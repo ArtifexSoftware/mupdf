@@ -147,7 +147,6 @@ Instance properties
 
 		var results = page.search("my search phrase")
 
-
 .. method:: Page.prototype.getLinks()
 
 	Return an array of all the links on the page. If there are no
@@ -184,7 +183,6 @@ Instance properties
 		// create a link to another page in the document
 		var link = page.createLink([0, 100, 100, 150], "#page=1&view=FitV,0")
 
-
 .. method:: Page.prototype.deleteLink(link)
 
 	Delete the link from the page.
@@ -214,12 +212,6 @@ Instance properties
 	.. code-block::
 
 		var isPDF = page.isPDF()
-
-	.. note::
-
-		As `PDFPage` extends `Page` this method will
-		return **false**. It is only if we actually have an instance of
-		a `PDFPage` when this method is overridden to return **true**.
 
 .. method:: Page.prototype.decodeBarcode(subarea, rotate)
 

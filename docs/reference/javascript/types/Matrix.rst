@@ -35,7 +35,7 @@ Constructors
 
 .. class:: Matrix
 
-	|no_new|
+	|interface_type|
 
 Matrices are not represented by a class; they are just plain arrays of six numbers.
 

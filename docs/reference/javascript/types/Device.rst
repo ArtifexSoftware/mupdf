@@ -278,8 +278,6 @@ Clipping and masking
 Groups and transparency
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. TODO in beginGroup() should blendmode be passed as an integer or as a string?
-
 .. method:: Device.prototype.beginGroup(area, colorspace, isolated, knockout, blendmode, alpha)
 
 	Begin a transparency blending group. See :term:`knockout and isolation`

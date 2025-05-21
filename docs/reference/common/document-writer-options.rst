@@ -1,6 +1,14 @@
 Document Writer Options
 =======================
 
+Supported output formats:
+-------------------------------------------------
+
+- raster: ``cbz``, ``png``, ``pnm``, ``pgm``, ``ppm``, ``pam``, ``pbm``, ``pkm``.
+- print-raster: ``pcl``, ``pclm``, ``ps``, ``pwg``.
+- vector: ``pdf``, ``svg``.
+- text: ``html``, ``xhtml``, ``text``, ``stext``.
+
 Raster output options:
 -------------------------------------------------
 

@@ -15,7 +15,7 @@ Constructors
 
 .. class:: OutlineItem
 
-	|no_new|
+	|interface_type|
 
 Outline items are passed around as plain objects.
 

@@ -1,5 +1,5 @@
-PDF Terms
-==========
+Glossary
+========
 
 .. glossary::
 	:sorted:
@@ -33,11 +33,11 @@ PDF Terms
 		then it represents an external file. Such a file is assumed
 		to be found at the specified location in the file system.
 
-		In addition a file specifications may also embed the entire
-		file contents within an stream inside the PDF, then the file
-		specification represents an embedded file. In that case
-		further metadata may be stored, e.g. file size, creation and
-		modification date.
+		A file specification may also embed the file contents as a
+		stream inside the PDF. In this case the file specification
+		represents an embedded file. For embedded files, further
+		metadata may be stored (e.g. file size, creation and
+		modification date).
 
 		For more details read the PDF specification's section on
 		`file specifications
@@ -281,3 +281,11 @@ PDF Terms
 	Associated File
 
 		TODO
+
+	CMYK JPEG
+
+		The situation with JPEG and CMYK colorspaces is complicated, and depends on
+		many factors such as App markers, the ColorTransform PDF parameter, and whether
+		a JPEG is intended as a standalone or embedded in PDF.
+
+		TODO: explain our behavior, and adobe's behavior, and when impossible situations appear

@@ -27,7 +27,7 @@ Constructors
 
 .. class:: Rect
 
-	|no_new|
+	|interface_type|
 
 Rects are not represented by a class; they are just plain arrays of four numbers.
 
@@ -36,19 +36,13 @@ Static properties
 
 .. data:: Rect.empty
 
-	|only_mutool|
-
 	A rectangle whose coordinates are such that it is categorized as empty.
 
 .. data:: Rect.invalid
 
-	|only_mutool|
-
 	A rectangle whose coordinates are such that it is categorized as invalid.
 
 .. data:: Rect.infinite
-
-	|only_mutool|
 
 	A rectangle whose coordinates are such that it is categorized as infinite.
 
@@ -57,7 +51,7 @@ Static methods
 
 .. function:: Rect.isEmpty(rect)
 
-	Returns a boolean indicating if the rectangle is empty or not.
+	Returns whether the rectangle is empty or not.
 
 	:param Rect rect: Rectangle to evaluate.
 
@@ -70,7 +64,7 @@ Static methods
 
 .. function:: Rect.isValid(rect)
 
-	Returns a boolean indicating if the rectangle is valid or not.
+	Returns whether the rectangle is valid or not.
 
 	:param Rect rect: Rectangle to evaluate.
 
@@ -83,7 +77,7 @@ Static methods
 
 .. function:: Rect.isInfinite(rect)
 
-	Returns a boolean indicating if the rectangle is infinite or not.
+	Returns whether the rectangle is infinite or not.
 
 	:param Rect rect: Rectangle to evaluate.
 
@@ -117,6 +111,7 @@ Static methods
 	:returns boolean
 
 	.. code-block::
+
 		var inside = mupdf.Rect.isPointInside([0, 0, 100, 100], [50, 50])
 
 .. function:: Rect.rectFromQuad(quad)

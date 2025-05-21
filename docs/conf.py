@@ -49,14 +49,11 @@ myst_enable_extensions = [
 
 googleanalytics_id = "G-JZTN4VTL9M"
 
-# TODO REMOVE
-exclude_patterns = [
-    "**/mutool-object-*.rst",
-]
-
 rst_prolog = """
 
 .. |no_new| replace:: *You cannot create instances of this class with the new operator!*
+
+.. |interface_type| replace:: *This is an interface, not a concrete class!*
 
 .. |only_mutool| raw:: html
 

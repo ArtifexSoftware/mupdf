@@ -15,9 +15,6 @@ and a handful of image formats.
 Static methods
 --------------
 
-
-.. TODO openDocument() in mupdf.js can handle Streams here, but mutool cannot. mutool could use it for files and buffers. More useful if progressive streams are added to mutool, but do we want that?
-
 .. function::
 	Document.openDocument(filename)
 	Document.openDocument(buffer, magic)
@@ -123,8 +120,6 @@ Instance methods
 		var modificationDate = doc.getMetaData("info:ModDate")
 		var author = doc.getMetaData("info:Author")
 
-.. TODO murun treats null/undefined values as "", maybe mupdf.js should too?
-
 .. method:: Document.prototype.setMetaData(key, value)
 
 	Set document meta data information field to a new value.
@@ -209,8 +204,6 @@ Instance methods
 
 		var obj = document.outlineIterator()
 
-.. TODO murun returns a page number, but mupdf.js returns a Link.
-
 .. method:: Document.prototype.resolveLink(link)
 
 	Resolve a document internal link URI to a page index.
@@ -265,8 +258,6 @@ Instance methods
 		} else {
 			// it does not have a native PDF representation
 		}
-
-.. TODO LinkDest is another of those typescript interfaces. do we create classes for these in mutool run? apparently I decided to do that, yes...
 
 .. method:: Document.prototype.formatLinkURI(linkDestination)
 

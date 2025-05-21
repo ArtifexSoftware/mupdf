@@ -5,10 +5,15 @@
 StructuredTextWalker
 ====================
 
+A structured text walker is an object with (optional) callback methods
+used to iterate over the contents of a `StructuredText`.
+
 Constructors
 ------------
 
 .. class:: StructuredTextWalker
+
+	|interface_type|
 
 On beginLine the direction parameter is a vector (e.g. [0, 1]) and
 can you can calculate the rotation as an angle with some trigonometry on the vector.

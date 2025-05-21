@@ -1,8 +1,6 @@
-Progressive Loading
-===============================
+# Progressive Loading
 
-What is progressive loading?
------------------------------------
+## What is progressive loading?
 
 The idea of progressive loading is that as you download a PDF file into a browser, you can display the pages as they appear.
 
@@ -10,8 +8,7 @@ MuPDF can make use of 2 different mechanisms to achieve this. The first relies o
 
 For optimum performance a file should be both linearized and be available over a byte-range supporting link, but benefits can still be had with either one of these alone.
 
-Progressive download using "linearized" files
------------------------------------------------------------
+## Progressive download using "linearized" files
 
 Adobe defines "linearized" PDFs as being ones that have both a specific layout of objects and a small amount of extra information to help avoid seeking within a file. The stated aim is to deliver the first page of a document in advance of the whole document downloading, whereupon subsequent pages will become available. Adobe also refers to these as "Optimized for fast web view" or "Web Optimized".
 
@@ -26,24 +23,19 @@ Essentially the file starts with a slightly modified header, and the first objec
 
 This object is then followed by all the objects required for the first page, then the "hint stream", then sets of object for each subsequent page in turn, then shared objects required for those pages, then various other random things.
 
-.. note::
+> While page 1 is sent with all the objects that it uses, shared or otherwise, subsequent pages do not get shared resources until after all the unshared page objects have been sent.
 
-	While page 1 is sent with all the objects that it uses, shared or otherwise, subsequent pages do not get shared resources until after all the unshared page objects have been sent.
-
-The Hint Stream
--------------------
+## The Hint Stream
 
 Adobe intended "Hint Stream" to be useful to facilitate the display of subsequent pages, but it has never used it. Consequently you can't trust people to write it properly - indeed Adobe outputs something that doesn't quite conform to the specification.
 
 Consequently very few people actually use it. MuPDF will use it after sanity checking the values, and should cope with illegal/incorrect values.
 
-So how does MuPDF handle progressive loading?
-------------------------------------------------------------
+## So how does MuPDF handle progressive loading?
 
 MuPDF has made various extensions to its mechanisms for handling progressive loading.
 
-Progressive streams
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Progressive streams
 
 At its lowest level MuPDF reads file data from a `fz_stream`, using the `fz_open_document_with_stream` call. (`fz_open_document` is implemented by calling this). We have extended the `fz_stream` slightly, giving the system a way to ask for meta information (or perform meta operations) on a stream.
 
@@ -58,8 +50,7 @@ When data is pulled from a progressive stream, if we attempt to read data that i
 
 When a MuPDF call is made on a progressive stream, such as `fz_open_document_with_stream`, or `fz_load_page`, the caller should be prepared to handle a `FZ_ERROR_TRYLATER` error as meaning that more data is required before it can continue. No indication is directly given as to exactly how much more data is required, but as the caller will be implementing the progressive `fz_stream` that it has passed into MuPDF to start with, it can reasonably be expected to figure out an estimate for itself.
 
-Cookie
-~~~~~~~~~~~
+### Progress Cookie
 
 Once a page has been loaded, if its contents are to be 'run' as normal (using e.g. `fz_run_page`) any error (such as failing to read a font, or an image, or even a content stream belonging to the page) will result in a rendering that aborts with an `FZ_ERROR_TRYLATER` error. The caller can catch this and display a placeholder instead.
 
@@ -71,8 +62,7 @@ To mitigate against this, MuPDF provides a way whereby callers can indicate that
 
 Callers prepared to tolerate such renderings should set the `incomplete_ok` flag in the cookie, then call `fz_run_page` etc. as normal. If a `FZ_ERROR_TRYLATER` error is thrown at any point during the page rendering, the error will be swallowed, the 'incomplete' field in the cookie will become non-zero and rendering will continue. When control returns to the caller the caller can check the value of the 'incomplete' field and know that the rendering it received is not authoritative.
 
-Progressive loading using byte range requests
--------------------------------------------------
+## Progressive loading using byte range requests
 
 If the caller has control over the http fetch, then it is possible to use byte range requests to fetch the document 'out of order'. This enables non-linearized files to be progressively displayed as they download, and fetches complete renderings of pages earlier than would otherwise be the case. This process requires no changes within MuPDF itself, but rather in the way the progressive stream learns from the attempts MuPDF makes to fetch data.
 
@@ -88,7 +78,7 @@ Consider, for example, an attempt to fetch a hypothetical file from a server.
 
 - MuPDF can then decide how to proceed based upon these flags and whether the file is linearized or not. (If the file contains a linearized object, and the content length matches, then the file is considered to be linear, otherwise it is not).
 
-**If the file is linear:**
+### If the file is linear:
 
 - We proceed to read objects out of the file as it downloads. This will provide us the first page and all its resources. It will also enable us to read the hint streams (if present).
 
@@ -96,35 +86,27 @@ Consider, for example, an attempt to fetch a hypothetical file from a server.
 
 - If we have hints, any attempt to load a subsequent page will cause MuPDF to attempt to read exactly the objects required. This will cause a sequence of seeks in the `fz_stream` followed by reads. If the stream does not have the data to satisfy that request yet, the stream code should remember the location that was fetched (and fetch that block in the background so that future retries will succeed) and should raise an `FZ_ERROR_TRYLATER` error.
 
-.. note::
-
-	Typically therefore when we jump to a page in a linear file on a byte request capable link, we will quickly see a rough rendering, which will improve fairly fast as images and fonts arrive.
+> Typically therefore when we jump to a page in a linear file on a byte request capable link, we will quickly see a rough rendering, which will improve fairly fast as images and fonts arrive.
 
 - Regardless of whether we have hints or byte requests, on every `fz_load_page` call MuPDF will attempt to process more of the stream (that is assumed to be being downloaded in the background). As linearized files are guaranteed to have pages in order, pages will gradually become available. In the absence of byte requests and hints however, we have no way of getting resources early, so the renderings for these pages will remain incomplete until much more of the file has arrived.
 
-.. note::
-
-	Typically therefore when we jump to a page in a linear file on a non byte request capable link, we will see a rough rendering for that page as soon as data arrives for it (which will typically take much longer than would be the case with byte range capable downloads), and that will improve much more slowly as images and fonts may not appear until almost the whole file has arrived.
+> Typically therefore when we jump to a page in a linear file on a non byte request capable link, we will see a rough rendering for that page as soon as data arrives for it (which will typically take much longer than would be the case with byte range capable downloads), and that will improve much more slowly as images and fonts may not appear until almost the whole file has arrived.
 
 - When the whole file has arrived, then we will attempt to read the outlines for the file.
 
-**For a non-linearized PDF on a byte request capable stream:**
+### For a non-linearized PDF on a byte request capable stream:
 
 - MuPDF will immediately seek to the end of the file to attempt to read the trailer. This will fail with a `FZ_ERROR_TRYLATER` due to the data not being here yet, but the stream code should remember that this data is required and it should be prioritized in the background fetch process.
 
 - Repeated attempts to open the stream should eventually succeed therefore. As MuPDF jumps through the file trying to read first the xrefs, then the page tree objects, then the page contents themselves etc., the background fetching process will be driven by the attempts to read the file in the foreground.
 
-.. note::
+> Typically therefore the opening of a non-linearized file will be slower than a linearized one, as the xrefs/page trees for a non-linear file can be 20%+ of the file data. Once past this initial point however, pages and data can be pulled from the file almost as fast as with a linearized file.
 
-	Typically therefore the opening of a non-linearized file will be slower than a linearized one, as the xrefs/page trees for a non-linear file can be 20%+ of the file data. Once past this initial point however, pages and data can be pulled from the file almost as fast as with a linearized file.
-
-**For a non-linearized PDF on a non-byte request capable stream:**
+### For a non-linearized PDF on a non-byte request capable stream:
 
 - MuPDF will immediately seek to the end of the file to attempt to read the trailer. This will fail with a `FZ_ERROR_TRYLATER` due to the data not being here yet. Subsequent retries will continue to fail until the whole file has arrived, whereupon the whole file will be instantly available.
 
-.. note::
-
-	This is the worst case situation - nothing at all can be displayed until the entire file has downloaded.
+> This is the worst case situation - nothing at all can be displayed until the entire file has downloaded.
 
 A typical structure for a fetcher process (see `curl-stream.c`, `mupdf-curl` in `platform/win32/mupdf-curl.vcxproj`) as an example) might therefore look like this:
 

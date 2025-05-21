@@ -17,7 +17,6 @@ Types
 	Document
 	DocumentWriter
 	DrawDevice
-	FileSpecificationParams
 	Font
 	Image
 	Link
@@ -42,13 +41,13 @@ Types
 	TextWalker
 	TreeArchive
 
-
 .. toctree::
 	:caption: PDF
 	:maxdepth: 1
 
 	PDFAnnotation
 	PDFDocument
+	PDFFilespecParams
 	PDFGraftMap
 	PDFObject
 	PDFPage

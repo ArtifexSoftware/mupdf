@@ -13,8 +13,8 @@ Constructors
 	Image(data, mask)
 	Image(filename, mask)
 
-	Create an Image and populate it with image data decode either from a pixmap,
-	a data buffer or a file name.
+	Create an Image and populate it with image data decoded either from a pixmap,
+	a data buffer, or a file.
 
 	:param Pixmap pixmap: A pixmap with the image data.
 	:param Buffer | ArrayBuffer | Uint8Array data: Image data.

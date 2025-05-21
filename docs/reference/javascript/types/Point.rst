@@ -12,7 +12,7 @@ Constructors
 
 .. class:: Point
 
-	|no_new|
+	|interface_type|
 
 Points are not represented by a class; they are just plain arrays of two numbers.
 

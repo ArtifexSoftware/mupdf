@@ -36,19 +36,15 @@ Use the methods on a `PDFDocument` instance to create new objects.
 Instance properties
 -------------------
 
-.. TODO mupdf.js implements "get length()", but what does that mean? will that become a read-only attribute?
-
 .. attribute:: PDFObject.prototype.length
 
-	Number of entries in array and dictionary PDFObjects.
-
-.. TODO does this work in mupdf.js? I imagine so, but I can't easily verify it.
+	Number of entries in array PDFObjects. Zero for all other object types.
 
 .. attribute:: PDFObject.prototype.[n]
 
 	|only_mutool|
 
-	Get or set the element at index ``n`` in an array.
+	Get or set the element at index ``n`` in an array (0-indexed).
 
 	See `PDFObject.prototype.get()` and `PDFObject.prototype.put()` for the equivalent in mupdf.js.
 
@@ -60,9 +56,7 @@ Instance properties
 		pdfObject[0] = "hello"
 		pdfObject[1] = "world"
 
-.. TODO does this work in mupdf.js? I imagine so, but I can't easily verify it.
-
-.. attribute:: PDFObject.prototype.name
+.. attribute:: PDFObject.prototype.[name]
 
 	|only_mutool|
 
@@ -76,12 +70,12 @@ Instance properties
 
 		var pages = doc.getTrailer().Root.Pages
 		pages.Hello = "world"
-		delete pages.Hello
+		pages["Xyzzy"] = 42
+		delete pages["Hello"]
+		delete pages.Xyzzy
 
 Instance methods
 ----------------
-
-.. TODO murun doesn't support paths while mupdf.js does
 
 .. method:: PDFObject.prototype.get(...path)
 
@@ -99,7 +93,7 @@ Instance methods
 		var value = arr.get(1)
 		var page7 = pdfDocument.getTrailer().get("Root", "Pages", "Kids", 7)
 
-.. method:: PDFObject.prototype.getInheritable()
+.. method:: PDFObject.prototype.getInheritable(key)
 
 	For a dictionary, if the requested key does not exist,
 	getInheritable() will walk Parent references to parent
@@ -108,26 +102,19 @@ Instance methods
 	If no key can be found in any parent or grand-parent or
 	grand-grand-parent, all the way up, ``null`` is returned.
 
-	:param PDFObject | string ref: Key or index.
+	:param PDFObject | string key:
 
-	:returns: The value for the key or index.
+	:returns: `PDFObject`
 
 	.. code-block:: javascript
 
-		var dict = pdfDocument.newDictionary()
-		var grandParent = pdfDocument.newDictionary()
-		var grandgrandParent = pdfDocument.newDictionary()
-		grandgrandParent.put("my_key", "my_value")
-		grandParent.put("Parent", grandgrandParent)
-		dict.put("Parent", grandParent)
-		var value = dict.getInheritable("my_key")
-		var arr = pdfDocument.newArray()
-		var value = arr.get(0)
+		var page = pdfDocument.loadPage(0)
+		var pageObj = page.getObject()
+		var rotate = pageObj.getInheritable("Rotate")
 
 .. method:: PDFObject.prototype.put(key, value)
 
-	Put information into dictionaries and arrays in the `PDFObject`.
-	Dictionaries and arrays can also be accessed using normal property syntax: ``obj.Foo = 42; delete obj.Foo; x = obj[5]``.
+	Set values in `PDFObject` dictionaries or arrays.
 
 	:param PDFObject | string | number key: Interpreted as an index for arrays or a key string for dictionaries.
 	:param PDFObject | Array | string | number | boolean | null value: The value to set at the array index or for dictionary key.
@@ -215,8 +202,6 @@ Instance methods
 
 		var str = obj.toString()
 
-.. TODO in murun indirect references are do appear to be converted to "R"
-
 .. method:: PDFObject.prototype.valueOf()
 
 	Try to convert a PDF object into a corresponding primitive Javascript value.
@@ -239,7 +224,7 @@ Instance methods
 	|only_mutool|
 
 	Compare the object to another one. Returns 0 on match, non-zero
-	on mismatch. Streams always mismatch.
+	on mismatch.
 
 	:param PDFObject other:
 
@@ -249,7 +234,7 @@ Instance methods
 
 		var match = pdfObj.compare(other_obj)
 
-PDF streams
+Streams
 ------------------------------------------
 
 The only way to access a stream is via an indirect object, since all streams are numbered objects.
@@ -323,8 +308,8 @@ Primitive Objects
 ---------------------
 
 Primitive PDF objects such as booleans, names, and numbers can usually be
-treated like Javascript values. When that is not sufficient use these
-functions:
+treated like Javascript values (thanks to valueOf). When that is not sufficient
+use these functions:
 
 .. method:: PDFObject.prototype.isNull()
 
@@ -366,9 +351,19 @@ functions:
 
 		var val = obj.isInteger()
 
+.. method:: PDFObject.prototype.isReal()
+
+	Returns whether the object is a PDF real number.
+
+	:returns: boolean
+
+	.. code-block:: javascript
+
+		var val = pdfObj.isReal()
+
 .. method:: PDFObject.prototype.isNumber()
 
-	Returns whether the object is a number.
+	Returns whether the object is a number (an integer or a real).
 
 	:returns: boolean
 
@@ -426,64 +421,15 @@ functions:
 
 		var val = obj.asString()
 
-.. TODO murun returns an rray of number, is that really equivalent?
-
 .. method:: PDFObject.prototype.asByteString()
 
 	Convert a string to an array of byte values.
 
-	:returns: Uint8Array
+	:returns: Uint8Array | Array of number
 
 	.. code-block::
 
 		var val = obj.asByteString()
-
-.. TODO should this even be here?
-
-.. method:: PDFObject.prototype.isReal()
-
-	|only_mutool|
-
-	Returns whether the object is a PDF real number.
-
-	:returns: boolean
-
-	.. code-block:: javascript
-
-		var val = pdfObj.isReal()
-
-.. TODO getNumber, getName, getString(), should these even be in mutool run!?
-
-.. method:: PDFObject.prototype.getNumber()
-
-	Convert a primitive PDF integer or real object to a
-	Javascript number object.
-
-	:returns: number
-
-	.. code-block:: javascript
-
-		var nbr = pdfObj.getNumber()
-
-.. method:: PDFObject.prototype.getName()
-
-	Convert a primitive PDF name object to a Javascript string.
-
-	:returns: string
-
-	.. code-block:: javascript
-
-		var name = pdfObj.getName()
-
-.. method:: PDFObject.prototype.getString()
-
-	Convert a primitive PDF string object to a Javascript string.
-
-	:returns: string
-
-	.. code-block:: javascript
-
-		var str = pdfObj.getString()
 
 .. method:: PDFObject.prototype.isIndirect()
 

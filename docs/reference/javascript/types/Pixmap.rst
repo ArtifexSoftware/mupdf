@@ -305,7 +305,7 @@ Instance methods
 	Note, if this pixmap has an alpha channel then an exception will be thrown.
 
 	:param number quality: Desired compression quality, between ``0`` and ``100``.
-	:param boolean invert_cmyk: If pixmap is CMYK, should the samples be inverted before encoding as JPEG. Otherwise has no effect.
+	:param boolean invert_cmyk: How to handle polarity in :term:`CMYK JPEG` images.
 
 	:returns: `Buffer`
 
@@ -369,11 +369,14 @@ Instance methods
 	|only_mutool|
 
 	Get the value of component ``index`` at position x, y (relative to
-	the image origin: 0, 0 is the top left pixel). Throws RangeError if x, y, or index are out of range.
+	the image origin: 0, 0 is the top left pixel).
 
 	:param number x: X coordinate.
 	:param number y: Y coordinate.
 	:param number index: Component index. i.e. For CMYK ColorSpaces 0 = Cyan, 3 = Black, for RGB 0 = Red, 2 == Blue etc.
+
+	:throws: RangeError if x, y, or index are out of range.
+
 	:returns: number
 
 	.. code-block:: javascript
@@ -393,7 +396,6 @@ Instance methods
 
 		pixmap.saveAsPNG("filename.png")
 
-
 .. method:: Pixmap.prototype.saveAsJPEG(filename, quality)
 
 	|only_mutool|
@@ -406,7 +408,6 @@ Instance methods
 	.. code-block:: javascript
 
 		pixmap.saveAsJPEG("filename.jpg", 80)
-
 
 .. method:: Pixmap.prototype.saveAsPAM(filename)
 

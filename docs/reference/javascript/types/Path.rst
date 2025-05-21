@@ -55,8 +55,6 @@ Instance methods
 
 		path.closePath()
 
-.. TODO lacks checkType() in mupdf.js, why?
-
 .. method:: Path.prototype.curveTo(x1, y1, x2, y2, x3, y3)
 
 	Append operation drawing a cubic Bézier curve from the current point
@@ -77,8 +75,6 @@ Instance methods
 
 		path.curveTo(0, 0, 10, 10, 100, 100)
 
-.. TODO lacks checkType() in mupdf.js, why?
-
 .. method:: Path.prototype.curveToV(cx, cy, ex, ey)
 
 	Append operation drawing a cubic Bézier curve from the current point
@@ -97,8 +93,6 @@ Instance methods
 	.. code-block::
 
 		path.curveToV(0, 0, 100, 100)
-
-.. TODO lacks checkType() in mupdf.js, why?
 
 .. method:: Path.prototype.curveToY(cx, cy, ex, ey)
 
@@ -141,7 +135,7 @@ Instance methods
 
 	.. code-block::
 
-		var rect = path.getBounds(TODO, mupdf.Matrix.identity)
+		var rect = path.getBounds(strokeState, mupdf.Matrix.identity)
 
 .. method:: Path.prototype.lineTo(x, y)
 
@@ -170,8 +164,6 @@ Instance methods
 	.. code-block::
 
 		path.moveTo(10, 10)
-
-.. TODO lacks checkType() in mupdf.js, why?
 
 .. method:: Path.prototype.rect(x1, y1, x2, y2)
 

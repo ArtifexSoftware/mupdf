@@ -12,7 +12,7 @@ Besides controlling the line width, it is also possible to control
 Constructors
 ------------
 
-.. class:: StrokeState([template])
+.. class:: StrokeState(template)
 
 	Create a new empty stroke state object.
 

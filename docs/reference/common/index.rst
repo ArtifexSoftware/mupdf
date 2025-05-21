@@ -6,6 +6,6 @@ Concepts
 
 	glossary
 	coordinate-system
+	document-writer-options
 	pdf-write-options
 	stext-options
-	document-writer-options

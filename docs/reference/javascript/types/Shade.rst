@@ -7,11 +7,6 @@ Shade
 
 A Shade object is used to define shadings.
 
-.. note::
-
-	The details of shadings are not exposed in Javascript yet.
-
-
 .. class:: Shade
 
 	|no_new|

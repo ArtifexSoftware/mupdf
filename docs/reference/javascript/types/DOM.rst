@@ -199,8 +199,6 @@ Instance methods
 
 		var result = xml.previous()
 
-.. TODO is value == NULL handled correctly in c, js and java?
-
 .. method:: DOM.prototype.addAttribute(attribute, value)
 
 	Add attribute with the given value, returns the updated element as
@@ -228,9 +226,7 @@ Instance methods
 
 		xml.removeAttribute("attribute")
 
-.. TODO rename attribute() to getAttribute()?
-
-.. method:: DOM.prototype.attribute(attribute)
+.. method:: DOM.prototype.getAttribute(attribute)
 
 	Return the element's attribute value as a string, or null if no
 	such attribute exists.
