@@ -1,3 +1,7 @@
+.. default-domain:: js
+
+.. highlight:: javascript
+
 Quad
 ====
 
@@ -14,7 +18,7 @@ Constructors
 
 .. class:: Quad
 
-	|no_new|
+	|interface_type|
 
 Quads are not represented by a class; they are just plain arrays of eight numbers.
 
@@ -114,6 +118,7 @@ Static methods
 	:returns boolean
 
 	.. code-block::
+
 		var inside = mupdf.Rect.isPointInside([0, 0, 100, 100], [50, 50])
 
 .. function:: Quad.quadFromRect(rect)

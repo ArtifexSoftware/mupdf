@@ -493,7 +493,7 @@ install-docs:
 install: install-libs install-apps install-docs
 
 docs:
-	python3 scripts/build-docs.py
+	bash scripts/build-docs.sh
 
 docs-clean:
 	rm -rf build/docs/html

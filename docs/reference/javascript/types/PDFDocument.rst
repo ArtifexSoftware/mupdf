@@ -67,55 +67,6 @@ Static methods
 Instance methods
 ----------------
 
-.. method:: PDFDocument.prototype.bake(bakeAnnots, bakeWidgets)
-
-	*Baking* a document changes all the annotations and/or form fields (otherwise known as widgets) in the document into static content. It "bakes" the appearance of the annotations and fields onto the page, before removing the interactive objects so they can no longer be changed.
-
-	Effectively this removes the "annotation or "widget" type of these objects, but keeps the appearance of the objects.
-
-	:param boolean bakeAnnots: Whether to bake annotations or not. Defaults to true.
-	:param boolean bakeWidgets: Whether to bake widgets or not. Defaults to true.
-
-.. method:: PDFDocument.prototype.newGraftMap()
-
-	Create a graft map on the destination document, so that objects that have already been copied can be found again. Each graft map should only be used with one source document. Make sure to create a new graft map for each source document used.
-
-	:returns: `PDFGraftMap`
-
-	.. code-block::
-
-		var graftMap = doc.newGraftMap()
-
-.. method:: PDFDocument.prototype.graftObject(obj)
-
-	Deep copy an object into the destination document. This function will
-	not remember previously copied objects. If you are copying several
-	objects from the same source document using multiple calls, you
-	should use a graft map instead, see
-	`PDFDocument.prototype.newGraftMap()`.
-
-	:param PDFObject obj: The object to graft.
-
-	:returns: `PDFObject`
-
-	.. code-block::
-
-		var copiedObj = doc.graftObject(obj)
-
-.. method:: PDFDocument.prototype.graftPage(to, srcDoc, srcPage)
-
-	Graft a page and its resources at the given page number from the source document to the requested page number in the document.
-
-	:param number to: The page number to insert the page before. Page numbers start at 0 and -1 means at the end of the document.
-	:param PDFDocument srcDoc: Source document.
-	:param number srcPage: Source page number.
-
-	This would copy the first page of the source document (0) to the last page (-1) of the current PDF document.
-
-	.. code-block::
-
-		doc.graftPage(-1, srcDoc, 0)
-
 .. method:: PDFDocument.prototype.needsPassword()
 
 	Returns true if a password is required to open a password protected PDF.
@@ -182,135 +133,76 @@ Instance methods
 
 		var canEdit = document.hasPermission("edit")
 
-.. method:: PDFDocument.prototype.setPageLabels(index, style, prefix, start)
+.. method:: PDFDocument.prototype.getVersion()
 
-	Sets the page label numbering for the page and all pages following it, until the next page with an attached label.
-
-	:param number index: The start page index to start labeling from.
-	:param string style: Can be one of the following strings: "" (none), "D" (decimal), "R" (roman numerals upper-case), "r" (roman numerals lower-case), "A" (alpha upper-case), or "a" (alpha lower-case).
-	:param string prefix: Define a prefix for the labels.
-	:param number start: The ordinal with which to start numbering.
-
-	.. code-block::
-
-		doc.setPageLabels(0, "D", "Prefix", 1)
-
-.. method:: PDFDocument.prototype.deletePageLabels(index)
-
-	Removes any associated page label from the page.
-
-	:param number index:
-
-	.. code-block::
-
-		doc.deletePageLabels(0)
-
-.. method:: PDFDocument.prototype.getTrailer()
-
-	The trailer dictionary. This contains indirect references to the "Root"
-	and "Info" dictionaries.
-
-	:returns: `PDFObject`
-
-	.. code-block::
-
-		var dict = doc.getTrailer()
-
-.. method:: PDFDocument.prototype.countObjects()
-
-	Return the number of objects in the PDF.
+	Returns the PDF document version as an integer multiplied by
+	10, so e.g. a PDF-1.4 document would return 14.
 
 	:returns: number
 
 	.. code-block::
 
-		var num = doc.countObjects()
+		var version = pdfDocument.getVersion()
 
-.. method:: PDFDocument.prototype.createObject()
+.. method:: PDFDocument.prototype.setLanguage(lang)
 
-	Allocate a new numbered object in the PDF, and return an indirect
-	reference to it. The object itself is uninitialized.
+	Set the document's :term:`language code`.
 
-	:returns: `PDFObject`
-
-	.. code-block::
-
-		var obj = doc.createObject()
-
-.. method:: PDFDocument.prototype.deleteObject(num)
-
-	Delete the object referred to by an indirect reference or its object number.
-
-	:param PDFObject | number num: Delete the referenced object number.
+	:param string lang:
 
 	.. code-block::
 
-		doc.deleteObject(obj)
+		pdfDocument.setLanguage("en")
 
-.. TODO murun doesn't do the fancy Record<string,any> handling that mupdf.js, nor is this documented here...
+.. method:: PDFDocument.prototype.getLanguage()
 
-.. method:: PDFDocument.prototype.saveToBuffer(options)
+	Get the document's :term:`language code`.
 
-	Saves the document to a Buffer.
-
-	:param string options: See :doc:`/reference/common/pdf-write-options`.
-
-	:returns: `Buffer`
+	:returns: string
 
 	.. code-block::
 
-		var buffer = doc.saveToBuffer("garbage=2,compress=yes")
+		var lang = pdfDocument.getLanguage()
 
-.. TODO murun doesn't do the fancy Record<string,any> handling for options that mupdf.js, nor is this documented here...
+.. method:: PDFDocument.prototype.wasPureXFA()
 
-.. method:: PDFDocument.prototype.save(filename, options)
+	|only_mutool|
 
-	Saves the document to a file.
+	Returns whether the document was an XFA form without AcroForm
+	fields.
 
-	:param string filename:
-	:param string options: See :doc:`/reference/common/pdf-write-options`
-
-	.. code-block::
-
-		doc.save("out.pdf", "incremental")
-
-.. method:: PDFDocument.prototype.addObject(obj)
-
-	Add obj to the PDF as a numbered object, and return an indirect reference to it.
-
-	:param PDFObject obj: Object to add.
-
-	:returns: `PDFObject`
+	:returns: boolean
 
 	.. code-block::
 
-		var ref = doc.addObject(obj)
+		var wasPureXFA = pdfDocument.wasPureXFA()
 
-.. method:: PDFDocument.prototype.addStream(buf, obj)
+.. method:: PDFDocument.prototype.wasRepaired()
 
-	Create a stream object with the contents of buffer, add it to the PDF, and return an indirect reference to it. If object is defined, it will be used as the stream object dictionary.
+	Returns whether the document was repaired when opened.
 
-	:param Buffer | ArrayBuffer | Uint8Array | string buf: Buffer whose data to put into stream.
-	:param PDFObject obj: The object to add the stream to.
-
-	:returns: `PDFObject`
+	:returns: boolean
 
 	.. code-block::
 
-		var stream = doc.addStream(buffer, object)
+		var wasRepaired = pdfDocument.wasRepaired()
 
-.. method:: PDFDocument.prototype.addRawStream(buf, obj)
+.. method:: PDFDocument.prototype.loadNameTree(treeName)
 
-	Create a stream object with the contents of buffer, add it to the PDF, and return an indirect reference to it. If object is defined, it will be used as the stream object dictionary. The buffer must contain already compressed data that matches "Filter" and "DecodeParms" set in the stream object dictionary.
+	Return an object whose properties and their values come from
+	corresponding names/values from the given name tree.
 
-	:param Buffer | ArrayBuffer | Uint8Array | string buf: Buffer whose data to put into stream.
-	:param PDFObject obj: The object to add the stream to.
-
-	:returns: `PDFObject`
+	:returns: Object
 
 	.. code-block::
 
-		var stream = doc.addRawStream(buffer, object)
+		var dests = pdfDocument.loadNameTree("Dests")
+		for (var p in dests) {
+			console.log("Destination: " + p)
+		}
+
+Objects
+-------------------
 
 .. method:: PDFDocument.prototype.newNull()
 
@@ -370,13 +262,11 @@ Instance methods
 
 		var obj = doc.newString("hello")
 
-.. TODO murun takes array of number but mupdf only Uint8Array, how should this be documented?
-
 .. method:: PDFDocument.prototype.newByteString(v)
 
 	Create a new byte string object.
 
-	:param Uint8Array v:
+	:param Uint8Array | Array of number v:
 
 	:returns: `PDFObject`
 
@@ -409,11 +299,9 @@ Instance methods
 
 		var obj = doc.newIndirect(42, 0)
 
-.. method:: PDFDocument.prototype.newArray(cap)
+.. method:: PDFDocument.prototype.newArray()
 
 	Create a new array object.
-
-	:param number cap: Defaults to 8.
 
 	:returns: `PDFObject`
 
@@ -421,11 +309,9 @@ Instance methods
 
 		var obj = doc.newArray()
 
-.. method:: PDFDocument.prototype.newDictionary(cap)
+.. method:: PDFDocument.prototype.newDictionary()
 
 	Create a new dictionary object.
-
-	:param number cap: Defaults to 8.
 
 	:returns: `PDFObject`
 
@@ -433,165 +319,91 @@ Instance methods
 
 		var obj = doc.newDictionary()
 
-.. method:: PDFDocument.prototype getVersion()
+Indirect objects
+----------------
 
-	Returns the PDF document version as an integer multiplied by
-	10, so e.g. a PDF-1.4 document would return 14.
+.. method:: PDFDocument.prototype.getTrailer()
+
+	The trailer dictionary. This contains indirect references to the "Root"
+	and "Info" dictionaries.
+
+	:returns: `PDFObject`
+
+	.. code-block::
+
+		var dict = doc.getTrailer()
+
+.. method:: PDFDocument.prototype.countObjects()
+
+	Return the number of objects in the PDF.
 
 	:returns: number
 
 	.. code-block::
 
-		var version = pdfDocument.getVersion()
+		var num = doc.countObjects()
 
-.. method:: PDFDocument.prototype.setLanguage(lang)
+.. method:: PDFDocument.prototype.createObject()
 
-	Set the document's :term:`language code`.
+	Allocate a new numbered object in the PDF, and return an indirect
+	reference to it. The object itself is uninitialized.
 
-	:param string lang:
-
-	.. code-block::
-
-		pdfDocument.setLanguage("en")
-
-.. method:: PDFDocument.prototype.getLanguage()
-
-	Get the document's :term:`language code`.
-
-	:returns: string
+	:returns: `PDFObject`
 
 	.. code-block::
 
-		var lang = pdfDocument.getLanguage()
+		var obj = doc.createObject()
 
-.. TODO is the rearrangePages() requirement that the document may not be used for anything else correct?
+.. method:: PDFDocument.prototype.deleteObject(num)
 
-.. method:: PDFDocument.prototype.rearrangePages(pages)
+	Delete the object referred to by an indirect reference or its object number.
 
-	Rearrange (re-order and/or delete) pages in the PDFDocument.
-
-	The pages in the document will be rearranged according to the
-	input list. Any pages not listed will be removed, and pages may
-	be duplicated by listing them multiple times.
-
-	The PDF objects describing removed pages will remain in the
-	file and take up space (and can be recovered by forensic tools)
-	unless you save with the "garbage" option set, see `PDFDocument.prototype.save()`.
-
-		The `PDFDocument` should not be used for anything except saving after rearranging the pages.
-
-	:param Array of number pages: An array of page numbers, each page number is 0-based.
+	:param PDFObject | number num: Delete the referenced object number.
 
 	.. code-block::
 
-		var document = new Document.openDocument("my_pdf.pdf")
-		pdfDocument.rearrangePages([3,2])
-		pdfDocument.save("fewer_pages.pdf", "garbage")
+		doc.deleteObject(obj)
 
-.. method:: PDFDocument.prototype.subsetFonts()
+.. method:: PDFDocument.prototype.addObject(obj)
 
-	Scan the document and establish which glyphs are used from each
-	font, next rewrite the font files such that they only contain
-	the used glyphs. By removing unused glyphs the size of the font
-	files inside the PDF will be reduced.
+	Add obj to the PDF as a numbered object, and return an indirect reference to it.
 
-	.. code-block::
+	:param PDFObject obj: Object to add.
 
-		pdfDocument.subsetFonts()
-
-.. method:: PDFDocument.prototype.canBeSavedIncrementally()
-
-	Returns whether the document can be saved incrementally, e.g.
-	repaired documents or applying redactions prevents incremental
-	saves.
-
-	:returns: boolean
+	:returns: `PDFObject`
 
 	.. code-block::
 
-		var canBeSavedIncrementally = pdfDocument.canBeSavedIncrementally()
+		var ref = doc.addObject(obj)
 
-.. method:: PDFDocument.prototype.countVersions()
+.. method:: PDFDocument.prototype.addStream(buf, obj)
 
-	Returns the number of versions of the document in a PDF file,
-	typically 1 + the number of updates.
+	Create a stream object with the contents of buffer, add it to the PDF, and return an indirect reference to it. If object is defined, it will be used as the stream object dictionary.
 
-	:returns: number
+	:param Buffer | ArrayBuffer | Uint8Array | string buf: Buffer whose data to put into stream.
+	:param PDFObject obj: The object to add the stream to.
 
-	.. code-block::
-
-		var versionNum = pdfDocument.countVersions()
-
-.. method:: PDFDocument.prototype.countUnsavedVersions()
-
-	Returns the number of unsaved updates to the document.
-
-	:returns: number
+	:returns: `PDFObject`
 
 	.. code-block::
 
-		var unsavedVersionNum = pdfDocument.countUnsavedVersions()
+		var stream = doc.addStream(buffer, object)
 
-.. method:: PDFDocument.prototype.validateChangeHistory()
+.. method:: PDFDocument.prototype.addRawStream(buf, obj)
 
-	Check the history of the document, and determine the last
-	version that checks out OK. Returns ``0`` if the entire history
-	is OK, ``1`` if the next to last version is OK, but the last
-	version has issues, etc.
+	Create a stream object with the contents of buffer, add it to the PDF, and return an indirect reference to it. If object is defined, it will be used as the stream object dictionary. The buffer must contain already compressed data that matches "Filter" and "DecodeParms" set in the stream object dictionary.
 
-	:returns: number
+	:param Buffer | ArrayBuffer | Uint8Array | string buf: Buffer whose data to put into stream.
+	:param PDFObject obj: The object to add the stream to.
 
-	.. code-block::
-
-		var changeHistory = pdfDocument.validateChangeHistory()
-
-.. method:: PDFDocument.prototype.hasUnsavedChanges()
-
-	Returns true if the document has been changed since it was last
-	opened or saved.
-
-	:returns: boolean
+	:returns: `PDFObject`
 
 	.. code-block::
 
-		var hasUnsavedChanges = pdfDocument.hasUnsavedChanges()
+		var stream = doc.addRawStream(buffer, object)
 
-.. method:: PDFDocument.prototype.wasPureXFA()
-
-	|only_mutool|
-
-	Returns whether the document was an XFA form without AcroForm
-	fields.
-
-	:returns: boolean
-
-	.. code-block::
-
-		var wasPureXFA = pdfDocument.wasPureXFA()
-
-.. method:: PDFDocument.prototype.wasRepaired()
-
-	Returns whether the document was repaired when opened.
-
-	:returns: boolean
-
-	.. code-block::
-
-		var wasRepaired = pdfDocument.wasRepaired()
-
-.. method:: PDFDocument.prototype.loadNameTree(treeName)
-
-	Return an object whose properties and their values come from
-	corresponding names/values from the given name tree.
-
-	:returns: Object
-
-	.. code-block::
-
-		var dests = pdfDocument.loadNameTree("Dests")
-		for (var p in dests) {
-			console.log("Destination: " + p)
-		}
+Page Tree
+-----------------
 
 .. method:: PDFDocument.protoype.findPage(number)
 
@@ -620,6 +432,42 @@ Instance methods
 
 		var pageNumber = pdfDocument.findPageNumber(page)
 
+.. method:: PDFDocument.prototype.lookupDest(obj)
+
+	|only_mutool|
+
+	Find the destination corresponding to a specific named
+	destination given as a name or byte string in the form of a
+	`PDFObject`.
+
+	:param PDFObject obj:
+
+	:returns: `PDFObject`
+
+	.. code-block::
+
+		var destination = pdfDocument.lookupDest(nameobj)
+
+.. method:: PDFDocument.prototype.rearrangePages(pages)
+
+	Rearrange (re-order and/or delete) pages in the PDFDocument.
+
+	The pages in the document will be rearranged according to the
+	input list. Any pages not listed will be removed, and pages may
+	be duplicated by listing them multiple times.
+
+	The PDF objects describing removed pages will remain in the
+	file and take up space (and can be recovered by forensic tools)
+	unless you save with the "garbage" option set, see `PDFDocument.prototype.save()`.
+
+	:param Array of number pages: An array of page numbers, each page number is 0-based.
+
+	.. code-block::
+
+		var document = new Document.openDocument("my_pdf.pdf")
+		pdfDocument.rearrangePages([3,2])
+		pdfDocument.save("fewer_pages.pdf", "garbage")
+
 .. method:: PDFDocument.prototype.insertPage(at, page)
 
 	Insert the page's `PDFObject` into the page tree at the page
@@ -643,9 +491,6 @@ Instance methods
 
 		pdfDocument.deletePage(0)
 
-.. TODO validate that the example code for addPage() is reasonable.
-.. TODO do we want to keep both examples? literalinclude, really?
-
 .. method:: PDFDocument.prototype.addPage(mediabox, rotate, resources, contents)
 
 	Create a new `PDFPage` object. Note: this function does NOT add
@@ -665,22 +510,21 @@ Instance methods
 
 	.. code-block::
 
-		var helvetica = pdfDocument.newDictionary()
-		helvetica.put("Type", pdfDocument.newName("Font"))
-		helvetica.put("Subtype", pdfDocument.newName("Type1"))
-		helvetica.put("Name", pdfDocument.newName("Helv"))
-		helvetica.put("BaseFont", pdfDocument.newName("Helvetica"))
-		helvetica.put("Encoding", pdfDocument.newName("WinAnsiEncoding"))
+		var helvetica = pdfDocument.addSimpleFont(new mupdf.Font("Helvetica"), "Latin")
 		var fonts = pdfDocument.newDictionary()
-		fonts.put("Helv", helvetica)
+		fonts.put("F1", helvetica)
 		var resources = pdfDocument.addObject(pdfDocument.newDictionary())
 		resources.put("Font", fonts)
-		var pageObject = pdfDocument.addPage([0,0,300,350], 0, resources, "BT /Helv 12 Tf 100 100 Td (MuPDF!)Tj ET")
+		var pageObject = pdfDocument.addPage(
+			[0,0,300,350],
+			0,
+			resources,
+			"BT /F1 12 Tf 100 100 Td (Hello, world!) Tj ET"
+		)
 		pdfDocument.insertPage(-1, pageObject)
 
-	.. literalinclude:: ../../../examples/pdf-create.js
-	   :caption: docs/examples/pdf-create.js
-	   :language: javascript
+Resources
+-----------------
 
 .. method:: PDFDocument.prototype.addSimpleFont(font, encoding)
 
@@ -754,27 +598,8 @@ Instance methods
 
 		var image = pdfDocument.loadImage(obj)
 
-.. method:: PDFDocument.prototype.lookupDest(obj)
-
-	|only_mutool|
-
-	Find the destination corresponding to a specific named
-	destination given as a name or byte string in the form of a
-	`PDFObject`.
-
-	:param PDFObject obj:
-
-	:returns: `PDFObject`
-
-	.. code-block::
-
-		var destination = pdfDocument.lookupDest(nameobj)
-
 Embedded/Associated files
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. TODO in mutool for addEmbeddedFile(), creationDate modificationDate are in milliseconds the epoch, not a Date object
-.. TODO later addition: Date object autoconvert into microseconds since the epoch, so Date objects are fine to pass as arguments!
-.. TODO even later: murun defaults to -1 for create/modified, causing them not be set in C, mupdf.js doesn't allow this.
+-------------------------
 
 .. method:: PDFDocument.protoype.addEmbeddedFile(filename, mimetype, contents, creationDate, modificationDate, addChecksum)
 
@@ -784,7 +609,7 @@ Embedded/Associated files
 
 	The returned :term:`file specification` object can later be e.g.
 	connected to an annotation using
-	`PDFAnnotation.prototype.setFileSpec()`.
+	`PDFAnnotation.prototype.setFilespec()`.
 
 	:param string filename:
 	:param string mimetype: The :term:`MIME-type`.
@@ -835,35 +660,17 @@ Embedded/Associated files
 		pdfDocument.insertEmbeddedFile("test.txt", fileSpecObject)
 		pdfDocument.deleteEmbeddedFile("test.txt")
 
-.. TODO this is called getFileSpecParams() after the renaming, which is likely a better name. can mupdf.js change?
-
-.. method:: PDFDocument.prototype.getEmbeddedFileParams(ref)
-
-	|only_mupdfjs|
-
-	Gets the embedded file parameters from a PDFObject reference.
-
-	The returned Javascript object follows this:
-
-	``{ filename: string, mimetype: string, size: number, creationDate: Date, modificationDate: Date }``
-
-	:param PDFObject ref: Reference to embedded file params.
-
-	:returns: `FileSpecificationParams`
-
-.. method:: PDFDocument.prototype.getFileSpecParams(fileSpecObject)
-
-	|only_mutool|
+.. method:: PDFDocument.prototype.getFilespecParams(fileSpecObject)
 
 	Get the file specification parameters from the :term:`file specification`.
 
 	:param PDFObject fileSpecObject: :term:`file specification` object.
 
-	:returns: `FileSpecificationParams`
+	:returns: `PDFFilespecParams`
 
 	.. code-block::
 
-		var obj = pdfDocument.getFileSpecParams(fileSpecObject)
+		var obj = pdfDocument.getFilespecParams(fileSpecObject)
 
 .. method:: PDFDocument.prototype.getEmbeddedFileContents(fileSpecObject)
 
@@ -892,11 +699,11 @@ Embedded/Associated files
 
 		var fileChecksumValid = pdfDocument.verifyEmbeddedFileChecksum(fileSpecObject)
 
-.. method:: PDFDocument.prototype.isFileSpec(object)
+.. method:: PDFDocument.prototype.isFilespec(object)
 
 	|only_mutool|
 
-	Check if the given ``object`` is a :tern:`file specification`.
+	Check if the given ``object`` is a :term:`file specification`.
 
 	:param PDFObject object:
 
@@ -904,9 +711,7 @@ Embedded/Associated files
 
 	.. code-block::
 
-		var isFileSpec = pdfDocument.isFileSpec(obj)
-
-.. TODO mupdf.js appears to return an integer here, but why? murun uses boolean
+		var isFilespec = pdfDocument.isFilespec(obj)
 
 .. method:: PDFDocument.prototype.isEmbeddedFile(object)
 
@@ -919,7 +724,7 @@ Embedded/Associated files
 
 	.. code-block::
 
-		var isFileSpecObject = pdfDocument.isEmbeddedFile(obj)
+		var isFilespecObject = pdfDocument.isEmbeddedFile(obj)
 
 .. method:: PDFDocument.prototype.countAssociatedFiles()
 
@@ -952,8 +757,51 @@ Embedded/Associated files
 
 		var obj = pdfDocument.associatedFile(0)
 
+Grafting
+----------
+
+.. method:: PDFDocument.prototype.newGraftMap()
+
+	Create a graft map on the destination document, so that objects that have already been copied can be found again. Each graft map should only be used with one source document. Make sure to create a new graft map for each source document used.
+
+	:returns: `PDFGraftMap`
+
+	.. code-block::
+
+		var graftMap = doc.newGraftMap()
+
+.. method:: PDFDocument.prototype.graftObject(obj)
+
+	Deep copy an object into the destination document. This function will
+	not remember previously copied objects. If you are copying several
+	objects from the same source document using multiple calls, you
+	should use a graft map instead, see
+	`PDFDocument.prototype.newGraftMap()`.
+
+	:param PDFObject obj: The object to graft.
+
+	:returns: `PDFObject`
+
+	.. code-block::
+
+		var copiedObj = doc.graftObject(obj)
+
+.. method:: PDFDocument.prototype.graftPage(to, srcDoc, srcPage)
+
+	Graft a page and its resources at the given page number from the source document to the requested page number in the document.
+
+	:param number to: The page number to insert the page before. Page numbers start at 0 and -1 means at the end of the document.
+	:param PDFDocument srcDoc: Source document.
+	:param number srcPage: Source page number.
+
+	This would copy the first page of the source document (0) to the last page (-1) of the current PDF document.
+
+	.. code-block::
+
+		doc.graftPage(-1, srcDoc, 0)
+
 Journalling
-~~~~~~~~~~~
+-----------
 
 .. method:: PDFDocument.prototype.enableJournal()
 
@@ -1080,66 +928,8 @@ Journalling
 
 		pdfDocument.saveJournal("test.journal")
 
-Javascript actions
-~~~~~~~~~~~~~~~~~~
-
-.. method:: PDFDocument.prototype.enableJS()
-
-	Enable interpretation of document Javascript actions.
-
-	.. code-block::
-
-		pdfDocument.enableJS()
-
-.. method:: PDFDocument.prototype.disableJS()
-
-	Disable interpretation of document Javascript actions.
-
-	.. code-block::
-
-		pdfDocument.disableJS()
-
-.. method:: PDFDocument.prototype.isJSSupported()
-
-	|only_mutool|
-
-	Returns whether interpretation of document Javascript actions
-	is supported. Interpretation of Javascript may be disabled at
-	build time.
-
-	:returns: boolean
-
-	.. code-block::
-
-		var jsIsSupported = pdfDocument.isJSSupported()
-
-.. TODO mupdf.js throws "TODO"! :) how about doing that for everything that we want to port but is not ready?
-
-.. method:: PDFDocument.prototype.setJSEventListener(listener)
-
-	|only_mutool|
-
-	Calls the listener whenever a document Javascript action
-	triggers an event.
-
-	At present the only callback the listener will be used for
-	is an alert event.
-
-	:param Object listener: The Javascript listener function.
-
-	.. code-block::
-
-		pdfDocument.setJSEventListener({
-				onAlert: function(message) {
-						print(message)
-				}
-		})
-
 Layers
-~~~~~~
-
-.. TODO in mupdf.js this is declared "countLayers(): number {" but another function is declared "countVersions() {" why?
-.. TODO setLayerVisible is even declared to return void!
+------
 
 .. method:: PDFDocument.prototype.countLayers()
 
@@ -1192,8 +982,191 @@ Layers
 
 		var name = pdfDocument.getLayerName(0)
 
+Page Labels
+-----------
+
+.. method:: PDFDocument.prototype.setPageLabels(index, style, prefix, start)
+
+	Sets the page label numbering for the page and all pages following it, until the next page with an attached label.
+
+	:param number index: The start page index to start labeling from.
+	:param string style: Can be one of the following strings: "" (none), "D" (decimal), "R" (roman numerals upper-case), "r" (roman numerals lower-case), "A" (alpha upper-case), or "a" (alpha lower-case).
+	:param string prefix: Define a prefix for the labels.
+	:param number start: The ordinal with which to start numbering.
+
+	.. code-block::
+
+		doc.setPageLabels(0, "D", "Prefix", 1)
+
+.. method:: PDFDocument.prototype.deletePageLabels(index)
+
+	Removes any associated page label from the page.
+
+	:param number index:
+
+	.. code-block::
+
+		doc.deletePageLabels(0)
+
+Saving
+------------
+
+.. method:: PDFDocument.prototype.canBeSavedIncrementally()
+
+	Returns whether the document can be saved incrementally, e.g.
+	repaired documents or applying redactions prevents incremental
+	saves.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var canBeSavedIncrementally = pdfDocument.canBeSavedIncrementally()
+
+.. method:: PDFDocument.prototype.saveToBuffer(options)
+
+	Saves the document to a Buffer.
+
+	:param string options: See :doc:`/reference/common/pdf-write-options`.
+
+	:returns: `Buffer`
+
+	.. code-block::
+
+		var buffer = doc.saveToBuffer("garbage=2,compress=yes")
+
+.. method:: PDFDocument.prototype.save(filename, options)
+
+	Saves the document to a file.
+
+	:param string filename:
+	:param string options: See :doc:`/reference/common/pdf-write-options`
+
+	.. code-block::
+
+		doc.save("out.pdf", "incremental")
+
+.. method:: PDFDocument.prototype.countVersions()
+
+	Returns the number of versions of the document in a PDF file,
+	typically 1 + the number of updates.
+
+	:returns: number
+
+	.. code-block::
+
+		var versionNum = pdfDocument.countVersions()
+
+.. method:: PDFDocument.prototype.hasUnsavedChanges()
+
+	Returns true if the document has been changed since it was last
+	opened or saved.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var hasUnsavedChanges = pdfDocument.hasUnsavedChanges()
+
+.. method:: PDFDocument.prototype.countUnsavedVersions()
+
+	Returns the number of unsaved updates to the document.
+
+	:returns: number
+
+	.. code-block::
+
+		var unsavedVersionNum = pdfDocument.countUnsavedVersions()
+
+.. method:: PDFDocument.prototype.validateChangeHistory()
+
+	Check the history of the document, and determine the last
+	version that checks out OK. Returns ``0`` if the entire history
+	is OK, ``1`` if the next to last version is OK, but the last
+	version has issues, etc.
+
+	:returns: number
+
+	.. code-block::
+
+		var changeHistory = pdfDocument.validateChangeHistory()
+
+Processing
+-------------
+
+.. method:: PDFDocument.prototype.subsetFonts()
+
+	Scan the document and establish which glyphs are used from each
+	font, next rewrite the font files such that they only contain
+	the used glyphs. By removing unused glyphs the size of the font
+	files inside the PDF will be reduced.
+
+	.. code-block::
+
+		pdfDocument.subsetFonts()
+
+.. method:: PDFDocument.prototype.bake(bakeAnnots, bakeWidgets)
+
+	*Baking* a document changes all the annotations and/or form fields (otherwise known as widgets) in the document into static content. It "bakes" the appearance of the annotations and fields onto the page, before removing the interactive objects so they can no longer be changed.
+
+	Effectively this removes the "annotation or "widget" type of these objects, but keeps the appearance of the objects.
+
+	:param boolean bakeAnnots: Whether to bake annotations or not. Defaults to true.
+	:param boolean bakeWidgets: Whether to bake widgets or not. Defaults to true.
+
+AcroForm Javascript
+-------------------
+
+.. method:: PDFDocument.prototype.enableJS()
+
+	Enable interpretation of document Javascript actions.
+
+	.. code-block::
+
+		pdfDocument.enableJS()
+
+.. method:: PDFDocument.prototype.disableJS()
+
+	Disable interpretation of document Javascript actions.
+
+	.. code-block::
+
+		pdfDocument.disableJS()
+
+.. method:: PDFDocument.prototype.isJSSupported()
+
+	Returns whether interpretation of document Javascript actions
+	is supported. Interpretation of Javascript may be disabled at
+	build time.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var jsIsSupported = pdfDocument.isJSSupported()
+
+.. method:: PDFDocument.prototype.setJSEventListener(listener)
+
+	|only_mutool|
+
+	Calls the listener whenever a document Javascript action
+	triggers an event.
+
+	At present the only callback the listener will be used for
+	is an alert event.
+
+	:param Object listener: The Javascript listener function.
+
+	.. code-block::
+
+		pdfDocument.setJSEventListener({
+				onAlert: function(message) {
+						print(message)
+				}
+		})
+
 ZUGFeRD
-~~~~~~~
+-------
 
 .. method:: PDFDocument.prototype.zugferdProfile()
 
@@ -1224,8 +1197,6 @@ ZUGFeRD
 
 		var version = pdfDocument.zugferdVersion()
 
-.. TODO what is returned if this is not a ZUGFeRD PDF?
-
 .. method:: PDFDocument.prototype.zugferdXML()
 
 	|only_mutool|
@@ -1233,7 +1204,7 @@ ZUGFeRD
 	Return a buffer containing the embedded ZUGFeRD XML data from
 	this ZUGFeRD PDF.
 
-	:returns: `Buffer`
+	:returns: `Buffer` | null
 
 	.. code-block::
 

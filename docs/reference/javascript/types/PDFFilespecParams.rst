@@ -2,7 +2,7 @@
 
 .. highlight:: javascript
 
-FileSpecificationParams
+PDFFilespecParams
 =======================
 
 This object represents the information found in a :term:`file specification`.

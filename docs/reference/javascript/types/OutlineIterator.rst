@@ -10,10 +10,8 @@ query their properties. To be able to insert items at the end of a list of
 sibling items, it can also walk one item past the end of the list. To get an
 instance of `OutlineIterator` use `Document.prototype.outlineIterator()`.
 
-.. note::
-
-	In the context of a PDF file, the document's Outline
-	is also known as Table of Contents or Bookmarks.
+In the context of a PDF file, the document's Outline is also known as Table of
+Contents or Bookmarks.
 
 Constructors
 ------------

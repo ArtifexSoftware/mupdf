@@ -27,11 +27,7 @@ Instance properties
 
 .. attribute:: Buffer.prototype.length
 
-	|only_mutool|
-
 	The number of bytes in this buffer (read-only).
-
-	See `getLength()` for the equivalent in mupdf.js.
 
 	:throws: TypeError on attempted writes.
 
@@ -50,7 +46,6 @@ Instance properties
 	.. code-block::
 
 		var byte = buffer[0]
-
 
 Instance methods
 ----------------
@@ -99,8 +94,6 @@ Instance methods
 
 		buffer.readByte(0)
 
-.. TODO in murun Buffer.slice() if end == undefied, then buffer size is used, what happens in mupdf.js?
-
 .. method:: Buffer.prototype.slice(start, end)
 
 	Create a new buffer containing a (subset of) the data in this buffer.
@@ -108,7 +101,7 @@ Instance methods
 	If ``start`` points to the end of this buffer, or if ``end`` point to at or before ``start``, then an empty buffer will be returned.
 
 	:param number start: Start index.
-	:param number end: End index.
+	:param number end: End index (optional).
 
 	:returns: `Buffer`
 
@@ -117,8 +110,6 @@ Instance methods
 		var buffer = new mupdf.Buffer()
 		buffer.write("hello world") // buffer contains "hello world"
 		var newBuffer = buffer.slice(1, -1) // newBuffer contains "ello worl"
-
-.. TODO in murun if Buffer.write() is given multiple strings, ' ' is appended between them, in mupdf.js, is ',' inserted, this is inconsistent.
 
 .. method:: Buffer.prototype.write(str)
 
@@ -129,8 +120,6 @@ Instance methods
 	.. code-block::
 
 		buffer.write("hello world")
-
-.. TODO in murun if Buffer.writeBuffer() is given multiple strings, ' ' is appended between them, in mupdf.js, is ',' inserted, this is inconsistent.
 
 .. method:: Buffer.prototype.writeBuffer(data)
 
@@ -152,9 +141,6 @@ Instance methods
 	.. code-block::
 
 		buffer.writeByte(0x2a)
-
-.. TODO in murun if Buffer.writeLine() is given multiple strings, ' ' is appended between them, in mupdf.js, is ',' inserted, this is inconsistent.
-.. TODO also do we want LF after every string, or just the last one?
 
 .. method:: Buffer.prototype.writeLine(str)
 
@@ -189,4 +175,4 @@ Instance methods
 
 	.. code-block:: javascript
 
-		buffer.save("my_buffer_filename")
+		buffer.save("buffer.dat")

@@ -23,7 +23,7 @@ Text
 
 	Set the appearance with the Icon attribute.
 
-	Attributes: :ref:`rect-attribute`, :ref:`color-attribute`, :ref:`icon-attribute`.
+	Attributes: `Rect`_, :ref:`color-attribute`, :ref:`icon-attribute`.
 
 FreeText
 	Text in a rectangle on the page.
@@ -949,12 +949,10 @@ Default Appearance
 
 .. _filespec-attribute:
 
-FileSpec
+Filespec
 --------
 
-.. TODO named hasFilespec() in mupdf.js and hasFileSpec in murun
-
-.. method:: PDFAnnotation.prototype.hasFileSpec()
+.. method:: PDFAnnotation.prototype.hasFilespec()
 
 	Returns whether the annotation is capable of supporting a
 	:term:`file specification`.
@@ -963,9 +961,9 @@ FileSpec
 
 	.. code-block::
 
-		var hasFileSpec = annotation.hasFileSpec()
+		var hasFilespec = annotation.hasFilespec()
 
-.. method:: PDFAnnotation.prototype.getFileSpec()
+.. method:: PDFAnnotation.prototype.getFilespec()
 
 	Get the :term:`file specification` PDF object for the file attachment.
 
@@ -973,9 +971,9 @@ FileSpec
 
 	.. code-block::
 
-		var fs = annotation.getFileSpec()
+		var fs = annotation.getFilespec()
 
-.. method:: PDFAnnotation.prototype.setFileSpec(fs)
+.. method:: PDFAnnotation.prototype.setFilespec(fs)
 
 	Set the :term:`file specification` PDF object for the file attachment.
 
@@ -983,7 +981,7 @@ FileSpec
 
 	.. code-block::
 
-		annotation.setFileSpec(fs)
+		annotation.setFilespec(fs)
 
 .. _icon-attribute:
 
@@ -1080,23 +1078,6 @@ Ink annotations consist of a number of strokes, each consisting of a sequence of
 
 		annotation.clearInkList()
 
-.. TODO addInkLink() in mupdf.js, maybe remove it everywhere?
-
-.. method:: PDFAnnotation.prototype.addInkList(list)
-
-	|only_mutool|
-
-	Appends a stroke, complete with all its vertices to the annotation.
-
-	:param Array of Point list:
-
-	.. code
-
-		// this draws a box
-		annotation.addInkList([
-			[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]
-		])
-
 .. method:: PDFAnnotation.prototype.addInkListStroke()
 
 	Add a new empty stroke to the ink annotation.
@@ -1131,8 +1112,6 @@ Interior Color
 
 		var hasInteriorColor = annotation.hasInteriorColor()
 
-.. TODO mupdf.js only allows 1 3 or 4 components, but 0 component colors denoting transparent are allowed by spec
-
 .. method:: PDFAnnotation.prototype.getInteriorColor()
 
 	Gets the annotation interior color.
@@ -1142,8 +1121,6 @@ Interior Color
 	.. code-block::
 
 		var interiorColor = annotation.getInteriorColor()
-
-.. TODO mupdf.js only allows 1 3 or 4 components, but 0 component colors denoting transparent are allowed by spec
 
 .. method:: PDFAnnotation.prototype.setInteriorColor(color)
 
@@ -1306,7 +1283,6 @@ drawings when illustrating distances.
 
 	:param boolean on:
 
-
 .. method:: PDFAnnotation.prototype.getLineCaption()
 
 	Returns whether the line caption is enabled or not.
@@ -1425,7 +1401,7 @@ quadadrilaterals, or :term:`QuadPoints <QuadPoint>`.
 These are used in e.g. Highlight
 annotations to mark up several disjoint spans of text.
 
-In Javascript QuadPoints are represented by the `Quad` class.
+In Javascript QuadPoints are represented with `Quad` objects.
 
 .. method:: PDFAnnotation.prototype.hasQuadPoints()
 
@@ -1603,7 +1579,6 @@ Intent
 
 		var hasIntent = annotation.hasIntent()
 
-
 .. method:: PDFAnnotation.prototype.getIntent()
 
 	Get the annotation intent, one of the values below:
@@ -1642,7 +1617,7 @@ the pointing device's cursor is hovering over an annotation, or if the
 pointing device's button is pressed.
 
 PDF widgets, which is a type of annnotation, may also have associated
-Javascript handles that are executed when certain events occur.
+Javascript functions that are executed when certain events occur.
 
 Therefore it is important to tell an PDFAnnotation when the pointing
 device's cursor enters/exits an annotation, when it's button is
@@ -1652,8 +1627,8 @@ clicked, or when an annotation gains/loses input focus.
 
 	|only_mutool|
 
-	Trigger appearance changes and event handlers to be
-	executed when the pointing device's cursor enters an
+	Trigger appearance changes and event handlers for
+	when the pointing device's cursor enters an
 	annotation's active area.
 
 	.. code-block::
@@ -1664,8 +1639,8 @@ clicked, or when an annotation gains/loses input focus.
 
 	|only_mutool|
 
-	Trigger appearance changes and event handlers to be
-	executed when the pointing device's cursor exits an
+	Trigger appearance changes and event handlers for
+	when the pointing device's cursor exits an
 	annotation's active area.
 
 	.. code-block::
@@ -1676,8 +1651,8 @@ clicked, or when an annotation gains/loses input focus.
 
 	|only_mutool|
 
-	Trigger appearance changes and event handlers to be
-	executed when the pointing device's button is depressed within
+	Trigger appearance changes and event handlers for
+	when the pointing device's button is depressed within
 	an annotation's active area.
 
 	.. code-block::
@@ -1688,20 +1663,19 @@ clicked, or when an annotation gains/loses input focus.
 
 	|only_mutool|
 
-	Trigger appearance changes and event handlers to be
-	executed when the pointing device's button is released within
+	Trigger appearance changes and event handlers for
+	when the pointing device's button is released within
 	an annotation's active area.
 
 	.. code-block::
 
 		widget.eventUp()
 
-
 .. method:: eventFocus()
 
 	|only_mutool|
 
-	Trigger event handles to be executed when an annotation gains
+	Trigger event handlers for when an annotation gains
 	input focus.
 
 	.. code-block::
@@ -1712,7 +1686,7 @@ clicked, or when an annotation gains/loses input focus.
 
 	|only_mutool|
 
-	Trigger event handles to be executed when an annotation loses
+	Trigger event handlers for when an annotation loses
 	input focus.
 
 	.. code-block::

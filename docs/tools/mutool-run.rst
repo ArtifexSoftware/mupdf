@@ -48,6 +48,9 @@ The following functions are only available in the mutool run shell:
 ``read(fileName)``
 	Read the contents of a file and return them as a UTF-8 decoded string.
 
+``readFile(filenName)``
+	Read the contents from a file and return them as a Buffer.
+
 ``readline()``
 	Read one line of input from standard input and return it as a string.
 

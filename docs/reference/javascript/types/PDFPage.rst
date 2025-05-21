@@ -102,8 +102,6 @@ Instance methods
 
 		page.setPageBox("ArtBox", [10, 10, 585, 832])
 
-.. TODO in murun the array returned from getAnnotations/getWidgets() does not automagically get updated when creating a new annotation.
-
 .. method:: PDFPage.prototype.createAnnotation(type)
 
 	Create a new blank annotation of a given annotation type.
@@ -115,8 +113,6 @@ Instance methods
 	.. code-block::
 
 		var annot = page.createAnnotation("Text")
-
-.. TODO in murun the array returned from getAnnotations/getWidgets() does not automagically get updated when deleting an annotation.
 
 .. method:: PDFPage.prototype.deleteAnnotation(annot)
 
@@ -191,8 +187,6 @@ Instance methods
 		annot2.setRect([0, 600, 500, 700])
 		page.applyRedactions(true, mupdf.PDFPage.REDACT_IMAGE_NONE)
 
-.. TODO murun doesn't really have a PDFProcessor, but you create an inline object with correct callbacks.
-
 .. method:: PDFPage.prototype.process(processor)
 
 	|only_mutool|
@@ -200,13 +194,11 @@ Instance methods
 	Run through the page contents stream and call methods on the
 	supplied `PDFProcessor`.
 
-	:param PDFProcessor processor: User defined function.
+	:param PDFProcessor processor: User defined function callback object.
 
 	.. code-block:: javascript
 
 		pdfPage.process(processor)
-
-.. TODO Why was getTransform() marked redundant in the old docs?
 
 .. method:: PDFPage.prototype.getTransform()
 

@@ -5,13 +5,9 @@
 Functions
 =========
 
-.. function:: mupdf.setUserCSS(stylesheet, useDocumentStyles)
-
-	Set a style sheet to apply to all reflowable documents.
-
-	:param string stylesheet: The CSS text to use.
-	:param boolean useDocumentStyles:
-		Whether to respect the document's own style sheet.
+Most functionality is provided by member functions of class objects.
+There are just a couple of top level configuration functions listed
+here.
 
 .. function:: mupdf.installLoadFontFunction(callback)
 
@@ -36,13 +32,10 @@ Functions
 
 	Disable ICC-profiles based operation.
 
-.. TODO move readFile() below to mutool-run.rst?
+.. function:: mupdf.setUserCSS(stylesheet, useDocumentStyles)
 
-.. method:: readFile(filename)
+	Set a style sheet to apply to all reflowable documents.
 
-	|mutool_only|
-
-	Read the contents from a file of the given name. Throws an
-	exception if the file does not exist.
-
-	:returns: `Buffer`
+	:param string stylesheet: The CSS text to use.
+	:param boolean useDocumentStyles:
+		Whether to respect the document's own style sheet.

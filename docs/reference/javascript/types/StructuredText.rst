@@ -27,7 +27,7 @@ Instance methods
 	Each match in the result is an array containing one or more Quads that cover the matching text.
 
 	:param string needle: The text to search for.
-	:param number maxHits: Maximum number of hits to return.
+	:param number maxHits: Maximum number of hits to return. Default 500.
 
 	:returns: Array of Array of `Quad`
 
@@ -35,13 +35,13 @@ Instance methods
 
 		var result = sText.search("Hello World!")
 
-.. method:: StructuredText.prototype.highlight(p, q, max_hits)
+.. method:: StructuredText.prototype.highlight(p, q, maxHits)
 
 	Return an array of `Quad` used to highlight a selection defined by the start and end points.
 
 	:param Point p: Start point.
 	:param Point q: End point.
-	:param number max_hits: The maximum number of hits to return. Default 100.
+	:param number maxHits: The maximum number of hits to return. Default 500.
 
 	:returns: Array of `Quad`
 

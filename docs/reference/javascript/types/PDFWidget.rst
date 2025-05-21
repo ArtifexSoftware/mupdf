@@ -9,13 +9,13 @@ PDFWidget
 components such as buttons, text inputs and signature fields.
 
 Because PDFWidget inherits `PDFAnnotation`, they also provide the
-same interface calls as other annotations.
+same interface as other annotation types.
 
-Many widgets, e.g. text inputs or checkboxes, are the visual
-representation of their abstract form field. As the widget changes
-state, so does its field value. E.g. when the text is edited in a text
-input or a checkbox is checked. But wdigets may also be changed by
-Javascript event handlers connected to other widgets.
+Many widgets, e.g. text inputs or checkboxes, are the visual representation of
+an associated form field. As the widget changes state, so does its
+corresponding field value; for example when the text is edited in a text input
+or a checkbox is checked. Note that widgets may be changed by Javascript event
+handlers triggered by edits on other widgets.
 
 The PDF specification has sections on `Widget annotations
 <https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G13.1951506>`_
@@ -51,7 +51,7 @@ Instance methods
 .. method:: PDFWidget.prototype.getFieldFlags()
 
 	Return the field flags which indicate attributes for the
-	field. There are convenince functions to check some of these:
+	field. There are convenience functions to check some of these:
 	:js:meth:`~PDFWidget.prototype.isReadOnly()`,
 	:js:meth:`~PDFWidget.prototype.isMultiline()`,
 	:js:meth:`~PDFWidget.prototype.isPassword()`,
@@ -84,6 +84,16 @@ Instance methods
 
 		var flags = widget.getFieldFlags()
 
+.. method:: PDFWidget.prototype.getName()
+
+	Retrieve the name of the field.
+
+	:returns: string
+
+	.. code-block::
+
+		var fieldName = widget.getName()
+
 .. method:: PDFWidget.prototype.getMaxLen()
 
 	Get maximum allowed length of the string value.
@@ -93,52 +103,6 @@ Instance methods
 	.. code-block::
 
 		var length = widget.getMaxLen()
-
-.. method:: PDFWidget.prototype.getValue()
-
-	Get the widget value.
-
-	:returns: string
-
-	.. code-block::
-
-		var value = widget.getValue()
-
-.. TODO neither murun not mupdf.js returns the number returned from setTextValue() that indicates whether the Field/Keystroke event processing allowed the value to be set
-
-.. method:: PDFWidget.prototype.setTextValue(value)
-
-	Set the widget string value.
-
-	:param string value: New text value.
-
-	.. code-block::
-
-		widget.setTextValue("Hello World!")
-
-.. TODO neither murun not mupdf.js returns the number returned from setChoiceValue() that indicates whether the Field/Keystroke event processing allowed the value to be set
-
-.. method:: PDFWidget.prototype.setChoiceValue(value)
-
-	Sets the choice value against the widget.
-
-	:param string value: New choice value.
-
-	.. code-block::
-
-		widget.setChoiceValue("Yes")
-
-.. TODO mupdf.js does not return the value from toggle()
-
-.. method:: PDFWidget.prototype.toggle()
-
-	Toggle the state of the widget, returns true if the state changed.
-
-	:returns: boolean
-
-	.. code-block::
-
-		var state = widget.toggle()
 
 .. method:: PDFWidget.prototype.getOptions()
 
@@ -159,6 +123,97 @@ Instance methods
 	.. code-block::
 
 		var label = widget.getLabel()
+
+Editing
+-------
+
+.. method:: PDFWidget.prototype.getValue()
+
+	Get the widget value.
+
+	:returns: string
+
+	.. code-block::
+
+		var value = widget.getValue()
+
+.. method:: PDFWidget.prototype.setTextValue(value)
+
+	Set the widget string value.
+
+	:param string value: New text value.
+
+	.. code-block::
+
+		widget.setTextValue("Hello World!")
+
+.. method:: PDFWidget.prototype.setChoiceValue(value)
+
+	Sets the choice value against the widget.
+
+	:param string value: New choice value.
+
+	.. code-block::
+
+		widget.setChoiceValue("Yes")
+
+.. method:: PDFWidget.prototype.toggle()
+
+	Toggle the state of the widget, returns true if the state changed.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var state = widget.toggle()
+
+.. method:: PDFWidget.prototype.getEditingState()
+
+	|only_mutool|
+
+	Get whether the widget is in editing state.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var state = widget.getEditingState()
+
+.. method:: PDFWidget.prototype.setEditingState(state)
+
+	|only_mutool|
+
+	Set whether the widget is in editing state.
+
+	When in editing state any changes to the widget value will not
+	cause any side-effects such as changing other widgets or
+	running Javascript event handlers. This is intended for, e.g.
+	when a text widget is interactively having characters typed
+	into it. Once editing is finished the state should reverted
+	back, before updating the widget value again.
+
+	:param boolean state:
+
+	.. code-block::
+
+		widget.getEditingState(false)
+
+.. TODO The text layout object needs to be described.
+
+.. method:: PDFWidget.prototype.layoutTextWidget()
+
+	|only_mutool|
+
+	Layout the value of a text widget. Returns a text layout object.
+
+	:returns: Object
+
+	.. code-block::
+
+		var layout = widget.layoutTextWidget()
+
+Flags
+-----
 
 .. method:: PDFWidget.prototype.isReadOnly()
 
@@ -256,68 +311,8 @@ Instance methods
 
 	:returns: boolean
 
-
-
-
-
-
-.. TODO The text layout object needs to be described.
-
-.. method:: PDFWidget.prototype.layoutTextWidget()
-
-	|only_mutool|
-
-	Layout the value of a text widget. Returns a text layout object.
-
-	:returns: Object
-
-	.. code-block::
-
-		var layout = widget.layoutTextWidget()
-
-.. method:: PDFWidget.prototype.getEditingState()
-
-	|only_mutool|
-
-	Get whether the widget is in editing state.
-
-	:returns: boolean
-
-	.. code-block::
-
-		var state = widget.getEditingState()
-
-.. method:: PDFWidget.prototype.setEditingState(state)
-
-	|only_mutool|
-
-	Set whether the widget is in editing state.
-
-	When in editing state any changes to the widget value will not
-	cause any side-effects such as changing other widgets or
-	running Javascript event handlers. This is intended for, e.g.
-	when a text widget is interactively having characters typed
-	into it. Once editing is finished the state should reverted
-	back, before updating the widget value again.
-
-	:param boolean state:
-
-	.. code-block::
-
-		widget.getEditingState(false)
-
-.. method:: PDFWidget.prototype.getName()
-
-	Retrieve the name for a field as a string.
-
-	:returns: string
-
-	.. code-block::
-
-		var fieldName = widget.getName()
-
-Signature Methods
-~~~~~~~~~~~~~~~~~
+Signatures
+----------
 
 .. method:: PDFWidget.prototype.isSigned()
 

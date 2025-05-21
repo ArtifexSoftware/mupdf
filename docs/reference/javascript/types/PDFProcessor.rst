@@ -16,9 +16,9 @@ for what these do and what the callback arguments are.
 Constructors
 ------------
 
-.. class:: PDFProcessor
+.. class:: PDFProcessor(callbacks)
 
-	|no_new|
+	|interface_type|
 
 Special resource tracking
 -------------------------

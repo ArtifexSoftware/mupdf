@@ -10,7 +10,7 @@ Constructors
 
 .. class:: PathWalker
 
-	|no_new|
+	|interface_type|
 
 An object implementing this interface of optional callback functions
 can be used to get calls whenever `Path.prototype.walk()` iterates over a
