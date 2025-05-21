@@ -1721,6 +1721,7 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 			 * chars. - FIXME: Now we do! */
 			for (ch = line->first_char; ch; ch = ch->next)
 			{
+				fz_point up;
 				float dx, dy, dot;
 				fz_rect ch_box = expanded_rect_from_quad(ch->quad, line->dir, ch->origin, ch->size);
 
@@ -1730,7 +1731,6 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 				/* Is this a strikeout or an underline? */
 
 				/* The baseline moves from ch->origin in the direction line->dir */
-				fz_point up;
 				up.x = line->dir.y;
 				up.y = -line->dir.x;
 
