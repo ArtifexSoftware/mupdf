@@ -3775,26 +3775,26 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setLineCaptionO
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    hasFileSpec
+ * Method:    hasFilespec
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_hasFileSpec
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_hasFilespec
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    setFileSpec
+ * Method:    setFilespec
  * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)V
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setFileSpec
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setFilespec
   (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
- * Method:    getFileSpec
+ * Method:    getFilespec
  * Signature: ()Lcom/artifex/mupdf/fitz/PDFObject;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getFileSpec
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getFilespec
   (JNIEnv *, jobject);
 
 /*
@@ -4736,18 +4736,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addEmbeddedFil
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    getEmbeddedFileParams
- * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)Lcom/artifex/mupdf/fitz/PDFDocument/PDFEmbeddedFileParams;
+ * Method:    getFilespecParams
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)Lcom/artifex/mupdf/fitz/PDFDocument/PDFFilespecParams;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getEmbeddedFileParams
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    getFileSpecParams
- * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)Lcom/artifex/mupdf/fitz/PDFDocument/PDFFileSpecParams;
- */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getFileSpecParams
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getFilespecParams
   (JNIEnv *, jobject, jobject);
 
 /*
@@ -5418,10 +5410,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_pushPDFObject
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    isFileSpec
+ * Method:    isFilespec
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_isFileSpec
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_isFilespec
   (JNIEnv *, jobject);
 
 #ifdef __cplusplus
