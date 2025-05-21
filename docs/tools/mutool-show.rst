@@ -77,17 +77,17 @@ Find the number of pages in a document:
 
 	mutool show input.pdf trailer/Root/Pages/Count
 
-Print the raw content stream of the first page:
+Print the content stream data of the first page:
 
 .. code-block:: bash
 
 	mutool show -b input.pdf pages/1/Contents
 
-Print the raw content stream of the first page & second page & the PDF outline (demonstrates use of the ``*`` element):
+Print the names of all the font resources on all the pages:
 
 .. code-block:: bash
 
-	mutool show -b input.pdf pages/1/Contents pages/2/Contents outline
+	mutool show input.pdf pages/*/Resources/Font/*/BaseFont
 
 Show all JPEG compressed stream objects:
 

@@ -6,7 +6,7 @@ Welcome to MuPDF
 	:width: 33%
 	:align: center
 	:alt: [MuPDF Logo]
-	:target: _welcome
+	:target: welcome_
 
 MuPDF is an open source software framework for viewing and converting PDF, XPS,
 and E-book documents. There are viewers for various platforms, several command
