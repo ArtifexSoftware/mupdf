@@ -1853,11 +1853,12 @@ js_dev_begin_group(fz_context *ctx, fz_device *dev, fz_rect bbox,
 	if (js_hasproperty(J, -1, "beginGroup")) {
 		js_copy(J, -2);
 		ffi_pushrect(J, bbox);
+		ffi_pushcolorspace(J, cs);
 		js_pushboolean(J, isolated);
 		js_pushboolean(J, knockout);
 		js_pushliteral(J, fz_blendmode_name(blendmode));
 		js_pushnumber(J, alpha);
-		js_call(J, 5);
+		js_call(J, 6);
 		js_pop(J, 1);
 	}
 	js_endtry(J);
@@ -3280,12 +3281,13 @@ static void ffi_Device_beginGroup(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_device *dev = js_touserdata(J, 0, "fz_device");
 	fz_rect area = ffi_torect(J, 1);
-	int isolated = js_toboolean(J, 2);
-	int knockout = js_toboolean(J, 3);
-	int blendmode = fz_lookup_blendmode(js_tostring(J, 4));
-	float alpha = js_tonumber(J, 5);
+	fz_colorspace *cs = js_touserdata(J, 2, "fz_colorspace");
+	int isolated = js_toboolean(J, 3);
+	int knockout = js_toboolean(J, 4);
+	int blendmode = fz_lookup_blendmode(js_tostring(J, 5));
+	float alpha = js_tonumber(J, 6);
 	fz_try(ctx)
-		fz_begin_group(ctx, dev, area, NULL, isolated, knockout, blendmode, alpha);
+		fz_begin_group(ctx, dev, area, cs, isolated, knockout, blendmode, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -11785,7 +11787,7 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "Device.beginMask", ffi_Device_beginMask, 6);
 		jsB_propfun(J, "Device.endMask", ffi_Device_endMask, 0);
-		jsB_propfun(J, "Device.beginGroup", ffi_Device_beginGroup, 5);
+		jsB_propfun(J, "Device.beginGroup", ffi_Device_beginGroup, 6);
 		jsB_propfun(J, "Device.endGroup", ffi_Device_endGroup, 0);
 		jsB_propfun(J, "Device.beginTile", ffi_Device_beginTile, 6);
 		jsB_propfun(J, "Device.endTile", ffi_Device_endTile, 0);
