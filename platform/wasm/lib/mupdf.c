@@ -311,11 +311,11 @@ GET(link_dest, float, w)
 GET(link_dest, float, h)
 GET(link_dest, float, zoom)
 
-PDF_GET(embedded_file_params, const char*, filename)
-PDF_GET(embedded_file_params, const char*, mimetype)
-PDF_GET(embedded_file_params, int, size)
-PDF_GET(embedded_file_params, int, created)
-PDF_GET(embedded_file_params, int, modified)
+PDF_GET(filespec_params, const char*, filename)
+PDF_GET(filespec_params, const char*, mimetype)
+PDF_GET(filespec_params, int, size)
+PDF_GET(filespec_params, int, created)
+PDF_GET(filespec_params, int, modified)
 
 PDF_GET(page, pdf_obj*, obj)
 
@@ -579,9 +579,9 @@ fz_pixmap * wasm_convert_pixmap(fz_pixmap *pixmap, fz_colorspace *colorspace, bo
 }
 
 EXPORT
-fz_pixmap * wasm_warp_pixmap(fz_pixmap *pixmap, fz_quad *points, float w, float h)
+fz_pixmap * wasm_warp_pixmap(fz_pixmap *pixmap, fz_quad *q, float w, float h)
 {
-	POINTER(fz_warp_pixmap, pixmap, (fz_point*)points, w, h)
+	POINTER(fz_warp_pixmap, pixmap, *q, w, h)
 }
 
 // --- Shade ---
@@ -1512,11 +1512,11 @@ int wasm_pdf_is_embedded_file(pdf_obj *ref)
 }
 
 EXPORT
-pdf_embedded_file_params * wasm_pdf_get_embedded_file_params(pdf_obj *ref)
+pdf_filespec_params * wasm_pdf_get_filespec_params(pdf_obj *ref)
 {
-	static pdf_embedded_file_params out;
+	static pdf_filespec_params out;
 	TRY ({
-		pdf_get_embedded_file_params(ctx, ref, &out);
+		pdf_get_filespec_params(ctx, ref, &out);
 	})
 	return &out;
 }
@@ -2158,6 +2158,7 @@ int wasm_pdf_toggle_widget(pdf_annot *widget)
 PDF_IS(indirect)
 PDF_IS(bool)
 PDF_IS(int)
+PDF_IS(real)
 PDF_IS(number)
 PDF_IS(name)
 PDF_IS(string)
@@ -2179,15 +2180,15 @@ pdf_obj * wasm_pdf_new_indirect(pdf_document *doc, int num)
 }
 
 EXPORT
-pdf_obj * wasm_pdf_new_array(pdf_document *doc, int cap)
+pdf_obj * wasm_pdf_new_array(pdf_document *doc)
 {
-	POINTER(pdf_new_array, doc, cap)
+	POINTER(pdf_new_array, doc, 0)
 }
 
 EXPORT
-pdf_obj * wasm_pdf_new_dict(pdf_document *doc, int cap)
+pdf_obj * wasm_pdf_new_dict(pdf_document *doc)
 {
-	POINTER(pdf_new_dict, doc, cap)
+	POINTER(pdf_new_dict, doc, 0)
 }
 
 EXPORT
