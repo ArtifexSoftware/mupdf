@@ -1592,7 +1592,7 @@ static int ffi_buffer_put(js_State *J, void *buf_, const char *key)
 	return 0;
 }
 
-static void ffi_pushbuffer(js_State *J, fz_buffer *buf)
+static void ffi_pushbuffer_own(js_State *J, fz_buffer *buf)
 {
 	js_getregistry(J, "fz_buffer");
 	js_newuserdatax(J, "fz_buffer", buf,
@@ -3614,7 +3614,7 @@ static void ffi_readFile(js_State *J)
 		buf = fz_read_file(ctx, filename);
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_setUserCSS(js_State *J)
@@ -3704,7 +3704,7 @@ static void ffi_Archive_readEntry(js_State *J)
 		buf = fz_read_archive_entry(ctx, arch, name);
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_new_MultiArchive(js_State *J)
@@ -3758,7 +3758,7 @@ static void ffi_TreeArchive_add(js_State *J)
 static void ffi_new_Buffer(js_State *J)
 {
 	fz_buffer *buf = ffi_tobuffer(J, 1);
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_Buffer_readByte(js_State *J)
@@ -3885,7 +3885,7 @@ static void ffi_Buffer_slice(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushbuffer(J, copy);
+	ffi_pushbuffer_own(J, copy);
 }
 
 static void ffi_Document_openDocument(js_State *J)
@@ -5032,7 +5032,7 @@ static void ffi_Pixmap_asPNG(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_Pixmap_asPSD(js_State *J)
@@ -5046,7 +5046,7 @@ static void ffi_Pixmap_asPSD(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_Pixmap_asPAM(js_State *J)
@@ -5060,7 +5060,7 @@ static void ffi_Pixmap_asPAM(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_Pixmap_asJPEG(js_State *J)
@@ -5076,7 +5076,7 @@ static void ffi_Pixmap_asJPEG(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_Pixmap_autowarp(js_State *J)
@@ -7371,7 +7371,7 @@ static void ffi_PDFDocument_getEmbeddedFileContents(js_State *J)
 		rethrow(J);
 
 	if (contents)
-		ffi_pushbuffer(J, contents);
+		ffi_pushbuffer_own(J, contents);
 	else
 		js_pushnull(J);
 }
@@ -7669,7 +7669,7 @@ static void ffi_PDFDocument_saveToBuffer(js_State *J)
 		fz_drop_buffer(ctx, buf);
 		rethrow(J);
 	}
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_PDFDocument_rearrangePages(js_State *J)
@@ -8360,7 +8360,7 @@ static void ffi_PDFDocument_zugferdXML(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 	if (buf)
-		ffi_pushbuffer(J, buf);
+		ffi_pushbuffer_own(J, buf);
 	else
 		js_pushnull(J);
 }
@@ -8896,7 +8896,7 @@ static void ffi_PDFObject_readStream(js_State *J)
 		buf = pdf_load_stream(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_PDFObject_readRawStream(js_State *J)
@@ -8908,7 +8908,7 @@ static void ffi_PDFObject_readRawStream(js_State *J)
 		buf = pdf_load_raw_stream(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushbuffer(J, buf);
+	ffi_pushbuffer_own(J, buf);
 }
 
 static void ffi_PDFObject_writeObject(js_State *J)
