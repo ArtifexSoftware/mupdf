@@ -259,7 +259,7 @@ Clipping and masking
 	Create a soft mask. Any drawing commands between `beginMask` and `endMask` are grouped and used as a clip mask.
 
 	:param Rect area: Mask area.
-	:param boolean luminosity: If luminosity is *true*, the mask is derived from the luminosity (grayscale value) of the graphics drawn; otherwise the color is ignored completely and the mask is derived from the alpha of the group.
+	:param boolean luminosity: If luminosity is ``true``, the mask is derived from the luminosity (grayscale value) of the graphics drawn; otherwise the color is ignored completely and the mask is derived from the alpha of the group.
 	:param ColorSpace colorspace: Colorspace
 	:param Color color: The color to be used.
 

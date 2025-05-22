@@ -74,7 +74,7 @@ Instance methods
 
 .. method:: Document.prototype.hasPermission(permission)
 
-	Returns *true* if the document has permission for the supplied permission string parameter.
+	Returns ``true`` if the document has permission for the supplied permission string parameter.
 
 	:param string permission: The permission to seek for, e.g. "edit".
 

@@ -87,9 +87,9 @@ Instance properties
 .. method:: Page.prototype.toPixmap(matrix, colorspace, alpha, showExtras)
 
 	Render the page into a `Pixmap` using the specified transform
-	matrix and colorspace. If ``alpha`` is *true*, the page will be drawn
+	matrix and colorspace. If ``alpha`` is ``true``, the page will be drawn
 	on a transparent background, otherwise white. If ``showExtras`` is
-	*true* then the operation will include any page annotations and/or
+	``true`` then the operation will include any page annotations and/or
 	widgets.
 
 	:param Matrix matrix: The transformation matrix.
@@ -106,7 +106,7 @@ Instance properties
 .. method:: Page.prototype.toDisplayList(showExtras)
 
 	Record the contents on the page into a `DisplayList`. If
-	``showExtras`` is *true* then the operation will include all
+	``showExtras`` is ``true`` then the operation will include all
 	annotations and/or widgets on the page.
 
 	:param boolean showExtras: Whether to render annotations and widgets. Defaults to ``true``.
@@ -205,7 +205,7 @@ Instance properties
 
 .. method:: Page.prototype.isPDF()
 
-	Returns *true* if the page is from a PDF document.
+	Returns ``true`` if the page is from a PDF document.
 
 	:returns: boolean
 

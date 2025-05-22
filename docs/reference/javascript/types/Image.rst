@@ -102,7 +102,7 @@ Instance methods
 
 .. method:: Image.prototype.getImageMask()
 
-	Returns *true* if this image is an image mask.
+	Returns ``true`` if this image is an image mask.
 
 	:returns: boolean
 
