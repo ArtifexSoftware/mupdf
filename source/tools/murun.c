@@ -7250,8 +7250,15 @@ static void ffi_PDFDocument_addStream_imp(js_State *J, int compressed)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	pdf_obj *obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
-	fz_buffer *buf = ffi_tobuffer(J, 1);
+	fz_buffer *buf;
 	pdf_obj *ind = NULL;
+
+	if (js_try(J)) {
+		pdf_drop_obj(ctx, obj);
+		js_throw(J);
+	}
+	buf = ffi_tobuffer(J, 1);
+	js_endtry(J);
 
 	fz_try(ctx)
 		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
