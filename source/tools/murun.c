@@ -4237,13 +4237,13 @@ static void ffi_OutlineIterator_item(js_State *J)
 	js_newobject(J);
 
 	if (item->title)
-		js_pushliteral(J, item->title);
+		js_pushstring(J, item->title);
 	else
 		js_pushundefined(J);
 	js_setproperty(J, -2, "title");
 
 	if (item->uri)
-		js_pushliteral(J, item->uri);
+		js_pushstring(J, item->uri);
 	else
 		js_pushundefined(J);
 	js_setproperty(J, -2, "uri");
