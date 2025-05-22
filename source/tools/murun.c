@@ -3177,7 +3177,7 @@ static void ffi_StrokeState_getLineCap(js_State *J)
 static void ffi_StrokeState_getLineJoin(js_State *J)
 {
 	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
-	js_pushstring(J, fz_string_from_linejoin(stroke->linejoin));
+	js_pushliteral(J, fz_string_from_linejoin(stroke->linejoin));
 }
 
 static void ffi_StrokeState_getLineWidth(js_State *J)
@@ -4637,7 +4637,7 @@ static void ffi_Page_decodeBarcode(js_State *J)
 	}
 
 	js_newobject(J);
-	js_pushstring(J, fz_string_from_barcode_type(type));
+	js_pushliteral(J, fz_string_from_barcode_type(type));
 	js_setproperty(J, -2, "type");
 	js_pushstring(J, text);
 	js_setproperty(J, -2, "contents");
@@ -4749,14 +4749,14 @@ static void ffi_ColorSpace_getType(js_State *J)
 	switch (t)
 	{
 	default:
-	case FZ_COLORSPACE_NONE: js_pushstring(J, "None"); break;
-	case FZ_COLORSPACE_GRAY: js_pushstring(J, "Gray"); break;
-	case FZ_COLORSPACE_RGB: js_pushstring(J, "RGB"); break;
-	case FZ_COLORSPACE_BGR: js_pushstring(J, "BGR"); break;
-	case FZ_COLORSPACE_CMYK: js_pushstring(J, "CMYK"); break;
-	case FZ_COLORSPACE_LAB: js_pushstring(J, "Lab"); break;
-	case FZ_COLORSPACE_INDEXED: js_pushstring(J, "Indexed"); break;
-	case FZ_COLORSPACE_SEPARATION: js_pushstring(J, "Separation"); break;
+	case FZ_COLORSPACE_NONE: js_pushliteral(J, "None"); break;
+	case FZ_COLORSPACE_GRAY: js_pushliteral(J, "Gray"); break;
+	case FZ_COLORSPACE_RGB: js_pushliteral(J, "RGB"); break;
+	case FZ_COLORSPACE_BGR: js_pushliteral(J, "BGR"); break;
+	case FZ_COLORSPACE_CMYK: js_pushliteral(J, "CMYK"); break;
+	case FZ_COLORSPACE_LAB: js_pushliteral(J, "Lab"); break;
+	case FZ_COLORSPACE_INDEXED: js_pushliteral(J, "Indexed"); break;
+	case FZ_COLORSPACE_SEPARATION: js_pushliteral(J, "Separation"); break;
 	}
 }
 
@@ -5136,7 +5136,7 @@ static void ffi_Pixmap_decodeBarcode(js_State *J)
 	}
 
 	js_newobject(J);
-	js_pushstring(J, fz_string_from_barcode_type(type));
+	js_pushliteral(J, fz_string_from_barcode_type(type));
 	js_setproperty(J, -2, "type");
 	js_pushstring(J, text);
 	js_setproperty(J, -2, "contents");
@@ -6191,7 +6191,7 @@ static void ffi_DisplayList_decodeBarcode(js_State *J)
 	}
 
 	js_newobject(J);
-	js_pushstring(J, fz_string_from_barcode_type(type));
+	js_pushliteral(J, fz_string_from_barcode_type(type));
 	js_setproperty(J, -2, "type");
 	js_pushstring(J, text);
 	js_setproperty(J, -2, "contents");
@@ -6280,7 +6280,7 @@ stext_walk(js_State *J, fz_stext_block *block)
 				if (js_hasproperty(J, 1, "beginStruct"))
 				{
 					js_pushnull(J);
-					js_pushstring(J, fz_structure_to_string(block->u.s.down->standard));
+					js_pushliteral(J, fz_structure_to_string(block->u.s.down->standard));
 					js_pushstring(J, block->u.s.down->raw);
 					js_pushnumber(J, block->u.s.index);
 					js_call(J, 3);
@@ -8347,7 +8347,7 @@ static void ffi_PDFDocument_zugferdProfile(js_State *J)
 		profile = pdf_zugferd_profile(ctx, pdf, &version);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, pdf_zugferd_profile_to_string(ctx, profile));
+	js_pushliteral(J, pdf_zugferd_profile_to_string(ctx, profile));
 }
 
 static void ffi_PDFDocument_zugferdVersion(js_State *J)
@@ -10130,7 +10130,7 @@ static void ffi_PDFAnnotation_getBorderStyle(js_State *J)
 		style = pdf_annot_border_style(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, string_from_border_style(style));
+	js_pushliteral(J, string_from_border_style(style));
 }
 
 static void ffi_PDFAnnotation_setBorderStyle(js_State *J)
@@ -10236,7 +10236,7 @@ static void ffi_PDFAnnotation_getBorderEffect(js_State *J)
 		effect = pdf_annot_border_effect(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, string_from_border_effect(effect));
+	js_pushliteral(J, string_from_border_effect(effect));
 }
 
 static void ffi_PDFAnnotation_setBorderEffect(js_State *J)
@@ -11302,7 +11302,7 @@ static void ffi_PDFWidget_checkCertificate(js_State *J)
 		pdf_drop_verifier(ctx, verifier);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, pdf_signature_error_description(val));
+	js_pushliteral(J, pdf_signature_error_description(val));
 }
 
 static void ffi_PDFWidget_checkDigest(js_State *J)
@@ -11321,7 +11321,7 @@ static void ffi_PDFWidget_checkDigest(js_State *J)
 		pdf_drop_verifier(ctx, verifier);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, pdf_signature_error_description(val));
+	js_pushliteral(J, pdf_signature_error_description(val));
 }
 
 static void ffi_PDFWidget_incrementalChangesSinceSigning(js_State *J)
