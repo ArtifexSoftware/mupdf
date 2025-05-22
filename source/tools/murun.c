@@ -10648,6 +10648,8 @@ static void ffi_PDFAnnotation_setStampImageObject(js_State *J)
 
 	fz_try(ctx)
 		pdf_set_annot_stamp_image_obj(ctx, annot, obj);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
 }
