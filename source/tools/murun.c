@@ -984,10 +984,10 @@ static void ffi_pushquad(js_State *J, fz_quad quad)
 static fz_irect ffi_toirect(js_State *J, int idx)
 {
 	fz_irect irect;
-	js_getindex(J, idx, 0); irect.x0 = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 1); irect.y0 = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 2); irect.x1 = js_tonumber(J, -1); js_pop(J, 1);
-	js_getindex(J, idx, 3); irect.y1 = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 0); irect.x0 = js_tointeger(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 1); irect.y0 = js_tointeger(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 2); irect.x1 = js_tointeger(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 3); irect.y1 = js_tointeger(J, -1); js_pop(J, 1);
 	return irect;
 }
 
@@ -1291,7 +1291,7 @@ static fz_outline_item ffi_tooutlineitem(js_State *J, int idx)
 		item.b = js_tonumber(J, -1);
 	}
 	if (js_hasproperty(J, idx, "flags")) {
-		item.flags = js_tonumber(J, -1);
+		item.flags = js_tointeger(J, -1);
 	}
 
 	return item;
@@ -1584,7 +1584,7 @@ static int ffi_buffer_put(js_State *J, void *buf_, const char *key)
 	if (is_number(key, &idx)) {
 		if (idx < 0 || (size_t)idx >= len)
 			js_rangeerror(J, "index out of bounds");
-		data[idx] = js_tonumber(J, -1);
+		data[idx] = js_tointeger(J, -1);
 		return 1;
 	}
 	if (!strcmp(key, "length"))
@@ -3475,7 +3475,7 @@ static void ffi_Device_beginTile(js_State *J)
 	float xstep = js_tonumber(J, 3);
 	float ystep = js_tonumber(J, 4);
 	fz_matrix ctm = ffi_tomatrix(J, 5);
-	int id = js_tonumber(J, 6);
+	int id = js_tointeger(J, 6);
 	int n = 0;
 	fz_try(ctx)
 		n = fz_begin_tile_id(ctx, dev, area, view, xstep, ystep, ctm, id);
@@ -3765,7 +3765,7 @@ static void ffi_Buffer_readByte(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
-	size_t index = js_tonumber(J, 1);
+	size_t index = js_tointeger(J, 1);
 	unsigned char *p = NULL;
 	size_t len;
 	fz_try(ctx)
@@ -3794,7 +3794,7 @@ static void ffi_Buffer_writeByte(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
-	unsigned char val = js_tonumber(J, 1);
+	unsigned char val = js_tointeger(J, 1);
 	fz_try(ctx)
 		fz_append_byte(ctx, buf, val);
 	fz_catch(ctx)
@@ -3805,7 +3805,7 @@ static void ffi_Buffer_writeRune(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
-	int val = js_tonumber(J, 1);
+	int val = js_tointeger(J, 1);
 	fz_try(ctx)
 		fz_append_rune(ctx, buf, val);
 	fz_catch(ctx)
@@ -4971,8 +4971,8 @@ static void ffi_Pixmap_warp(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	fz_quad points = ffi_toquad(J, 1);
-	int w = js_tonumber(J, 2);
-	int h = js_tonumber(J, 3);
+	int w = js_tointeger(J, 2);
+	int h = js_tointeger(J, 3);
 	fz_pixmap *dest = NULL;
 
 	fz_try(ctx)
@@ -5268,7 +5268,7 @@ static void ffi_Pixmap_clear(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	if (js_isdefined(J, 1)) {
-		int value = js_tonumber(J, 1);
+		int value = js_tointeger(J, 1);
 		fz_try(ctx)
 			fz_clear_pixmap_with_value(ctx, pixmap, value);
 		fz_catch(ctx)
@@ -5637,7 +5637,7 @@ static void ffi_new_Font(js_State *J)
 	const char *name = js_tostring(J, 1);
 	const char *path = js_isstring(J, 2) ? js_tostring(J, 2) : NULL;
 	fz_buffer *buffer = js_isuserdata(J, 2, "fz_buffer") ? js_touserdata(J, 2, "fz_buffer") : NULL;
-	int index = js_isnumber(J, 3) ? js_tonumber(J, 3) : 0;
+	int index = js_isnumber(J, 3) ? js_tointeger(J, 3) : 0;
 	fz_font *font = NULL;
 
 	fz_try(ctx) {
@@ -5702,7 +5702,7 @@ static void ffi_Font_encodeCharacter(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_font *font = js_touserdata(J, 0, "fz_font");
-	int unicode = js_tonumber(J, 1);
+	int unicode = js_tointeger(J, 1);
 	int glyph = 0;
 	fz_try(ctx)
 		glyph = fz_encode_character(ctx, font, unicode);
@@ -5715,8 +5715,8 @@ static void ffi_Font_advanceGlyph(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_font *font = js_touserdata(J, 0, "fz_font");
-	int glyph = js_tonumber(J, 1);
-	int wmode = js_tonumber(J, 2);
+	int glyph = js_tointeger(J, 1);
+	int wmode = js_tointeger(J, 2);
 
 	float advance = 0;
 	fz_try(ctx)
@@ -6428,7 +6428,7 @@ static void ffi_StructuredText_asHTML(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *page = js_touserdata(J, 0, "fz_stext_page");
-	int id = js_tonumber(J, 1);
+	int id = js_tointeger(J, 1);
 	const char *data = NULL;
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
@@ -7224,7 +7224,7 @@ static void ffi_PDFDocument_deleteObject(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	pdf_obj *ind = js_isuserdata(J, 1, "pdf_obj") ? js_touserdata(J, 1, "pdf_obj") : NULL;
-	int num = ind ? pdf_to_num(ctx, ind) : js_tonumber(J, 1);
+	int num = ind ? pdf_to_num(ctx, ind) : js_tointeger(J, 1);
 
 	fz_try(ctx)
 		pdf_delete_object(ctx, pdf, num);
@@ -7530,7 +7530,7 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_rect mediabox = ffi_torect(J, 1);
-	int rotate = js_tonumber(J, 2);
+	int rotate = js_tointeger(J, 2);
 	pdf_obj *resources;
 	fz_buffer *contents = NULL;
 	pdf_obj *ind = NULL;
@@ -7558,7 +7558,7 @@ static void ffi_PDFDocument_insertPage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	int at = js_tonumber(J, 1);
+	int at = js_tointeger(J, 1);
 	pdf_obj *obj = ffi_toobj(J, pdf, 2);
 
 	fz_try(ctx)
@@ -7573,7 +7573,7 @@ static void ffi_PDFDocument_deletePage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	int at = js_tonumber(J, 1);
+	int at = js_tointeger(J, 1);
 
 	fz_try(ctx)
 		pdf_delete_page(ctx, pdf, at);
@@ -7599,7 +7599,7 @@ static void ffi_PDFDocument_findPage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	int at = js_tonumber(J, 1);
+	int at = js_tointeger(J, 1);
 	pdf_obj *obj = NULL;
 
 	fz_try(ctx)
@@ -7705,7 +7705,7 @@ static void ffi_PDFDocument_rearrangePages(js_State *J)
 	for (i = 0; i < n; ++i)
 	{
 		js_getindex(J, 1, i);
-		pages[i] = js_tonumber(J, -1);
+		pages[i] = js_tointeger(J, -1);
 		js_pop(J, 1);
 	}
 
@@ -7790,7 +7790,7 @@ static void ffi_PDFDocument_newByteString(js_State *J)
 
 	for (i = 0; i < n; ++i) {
 		js_getindex(J, 1, i);
-		buf[i] = js_tonumber(J, -1);
+		buf[i] = js_tointeger(J, -1);
 		js_pop(J, 1);
 	}
 
@@ -8072,9 +8072,9 @@ static void ffi_PDFDocument_graftPage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *dst = js_touserdata(J, 0, "pdf_document");
-	int to = js_tonumber(J, 1);
+	int to = js_tointeger(J, 1);
 	pdf_document *src = js_touserdata(J, 2, "pdf_document");
-	int from = js_tonumber(J, 3);
+	int from = js_tointeger(J, 3);
 	fz_try(ctx)
 		pdf_graft_page(ctx, dst, to, src, from);
 	fz_catch(ctx)
@@ -8244,7 +8244,7 @@ static void ffi_PDFDocument_setPageLabels(js_State *J)
 	int index = js_tointeger(J, 1);
 	const char *s = js_iscoercible(J, 2) ? js_tostring(J, 2) : "D";
 	const char *p = js_iscoercible(J, 3) ? js_tostring(J, 3) : "";
-	int st = js_iscoercible(J, 4) ? js_tonumber(J, 4) : 1;
+	int st = js_iscoercible(J, 4) ? js_tointeger(J, 4) : 1;
 	fz_try(ctx)
 		pdf_set_page_labels(ctx, pdf, index, s[0], p, st);
 	fz_catch(ctx)
@@ -8434,7 +8434,7 @@ static void ffi_appendDestToURI(js_State *J)
 	}
 	else if (js_isnumber(J, 2))
 	{
-		dest = fz_make_link_dest_xyz(0, js_tonumber(J, 2) - 1, NAN, NAN, NAN);
+		dest = fz_make_link_dest_xyz(0, js_tointeger(J, 2) - 1, NAN, NAN, NAN);
 		fz_try(ctx)
 			uri = pdf_append_explicit_dest_to_uri(ctx, url, dest);
 		fz_catch(ctx)
@@ -8479,7 +8479,7 @@ static void ffi_formatURIFromPathAndDest(js_State *J)
 	}
 	else if (js_isnumber(J, 2))
 	{
-		dest = fz_make_link_dest_xyz(0, js_tonumber(J, 2) - 1, NAN, NAN, NAN);
+		dest = fz_make_link_dest_xyz(0, js_tointeger(J, 2) - 1, NAN, NAN, NAN);
 		fz_try(ctx)
 			uri = pdf_new_uri_from_path_and_explicit_dest(ctx, path, dest);
 		fz_catch(ctx)
@@ -8541,7 +8541,7 @@ static pdf_obj *ffi_PDFObject_get_imp(js_State *J, int inheritable)
 
 	for (i = 1; i < n && obj; ++i) {
 		if (pdf_is_array(ctx, obj)) {
-			int key = js_tonumber(J, 1);
+			int key = js_tointeger(J, 1);
 			fz_try(ctx)
 				obj = val = pdf_array_get(ctx, obj, key);
 			fz_catch(ctx)
@@ -9385,7 +9385,7 @@ static void ffi_PDFAnnotation_setFlags(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	int flags = js_tonumber(J, 1);
+	int flags = js_tointeger(J, 1);
 	fz_try(ctx)
 		pdf_set_annot_flags(ctx, annot, flags);
 	fz_catch(ctx)
@@ -10337,7 +10337,7 @@ static void ffi_PDFAnnotation_setQuadding(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	int quadding = js_tonumber(J, 1);
+	int quadding = js_tointeger(J, 1);
 	fz_try(ctx)
 		pdf_set_annot_quadding(ctx, annot, quadding);
 	fz_catch(ctx)
@@ -10874,7 +10874,7 @@ static void ffi_PDFAnnotation_setIsOpen(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	int isopen = js_tonumber(J, 1);
+	int isopen = js_tointeger(J, 1);
 	fz_try(ctx)
 		pdf_set_annot_is_open(ctx, annot, isopen);
 	fz_catch(ctx)
