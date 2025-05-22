@@ -6376,12 +6376,14 @@ static void ffi_StructuredText_copy(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_pushstring(J, s);
-
-	fz_try(ctx)
+	if (js_try(J))
+	{
 		fz_free(ctx, s);
-	fz_catch(ctx)
-		rethrow(J);
+		js_throw(J);
+	}
+	js_pushstring(J, s);
+	js_endtry(J);
+	fz_free(ctx, s);
 }
 
 static void ffi_StructuredText_asJSON(js_State *J)
