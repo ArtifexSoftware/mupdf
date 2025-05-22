@@ -7010,6 +7010,7 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 		for (i = 0; i < n; ++i) {
 			js_getindex(J, idx, i);
 			val = ffi_toobj(J, pdf, -1);
+			// FIXME val leaks if fz_try() runs out of space
 			fz_try(ctx)
 				pdf_array_push_drop(ctx, obj, val);
 			fz_catch(ctx)
@@ -7035,6 +7036,7 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 		while ((key = js_nextiterator(J, -1))) {
 			js_getproperty(J, idx, key);
 			val = ffi_toobj(J, pdf, -1);
+			// FIXME val leaks if fz_try() runs out of space
 			fz_try(ctx)
 				pdf_dict_puts_drop(ctx, obj, key, val);
 			fz_catch(ctx)
@@ -7239,6 +7241,7 @@ static void ffi_PDFDocument_addObject(js_State *J)
 	pdf_obj *obj = ffi_toobj(J, pdf, 1);
 	pdf_obj *ind = NULL;
 
+	// FIXME if fz_try() runs out of space, obj leaks
 	fz_try(ctx)
 		ind = pdf_add_object_drop(ctx, pdf, obj);
 	fz_catch(ctx)
