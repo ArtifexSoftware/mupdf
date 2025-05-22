@@ -10674,7 +10674,12 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 		rethrow(J);
 
 	res = ffi_toobj(J, pdf, 5);
+	if (js_try(J)) {
+		pdf_drop_obj(ctx, res);
+		js_throw(J);
+	}
 	contents = ffi_tobuffer(J, 6);
+	js_endtry(J);
 
 	fz_try(ctx)
 		pdf_set_annot_appearance(ctx, annot, appearance, state, ctm, bbox, res, contents);
