@@ -5464,6 +5464,8 @@ static void ffi_new_Image(js_State *J)
 			if (mask)
 				image->mask = fz_keep_image(ctx, mask);
 		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, buffer);
 		fz_catch(ctx)
 			rethrow(J);
 	} else {
