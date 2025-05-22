@@ -48,8 +48,8 @@ Instance methods
 .. method:: Link.prototype.getURI()
 
 	Returns a string URI describing the link's destination. If
-	`isExternal()` returns *true*, this is a URI suitable for a
-	browser, if it returns *false* pass it to `Document.prototype.resolveLink` to access
+	`isExternal()` returns ``true``, this is a URI suitable for a
+	browser, if it returns ``false`` pass it to `Document.prototype.resolveLink` to access
 	to the destination page in the document.
 
 	:returns: string
