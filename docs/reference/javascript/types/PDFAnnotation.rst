@@ -1623,7 +1623,7 @@ Therefore it is important to tell an PDFAnnotation when the pointing
 device's cursor enters/exits an annotation, when it's button is
 clicked, or when an annotation gains/loses input focus.
 
-.. method:: eventEnter()
+.. method:: PDFAnnotation.prototype.eventEnter()
 
 	|only_mutool|
 
@@ -1635,7 +1635,7 @@ clicked, or when an annotation gains/loses input focus.
 
 		annot.eventEnter()
 
-.. method:: eventExit()
+.. method:: PDFAnnotation.prototype.eventExit()
 
 	|only_mutool|
 
@@ -1647,7 +1647,7 @@ clicked, or when an annotation gains/loses input focus.
 
 		annot.eventExit()
 
-.. method:: eventDown()
+.. method:: PDFAnnotation.prototype.eventDown()
 
 	|only_mutool|
 
@@ -1659,7 +1659,7 @@ clicked, or when an annotation gains/loses input focus.
 
 		widget.eventDown()
 
-.. method:: eventUp()
+.. method:: PDFAnnotation.prototype.eventUp()
 
 	|only_mutool|
 
@@ -1671,7 +1671,7 @@ clicked, or when an annotation gains/loses input focus.
 
 		widget.eventUp()
 
-.. method:: eventFocus()
+.. method:: PDFAnnotation.prototype.eventFocus()
 
 	|only_mutool|
 
@@ -1682,7 +1682,7 @@ clicked, or when an annotation gains/loses input focus.
 
 		widget.eventFocus()
 
-.. method:: eventBlur()
+.. method:: PDFAnnotation.prototype.eventBlur()
 
 	|only_mutool|
 
