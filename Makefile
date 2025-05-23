@@ -298,7 +298,7 @@ generate: source/html/css-properties.h
 
 ifeq ($(shared),yes)
   $(OUT)/libmupdf.$(SO)$(SO_VERSION): $(MUPDF_OBJ) $(THIRD_OBJ)
-	$(LINK_SO_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS)
+	$(LINK_SO_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS) $(LIBS)
   ifeq ($(OS),OpenBSD)
     # should never create symlink
     MUPDF_LIB = $(OUT)/libmupdf.$(SO)$(SO_VERSION)
