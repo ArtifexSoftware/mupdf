@@ -7249,10 +7249,11 @@ static void ffi_PDFDocument_addStream_imp(js_State *J, int compressed)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
+	pdf_obj *obj;
 	fz_buffer *buf;
 	pdf_obj *ind = NULL;
 
+	obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
 	if (js_try(J)) {
 		pdf_drop_obj(ctx, obj);
 		js_throw(J);
@@ -7528,15 +7529,15 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_rect mediabox = ffi_torect(J, 1);
 	int rotate = js_tonumber(J, 2);
-	pdf_obj *resources = ffi_toobj(J, pdf, 3);
+	pdf_obj *resources;
 	fz_buffer *contents = NULL;
 	pdf_obj *ind = NULL;
 
+	resources = ffi_toobj(J, pdf, 3);
 	if (js_try(J)) {
 		pdf_drop_obj(ctx, resources);
 		js_throw(J);
 	}
-
 	contents = ffi_tobuffer(J, 4);
 	js_endtry(J);
 
