@@ -1170,7 +1170,7 @@ static int ffi_torenderflags(js_State *J, int idx)
 {
 	int flags = 0;
 	const char *name;
-	int i, n = js_getlength(J, idx);
+	int i, n = fz_maxi(0, js_getlength(J, idx));
 	size_t k;
 	for (i = 0; i < n; ++i) {
 		js_getindex(J, idx, i);
@@ -3098,7 +3098,7 @@ static void ffi_new_StrokeState(js_State *J)
 
 	if (js_hasproperty(J, 1, "dashPattern"))
 	{
-		int i, n = js_getlength(J, -1);
+		int i, n = fz_maxi(0, js_getlength(J, -1));
 		fz_try(ctx)
 			stroke = fz_new_stroke_state_with_dash_len(ctx, n);
 		fz_catch(ctx)
@@ -6997,7 +6997,7 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 	}
 
 	if (js_isarray(J, idx)) {
-		int i, n = js_getlength(J, idx);
+		int i, n = fz_maxi(0, js_getlength(J, idx));
 		pdf_obj *val;
 		fz_try(ctx)
 			obj = pdf_new_array(ctx, pdf, n);
@@ -7691,7 +7691,7 @@ static void ffi_PDFDocument_rearrangePages(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	int n = js_getlength(J, 1);
+	int n = fz_maxi(0, js_getlength(J, 1));
 	int *pages = NULL;
 	int i;
 
@@ -7777,9 +7777,7 @@ static void ffi_PDFDocument_newByteString(js_State *J)
 	char *buf;
 	pdf_obj *obj = NULL;
 
-	n = js_getlength(J, 1);
-	if (n < 0)
-		n = 0;
+	n = fz_maxi(0, js_getlength(J, 1));
 
 	fz_try(ctx)
 		buf = fz_malloc(ctx, n);
@@ -9545,7 +9543,7 @@ static void ffi_PDFAnnotation_setColor(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	int i, n = js_getlength(J, 1);
+	int i, n = fz_maxi(0, js_getlength(J, 1));
 	float color[4];
 
 	if (n == 0 || n == 1 || n == 3 || n == 4)
@@ -9597,7 +9595,7 @@ static void ffi_PDFAnnotation_setInteriorColor(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	int i, n = js_getlength(J, 1);
+	int i, n = fz_maxi(0, js_getlength(J, 1));
 	float color[4];
 	for (i = 0; i < n && i < 4; ++i) {
 		js_getindex(J, 1, i);
@@ -9675,7 +9673,7 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 	fz_quad *qp = NULL;
 	int i, n;
 
-	n = js_getlength(J, 1);
+	n = fz_maxi(0, js_getlength(J, 1));
 
 	fz_try(ctx)
 		qp = fz_malloc_array(ctx, n, fz_quad);
@@ -9761,7 +9759,7 @@ static void ffi_PDFAnnotation_setVertices(js_State *J)
 	fz_point p;
 	int i, n;
 
-	n = js_getlength(J, 1);
+	n = fz_maxi(0, js_getlength(J, 1));
 
 	fz_try(ctx)
 		pdf_clear_annot_vertices(ctx, annot);
@@ -9865,13 +9863,13 @@ static void ffi_PDFAnnotation_setInkList(js_State *J)
 	fz_var(counts);
 	fz_var(points);
 
-	n = js_getlength(J, 1);
+	n = fz_maxi(0, js_getlength(J, 1));
 	if (n > MAX_INK_STROKE)
 		js_rangeerror(J, "too many strokes in ink annotation");
 	nv = 0;
 	for (i = 0; i < n; ++i) {
 		js_getindex(J, 1, i);
-		m = js_getlength(J, -1);
+		m = fz_maxi(0, js_getlength(J, -1));
 		if (m > MAX_INK_POINT)
 			js_rangeerror(J, "too many points in ink annotation stroke");
 		nv += m;
@@ -10198,7 +10196,7 @@ static void ffi_PDFAnnotation_setBorderDashPattern(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
-	int i, n = js_getlength(J, 1);
+	int i, n = fz_maxi(0, js_getlength(J, 1));
 	float length;
 
 	fz_try(ctx)
@@ -10609,7 +10607,7 @@ static void ffi_PDFAnnotation_setDefaultAppearance(js_State *J)
 	pdf_annot *annot = ffi_toannot(J, 0);
 	const char *font = js_tostring(J, 1);
 	float size = js_tonumber(J, 2);
-	int i, n = js_getlength(J, 3);
+	int i, n = fz_maxi(0, js_getlength(J, 3));
 	float color[4] = { 0.0f };
 
 	if (n != 0 && n != 1 && n != 3 && n != 4)
@@ -10982,7 +10980,7 @@ static void ffi_PDFAnnotation_setCalloutLine(js_State *J)
 	fz_point line[3] = { 0 };
 	int i, n;
 
-	n = js_getlength(J, 1);
+	n = fz_maxi(0, js_getlength(J, 1));
 	if (n == 2 || n == 3)
 	{
 		for (i = 0; i < n; ++i)
