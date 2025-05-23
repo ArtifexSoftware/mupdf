@@ -194,7 +194,7 @@ Instance methods
 	Returns the object as a pretty-printed string.
 
 	:param boolean tight: Whether to print the object as tightly as possible, or as human-readably as possible.
-	:param boolean ascii: Whetehr to print binary data as ascii or as binary data.
+	:param boolean ascii: Whether to print binary data as ascii or as binary data.
 
 	:returns: string
 
