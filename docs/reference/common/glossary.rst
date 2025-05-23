@@ -168,17 +168,14 @@ Glossary
 
 	Line Ending Style
 
-		Styles used to draw line endings in certain annotations:
-			None,
-			Square,
-			Circle,
-			Diamond,
-			OpenArrow,
-			ClosedArrow,
-			Butt,
-			ROpenArrow,
-			RClosedArrow,
-			Slash
+		Styles used to draw line endings for certain annotations.
+		Below is an illustration with the name of each style.
+		The example uses black line color, with both none and
+		blue interior color.
+
+		.. imagesvg:: ../../images/line-ending-styles.svg
+			:tagtype: object
+			:width: 75%
 
 	Border Style
 
