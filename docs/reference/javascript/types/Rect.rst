@@ -118,6 +118,6 @@ Static methods
 
 	Create a Rect that encompasses the entire quad.
 
-	:param Qaud quad:
+	:param Quad quad:
 
 	:returns: `Rect`

@@ -14,7 +14,7 @@ Constructors
 
 	Create a new archive based either on a tar- or zip-file or the contents of a directory.
 
-	:param string path: Path string to the archive file or directotry.
+	:param string path: Path string to the archive file or directory.
 
 	.. code-block::
 

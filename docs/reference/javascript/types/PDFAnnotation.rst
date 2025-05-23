@@ -913,7 +913,7 @@ Default Appearance
 	|only_mutool|
 
 	Returns whether the annotation is capable of supporting a default
-	apperance.
+	appearance.
 
 	:returns: boolean
 
@@ -1616,7 +1616,7 @@ PDF annotations can have different appearances depending on whether
 the pointing device's cursor is hovering over an annotation, or if the
 pointing device's button is pressed.
 
-PDF widgets, which is a type of annnotation, may also have associated
+PDF widgets, which is a type of annotation, may also have associated
 Javascript functions that are executed when certain events occur.
 
 Therefore it is important to tell an PDFAnnotation when the pointing

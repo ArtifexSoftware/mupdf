@@ -30,7 +30,7 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 
 .. function:: beginLine(bbox, wmode, direction)
 
-	Called bfore every line of text in a block.
+	Called before every line of text in a block.
 
 	:param Rect bbox:
 	:param number wmode:
