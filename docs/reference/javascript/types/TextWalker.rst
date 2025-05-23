@@ -10,7 +10,7 @@ TextWalker
 An object implementing this interface of optional callback functions
 can be used to get calls whenever `Text.prototype.walk()` iterates over a text object.
 
-.. function:: beginSpan()
+.. function:: beginSpan(font, trm, wmode, bidiLevel, markupDirection, language)
 
 	Called before every text span in the `Text` being walked.
 
@@ -25,7 +25,7 @@ can be used to get calls whenever `Text.prototype.walk()` iterates over a text o
 
 	Called at the end of every span in the text.
 
-.. function:: showGlyph()
+.. function:: showGlyph(font, trm, gid, ucs, wmode, bidiLevel)
 
 	Called once per character for in a text span.
 

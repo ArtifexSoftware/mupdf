@@ -40,10 +40,14 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 
 	Called after every line of text.
 
-.. function:: beginStruct()
+.. function:: beginStruct(standard, raw, index)
 
 	Called to indicate that a new structure element begins. May not
 	be neatly nested within blocks or lines.
+
+	:param string standard:
+	:param string raw:
+	:param number index:
 
 .. function:: endStruct()
 
@@ -69,7 +73,7 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 	:param Matrix transform:
 	:param Image image:
 
-.. function:: onVector()
+.. function:: onVector(flags, rgb)
 
 	Called for every vector in a `StructuredText` if its options
 	were set to collect vectors.
