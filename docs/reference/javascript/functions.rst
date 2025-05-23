@@ -24,11 +24,11 @@ here.
 	loading machinery can keep looking through the chain of fallback
 	fonts).
 
-.. method:: mupdf.enableICC()
+.. function:: mupdf.enableICC()
 
 	Enable ICC-profiles based operation.
 
-.. method:: mupdf.disableICC()
+.. function:: mupdf.disableICC()
 
 	Disable ICC-profiles based operation.
 
