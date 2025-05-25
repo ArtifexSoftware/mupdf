@@ -869,7 +869,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else if (output_format == OUT_STEXT_JSON || output_format == OUT_OCR_STEXT_JSON)
 			{
 				static int first = 1;
-				if (first)
+				if (first || output_file_per_page)
 					first = 0;
 				else
 					fz_write_string(ctx, out, ",");
