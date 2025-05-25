@@ -4132,6 +4132,12 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFDocument_PAGE_LABEL_ALPHA_UC 65L
 #undef com_artifex_mupdf_fitz_PDFDocument_PAGE_LABEL_ALPHA_LC
 #define com_artifex_mupdf_fitz_PDFDocument_PAGE_LABEL_ALPHA_LC 97L
+#undef com_artifex_mupdf_fitz_PDFDocument_LAYER_UI_LABEL
+#define com_artifex_mupdf_fitz_PDFDocument_LAYER_UI_LABEL 0L
+#undef com_artifex_mupdf_fitz_PDFDocument_LAYER_UI_CHECKBOX
+#define com_artifex_mupdf_fitz_PDFDocument_LAYER_UI_CHECKBOX 1L
+#undef com_artifex_mupdf_fitz_PDFDocument_LAYER_UI_RADIOBOX
+#define com_artifex_mupdf_fitz_PDFDocument_LAYER_UI_RADIOBOX 2L
 #undef com_artifex_mupdf_fitz_PDFDocument_NOT_ZUGFERD
 #define com_artifex_mupdf_fitz_PDFDocument_NOT_ZUGFERD 0L
 #undef com_artifex_mupdf_fitz_PDFDocument_ZUGFERD_COMFORT
@@ -4810,6 +4816,22 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getLayerConfig
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_selectLayerConfig
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    countLayerConfigUIs
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_countLayerConfigUIs
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    getLayerConfigUIInfo
+ * Signature: (I)Lcom/artifex/mupdf/fitz/PDFDocument/LayerConfigUIInfo;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_getLayerConfigUIInfo
   (JNIEnv *, jobject, jint);
 
 /*

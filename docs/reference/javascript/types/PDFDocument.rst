@@ -977,6 +977,20 @@ Layers
 
 		var info = pdfDocument.selectLayerConfig(1)
 
+.. method:: PDFDocument.prototype.countLayerConfigUIs()
+
+	Return the number of optional content layer UI elements in this document
+	given the selected optional content layer configuration.
+
+	:returns: number
+
+.. method:: PDFDocument.prototype.getLayerConfigUIInfo(n)
+
+	Return the information about optional content layer UI element number ``n``,
+	where ``n`` is ``0 <= n < countLayerConfigUIs()``.
+
+	:returns: ``{ type: number, depth: number, selected: boolean, locked: boolean, text: string }``
+
 .. method:: PDFDocument.prototype.countLayers()
 
 	Return the number of optional content layers in this document.

@@ -535,6 +535,16 @@ function fromBuffer(ptr: Pointer<"fz_buffer">): Uint8Array {
 	return libmupdf.HEAPU8.slice(data, data + size)
 }
 
+function fromLayerConfigUIInfo(ptr: Pointer<"pdf_layer_config_ui">): Object {
+	return {
+		text: libmupdf._wasm_pdf_layer_config_ui_get_text(ptr),
+		depth: libmupdf._wasm_pdf_layer_config_ui_get_depth(ptr),
+		type: libmupdf._wasm_pdf_layer_config_ui_get_type(ptr),
+		selected: libmupdf._wasm_pdf_layer_config_ui_get_selected(ptr),
+		locked: libmupdf._wasm_pdf_layer_config_ui_get_locked(ptr),
+	}
+}
+
 /* unused for now
 function rgbFromColor(c?: Color): [number, number, number] {
 	var r = 0, g = 0, b = 0
@@ -2841,15 +2851,23 @@ export class PDFDocument extends Document {
 	}
 
 	getLayerConfigCreator(config: number): string {
-		return libmupdf._wasm_pdf_layer_config_creator(this.pointer, config)
+		return fromString(libmupdf._wasm_pdf_layer_config_creator(this.pointer, config))
 	}
 
 	getLayerConfigName(config: number): string {
-		return libmupdf._wasm_pdf_layer_config_name(this.pointer, config)
+		return fromString(libmupdf._wasm_pdf_layer_config_name(this.pointer, config))
 	}
 
 	selectLayerConfig(config: number) {
-		libmupdf._wasm_pdf_select_layer_confi
+		libmupdf._wasm_pdf_select_layer_config(this.pointer, config)
+	}
+
+	countLayerConfigUIs(): number {
+		return libmupdf._wasm_pdf_count_layer_config_uis(this.pointer)
+	}
+
+	getLayerConfigUIInfo(configui: number) {
+		return fromLayerConfigUIInfo(libmupdf._wasm_pdf_layer_config_ui_info(this.pointer, configui));
 	}
 
 	countLayers(): number {

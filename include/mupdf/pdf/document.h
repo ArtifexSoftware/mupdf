@@ -365,6 +365,9 @@ typedef enum
 	PDF_LAYER_UI_RADIOBOX = 2
 } pdf_layer_config_ui_type;
 
+const char *pdf_layer_config_ui_type_to_string(pdf_layer_config_ui_type type);
+pdf_layer_config_ui_type pdf_layer_config_ui_type_from_string(const char *str);
+
 typedef struct
 {
 	const char *text;

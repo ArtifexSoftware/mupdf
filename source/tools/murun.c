@@ -8582,6 +8582,44 @@ static void ffi_PDFDocument_selectLayerConfig(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_countLayerConfigUIs(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int count;
+	fz_try(ctx)
+		count = pdf_count_layer_config_ui(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, count);
+}
+
+static void ffi_PDFDocument_getLayerConfigUIInfo(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int idx = js_tointeger(J, 1);
+	pdf_layer_config_ui info;
+
+	fz_try(ctx)
+		pdf_layer_config_ui_info(ctx, pdf, idx, &info);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newobject(J);
+	js_pushliteral(J, pdf_layer_config_ui_type_to_string(info.type));
+	js_setproperty(J, -2, "type");
+	js_pushnumber(J, info.depth);
+	js_setproperty(J, -2, "depth");
+	js_pushboolean(J, info.selected);
+	js_setproperty(J, -2, "selected");
+	js_pushboolean(J, info.locked);
+	js_setproperty(J, -2, "locked");
+	js_pushstring(J, info.text);
+	js_setproperty(J, -2, "text");
+}
+
 static void ffi_appendDestToURI(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12395,6 +12433,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.getLayerConfigCreator", ffi_PDFDocument_getLayerConfigCreator, 1);
 		jsB_propfun(J, "PDFDocument.getLayerConfigName", ffi_PDFDocument_getLayerConfigName, 1);
 		jsB_propfun(J, "PDFDocument.selectLayerConfig", ffi_PDFDocument_selectLayerConfig, 1);
+		jsB_propfun(J, "PDFDocument.countLayerConfigUIs", ffi_PDFDocument_countLayerConfigUIs, 0);
+		jsB_propfun(J, "PDFDocument.getLayerConfigUIInfo", ffi_PDFDocument_getLayerConfigUIInfo, 1);
 	}
 	js_setregistry(J, "pdf_document");
 

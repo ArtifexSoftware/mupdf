@@ -42,6 +42,7 @@ static fz_point out_point;
 static fz_rect out_rect;
 static fz_quad out_quad;
 static fz_link_dest out_link_dest;
+static pdf_layer_config_ui out_layer_config_ui;
 
 typedef int boolean;
 
@@ -325,6 +326,12 @@ GET(link_dest, float, y)
 GET(link_dest, float, w)
 GET(link_dest, float, h)
 GET(link_dest, float, zoom)
+
+PDF_GET(layer_config_ui, const char*, text)
+PDF_GET(layer_config_ui, int, depth)
+PDF_GET(layer_config_ui, int, type)
+PDF_GET(layer_config_ui, int, selected)
+PDF_GET(layer_config_ui, int, locked)
 
 PDF_GET(filespec_params, const char*, filename)
 PDF_GET(filespec_params, const char*, mimetype)
@@ -1610,19 +1617,34 @@ int wasm_pdf_count_layer_configs(pdf_document *doc)
 EXPORT
 const char * wasm_pdf_layer_config_creator(pdf_document *doc, int config)
 {
-	POINTER(pdf_layer_config_creator, doc)
+	POINTER(pdf_layer_config_creator, doc, config)
 }
 
 EXPORT
 const char * wasm_pdf_layer_config_name(pdf_document *doc, int config)
 {
-	POINTER(pdf_layer_config_name, doc)
+	POINTER(pdf_layer_config_name, doc, config)
 }
 
 EXPORT
 void wasm_pdf_select_layer_config(pdf_document *doc, int config)
 {
 	VOID(pdf_select_layer_config, doc, config)
+}
+
+EXPORT
+int wasm_pdf_count_layer_config_uis(pdf_document *doc)
+{
+	INTEGER(pdf_count_layer_config_ui, doc)
+}
+
+EXPORT
+pdf_layer_config_ui *wasm_pdf_layer_config_ui_info(pdf_document *doc, int configui)
+{
+	TRY ({
+		pdf_layer_config_ui_info(ctx, doc, configui, &out_layer_config_ui);
+	})
+	return &out_layer_config_ui;
 }
 
 EXPORT

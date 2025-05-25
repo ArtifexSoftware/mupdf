@@ -935,3 +935,28 @@ pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc)
 
 	pdf_dict_del(ctx, ocprops, PDF_NAME(Configs));
 }
+
+const char *
+pdf_layer_config_ui_type_to_string(pdf_layer_config_ui_type type)
+{
+	switch (type)
+	{
+	default:
+		return "Invalid";
+	case PDF_LAYER_UI_LABEL:
+		return "Label";
+	case PDF_LAYER_UI_CHECKBOX:
+		return "Checkbox";
+	case PDF_LAYER_UI_RADIOBOX:
+		return "Radiobox";
+	}
+}
+
+pdf_layer_config_ui_type
+pdf_layer_config_ui_type_from_string(const char *str)
+{
+	if (!strcmp("Label", str)) return PDF_LAYER_UI_LABEL;
+	if (!strcmp("Checkbox", str)) return PDF_LAYER_UI_CHECKBOX;
+	if (!strcmp("Radiobox", str)) return PDF_LAYER_UI_RADIOBOX;
+	return PDF_LAYER_UI_CHECKBOX;
+}
