@@ -51,10 +51,6 @@ Android currently has two different viewers with varying degrees of complexity:
 <dd>An example of how to create a PDF viewer with the least amount of code.
 </dl>
 
-### Apple
-
-The iOS viewer is no longer available on the App Store. Sorry!
-
 ### Web Browser
 
 There's a simple
