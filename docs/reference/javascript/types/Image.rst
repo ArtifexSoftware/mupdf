@@ -72,9 +72,11 @@ Instance methods
 
 .. method:: Image.prototype.getColorSpace()
 
-	Returns the `ColorSpace` for the `Image`.
+	Returns the `ColorSpace` for the `Image`. Returns null if the image has
+	no colors (for example if it is an opacity mask with only an alpha
+	channel).
 
-	:returns: `ColorSpace`
+	:returns: `ColorSpace` | null
 
 	.. code-block::
 

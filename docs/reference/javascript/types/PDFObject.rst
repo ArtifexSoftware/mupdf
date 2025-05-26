@@ -81,9 +81,12 @@ Instance methods
 
 	Access dictionaries and arrays in the `PDFObject`.
 
+	Returns null if the dictionary key does not exist, or if
+	the array index is out of range.
+
 	:param Array<number | string | PDFObject> ...path: The path.
 
-	:returns: `PDFObject`
+	:returns: `PDFObject` | null
 
 	.. code-block::
 
@@ -104,7 +107,7 @@ Instance methods
 
 	:param PDFObject | string key:
 
-	:returns: `PDFObject`
+	:returns: `PDFObject` | null
 
 	.. code-block:: javascript
 

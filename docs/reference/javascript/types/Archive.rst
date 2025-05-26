@@ -49,11 +49,12 @@ Instance methods
 
 .. method:: Archive.prototype.listEntry(idx)
 
-	Returns the name of entry number idx in the archive.
+	Returns the name of entry number idx in the archive, or null if idx is
+	out of range.
 
 	:param number idx: Entry index.
 
-	:returns: string
+	:returns: string | null
 
 	.. code-block::
 
