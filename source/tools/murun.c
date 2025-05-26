@@ -1600,7 +1600,7 @@ static void ffi_pushbuffer_own(js_State *J, fz_buffer *buf)
 			ffi_gc_fz_buffer);
 }
 
-static fz_buffer *ffi_tobuffer(js_State *J, int idx)
+static fz_buffer *ffi_tonewbuffer(js_State *J, int idx)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_buffer *buf = NULL;
@@ -3746,7 +3746,7 @@ static void ffi_TreeArchive_add(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_archive *arch = js_touserdata(J, 0, "fz_tree_archive");
 	const char *name = js_tostring(J, 1);
-	fz_buffer *buf = ffi_tobuffer(J, 2);
+	fz_buffer *buf = ffi_tonewbuffer(J, 2);
 	fz_try(ctx)
 		fz_tree_archive_add_buffer(ctx, arch, name, buf);
 	fz_always(ctx)
@@ -3757,7 +3757,7 @@ static void ffi_TreeArchive_add(js_State *J)
 
 static void ffi_new_Buffer(js_State *J)
 {
-	fz_buffer *buf = ffi_tobuffer(J, 1);
+	fz_buffer *buf = ffi_tonewbuffer(J, 1);
 	ffi_pushbuffer_own(J, buf);
 }
 
@@ -3896,7 +3896,7 @@ static void ffi_Document_openDocument(js_State *J)
 	if (js_isuserdata(J, 1, "fz_buffer"))
 	{
 		const char *magic = js_tostring(J, 2);
-		fz_buffer *buf = ffi_tobuffer(J, 1);
+		fz_buffer *buf = ffi_tonewbuffer(J, 1);
 		fz_stream *stm = NULL;
 		fz_var(stm);
 		fz_try(ctx)
@@ -5457,7 +5457,7 @@ static void ffi_new_Image(js_State *J)
 		fz_catch(ctx)
 			rethrow(J);
 	} else if (js_isuserdata(J, 1, "fz_buffer")) {
-		fz_buffer *buffer = ffi_tobuffer(J, 1);
+		fz_buffer *buffer = ffi_tonewbuffer(J, 1);
 		fz_try(ctx)
 		{
 			image = fz_new_image_from_buffer(ctx, buffer);
@@ -6599,7 +6599,7 @@ static void ffi_new_Story(js_State *J)
 	const char *user_css = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	double em = js_isdefined(J, 3) ? js_tonumber(J, 3) : 12;
 	fz_archive *arch = js_iscoercible(J, 4) ? ffi_toarchive(J, 4) : NULL;
-	fz_buffer *contents = ffi_tobuffer(J, 1);
+	fz_buffer *contents = ffi_tonewbuffer(J, 1);
 	fz_story *story = NULL;
 
 	fz_try(ctx)
@@ -6952,7 +6952,7 @@ static void ffi_DOM_getAttributes(js_State *J)
 
 #if FZ_ENABLE_PDF
 
-static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
+static pdf_obj *ffi_tonewobj(js_State *J, pdf_document *pdf, int idx)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = NULL;
@@ -7009,7 +7009,7 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 		}
 		for (i = 0; i < n; ++i) {
 			js_getindex(J, idx, i);
-			val = ffi_toobj(J, pdf, -1);
+			val = ffi_tonewobj(J, pdf, -1);
 			// FIXME val leaks if fz_try() runs out of space
 			fz_try(ctx)
 				pdf_array_push_drop(ctx, obj, val);
@@ -7035,7 +7035,7 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 		js_pushiterator(J, idx, 1);
 		while ((key = js_nextiterator(J, -1))) {
 			js_getproperty(J, idx, key);
-			val = ffi_toobj(J, pdf, -1);
+			val = ffi_tonewobj(J, pdf, -1);
 			// FIXME val leaks if fz_try() runs out of space
 			fz_try(ctx)
 				pdf_dict_puts_drop(ctx, obj, key, val);
@@ -7096,7 +7096,7 @@ static int ffi_pdf_obj_put(js_State *J, void *obj, const char *key)
 	fz_catch(ctx)
 		rethrow(J);
 
-	val = ffi_toobj(J, pdf, -1);
+	val = ffi_tonewobj(J, pdf, -1);
 
 	if (is_number(key, &idx)) {
 		fz_try(ctx)
@@ -7238,7 +7238,7 @@ static void ffi_PDFDocument_addObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj = ffi_toobj(J, pdf, 1);
+	pdf_obj *obj = ffi_tonewobj(J, pdf, 1);
 	pdf_obj *ind = NULL;
 
 	// FIXME if fz_try() runs out of space, obj leaks
@@ -7258,12 +7258,12 @@ static void ffi_PDFDocument_addStream_imp(js_State *J, int compressed)
 	fz_buffer *buf;
 	pdf_obj *ind = NULL;
 
-	obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
+	obj = js_iscoercible(J, 2) ? ffi_tonewobj(J, pdf, 2) : NULL;
 	if (js_try(J)) {
 		pdf_drop_obj(ctx, obj);
 		js_throw(J);
 	}
-	buf = ffi_tobuffer(J, 1);
+	buf = ffi_tonewbuffer(J, 1);
 	js_endtry(J);
 
 	fz_try(ctx)
@@ -7293,7 +7293,7 @@ static void ffi_PDFDocument_addEmbeddedFile(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *filename = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	const char *mimetype = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
-	fz_buffer *contents = ffi_tobuffer(J, 3);
+	fz_buffer *contents = ffi_tonewbuffer(J, 3);
 	double created = js_trynumber(J, 4, -1);
 	double modified = js_trynumber(J, 5, -1);
 	int add_checksum = js_tryboolean(J, 6, 0);
@@ -7358,7 +7358,7 @@ static void ffi_PDFDocument_getFilespecParams(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *fs = ffi_toobj(J, pdf, 1);
+	pdf_obj *fs = ffi_tonewobj(J, pdf, 1);
 	pdf_filespec_params params;
 
 	fz_try(ctx)
@@ -7375,7 +7375,7 @@ static void ffi_PDFDocument_getEmbeddedFileContents(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *fs = ffi_toobj(J, pdf, 1);
+	pdf_obj *fs = ffi_tonewobj(J, pdf, 1);
 	fz_buffer *contents = NULL;
 
 	fz_try(ctx)
@@ -7395,7 +7395,7 @@ static void ffi_PDFDocument_verifyEmbeddedFileChecksum(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *fs = ffi_toobj(J, pdf, 1);
+	pdf_obj *fs = ffi_tonewobj(J, pdf, 1);
 	int valid = 0;
 
 	fz_try(ctx)
@@ -7412,7 +7412,7 @@ static void ffi_PDFDocument_isFilespec(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *fs = ffi_toobj(J, pdf, 1);
+	pdf_obj *fs = ffi_tonewobj(J, pdf, 1);
 	int result = 0;
 	fz_try(ctx)
 		result = pdf_is_filespec(ctx, fs);
@@ -7425,7 +7425,7 @@ static void ffi_PDFDocument_isEmbeddedFile(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *fs = ffi_toobj(J, pdf, 1);
+	pdf_obj *fs = ffi_tonewobj(J, pdf, 1);
 	int result = 0;
 
 	fz_try(ctx)
@@ -7457,7 +7457,7 @@ static void ffi_PDFDocument_loadImage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj = ffi_toobj(J, pdf, 1);
+	pdf_obj *obj = ffi_tonewobj(J, pdf, 1);
 	fz_image *img = NULL;
 
 	fz_try(ctx)
@@ -7538,12 +7538,12 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	fz_buffer *contents = NULL;
 	pdf_obj *ind = NULL;
 
-	resources = ffi_toobj(J, pdf, 3);
+	resources = ffi_tonewobj(J, pdf, 3);
 	if (js_try(J)) {
 		pdf_drop_obj(ctx, resources);
 		js_throw(J);
 	}
-	contents = ffi_tobuffer(J, 4);
+	contents = ffi_tonewbuffer(J, 4);
 	js_endtry(J);
 
 	fz_try(ctx)
@@ -7562,7 +7562,7 @@ static void ffi_PDFDocument_insertPage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int at = js_tointeger(J, 1);
-	pdf_obj *obj = ffi_toobj(J, pdf, 2);
+	pdf_obj *obj = ffi_tonewobj(J, pdf, 2);
 
 	fz_try(ctx)
 		pdf_insert_page(ctx, pdf, at, obj);
@@ -7632,7 +7632,7 @@ static void ffi_PDFDocument_lookupDest(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *needle = ffi_toobj(J, pdf, 1);
+	pdf_obj *needle = ffi_tonewobj(J, pdf, 1);
 	pdf_obj *obj = NULL;
 
 	fz_try(ctx)
@@ -8614,7 +8614,7 @@ static void ffi_PDFObject_push(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
 	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
-	pdf_obj *item = ffi_toobj(J, pdf, 1);
+	pdf_obj *item = ffi_tonewobj(J, pdf, 1);
 	fz_try(ctx)
 		pdf_array_push(ctx, obj, item);
 	fz_always(ctx)
@@ -8929,7 +8929,7 @@ static void ffi_PDFObject_writeObject(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *ref = js_touserdata(J, 0, "pdf_obj");
 	pdf_document *pdf = pdf_get_bound_document(ctx, ref);
-	pdf_obj *obj = ffi_toobj(J, pdf, 1);
+	pdf_obj *obj = ffi_tonewobj(J, pdf, 1);
 	fz_try(ctx)
 		pdf_update_object(ctx, pdf, pdf_to_num(ctx, ref), obj);
 	fz_always(ctx)
@@ -8942,7 +8942,7 @@ static void ffi_PDFObject_writeStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	fz_buffer *buf = ffi_tobuffer(J, 1);
+	fz_buffer *buf = ffi_tonewbuffer(J, 1);
 	fz_try(ctx)
 		pdf_update_stream(ctx, pdf_get_bound_document(ctx, obj), obj, buf, 0);
 	fz_always(ctx)
@@ -8955,7 +8955,7 @@ static void ffi_PDFObject_writeRawStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	fz_buffer *buf = ffi_tobuffer(J, 1);
+	fz_buffer *buf = ffi_tonewbuffer(J, 1);
 	fz_try(ctx)
 		pdf_update_stream(ctx, pdf_get_bound_document(ctx, obj), obj, buf, 1);
 	fz_always(ctx)
@@ -10647,7 +10647,7 @@ static void ffi_PDFAnnotation_setStampImageObject(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	obj = ffi_toobj(J, pdf, 1);
+	obj = ffi_tonewobj(J, pdf, 1);
 
 	fz_try(ctx)
 		pdf_set_annot_stamp_image_obj(ctx, annot, obj);
@@ -10686,12 +10686,12 @@ static void ffi_PDFAnnotation_setAppearance(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	res = ffi_toobj(J, pdf, 5);
+	res = ffi_tonewobj(J, pdf, 5);
 	if (js_try(J)) {
 		pdf_drop_obj(ctx, res);
 		js_throw(J);
 	}
-	contents = ffi_tobuffer(J, 6);
+	contents = ffi_tonewbuffer(J, 6);
 	js_endtry(J);
 
 	fz_try(ctx)
