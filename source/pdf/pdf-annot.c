@@ -3641,7 +3641,7 @@ const char *pdf_string_from_intent(fz_context *ctx, enum pdf_intent it)
 	switch (it)
 	{
 	default:
-	case PDF_ANNOT_IT_DEFAULT: return NULL;
+	case PDF_ANNOT_IT_DEFAULT: return "Default";
 	case PDF_ANNOT_IT_FREETEXT_CALLOUT: return "FreeTextCallout";
 	case PDF_ANNOT_IT_FREETEXT_TYPEWRITER: return "FreeTextTypeWriter";
 	case PDF_ANNOT_IT_LINE_ARROW: return "LineArrow";
