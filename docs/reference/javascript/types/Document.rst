@@ -112,7 +112,7 @@ Instance methods
 
 	:param string key: What metadata type to return.
 
-	:returns: string
+	:returns: string | null
 
 	.. code-block::
 

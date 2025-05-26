@@ -158,7 +158,7 @@ Instance methods
 
 	Get the document's :term:`language code`.
 
-	:returns: string
+	:returns: string | null
 
 	.. code-block::
 
@@ -411,6 +411,8 @@ Page Tree
 
 	:param number number: The page number, the first page is number zero.
 
+	:throws: Error on out of range page numbers.
+
 	:returns: `PDFObject`
 
 	.. code-block::
@@ -440,9 +442,11 @@ Page Tree
 	destination given as a name or byte string in the form of a
 	`PDFObject`.
 
+	Returns null if the named destination does not exist.
+
 	:param PDFObject obj:
 
-	:returns: `PDFObject`
+	:returns: `PDFObject` | null
 
 	.. code-block::
 
@@ -751,7 +755,9 @@ Embedded/Associated files
 
 	``n`` should be in the range ``0 <= n < countAssociatedFiles()``.
 
-	:returns: `PDFObject`
+	Returns null if no associated file exists or index is out of range.
+
+	:returns: `PDFObject` | null
 
 	.. code-block::
 

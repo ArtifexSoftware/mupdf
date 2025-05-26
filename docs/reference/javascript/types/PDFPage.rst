@@ -65,7 +65,7 @@ Instance methods
 
 	Get the underlying `PDFObject` for a `PDFPage`.
 
-	:returns: `PDFObject`.
+	:returns: `PDFObject`
 
 	.. code-block::
 
@@ -252,7 +252,9 @@ Instance methods
 
 	``n`` should be in the range ``0 <= n < countAssociatedFiles()``.
 
-	:returns: `PDFObject`
+	Returns null if no associated file exists or index is out of range.
+
+	:returns: `PDFObject` | null
 
 	.. code-block:: javascript
 

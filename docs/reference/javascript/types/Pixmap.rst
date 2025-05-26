@@ -113,9 +113,11 @@ Instance methods
 
 .. method:: Pixmap.prototype.getColorSpace()
 
-	Returns the colorspace of this pixmap.
+	Returns the colorspace of this pixmap. Returns null if the pixmap has
+	no colors (for example if it is an opacity mask with only an alpha
+	channel).
 
-	:returns: `ColorSpace`
+	:returns: `ColorSpace` | null
 
 	.. code-block::
 
@@ -478,7 +480,9 @@ Instance methods
 	without alpha is supported, anything else will cause an exception
 	to be thrown.
 
-	:returns: `Quad`
+	Returns null if no document was detected.
+
+	:returns: `Quad` | null
 
 	.. code-block:: javascript
 

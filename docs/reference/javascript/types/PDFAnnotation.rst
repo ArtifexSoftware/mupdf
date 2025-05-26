@@ -442,7 +442,7 @@ Common
 	Get the annotation :term:`language code` (or get the one
 	inherited from the document).
 
-	:returns: string
+	:returns: string | null
 
 	.. code-block::
 
@@ -584,9 +584,11 @@ of the border.
 
 .. method:: PDFAnnotation.prototype.setColor(color)
 
-	Set the annotation color, represented as an array of 1, 3, or 4 component values.
+	Set the annotation color, represented as an array of 0, 1, 3, or 4 component values.
 
 	:param Color color: The new color.
+
+	:throws: TypeError if number of components is not 0, 1, 3, or 4.
 
 	.. code-block::
 
@@ -926,8 +928,7 @@ Default Appearance
 	Get the default text appearance used for free text annotations
 	as an object containing the font, size, and color.
 
-	:returns:
-		``{ font: string, size: number, color: Color }``
+	:returns: ``{ font: string, size: number, color: Color }``
 
 	.. code-block::
 
@@ -965,9 +966,9 @@ Filespec
 
 .. method:: PDFAnnotation.prototype.getFilespec()
 
-	Get the :term:`file specification` PDF object for the file attachment.
+	Get the :term:`file specification` PDF object for the file attachment, or null if none set.
 
-	:returns: `PDFObject`
+	:returns: `PDFObject` | null
 
 	.. code-block::
 
@@ -1127,6 +1128,8 @@ Interior Color
 	Sets the annotation interior color.
 
 	:param Color color: The new desired interior color.
+
+	:throws: TypeError if number of components is not 0, 1, 3, or 4.
 
 	.. code-block::
 
