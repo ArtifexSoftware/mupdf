@@ -11,6 +11,8 @@ with it.
 
 Please ensure that you can comply with the conditions of the AGPL license.
 
+See [Artifex licensing guide](https://artifex.com/licensing) if you have questions.
+
 ## Commercial
 
 For those users that cannot (or do not want to) comply with the terms of the
