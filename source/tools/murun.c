@@ -8396,15 +8396,20 @@ static void ffi_PDFDocument_getLanguage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_text_language lang;
+	const char *ret;
 	char text[8];
 	fz_try(ctx)
 	{
 		lang = pdf_document_language(ctx, pdf);
-		fz_string_from_text_language(text, lang);
+		ret = fz_string_from_text_language(text, lang);
 	}
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, text);
+
+	if (ret)
+		js_pushstring(J, text);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_PDFDocument_setLanguage(js_State *J)
@@ -10353,12 +10358,17 @@ static void ffi_PDFAnnotation_getLanguage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *ret;
 	char lang[8];
 	fz_try(ctx)
-		fz_string_from_text_language(lang, pdf_annot_language(ctx, annot));
+		ret = fz_string_from_text_language(lang, pdf_annot_language(ctx, annot));
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, lang);
+
+	if (ret)
+		js_pushstring(J, lang);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_PDFAnnotation_setLanguage(js_State *J)
