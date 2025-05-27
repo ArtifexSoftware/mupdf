@@ -3200,7 +3200,10 @@ static void ffi_StrokeState_getDashPhase(js_State *J)
 static void ffi_StrokeState_getDashPattern(js_State *J)
 {
 	fz_stroke_state *stroke = js_touserdata(J, 0, "fz_stroke_state");
-	ffi_pusharray(J, stroke->dash_list, stroke->dash_len);
+	if (stroke->dash_len > 0)
+		ffi_pusharray(J, stroke->dash_list, stroke->dash_len);
+	else
+		js_pushnull(J);
 }
 
 /* device calling into c from js */
