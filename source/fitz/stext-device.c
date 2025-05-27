@@ -2316,6 +2316,9 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 	fz_stext_page *page = tdev->page;
 	fz_stext_block *block, *le, *gt, *newblock;
 
+	if (raw == NULL)
+		raw = "";
+
 	/* Find a pointer to the last block. */
 	if (page->last_block)
 	{
@@ -2380,9 +2383,7 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 			/* No. We need to create a new struct node. */
 			new_stext_struct(ctx, page, le, standard, raw);
 		}
-		else if (le->u.s.down->standard != standard ||
-				(raw == NULL && le->u.s.down->raw[0] != 0) ||
-				(raw != NULL && strcmp(raw, le->u.s.down->raw) != 0))
+		else if (le->u.s.down->standard != standard || strcmp(raw, le->u.s.down->raw) != 0)
 		{
 			/* Yes, but it doesn't match the one we expect! */
 			fz_warn(ctx, "Mismatched structure type!");

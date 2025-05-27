@@ -2151,15 +2151,14 @@ static void
 js_dev_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard, const char *raw, int idx)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (raw == NULL)
+		raw = "";
 	if (js_try(J))
 		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "beginStructure")) {
 		js_copy(J, -2);
 		js_pushliteral(J, fz_structure_to_string(standard));
-		if (raw)
-			js_pushstring(J, raw);
-		else
-			js_pushnull(J);
+		js_pushstring(J, raw);
 		js_pushnumber(J, idx);
 		js_call(J, 3);
 		js_pop(J, 1);
