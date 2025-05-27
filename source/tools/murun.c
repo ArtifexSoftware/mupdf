@@ -5125,13 +5125,9 @@ static void ffi_Pixmap_detectDocument(js_State *J)
 		rethrow(J);
 
 	if (found)
-	{
 		ffi_pushquad(J, points);
-	} else {
-		/* Do nothing and Javascript will put undefined.
-		 * Apparently this is the kind of thing Javascript
-		 * does. */
-	}
+	else
+		js_pushnull(J);
 }
 
 static void ffi_Pixmap_decodeBarcode(js_State *J)
