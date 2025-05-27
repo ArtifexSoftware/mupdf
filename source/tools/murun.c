@@ -9597,15 +9597,21 @@ static void ffi_PDFAnnotation_setInteriorColor(js_State *J)
 	pdf_annot *annot = ffi_toannot(J, 0);
 	int i, n = fz_maxi(0, js_getlength(J, 1));
 	float color[4];
-	for (i = 0; i < n && i < 4; ++i) {
-		js_getindex(J, 1, i);
-		color[i] = js_tonumber(J, -1);
-		js_pop(J, 1);
+
+	if (n == 0 || n == 1 || n == 3 || n == 4)
+	{
+		for (i = 0; i < n && i < (int) nelem(color); ++i) {
+			js_getindex(J, 1, i);
+			color[i] = js_tonumber(J, -1);
+			js_pop(J, 1);
+		}
+		fz_try(ctx)
+			pdf_set_annot_interior_color(ctx, annot, n, color);
+		fz_catch(ctx)
+			rethrow(J);
 	}
-	fz_try(ctx)
-		pdf_set_annot_interior_color(ctx, annot, n, color);
-	fz_catch(ctx)
-		rethrow(J);
+	else
+		js_typeerror(J, "invalid number of components for Color");
 }
 
 static void ffi_PDFAnnotation_getOpacity(js_State *J)

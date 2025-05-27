@@ -574,7 +574,7 @@ of the border.
 
 .. method:: PDFAnnotation.prototype.getColor()
 
-	Get the annotation color, represented as an array of 1, 3, or 4 component values.
+	Get the annotation color, represented as an array of 0, 1, 3, or 4 component values.
 
 	:returns: `Color`
 
@@ -1114,7 +1114,7 @@ Interior Color
 
 .. method:: PDFAnnotation.prototype.getInteriorColor()
 
-	Gets the annotation interior color.
+	Get the annotation interior color, represented as an array of 0, 1, 3, or 4 component values.
 
 	:returns: `Color`
 
