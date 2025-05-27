@@ -1607,6 +1607,23 @@ export class Device extends Userdata<"fz_device"> {
 		"Luminosity",
 	]
 
+	static readonly BLEND_NORMAL = "Normal"
+	static readonly BLEND_MULTIPLY = "Multiply"
+	static readonly BLEND_SCREEN = "Screen"
+	static readonly BLEND_OVERLAY = "Overlay"
+	static readonly BLEND_DARKEN = "Darken"
+	static readonly BLEND_LIGHTEN = "Lighten"
+	static readonly BLEND_COLOR_DODGE = "ColorDodge"
+	static readonly BLEND_COLOR_BURN = "ColorBurn"
+	static readonly BLEND_HARD_LIGHT = "HardLight"
+	static readonly BLEND_SOFT_LIGHT = "SoftLight"
+	static readonly BLEND_DIFFERENCE = "Difference"
+	static readonly BLEND_EXCLUSION = "Exclusion"
+	static readonly BLEND_HUE = "Hue"
+	static readonly BLEND_SATURATION = "Saturation"
+	static readonly BLEND_COLOR = "Color"
+	static readonly BLEND_LUMINOSITY = "Luminosity"
+
 	constructor(pointer: Pointer<"fz_device">)
 	constructor(callbacks: DeviceFunctions)
 
