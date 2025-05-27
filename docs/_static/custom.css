@@ -8,13 +8,13 @@ dl.glossary > dt {
 
 /* sidebar logo and brand */
 .sidebar-logo {
-    max-width: 80px;
+	max-width: 80px;
 }
 .sidebar-brand-text {
-    font-size: 14px;
-    padding: 0;
-    margin: 10px 0;
-    text-align: center;
+	font-size: 14px;
+	padding: 0;
+	margin: 10px 0;
+	text-align: center;
 }
 
 /* discord link in footer */
@@ -23,45 +23,26 @@ dl.glossary > dt {
 
 /* blue h1 header */
 h1 {
-    padding: 5px 15px;
-    background-color: #007aff !important; /* override :target highlighting */
-    color: #fff;
-    border-radius: 5px;
-    margin-top: 16px;
-    margin-left: -10px;
+	padding: 5px 15px;
+	background-color: #007aff !important; /* override :target highlighting */
+	color: #fff;
+	border-radius: 5px;
+	margin-top: 16px;
+	margin-left: -10px;
 }
-
 /* theme icon buttons - invert color because they're on our blue background instead of white/black */
 .content-icon-container button {
 	filter: invert(100%);
 }
 
-/* colored h2 headers */
-/*
-section#static-properties h2, section#static-properties h2 a { background-color: #f46172; color: white !important }
-section#static-methods h2, section#static-methods h2 a { background-color: #f1632c; color: white !important }
-section#constructors h2, section#constructors h2 a { background-color: #ccbe44; color: white !important }
-section#instance-properties h2, section#instance-properties h2 a { background-color: #046172; color: white !important }
-section#instance-methods h2, section#instance-methods h2 a { background-color: #21632c; color: white !important }
-*/
-
 /* custom |tags| */
 .only_mutool, .only_mupdfjs {
-    font: bold 12px monospace;
-    padding: 5px 10px;
-    border-radius: 5px;
+	font: bold 12px monospace;
+	padding: 5px 10px;
+	border-radius: 5px;
 }
 .only_mutool { color: white; background-color: #2ab57c; }
 .only_mupdfjs { color: white; background-color: #2c5cbd; }
-
-/* license disclaimer in footer */
-.footer-disclaimer {
-	font-size: 10px;
-	margin-top: 30px;
-	padding: 10px;
-	border: 1px solid #0004;
-	color: #999;
-}
 
 /* Hide the "Made with Furo" text */
 .bottom-of-page .left-details { font-size: 0; }

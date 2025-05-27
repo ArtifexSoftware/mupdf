@@ -1,66 +1,48 @@
 # Building MuPDF Documentation
 
-This documentation relies on [Sphinx](https://www.sphinx-doc.org/en/master/) to publish HTML docs from markdown files written with [restructured text](https://en.wikipedia.org/wiki/ReStructuredText) (RST).
+This documentation relies on
+[Sphinx](https://www.sphinx-doc.org/en/master/)
+to publish HTML docs from source files written with
+[reStructuredText](https://docutils.sourceforge.io/rst.html)
+and [Markdown](https://myst-parser.readthedocs.io/en/latest/intro.html).
 
-## Sphinx version
+## Installing Sphinx
 
-This README assumes you have [Sphinx v5.0.2 installed](https://www.sphinx-doc.org/en/master/usage/installation.html) on your system.
+This README assumes you have [installed Sphinx](https://www.sphinx-doc.org/en/master/usage/installation.html) on your system.
 
+We recommend setting up a virtual environment:
 
-## Updating the documentation
+	python -m venv .venv
 
-Within the "docs" folder update the associated restructured text (`.rst`) files. These files represent the corresponding document pages.
+Activate the environment by sourcing the activation script:
 
+	source .venv/bin/activate
 
+In this environment run pip to install Sphinx and all the required modules.
+
+	pip install -r docs/requirements.txt
 
 ## Building HTML documentation
 
-- Ensure you have the `furo` theme installed:
+Within the virtual environment you can now build the documentation:
 
-`pip install furo`
+	sphinx-build docs build/docs
 
-Furo theme, Copyright (c) 2020 Pradyun Gedam <mail@pradyunsg.me>, thank you to:
+To do a fresh rebuild (in case files in the `_static` folder or the toc structure has changed):
 
-https://github.com/pradyunsg/furo/blob/main/LICENSE
+	sphinx-build -E -a docs build/docs
 
+## Live edit HTML documentation
 
-- From the "docs" location run:
+You can use [Sphinx Autobuild](https://pypi.org/project/sphinx-autobuild/) to rebuild
+the documentation on changes, with hot reloading in the browser.
 
-`sphinx-build -b html src build`
+	pip install sphinx-autobuild
+	sphinx-autobuild --open-browser docs build/docs
 
-> To force build all the stuff in the `_static` folder (e.g. CSS), do:
-> `sphinx-build -a -b html src build`
+## Using the Makefile targets
 
-This then creates the HTML documentation within the folder "build" in the root of "docs".
+We also have makefile targets and helper scripts to perform the above tasks:
 
-
-- Alternatively you can also use [Sphinx Autobuild](https://pypi.org/project/sphinx-autobuild/) and do:
-
-`sphinx-autobuild src _build/html`
-
-This will ensure that the documentation runs in a localhost and will also hot-reload changes.
-
-
-## Building PDF documentation
-
-
-- First ensure you have [rst2pdf](https://pypi.org/project/rst2pdf/) and
-[svglib](https://pypi.org/project/svglib/) installed:
-
-
-`python -m pip install rst2pdf`
-`python -m pip install svglib`
-
-
-- Then run:
-
-
-`sphinx-build -b pdf src build/pdf`
-
-This will then generate a single PDF for all of the documentation within `build/pdf`.
-
-
----
-
-
-For full details see: [Using Sphinx](https://www.sphinx-doc.org/en/master/usage/index.html)
+	make docs
+	make docs-live

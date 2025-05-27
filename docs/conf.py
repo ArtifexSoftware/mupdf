@@ -75,23 +75,6 @@ rst_prolog = """
 
 """
 
-XXX_rst_epilog = """
-
-.. raw:: html
-
-   <p class="footer-disclaimer">
-   This software is provided AS-IS with no warranty, either express or implied.
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.
-   Refer to licensing information at
-   <a href="https://www.artifex.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=footer-link">artifex.com</a>
-   or contact
-   Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA, for further information.
-   </p>
-
-"""
-
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = "furo"
@@ -104,6 +87,7 @@ html_domain_indices = False
 html_use_index = False
 html_split_index = False
 
+html_copy_source = False
 html_show_sourcelink = False
 html_show_sphinx = False
 html_show_copyright = True

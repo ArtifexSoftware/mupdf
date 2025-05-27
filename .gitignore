@@ -34,6 +34,7 @@ user.make
 *.so
 *.dll
 DerivedData
+.venv
 
 # PyMuPDF generated build files
 __pycache__
