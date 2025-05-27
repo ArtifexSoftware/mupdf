@@ -2,6 +2,6 @@ furo
 linkify-it-py
 myst-parser
 readthedocs-sphinx-search==0.3.2
-sphinx==7.4.7
+sphinx==8.2.3
 sphinxcontrib-googleanalytics
 sphinxcontrib-imagesvg

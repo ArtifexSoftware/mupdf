@@ -495,27 +495,17 @@ install: install-libs install-apps install-docs
 docs:
 	bash scripts/build-docs.sh
 
+docs-live:
+	bash scripts/build-docs-live.sh
+
 docs-clean:
-	rm -rf build/docs/html
-	rm -rf build/docs/doctree
+	rm -rf build/docs
+	rm -rf build/venv-docs
+	rm -rf build/.doctrees
 
 install-docs-html: docs
-	install -d $(DESTDIR)$(docdir)
-	install -d $(DESTDIR)$(docdir)/_images
-	install -d $(DESTDIR)$(docdir)/_static
-	install -d $(DESTDIR)$(docdir)/_static/styles
-	install -d $(DESTDIR)$(docdir)/_static/scripts
-	install -m 644 build/docs/html/*.html $(DESTDIR)$(docdir)
-	install -m 644 build/docs/html/*.inv $(DESTDIR)$(docdir)
-	install -m 644 build/docs/html/*.js $(DESTDIR)$(docdir)
-	install -m 644 build/docs/html/_images/* $(DESTDIR)$(docdir)/_images
-	install -m 644 build/docs/html/_static/*.ico $(DESTDIR)$(docdir)/_static
-	install -m 644 build/docs/html/_static/*.js $(DESTDIR)$(docdir)/_static
-	install -m 644 build/docs/html/_static/*.png $(DESTDIR)$(docdir)/_static
-	install -m 644 build/docs/html/_static/*.css $(DESTDIR)$(docdir)/_static
-	install -m 644 build/docs/html/_static/scripts/*.js $(DESTDIR)$(docdir)/_static/scripts
-	install -m 644 build/docs/html/_static/scripts/*.map $(DESTDIR)$(docdir)/_static/scripts
-	install -m 644 build/docs/html/_static/styles/*.css $(DESTDIR)$(docdir)/_static/styles
+	mkdir -p $(DESTDIR)$(docdir)
+	cp -r build/docs/* $(DESTDIR)$(docdir)
 
 tarball:
 	bash scripts/archive.sh
