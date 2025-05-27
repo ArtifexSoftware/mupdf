@@ -3677,7 +3677,10 @@ static void ffi_Archive_listEntry(js_State *J)
 		name = fz_list_archive_entry(ctx, arch, idx);
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, name);
+	if (name)
+		js_pushstring(J, name);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_Archive_hasEntry(js_State *J)
@@ -4065,6 +4068,8 @@ static void ffi_Document_getMetaData(js_State *J)
 
 	if (found)
 		js_pushstring(J, info);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_Document_setMetaData(js_State *J)
