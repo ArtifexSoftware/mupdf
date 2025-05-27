@@ -10986,6 +10986,8 @@ static void ffi_PDFAnnotation_getCalloutLine(js_State *J)
 			js_setindex(J, -2, i);
 		}
 	}
+	else
+		js_pushnull(J);
 }
 
 static void ffi_PDFAnnotation_setCalloutLine(js_State *J)
