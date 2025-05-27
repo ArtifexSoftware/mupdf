@@ -877,7 +877,7 @@ allow for a graphical line to point to an area on a page.
 
 	Returns the array of points.
 
-	:returns: Array of `Point`
+	:returns: Array of `Point` | null
 
 .. method:: PDFAnnotation.prototype.setCalloutPoint(p)
 
