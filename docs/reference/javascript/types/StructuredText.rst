@@ -73,7 +73,7 @@ Instance methods
 
 	.. code-block::
 
-		var sText = pdfPage.toStructuredText()
+		var sText = page.toStructuredText()
 		sText.walk({
 			beginLine: function (bbox, wmode, direction) {
 				console.log("beginLine", bbox, wmode, direction)
@@ -104,29 +104,72 @@ Instance methods
 			},
 		})
 
-.. method:: StructuredText.prototype.asJSON(scale)
+.. method:: StructuredText.prototype.asText()
 
-	Returns a JSON string representing the structured text data.
-
-	:param number scale: Optional scaling factor to multiply all the coordinates by.
+	Returns a plain text representation.
 
 	:returns: string
 
-	.. code-block::
-
-		var json = sText.asJSON()
-
 .. method:: StructuredText.prototype.asHTML(id)
 
-	Returns a string containing an HTML representation.
+	Returns a string containing an HTML rendering of the text.
 
 	:param number id:
 		Used to number the "id" on the top div tag (as ``"page" + id``).
 
 	:returns: string
 
-.. method:: StructuredText.prototype.asText()
+.. method:: StructuredText.prototype.asJSON(scale)
 
-	Returns a plain text representation.
+	Returns a JSON string representing the structured text data.
 
-	:returns: string
+	This is a simplified serialization of the information that
+	`StructuredText.prototype.walk()` provides.
+
+	Note: You must extract the structured text with "preserve-spans"!
+	If you forget to set this option, any font changes in the middle of the
+	line will not be present in the JSON output.
+
+	:param number scale: Optional scaling factor to multiply all the coordinates by.
+
+	:returns: string containing JSON of the following schema:
+
+		.. code-block:: typescript
+
+			type StructuredTextPage = {
+				blocks: StructuredTextBlock[]
+			}
+			type StructuredTextBlock = {
+				type: "image" | "text",
+				bbox: {
+					x: number,
+					y: number,
+					w: number,
+					h: number
+				},
+				lines: StructuredTextLine[],
+			}
+			type StructuredTextLine = {
+				wmode: 0 | 1,	// 0=horizontal, 1=vertical
+				bbox: {
+					x: number,
+					y: number,
+					w: number,
+					h: number
+				},
+				font: {
+					name: string,
+					family: "serif" | "sans-serif" | "monospace",
+					weight: "normal" | "bold",
+					style: "normal" | "italic",
+					size: number
+				},
+				// text origin point for first character in line
+				x: number,
+				y: number,
+				text: string
+			}
+
+	.. code-block::
+
+		var data = JSON.parse(page.toStructuredText("preserve-spans").asJSON())
