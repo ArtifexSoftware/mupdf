@@ -95,9 +95,9 @@ Instance methods
 .. method:: StrokeState.prototype.getDashPattern()
 
 	Get the dash pattern as an array of numbers specifying alternating
-	lengths of dashes and gaps.
+	lengths of dashes and gaps, or null if none set.
 
-	:returns: Array of number
+	:returns: Array of number | null
 
 	.. code-block:: javascript
 
