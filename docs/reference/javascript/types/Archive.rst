@@ -22,8 +22,8 @@ Constructors
 		var archive2 = new mupdf.Archive("example2.tar")
 		var archive3 = new mupdf.Archive("images/")
 
-Instance properties
--------------------
+Instance methods
+-----------------
 
 .. method:: Archive.prototype.getFormat()
 

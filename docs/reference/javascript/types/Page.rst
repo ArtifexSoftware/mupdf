@@ -19,8 +19,8 @@ Constructors
 
 Page instances are returned by `Document.prototype.loadPage()`.
 
-Instance properties
--------------------
+Instance methods
+----------------
 
 .. method:: Page.prototype.getBounds(box)
 
