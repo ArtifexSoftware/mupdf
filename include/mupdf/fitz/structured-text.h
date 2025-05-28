@@ -817,4 +817,153 @@ int fz_is_unicode_whitespace(int c);
 */
 int fz_is_unicode_hyphen(int c);
 
+typedef struct fz_search fz_search;
+
+typedef enum
+{
+	FZ_SEARCH_EXACT = 0,
+	FZ_SEARCH_IGNORE_CASE = 1,
+	FZ_SEARCH_IGNORE_DIACRITICS = 2,
+	FZ_SEARCH_REGEXP = 4,
+	FZ_SEARCH_KEEP_WHITESPACE = 8,
+	FZ_SEARCH_KEEP_LINES = 16,
+	FZ_SEARCH_KEEP_PARAGRAPHS = 32,
+	FZ_SEARCH_KEEP_HYPHENS = 64
+} fz_search_options;
+
+/**
+	Create a new search.
+*/
+fz_search *fz_new_search(fz_context *ctx);
+
+/**
+	Change the options/needle to be used for a search.
+
+	If the needle is invalid (in the case of regexps, it fails to compile)
+	it will throw an error.
+
+	If the needle changes, the current position of the search within the
+	text is kept.
+
+	If the options change, the search position may revert to the beginning
+	of the current page.
+*/
+void fz_search_set_options(fz_context *ctx, fz_search *search, fz_search_options options, const char *needle);
+
+typedef enum
+{
+	/* Ran out of stext to search. Please feed me some more. */
+	FZ_SEARCH_MORE_INPUT = 0,
+
+	/* We have a match. match structure has been populated. */
+	FZ_SEARCH_MATCH = 1,
+
+	/* Search complete */
+	FZ_SEARCH_COMPLETE
+} fz_search_reason;
+
+typedef struct
+{
+	fz_quad quad;
+	int seq;
+	int chapter_num;
+	int page_num;
+} fz_match_quad;
+
+
+typedef struct
+{
+	fz_stext_struct *struc;
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+} fz_stext_position;
+
+typedef struct
+{
+	int num_quads;
+	fz_match_quad *quads;
+	fz_stext_position begin;
+	fz_stext_position end;
+}
+fz_search_result_details;
+
+/**
+	Structure used to represent the 'result' of a search.
+*/
+typedef struct
+{
+	fz_search_reason reason;
+	union
+	{
+		struct
+		{
+			int seq_needed;
+		} more_input;
+		struct
+		{
+			fz_search_result_details *result;
+		} match;
+	} u;
+} fz_search_result;
+
+/**
+	Continue searching for the next match.
+
+	Will return with a search result.
+
+	If it asks for more stext, feed it with the requested page (or
+	NULL to tell it it's the end of the document) before calling
+	this again.
+
+	Several pages may be requested before searching begins.
+*/
+fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search);
+
+/**
+	Continue searching backwards for the next match.
+
+	Will return asking for more stext, having matched, or having
+	completed the search.
+
+	If it asks for more stext, then any further calls to this
+	function will give the same result, until stext is supplied,
+	or a NULL stext is fed in to indicate the end of the document.
+
+	Several pages may be requested before searching begins.
+*/
+fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search);
+
+/**
+	Supply more stext to be searched; ownership of the stext page is
+	passed in.
+
+	This can be called immediately after an fz_search has been created
+	to give it the first page to search, or it will be requested as soon
+	as the first search operation is done on that page.
+
+	If we are calling this in response to fz_search_forwards telling
+	us that we need another page, page will be the stext for the next
+	page.
+
+	If we are calling this in response to fz_search_backwards telling
+	is that we need another page, page will be the stext for the previous
+	page.
+
+	seq is a simple integer value that will be parrotted back to us in the
+	match (typically the page number within the document).
+
+	The search function will retain the page for a while. When it has
+	finished with it, it will call fz_drop_stext_page() to release it.
+
+	Pass page = NULL to indicate that there are no more pages (in this
+	direction) to be fed.
+*/
+void fz_feed_search(fz_context *ctx, fz_search *search, fz_stext_page *page, int seq);
+
+/**
+	Free the search structures.
+*/
+void fz_drop_search(fz_context *ctx, fz_search *search);
+
 #endif
