@@ -318,6 +318,7 @@ enum
 */
 typedef struct
 {
+	int refs;
 	fz_pool *pool;
 	fz_rect mediabox;
 	fz_stext_block *first_block;

@@ -227,6 +227,7 @@ fz_new_stext_page(fz_context *ctx, fz_rect mediabox)
 	fz_try(ctx)
 	{
 		page = fz_pool_alloc(ctx, pool, sizeof(*page));
+		page->refs = 1;
 		page->pool = pool;
 		page->mediabox = mediabox;
 		page->first_block = NULL;
@@ -267,10 +268,19 @@ drop_run(fz_context *ctx, fz_stext_block *block)
 	}
 }
 
+fz_stext_page *
+fz_keep_stext_page(fz_context *ctx, fz_stext_page *page)
+{
+	return fz_keep_imp(ctx, page, &page->refs);
+}
+
 void
 fz_drop_stext_page(fz_context *ctx, fz_stext_page *page)
 {
-	if (page)
+	if (page == NULL)
+		return;
+
+	if (fz_drop_imp(ctx, page, &page->refs))
 	{
 		drop_run(ctx, page->first_block);
 		fz_drop_pool(ctx, page->pool);
