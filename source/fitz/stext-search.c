@@ -1087,11 +1087,8 @@ transform_text_with_index(fz_context *ctx, fz_text_transform transform, const ch
 	return output;
 }
 
-/* Will become a public function shortly. */
-typedef int (fz_match_callback_fn)(fz_context *ctx, void *opaque, int num_quads, fz_quad *hit_bbox, int chapter, int page);
-
-static int
-fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque)
+int
+fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options)
 {
 	fz_search *search = fz_new_search(ctx);
 	fz_search_result res;
@@ -1104,7 +1101,7 @@ fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle,
 
 	fz_try(ctx)
 	{
-		fz_search_set_options(ctx, search, FZ_SEARCH_IGNORE_CASE, needle);
+		fz_search_set_options(ctx, search, options, needle);
 
 		fz_feed_search(ctx, search, fz_keep_stext_page(ctx, page), 0);
 
@@ -1164,7 +1161,7 @@ fz_search_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle
 {
 	match2search_data md = { cb, opaque };
 
-	return fz_match_stext_page_cb(ctx, page, needle, match2search, &md);
+	return fz_match_stext_page_cb(ctx, page, needle, match2search, &md, FZ_SEARCH_IGNORE_CASE);
 }
 
 typedef struct
@@ -1198,55 +1195,6 @@ oldsearch_cb(fz_context *ctx, void *opaque, int num_quads, fz_quad *quads)
 	return 0;
 }
 
-#if 0
-static fz_text_transform transform_from_style(fz_context *ctx, fz_match_style style, const fz_match_finder **finder, void **find_arg)
-{
-	fz_text_transform trans = FZ_TEXT_TRANSFORM_NONE;
-
-	if (style & FZ_MATCH_KEEP_WHITESPACE)
-		trans |= FZ_TEXT_TRANSFORM_KEEP_WHITESPACE;
-	if (style & FZ_MATCH_KEEP_LINES)
-		trans |= FZ_TEXT_TRANSFORM_KEEP_LINES;
-	if (style & FZ_MATCH_KEEP_PARAGRAPHS)
-		trans |= FZ_TEXT_TRANSFORM_KEEP_PARAGRAPHS;
-
-	if (style & FZ_MATCH_REGEXP)
-	{
-		if (style & FZ_MATCH_IGNORE_CASE)
-		{
-			*finder = &regexp_finder_insensitive;
-			style &= ~FZ_MATCH_IGNORE_CASE;
-		}
-		else
-			*finder = &regexp_finder;
-	}
-	else
-	{
-		*finder = &simple_finder;
-		*find_arg = NULL;
-	}
-
-	switch (style & (FZ_MATCH_IGNORE_CASE | FZ_MATCH_IGNORE_DIACRITICS))
-	{
-	default:
-	case FZ_MATCH_EXACT:
-		trans |= FZ_TEXT_TRANSFORM__NORMAL;
-		break;
-	case FZ_MATCH_IGNORE_CASE:
-		trans |= FZ_TEXT_TRANSFORM__IGNORE_CASE;
-		break;
-	case FZ_MATCH_IGNORE_DIACRITICS:
-		trans |= FZ_TEXT_TRANSFORM__IGNORE_DIACRITICS;
-		break;
-	case FZ_MATCH_IGNORE_CASE | FZ_MATCH_IGNORE_DIACRITICS:
-		trans |= FZ_TEXT_TRANSFORM__IGNORE_CASE_DIACRITICS;
-		break;
-	}
-
-	return trans;
-}
-#endif
-
 int
 fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads)
 {
@@ -1258,7 +1206,25 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, i
 	data.max_quads = max_quads;
 	data.fill = 0;
 	data.hit = 0;
-	(void)fz_match_stext_page_cb(ctx, page, needle, match2search, &md);
+	(void)fz_match_stext_page_cb(ctx, page, needle, match2search, &md, FZ_SEARCH_IGNORE_CASE);
+
+	return data.fill; /* Return the number of quads we have read */
+}
+
+int
+fz_match_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads, fz_search_options options)
+{
+	oldsearch_data data;
+	match2search_data md = { oldsearch_cb, &data };
+
+	data.hit_mark = hit_mark;
+	data.quads = quads;
+	data.max_quads = max_quads;
+	data.fill = 0;
+	data.hit = 0;
+
+	(void)fz_match_stext_page_cb(ctx, page, needle, match2search, &md, options);
+
 	return data.fill; /* Return the number of quads we have read */
 }
 

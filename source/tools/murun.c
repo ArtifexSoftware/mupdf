@@ -4541,13 +4541,14 @@ typedef struct {
 	int error;
 } search_state;
 
-static int hit_callback(fz_context *ctx, void *opaque, int quads, fz_quad *quad)
+static int hit_callback(fz_context *ctx, void *opaque, int quads, fz_quad *quad, int chapter, int page)
 {
 	search_state *state = (search_state *) opaque;
 	int i;
 
 	if (state->hits >= state->max_hits)
 		return 1;
+	/* FIXME: chapter/page */
 
 	if (js_try(state->J))
 	{
@@ -4579,7 +4580,7 @@ static void ffi_Page_search(js_State *J)
 	js_newarray(J);
 
 	fz_try(ctx)
-		fz_search_page_cb(ctx, page, needle, hit_callback, &state);
+		fz_match_page_cb(ctx, page, needle, hit_callback, &state, FZ_SEARCH_IGNORE_CASE);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -6198,7 +6199,7 @@ static void ffi_DisplayList_search(js_State *J)
 	js_newarray(J);
 
 	fz_try(ctx)
-		fz_search_display_list_cb(ctx, list, needle, hit_callback, &state);
+		fz_match_display_list_cb(ctx, list, needle, hit_callback, &state, FZ_SEARCH_IGNORE_CASE);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -6370,7 +6371,7 @@ static void ffi_StructuredText_search(js_State *J)
 	js_newarray(J);
 
 	fz_try(ctx)
-		fz_search_stext_page_cb(ctx, text, needle, hit_callback, &state);
+		fz_match_stext_page_cb(ctx, text, needle, hit_callback, &state, FZ_SEARCH_IGNORE_CASE);
 	fz_catch(ctx)
 		rethrow(J);
 

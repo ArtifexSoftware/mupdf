@@ -146,6 +146,10 @@ int fz_search_page(fz_context *ctx, fz_page *page, const char *needle, int *hit_
 int fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max);
 int fz_search_chapter_page_number(fz_context *ctx, fz_document *doc, int chapter, int page, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max);
 int fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max);
+int fz_match_page(fz_context *ctx, fz_page *page, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max, fz_search_options options);
+int fz_match_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max, fz_search_options options);
+int fz_match_chapter_page_number(fz_context *ctx, fz_document *doc, int chapter, int page, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max, fz_search_options options);
+int fz_match_display_list(fz_context *ctx, fz_display_list *list, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max, fz_search_options options);
 
 /**
 	Search for the 'needle' text on the page.
@@ -154,6 +158,10 @@ int fz_search_page_cb(fz_context *ctx, fz_page *page, const char *needle, fz_sea
 int fz_search_page_number_cb(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_search_callback_fn *cb, void *opaque);
 int fz_search_chapter_page_number_cb(fz_context *ctx, fz_document *doc, int chapter, int page, const char *needle, fz_search_callback_fn *cb, void *opaque);
 int fz_search_display_list_cb(fz_context *ctx, fz_display_list *list, const char *needle, fz_search_callback_fn *cb, void *opaque);
+int fz_match_page_cb(fz_context *ctx, fz_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options);
+int fz_match_page_number_cb(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options);
+int fz_match_chapter_page_number_cb(fz_context *ctx, fz_document *doc, int chapter, int page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options);
+int fz_match_display_list_cb(fz_context *ctx, fz_display_list *list, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options);
 
 /**
 	Parse an SVG document into a display-list.
