@@ -603,6 +603,16 @@ const char *postfix_js =
 	"			dict[names[i].asString()] = names[i+1]\n"
 	"}\n"
 	"mupdf.Device = function Device(callbacks) { return callbacks }\n"
+	"mupdf.LinkDestination = function LinkDestination(c,p,t,x,y,w,h,z) {\n"
+	"	this.chapter = c | 0\n"
+	"	this.page = p | 0\n"
+	"	this.type = t || \"Fit\"\n"
+	"	this.x = x\n"
+	"	this.y = y\n"
+	"	this.width = w\n"
+	"	this.height = h\n"
+	"	this.zoom = z\n"
+	"}\n"
 ;
 
 struct event_cb_data

@@ -1847,6 +1847,48 @@ export type DocumentPermission =
 	"assemble" |
 	"print-hq"
 
+export class LinkDestination {
+	static readonly LINK_DEST: LinkDestType[] = [
+		"Fit",
+		"FitB",
+		"FitH",
+		"FitBH",
+		"FitV",
+		"FitBV",
+		"FitR",
+		"XYZ",
+	]
+
+	static readonly FIT = "Fit"
+	static readonly FIT_B = "FitB"
+	static readonly FIT_H = "FitH"
+	static readonly FIT_BH = "FitBH"
+	static readonly FIT_V = "FitV"
+	static readonly FIT_BV = "FitBV"
+	static readonly FIT_R = "FitR"
+	static readonly XYZ = "XYZ"
+
+	type: LinkDestType
+	chapter: number
+	page: number
+	x: number
+	y: number
+	width: number
+	height: number
+	zoom: number
+
+	constructor(chapter=0, page=0, type="Fit", x=NaN, y=NaN, width=NaN, height=NaN, zoom=NaN) {
+		this.chapter = chapter
+		this.page = page
+		this.type = type
+		this.x = x
+		this.y = y
+		this.width = width
+		this.height = height
+		this.zoom = zoom
+	}
+}
+
 export class Document extends Userdata<"any_document"> {
 	static override readonly _drop = libmupdf._wasm_drop_document
 
@@ -1880,17 +1922,6 @@ export class Document extends Userdata<"any_document"> {
 		"assemble": "a".charCodeAt(0),
 		"print-hq": "h".charCodeAt(0),
 	}
-
-	static readonly LINK_DEST: LinkDestType[] = [
-		"Fit",
-		"FitB",
-		"FitH",
-		"FitBH",
-		"FitV",
-		"FitBV",
-		"FitR",
-		"XYZ",
-	]
 
 	static openDocument(from: Buffer | ArrayBuffer | Uint8Array | Stream | string, magic?: string): Document {
 		let pointer = 0 as Pointer<"any_document">
