@@ -958,6 +958,7 @@
     <ClCompile Include="..\..\source\tools\mubar.c" />
     <ClCompile Include="..\..\source\tools\muconvert.c" />
     <ClCompile Include="..\..\source\tools\mudraw.c" />
+    <ClCompile Include="..\..\source\tools\mugrep.c" />
     <ClCompile Include="..\..\source\tools\murun.c" />
     <ClCompile Include="..\..\source\tools\mutrace.c" />
     <ClCompile Include="..\..\source\tools\pdfbake.c" />

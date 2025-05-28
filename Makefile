@@ -335,6 +335,7 @@ MUTOOL_SRC += source/tools/muconvert.c
 MUTOOL_SRC += source/tools/mudraw.c
 MUTOOL_SRC += source/tools/murun.c
 MUTOOL_SRC += source/tools/mutrace.c
+MUTOOL_SRC += source/tools/mugrep.c
 MUTOOL_SRC += source/tools/mubar.c
 MUTOOL_SRC += source/tools/cmapdump.c
 MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
