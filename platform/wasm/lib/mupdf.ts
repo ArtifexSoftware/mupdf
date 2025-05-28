@@ -461,6 +461,12 @@ function fromColorArray(n: number, ptr: Pointer<"float">): number[] {
 	return color
 }
 
+function fromStringOrNull(ptr: Pointer<"char">): string | null {
+	if (ptr === 0)
+		return null
+	return libmupdf.UTF8ToString(ptr)
+}
+
 function fromString(ptr: Pointer<"char">): string {
 	return libmupdf.UTF8ToString(ptr)
 }
@@ -2329,7 +2335,7 @@ export class PDFDocument extends Document {
 	}
 
 	getLanguage() {
-		return fromString(libmupdf._wasm_pdf_document_language(this.pointer))
+		return fromStringOrNull(libmupdf._wasm_pdf_document_language(this.pointer))
 	}
 
 	setLanguage(lang: string) {
@@ -3256,7 +3262,7 @@ export class PDFAnnotation extends Userdata<"pdf_annot"> {
 	}
 
 	getLanguage() {
-		return fromString(libmupdf._wasm_pdf_annot_language(this.pointer))
+		return fromStringOrNull(libmupdf._wasm_pdf_annot_language(this.pointer))
 	}
 
 	setLanguage(lang: string) {
@@ -3505,7 +3511,7 @@ export class PDFAnnotation extends Userdata<"pdf_annot"> {
 				fromPoint((_wasm_point+0) << 2 as Pointer<"fz_point">),
 				fromPoint((_wasm_point+1) << 2 as Pointer<"fz_point">)
 			]
-		return undefined
+		return null
 	}
 
 	setCalloutLine(line: Point[]) {
