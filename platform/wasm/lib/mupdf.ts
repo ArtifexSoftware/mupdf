@@ -2105,9 +2105,12 @@ interface OutlineItem {
 export class OutlineIterator extends Userdata<"fz_outline_iterator"> {
 	static override readonly _drop = libmupdf._wasm_drop_outline_iterator
 
-	static readonly RESULT_DID_NOT_MOVE = -1
-	static readonly RESULT_AT_ITEM = 0
-	static readonly RESULT_AT_EMPTY = 1
+	static readonly ITERATOR_DID_NOT_MOVE = -1
+	static readonly ITERATOR_AT_ITEM = 0
+	static readonly ITERATOR_AT_EMPTY = 1
+
+	static readonly FLAG_BOLD = 1
+	static readonly FLAG_ITALIC = 2
 
 	item() {
 		let item = libmupdf._wasm_outline_iterator_item(this.pointer)
