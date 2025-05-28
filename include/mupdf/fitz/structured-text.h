@@ -732,5 +732,9 @@ fz_device *fz_new_ocr_device(fz_context *ctx, fz_device *target, fz_matrix ctm, 
 
 fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, const fz_stext_options *opts);
 
+/**
+	Simple function to return if a given unicode char is equivalent to a space.
+*/
+int fz_is_unicode_space_equivalent(int c);
 
 #endif

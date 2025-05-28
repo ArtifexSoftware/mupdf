@@ -519,6 +519,33 @@ fz_copy_rectangle(fz_context *ctx, fz_stext_page *page, fz_rect area, int crlf)
 
 /* String search */
 
+int
+fz_is_unicode_space_equivalent(int c)
+{
+	switch (c)
+	{
+	case 0xa0:	/* NO-BREAK-SPACE */
+	case 0x1680:	/* OGHAM SPACE MARK */
+	case 0x2000:	/* EN QUAD */
+	case 0x2001:	/* EM QUAD */
+	case 0x2002:	/* EN SPACE */
+	case 0x2003:	/* EM SPACE */
+	case 0x2004:	/* THREE-PER-EM-SPACE */
+	case 0x2005:	/* FOUR-PER-EM-SPACE */
+	case 0x2006:	/* SIX-PER-EM-SPACE */
+	case 0x2007:	/* FIGURE-SPACE */
+	case 0x2008:	/* PUNCTUATION-SPACE */
+	case 0x2009:	/* THIN-SPACE */
+	case 0x200A:	/* HAIR-SPACE */
+	case 0x202F:	/* NARROW-NO-BREAK-SPACE */
+	case 0x205F:	/* MEDIUM-MATHEMATICAL-SPACE */
+	case 0x3000:	/* IDEOGRAPHIC-SPACE */
+		return 1;
+	}
+
+	return 0;
+}
+
 static inline int canon(int c)
 {
 	// Map full-width ASCII forms to ASCII:
