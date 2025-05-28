@@ -535,10 +535,9 @@ Resources
 	Create a `PDFObject` from the `Font` object as a simple font.
 
 	:param Font font:
-	:param string encoding:
-		The encoding to use. Encoding is either "Latin"
-		(CP-1252), "Greek" (ISO-8859-7), or "Cyrillic"
-		(KOI-8U). The default is "Latin".
+	:param "Latin" | "Greek" | "Cyrillic" encoding: Which 8-bit encoding to use. Defaults to "Latin".
+
+	See `Font.SIMPLE_ENCODING_LATIN`, etc.
 
 	:returns: `PDFObject`
 

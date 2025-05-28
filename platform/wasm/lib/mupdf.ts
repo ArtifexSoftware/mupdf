@@ -842,6 +842,10 @@ export class Font extends Userdata<"fz_font"> {
 		"Cyrillic"
 	]
 
+	static readonly SIMPLE_ENCODING_LATIN = "Latin"
+	static readonly SIMPLE_ENCODING_GREEK = "Greek"
+	static readonly SIMPLE_ENCODING_CYRILLIC = "Cyrillic"
+
 	static readonly ADOBE_CNS = 0
 	static readonly ADOBE_GB = 1
 	static readonly ADOBE_JAPAN = 2
