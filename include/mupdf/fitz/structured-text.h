@@ -737,4 +737,9 @@ fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, c
 */
 int fz_is_unicode_space_equivalent(int c);
 
+/**
+	Simple function to return if a given unicode char is whitespace.
+*/
+int fz_is_unicode_whitespace(int c);
+
 #endif

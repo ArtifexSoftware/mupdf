@@ -546,6 +546,26 @@ fz_is_unicode_space_equivalent(int c)
 	return 0;
 }
 
+static int my_isspace(int ch)
+{
+	/* \t, \n, \v, \f, \r, space */
+	return (ch == 9 || ch == 10 || ch == 11 || ch == 12 || ch == 13 || ch == 32);
+}
+
+int fz_is_unicode_whitespace(int c)
+{
+	if (fz_is_unicode_space_equivalent(c))
+		return 1;
+	if (c == 0x2028)
+		return 1; /* Line separator */
+	if (c == 0x2029)
+		return 1; /* Paragraph separator */
+	if (c > 0 && c < 256 && my_isspace(c))
+		return 1;
+
+	return 0;
+}
+
 static inline int canon(int c)
 {
 	// Map full-width ASCII forms to ASCII:
