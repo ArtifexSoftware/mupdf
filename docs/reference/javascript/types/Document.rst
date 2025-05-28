@@ -12,6 +12,45 @@ and a handful of image formats.
 
 	|no_new|
 
+Constants
+---------
+
+Permission flags for `Document.prototype.hasPermission`:
+
+.. data:: Document.PERMISSION_PRINT
+
+	``"print"`` -- Print the document.
+
+.. data:: Document.PERMISSION_EDIT
+
+	``"edit"`` -- Modify the contents of the document by operations other than those controlled by the other flags: (annotate, form, assemble).
+
+.. data:: Document.PERMISSION_COPY
+
+	``"edit"`` -- Copy or otherwise extract text from the document.
+
+.. data:: Document.PERMISSION_ANNOTATE
+
+	``"annotate"`` -- Add or modify annotations.
+
+.. data:: Document.PERMISSION_FORM
+
+	``"form"`` -- Fill in existing form fields.
+
+.. data:: Document.PERMISSION_ACCESSIBILITY
+
+	``"accessibility"`` --
+	Copy or otherwise extract text from the document in support of accessibility.
+
+.. data:: Document.PERMISSION_ASSEMBLE
+
+	``"assemble"`` -- Insert, rotate, or delete pages and create bookmarks.
+
+.. data:: Document.PERMISSION_PRINT_HQ
+
+	``"print-hq"`` -- Print the document to a representation from which a faithful digital
+	copy of the PDF content could be generated.
+
 Static methods
 --------------
 
@@ -74,37 +113,19 @@ Instance methods
 
 .. method:: Document.prototype.hasPermission(permission)
 
-	Returns ``true`` if the document has permission for the supplied permission string parameter.
+	Check if a user is allowed permission to perform certain operations on the document.
 
-	:param string permission: The permission to seek for, e.g. "edit".
+	:param "print" | "edit" | "copy" | "annotate" | "form" | "accessibility" | "assemble" | "print-hq" permission:
+
+	See `Document.PERMISSION_PRINT`, etc.
+
 
 	:returns: boolean
 
-	.. list-table::
-		:header-rows: 1
-
-		* - **String**
-		  - **Description**
-		* - print
-		  - Can print
-		* - edit
-		  - Can edit
-		* - copy
-		  - Can copy
-		* - annotate
-		  - Can annotate
-		* - form
-		  - Can fill out forms
-		* - accessibility
-		  - Can copy for accessibility
-		* - assemble
-		  - Can manage document pages
-		* - print-hq
-		  - Can print high-quality
-
 	.. code-block::
 
-		var canEdit = document.hasPermission("edit")
+		var canEdit1 = document.hasPermission("edit")
+		var canEdit2 = document.hasPermission(Document.PERMISSION_EDIT)
 
 .. method:: Document.prototype.getMetaData(key)
 

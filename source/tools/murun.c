@@ -4052,19 +4052,27 @@ static void ffi_Document_hasPermission(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
-	const char *perm = js_tostring(J, 1);
+	const char *perm;
 	int flag = 0;
 	int result = 0;
 
-	if (!strcmp(perm, "print")) flag = FZ_PERMISSION_PRINT;
-	else if (!strcmp(perm, "edit")) flag = FZ_PERMISSION_EDIT;
-	else if (!strcmp(perm, "copy")) flag = FZ_PERMISSION_COPY;
-	else if (!strcmp(perm, "annotate")) flag = FZ_PERMISSION_ANNOTATE;
-	else if (!strcmp(perm, "form")) flag = FZ_PERMISSION_FORM;
-	else if (!strcmp(perm, "accessibility")) flag = FZ_PERMISSION_ACCESSIBILITY;
-	else if (!strcmp(perm, "assemble")) flag = FZ_PERMISSION_ASSEMBLE;
-	else if (!strcmp(perm, "print-hq")) flag = FZ_PERMISSION_PRINT_HQ;
-	else js_error(J, "invalid permission name");
+	if (js_isnumber(J, 1))
+	{
+		flag = js_tonumber(J, 1);
+	}
+	else
+	{
+		perm = js_tostring(J, 1);
+		if (!strcmp(perm, "print")) flag = FZ_PERMISSION_PRINT;
+		else if (!strcmp(perm, "edit")) flag = FZ_PERMISSION_EDIT;
+		else if (!strcmp(perm, "copy")) flag = FZ_PERMISSION_COPY;
+		else if (!strcmp(perm, "annotate")) flag = FZ_PERMISSION_ANNOTATE;
+		else if (!strcmp(perm, "form")) flag = FZ_PERMISSION_FORM;
+		else if (!strcmp(perm, "accessibility")) flag = FZ_PERMISSION_ACCESSIBILITY;
+		else if (!strcmp(perm, "assemble")) flag = FZ_PERMISSION_ASSEMBLE;
+		else if (!strcmp(perm, "print-hq")) flag = FZ_PERMISSION_PRINT_HQ;
+		else js_error(J, "invalid permission name");
+	}
 
 	fz_try(ctx)
 		result = fz_has_permission(ctx, doc, flag);

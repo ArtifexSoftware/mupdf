@@ -1861,6 +1861,15 @@ export class Document extends Userdata<"any_document"> {
 	static readonly META_INFO_CREATIONDATE = "info:CreationDate"
 	static readonly META_INFO_MODIFICATIONDATE = "info:ModDate"
 
+	static readonly PERMISSION_PRINT = "print"
+	static readonly PERMISSION_COPY = "copy"
+	static readonly PERMISSION_EDIT = "eedit"
+	static readonly PERMISSION_ANNOTATE = "annotate"
+	static readonly PERMISSION_FORM = "form"
+	static readonly PERMISSION_ACCESSIBILITY = "accessibility"
+	static readonly PERMISSION_ASSEMBLE = "assemble"
+	static readonly PERMISSION_PRINT_HQ = "print-hq"
+
 	static readonly PERMISSION: Record<DocumentPermission,number> = {
 		"print": "p".charCodeAt(0),
 		"copy": "c".charCodeAt(0),
@@ -1949,7 +1958,7 @@ export class Document extends Userdata<"any_document"> {
 	}
 
 	hasPermission(perm: DocumentPermission) {
-		let perm_ix = Document.PERMISSION[perm]
+		let perm_ix = (typeof perm === "number") ? perm : Document.PERMISSION[perm]
 		return !!libmupdf._wasm_has_permission(this.pointer, perm_ix)
 	}
 
