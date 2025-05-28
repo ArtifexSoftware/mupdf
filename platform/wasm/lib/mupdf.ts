@@ -2216,6 +2216,12 @@ export class Page extends Userdata<"any_page"> {
 		"ArtBox"
 	]
 
+	static readonly MEDIA_BOX = "MediaBox"
+	static readonly CROP_BOX = "CropBox"
+	static readonly BLEED_BOX = "BleedBox"
+	static readonly TRIM_BOX = "TrimBox"
+	static readonly ART_BOX = "ArtBox"
+
 	isPDF() {
 		return this instanceof PDFPage
 	}

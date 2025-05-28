@@ -12673,7 +12673,6 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "Page", "BLEED_BOX", FZ_BLEED_BOX);
 		jsB_enum(J, "Page", "TRIM_BOX", FZ_TRIM_BOX);
 		jsB_enum(J, "Page", "ART_BOX", FZ_ART_BOX);
-		jsB_enum(J, "Page", "UNKNOWN_BOX", FZ_UNKNOWN_BOX);
 
 		jsB_enum(J, "Pixmap", "DESKEW_BORDER_INCREASE", FZ_DESKEW_BORDER_INCREASE);
 		jsB_enum(J, "Pixmap", "DESKEW_BORDER_MAINTAIN", FZ_DESKEW_BORDER_MAINTAIN);

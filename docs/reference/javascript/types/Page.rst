@@ -19,6 +19,17 @@ Constructors
 
 Page instances are returned by `Document.prototype.loadPage()`.
 
+Constants
+---------
+
+The :term:`page box` types:
+
+.. data:: Page.MEDIA_BOX
+.. data:: Page.CROP_BOX
+.. data:: Page.BLEED_BOX
+.. data:: Page.TRIM_BOX
+.. data:: Page.ART_BOX
+
 Instance methods
 ----------------
 
