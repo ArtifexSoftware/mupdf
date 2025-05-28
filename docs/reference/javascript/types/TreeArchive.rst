@@ -18,8 +18,8 @@ Constructors
 
 		var treeArchive = new mupdf.TreeArchive()
 
-Instance properties
--------------------
+Instance methods
+----------------
 
 .. method:: TreeArchive.prototype.add(name, buffer)
 

@@ -93,7 +93,7 @@ Instance methods
 
 .. method:: Pixmap.prototype.getAlpha()
 
-	*True* if alpha channel is present.
+	Returns whether an alpha channel is present.
 
 	:returns: boolean
 

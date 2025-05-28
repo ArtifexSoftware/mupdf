@@ -25,8 +25,8 @@ Constructors
 
 		var story = new mupdf.Story(<contents>, <css>, <em>, <archive>)
 
-Instance properties
--------------------
+Instance methods
+----------------
 
 .. method:: Story.prototype.document()
 

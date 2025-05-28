@@ -18,8 +18,8 @@ Constructors
 
 		var multiArchive = new mupdf.MultiArchive()
 
-Instance properties
--------------------
+Instance methods
+----------------
 
 .. method:: MultiArchive.prototype.mountArchive(subArchive, path)
 
