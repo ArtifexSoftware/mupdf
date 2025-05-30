@@ -354,6 +354,8 @@ def build():
         names = [
                 pipcl.get_soname(f'{build_dir()}/libmupdf.so'),     # C.
                 pipcl.get_soname(f'{build_dir()}/libmupdfcpp.so'),  # C++.
+                f'{build_dir()}/libmupdf.so',                       # C symlink.
+                f'{build_dir()}/libmupdfcpp.so',                    # C++ symlink.
                 f'{build_dir()}/_mupdf.so',                         # Python internals.
                 f'{build_dir()}/mupdf.py',                          # Python.
                 ]
