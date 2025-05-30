@@ -6,6 +6,7 @@ import io
 import os
 import pickle
 import re
+import shlex
 import textwrap
 
 import jlib
@@ -5311,6 +5312,14 @@ def cpp_source(
                 '-D', 'MUPDF_WRAP_LIBCLANG',
                 '-D', 'FZ_FUNCTION=',
                 ]
+
+        # In some circumstances (e.g. when cross-compiling when
+        # libclang doesn't have the right include directories by
+        # default) the includes are provided externally:
+        libclang_args = os.environ.get('MUPDF_LIBCLANG_ARGS', '')
+        if libclang_args:
+            args += shlex.split(libclang_args)
+
         tu = index.parse(
                 temp_h,
                 args = args,
