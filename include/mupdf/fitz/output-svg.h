@@ -31,6 +31,7 @@
 enum {
 	FZ_SVG_TEXT_AS_PATH = 0,
 	FZ_SVG_TEXT_AS_TEXT = 1,
+	FZ_SVG_TEXT_AS_PATH_AND_TEXT = 2,
 };
 
 /**
@@ -54,6 +55,8 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 		layout errors and mismatching fonts.
 		FZ_SVG_TEXT_AS_PATH: As <path> elements with exact
 		visual appearance.
+		FZ_SVG_TEXT_AS_PATH_AND_TEXT: As <path> elements with
+		exact visual appearance and transparent text for copy&paste.
 
 	reuse_images: Share image resources using <symbol> definitions.
 
