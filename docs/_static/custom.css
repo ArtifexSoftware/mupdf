@@ -7,6 +7,9 @@ dl.glossary > dt {
 }
 
 /* sidebar logo and brand */
+img.logo {
+	max-width: 100%;
+}
 .sidebar-logo {
 	max-width: 80px;
 }
