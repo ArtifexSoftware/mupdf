@@ -261,12 +261,28 @@ jpeg_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, 
 {
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
+	fz_pixmap *pix2 = NULL;
 
 	fz_var(buf);
 	fz_var(out);
+	fz_var(pix2);
+
+	if (pix->w == 0 || pix->h == 0)
+	{
+		if (drop)
+			fz_drop_pixmap(ctx, pix);
+		return NULL;
+	}
 
 	fz_try(ctx)
 	{
+		if (pix->colorspace && pix->colorspace != fz_device_gray(ctx) && pix->colorspace != fz_device_rgb(ctx) && pix->colorspace != fz_device_cmyk(ctx))
+		{
+			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, color_params, 1);
+			if (drop)
+				fz_drop_pixmap(ctx, pix);
+			pix = pix2;
+		}
 		buf = fz_new_buffer(ctx, 1024);
 		out = fz_new_output_with_buffer(ctx, buf);
 		fz_write_pixmap_as_jpeg(ctx, out, pix, quality, invert_cmyk);
