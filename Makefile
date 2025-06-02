@@ -498,6 +498,9 @@ docs:
 docs-live:
 	bash scripts/build-docs-live.sh
 
+docs-markdown:
+	bash scripts/build-docs-markdown.sh
+
 docs-clean:
 	rm -rf build/docs
 	rm -rf build/venv-docs
