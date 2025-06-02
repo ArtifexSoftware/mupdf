@@ -585,6 +585,7 @@ const char *postfix_js =
 	"		for (var i = 0; i < names.length; i += 2)\n"
 	"			dict[names[i].asString()] = names[i+1]\n"
 	"}\n"
+	"mupdf.Device = function Device(callbacks) { return callbacks }\n"
 ;
 
 struct event_cb_data
