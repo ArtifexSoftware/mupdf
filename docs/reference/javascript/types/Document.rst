@@ -240,8 +240,6 @@ Instance methods
 
 .. method:: Document.prototype.asPDF()
 
-	|only_mutool|
-
 	Returns a PDF version of the document (if possible).
 	PDF documents return themselves.
 	Documents that have an underlying PDF representation return that.

@@ -1913,6 +1913,12 @@ export class Document extends Userdata<"any_document"> {
 		)
 	}
 
+	asPDF() {
+		if (this instanceof PDFDocument)
+			return this
+		return null
+	}
+
 	isPDF() {
 		return this instanceof PDFDocument
 	}
