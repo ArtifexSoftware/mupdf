@@ -1090,6 +1090,54 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 }
 
 fz_pixmap *
+fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh)
+{
+	fz_pixmap *pix1, *pix2;
+
+	pix1 = fz_get_pixmap_from_image(ctx, image, subarea, ctm, dw, dh);
+	if (pix1->n == 1 && pix1->alpha)
+		return pix1;
+
+	if (pix1->n == 1)
+	{
+		fz_warn(ctx, "convert gray to alpha for image mask");
+		fz_try(ctx)
+			pix2 = fz_alpha_from_gray(ctx, pix1);
+		fz_always(ctx)
+			fz_drop_pixmap(ctx, pix1);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		return pix2;
+	}
+	else if (pix1->n == 3)
+	{
+		fz_warn(ctx, "convert rgb to alpha for image mask");
+		fz_try(ctx)
+			pix2 = fz_alpha_from_rgb(ctx, pix1);
+		fz_always(ctx)
+			fz_drop_pixmap(ctx, pix1);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		return pix2;
+	}
+	else
+	{
+		fz_warn(ctx, "strange colorspace for image mask (%s)", pix1->colorspace->name);
+		fz_try(ctx)
+			pix2 = fz_convert_pixmap(ctx, pix1, fz_device_gray(ctx), NULL, NULL, fz_default_color_params, 0);
+		fz_always(ctx)
+			fz_drop_pixmap(ctx, pix1);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		pix2->colorspace = NULL;
+		pix2->alpha = 1;
+		return pix2;
+	}
+
+	return pix1;
+}
+
+fz_pixmap *
 fz_get_unscaled_pixmap_from_image(fz_context *ctx, fz_image *image)
 {
 	return fz_get_pixmap_from_image(ctx, image, NULL /*subarea*/, NULL /*ctm*/, NULL /*dw*/, NULL /*dh*/);
@@ -1357,7 +1405,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 {
 	fz_compressed_buffer *bc;
 	int w, h, xres, yres;
-	fz_colorspace *cspace;
+	fz_colorspace *cspace = NULL;
 	size_t len = buffer->len;
 	unsigned char *buf = buffer->data;
 	fz_image *image = NULL;
@@ -1376,7 +1424,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		fz_load_pnm_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		break;
 	case FZ_IMAGE_JPX:
-		fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace, NULL);
 		break;
 	case FZ_IMAGE_JPEG:
 		fz_load_jpeg_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace, &orientation);
@@ -1426,6 +1474,22 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		fz_rethrow(ctx);
 
 	return image;
+}
+
+fz_image *
+fz_new_jpx_image_from_buffer(fz_context *ctx, fz_buffer *buffer, fz_colorspace *defcs)
+{
+	fz_compressed_buffer *bc;
+	fz_colorspace *cs = NULL;
+	int w, h, xres, yres;
+
+	fz_load_jpx_info(ctx, buffer->data, buffer->len, &w, &h, &xres, &yres, &cs, defcs);
+
+	bc = fz_new_compressed_buffer(ctx);
+	bc->buffer = fz_keep_buffer(ctx, buffer);
+	bc->params.type = FZ_IMAGE_JPX;
+
+	return fz_new_image_from_compressed_buffer(ctx, w, h, 8, cs, xres, yres, 0, 0, NULL, NULL, bc, NULL);
 }
 
 int

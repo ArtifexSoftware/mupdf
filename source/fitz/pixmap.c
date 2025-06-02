@@ -799,7 +799,8 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 	unsigned char *sp, *dp;
 	int w, h, sstride, dstride;
 
-	assert(gray->n == 1);
+	if (gray->n != 1)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "pixmap to fz_alpha_from_gray must be gray without alpha");
 
 	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, gray), 0, 1);
 	dp = alpha->samples;
@@ -814,6 +815,38 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 		memcpy(dp, sp, w);
 		sp += sstride;
 		dp += dstride;
+	}
+
+	return alpha;
+}
+
+fz_pixmap *
+fz_alpha_from_rgb(fz_context *ctx, fz_pixmap *color)
+{
+	fz_pixmap *alpha;
+	unsigned char *sp, *dp;
+	int w, h;
+
+	if (color->n != 3)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "pixmap to fz_alpha_from_rgb must be RGB without alpha");
+
+	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, color), 0, 1);
+	dp = alpha->samples;
+	sp = color->samples;
+
+	assert(alpha->stride == alpha->w);
+	assert(color->stride == color->w * 3);
+
+	h = color->h;
+	while (h--)
+	{
+		w = color->w;
+		while (w--)
+		{
+			*dp = (sp[0] + sp[1] + sp[2]) / 3;
+			dp += 1;
+			sp += 3;
+		}
 	}
 
 	return alpha;

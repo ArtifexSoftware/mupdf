@@ -1951,7 +1951,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 	if (fz_is_empty_irect(src_area))
 		return;
 
-	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
+	pixmap = fz_get_pixmap_mask_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
 
 	fz_var(pixmap);
 
@@ -2061,7 +2061,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 
 	fz_try(ctx)
 	{
-		pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
+		pixmap = fz_get_pixmap_mask_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
 
 		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);

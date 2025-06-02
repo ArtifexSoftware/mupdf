@@ -667,14 +667,14 @@ fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, fz_colorspa
 }
 
 void
-fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep, fz_colorspace *defcs)
 {
 	fz_jpxd state = { 0 };
 
 	fz_try(ctx)
 	{
 		opj_lock(ctx);
-		jpx_read_image(ctx, &state, data, size, NULL, 1);
+		jpx_read_image(ctx, &state, data, size, defcs, 1);
 	}
 	fz_always(ctx)
 		opj_unlock(ctx);

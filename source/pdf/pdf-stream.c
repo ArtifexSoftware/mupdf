@@ -184,6 +184,11 @@ build_compression_params(fz_context *ctx, pdf_obj *f, pdf_obj *p, fz_compression
 				params->u.jbig2.globals = pdf_load_jbig2_globals(ctx, g);
 		}
 	}
+	else if (pdf_name_eq(ctx, f, PDF_NAME(JPXDecode)))
+	{
+		params->type = FZ_IMAGE_JPX;
+		params->u.jpx.smask_in_data = pdf_dict_get_bool_default(ctx, p, PDF_NAME(SMaskInData), 0);
+	}
 }
 
 /*
@@ -603,7 +608,7 @@ can_reuse_buffer(fz_context *ctx, pdf_xref_entry *entry, fz_compression_params *
 	return (params->type == FZ_IMAGE_RAW) ? 0 : 1;
 }
 
-static fz_buffer *
+fz_buffer *
 pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compression_params *params, int *truncated, size_t worst_case)
 {
 	fz_stream *stm = NULL;

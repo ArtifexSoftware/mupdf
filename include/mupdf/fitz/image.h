@@ -67,6 +67,12 @@ typedef struct fz_pixmap_image fz_pixmap_image;
 fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *w, int *h);
 
 /**
+	Like fz_get_pixmap_from_image but convert to an alpha only mask using
+	luminance if the image is grayscale or RGB.
+*/
+fz_pixmap *fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh);
+
+/**
 	Calls fz_get_pixmap_from_image() with ctm, subarea, w and h all set to NULL.
 */
 fz_pixmap *fz_get_unscaled_pixmap_from_image(fz_context *ctx, fz_image *image);
@@ -264,6 +270,7 @@ fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image 
 	of the data.
 */
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
+fz_image *fz_new_jpx_image_from_buffer(fz_context *ctx, fz_buffer *buffer, fz_colorspace *cs);
 
 /**
 	Create a new image from the contents
