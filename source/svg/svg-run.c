@@ -160,7 +160,7 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 			ry = h * 0.5f;
 
 		if (w <= 0 || h <= 0)
-			return;
+			break;
 
 		path = fz_new_path(ctx);
 		if (rx == 0 || ry == 0)
