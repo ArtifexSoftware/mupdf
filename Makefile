@@ -661,7 +661,9 @@ install-% c++-% python-% csharp-%:
 
 endif
 
-.PHONY: all clean nuke install third libs apps generate tags docs
+.PHONY: all clean nuke install third libs apps generate tags tarball
+.PHONY: docs docs-live docs-clean java java-clean wasm wasm-clean
+.PHONY: watch watch-recompile
 .PHONY: shared shared-debug shared-clean
 .PHONY: c++-% python-% csharp-%
 .PHONY: c++-clean python-clean csharp-clean
