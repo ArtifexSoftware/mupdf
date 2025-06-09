@@ -454,6 +454,28 @@ struct redact_filter_state {
 	int text;
 };
 
+
+static void pdf_run_obj_to_buf(fz_context *ctx, fz_buffer *buffer, pdf_obj *obj, pdf_page *page)
+{
+	pdf_processor *proc = pdf_new_buffer_processor(ctx, buffer, 0, 0);
+	pdf_obj *res;
+
+
+	fz_try(ctx)
+	{
+		res = pdf_xobject_resources(ctx, obj);
+		if (res == NULL)
+			res = pdf_page_resources(ctx, page);
+
+		pdf_process_contents(ctx, proc, page->doc, res, obj, NULL, NULL);
+		pdf_close_processor(ctx, proc);
+	}
+	fz_always(ctx)
+		pdf_drop_processor(ctx, proc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
 static void
 pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 {
@@ -471,28 +493,36 @@ pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 			continue;
 		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Redact))
 		{
-			qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
-			n = pdf_array_len(ctx, qp);
-			if (n > 0)
+			pdf_obj *ro = pdf_dict_get(ctx, annot->obj, PDF_NAME(RO));
+			if (ro)
 			{
-				for (i = 0; i < n; i += 8)
-				{
-					fz_quad q = pdf_to_quad(ctx, qp, i);
-					fz_append_printf(ctx, buf, "%g %g m\n", q.ll.x, q.ll.y);
-					fz_append_printf(ctx, buf, "%g %g l\n", q.lr.x, q.lr.y);
-					fz_append_printf(ctx, buf, "%g %g l\n", q.ur.x, q.ur.y);
-					fz_append_printf(ctx, buf, "%g %g l\n", q.ul.x, q.ul.y);
-					fz_append_string(ctx, buf, "f\n");
-				}
+				pdf_run_obj_to_buf(ctx, buf, ro, page);
 			}
 			else
 			{
-				fz_rect r = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
-				fz_append_printf(ctx, buf, "%g %g m\n", r.x0, r.y0);
-				fz_append_printf(ctx, buf, "%g %g l\n", r.x1, r.y0);
-				fz_append_printf(ctx, buf, "%g %g l\n", r.x1, r.y1);
-				fz_append_printf(ctx, buf, "%g %g l\n", r.x0, r.y1);
-				fz_append_string(ctx, buf, "f\n");
+				qp = pdf_dict_get(ctx, annot->obj, PDF_NAME(QuadPoints));
+				n = pdf_array_len(ctx, qp);
+				if (n > 0)
+				{
+					for (i = 0; i < n; i += 8)
+					{
+						fz_quad q = pdf_to_quad(ctx, qp, i);
+						fz_append_printf(ctx, buf, "%g %g m\n", q.ll.x, q.ll.y);
+						fz_append_printf(ctx, buf, "%g %g l\n", q.lr.x, q.lr.y);
+						fz_append_printf(ctx, buf, "%g %g l\n", q.ur.x, q.ur.y);
+						fz_append_printf(ctx, buf, "%g %g l\n", q.ul.x, q.ul.y);
+						fz_append_string(ctx, buf, "f\n");
+					}
+				}
+				else
+				{
+					fz_rect r = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+					fz_append_printf(ctx, buf, "%g %g m\n", r.x0, r.y0);
+					fz_append_printf(ctx, buf, "%g %g l\n", r.x1, r.y0);
+					fz_append_printf(ctx, buf, "%g %g l\n", r.x1, r.y1);
+					fz_append_printf(ctx, buf, "%g %g l\n", r.x0, r.y1);
+					fz_append_string(ctx, buf, "f\n");
+				}
 			}
 		}
 	}
