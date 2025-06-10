@@ -425,10 +425,9 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	opj_image_t *jpx;
 	opj_stream_t *stream;
 	OPJ_CODEC_FORMAT format;
-	int a, n, k;
+	int a, n, k, numcomps;
 	int w, h;
 	stream_block sb;
-	OPJ_UINT32 i;
 
 	fz_var(img);
 
@@ -474,12 +473,15 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 		fz_throw(ctx, FZ_ERROR_LIBRARY, "Failed to read JPX header");
 	}
 
-	if (!opj_decode(codec, stream, jpx))
+	if (!onlymeta)
 	{
-		opj_stream_destroy(stream);
-		opj_destroy_codec(codec);
-		opj_image_destroy(jpx);
-		fz_throw(ctx, FZ_ERROR_LIBRARY, "Failed to decode JPX image");
+		if (!opj_decode(codec, stream, jpx))
+		{
+			opj_stream_destroy(stream);
+			opj_destroy_codec(codec);
+			opj_image_destroy(jpx);
+			fz_throw(ctx, FZ_ERROR_LIBRARY, "Failed to decode JPX image");
+		}
 	}
 
 	opj_stream_destroy(stream);
@@ -489,22 +491,62 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 	if (!jpx)
 		fz_throw(ctx, FZ_ERROR_LIBRARY, "opj_decode failed");
 
+	numcomps = (int)jpx->numcomps;
+
 	/* Count number of alpha and color channels */
-	n = a = 0;
-	for (i = 0; i < jpx->numcomps; ++i)
+	switch (jpx->color_space)
 	{
-		if (jpx->comps[i].alpha)
-			++a;
+	default:
+	case OPJ_CLRSPC_UNKNOWN:
+	case OPJ_CLRSPC_UNSPECIFIED:
+		if (defcs && defcs->n <= numcomps)
+		{
+			n = defcs->n;
+		}
 		else
-			++n;
+		{
+			if (numcomps >= 3)
+			{
+				fz_warn(ctx, "unknown JPX colorspace; assuming RGB");
+				n = 3;
+			}
+			else
+			{
+				fz_warn(ctx, "unknown JPX colorspace; assuming Gray");
+				n = 1;
+			}
+		}
+		break;
+	case OPJ_CLRSPC_SRGB:
+	case OPJ_CLRSPC_SYCC:
+	case OPJ_CLRSPC_EYCC:
+		n = 3;
+		break;
+	case OPJ_CLRSPC_GRAY:
+		n = 1;
+		break;
+	case OPJ_CLRSPC_CMYK:
+		n = 4;
+		break;
+
 	}
 
-	for (k = 1; k < n + a; k++)
+	if (n > numcomps)
 	{
-		if (!jpx->comps[k].data)
+		fz_warn(ctx, "JPX numcomps (%d) doesn't match color_space (%d)", numcomps, n);
+		n = numcomps;
+	}
+	a = numcomps - n;
+
+	if (!onlymeta)
+	{
+		for (k = 0; k < numcomps; ++k)
 		{
-			opj_image_destroy(jpx);
-			fz_throw(ctx, FZ_ERROR_FORMAT, "image components are missing data");
+			if (!jpx->comps[k].data)
+			{
+				opj_image_destroy(jpx);
+				fz_throw(ctx, FZ_ERROR_FORMAT, "image components are missing data");
+			}
 		}
 	}
 
