@@ -1543,17 +1543,17 @@ fixup_bboxes_and_bidi(fz_context *ctx, fz_stext_block *block)
 }
 
 static void
-advance_x(fz_point *a, fz_point b, float d)
+advance_to_x(fz_point *a, fz_point b, float x)
 {
-	a->y += (b.y - a->y) * d / (b.x - a->x);
-	a->x += d;
+	a->y += (b.y - a->y) * (x - a->x) / (b.x - a->x);
+	a->x = x;
 }
 
 static void
-advance_y(fz_point *a, fz_point b, float d)
+advance_to_y(fz_point *a, fz_point b, float y)
 {
-	a->x += (b.x - a->x) * d / (b.y - a->y);
-	a->y += d;
+	a->x += (b.x - a->x) * (y - a->y) / (b.y - a->y);
+	a->y = y;
 }
 
 static int
@@ -1570,13 +1570,13 @@ line_crosses_rect(fz_point a, fz_point b, fz_rect r)
 		return 0;
 
 	if (a.x < r.x0)
-		advance_x(&a, b, r.x0 - a.x);
+		advance_to_x(&a, b, r.x0);
 	if (a.x > r.x1)
-		advance_x(&a, b, r.x1 - a.x);
+		advance_to_x(&a, b, r.x1);
 	if (a.y < r.y0)
-		advance_y(&a, b, r.y0 - a.y);
+		advance_to_y(&a, b, r.y0);
 	if (a.y > r.y1)
-		advance_y(&a, b, r.y1 - a.y);
+		advance_to_y(&a, b, r.y1);
 
 	return fz_is_point_inside_rect(a, r);
 }
