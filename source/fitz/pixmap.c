@@ -1657,10 +1657,10 @@ fz_subsample_pixblock_bresenham(unsigned char *s2, int w, int h, int n, int fact
 	int x, y, xx, yy, nn;
 	int f = 1<<factor;
 
-	/* In (w+subx)/f blocks, we want to repeat a line subx times. */
-	int bxd = (w+subx)/f;
+	/* In ((w+subx)/f) - 1 blocks, we want to repeat a line subx times. */
+	int bxd = ((w+subx)/f) - 1;
 	int bxf = bxd>>1;
-	int byd = (h+suby)/f;
+	int byd = ((h+suby)/f) - 1;
 	int byf = byd>>1;
 
 	assert(0 <= bxf && bxf < bxd);
@@ -1698,7 +1698,7 @@ fz_subsample_pixblock_bresenham(unsigned char *s2, int w, int h, int n, int fact
 			}
 			s += fwd2;
 			bxf2 -= subx;
-			if (bxf2 < 0)
+			while (bxf2 < 0)
 			{
 				s -= n;
 				bxf2 += bxd;
@@ -1706,7 +1706,7 @@ fz_subsample_pixblock_bresenham(unsigned char *s2, int w, int h, int n, int fact
 		}
 		s2 += stride * f;
 		byf -= suby;
-		if (byf < 0)
+		while (byf < 0)
 		{
 			s2 -= stride;
 			byf += byd;
