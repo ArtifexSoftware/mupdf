@@ -228,27 +228,56 @@ get_file_stream_and_name(fz_context *ctx, pdf_obj *fs, pdf_obj **namep)
 	pdf_obj *ef = pdf_dict_get(ctx, fs, PDF_NAME(EF));
 	pdf_obj *name = pdf_dict_get(ctx, fs, PDF_NAME(UF));
 	pdf_obj *file = pdf_dict_get(ctx, ef, PDF_NAME(UF));
+	pdf_obj *any_name = name;
 
 	if (!name && !file)
 	{
 		name = pdf_dict_get(ctx, fs, PDF_NAME(F));
+		if (any_name == NULL)
+			any_name = name;
 		file = pdf_dict_get(ctx, ef, PDF_NAME(F));
 	}
 	if (!name && !file)
 	{
 		name = pdf_dict_get(ctx, fs, PDF_NAME(Unix));
+		if (any_name == NULL)
+			any_name = name;
 		file = pdf_dict_get(ctx, ef, PDF_NAME(Unix));
 	}
 	if (!name && !file)
 	{
 		name = pdf_dict_get(ctx, fs, PDF_NAME(DOS));
+		if (any_name == NULL)
+			any_name = name;
 		file = pdf_dict_get(ctx, ef, PDF_NAME(DOS));
 	}
 	if (!name && !file)
 	{
 		name = pdf_dict_get(ctx, fs, PDF_NAME(Mac));
+		if (any_name == NULL)
+			any_name = name;
 		file = pdf_dict_get(ctx, ef, PDF_NAME(Mac));
 	}
+
+	/* bug708587: Some bad files have the name under one
+	 * entry (e.g. UF), and the entry in EF under another
+	 * (e.g. F). Strictly speaking this is against the
+	 * spec, but we'd rather find the embedded file than
+	 * not. */
+	if (any_name && !file)
+	{
+		name = any_name;
+		file = pdf_dict_get(ctx, ef, PDF_NAME(UF));
+		if (file == NULL)
+			file = pdf_dict_get(ctx, ef, PDF_NAME(F));
+		if (file == NULL)
+			file = pdf_dict_get(ctx, ef, PDF_NAME(Unix));
+		if (file == NULL)
+			file = pdf_dict_get(ctx, ef, PDF_NAME(DOS));
+		if (file == NULL)
+			file = pdf_dict_get(ctx, ef, PDF_NAME(Mac));
+	}
+
 	if (namep)
 		*namep = name;
 
