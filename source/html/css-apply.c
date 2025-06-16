@@ -640,6 +640,16 @@ add_shorthand_trbl(fz_css_match *match, fz_css_value *value, int spec,
 }
 
 static void
+add_shorthand_inset(fz_css_match *match, fz_css_value *value, int spec)
+{
+	add_shorthand_trbl(match, value, spec,
+		PRO_INSET_TOP,
+		PRO_INSET_RIGHT,
+		PRO_INSET_BOTTOM,
+		PRO_INSET_LEFT);
+}
+
+static void
 add_shorthand_margin(fz_css_match *match, fz_css_value *value, int spec)
 {
 	add_shorthand_trbl(match, value, spec,
@@ -828,6 +838,9 @@ add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 	/* shorthand expansions: */
 	switch (name)
 	{
+	case PRO_INSET:
+		add_shorthand_inset(match, value, spec);
+		return;
 	case PRO_MARGIN:
 		add_shorthand_margin(match, value, spec);
 		return;
