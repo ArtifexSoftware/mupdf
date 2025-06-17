@@ -338,9 +338,9 @@ static void test_write_stabilized_story(fz_context *ctx)
 	fz_drop_document_writer(ctx, writer);
 }
 
-int main(int argc, const char *argv[])
+static void
+test_story(fz_context *ctx, const char *filename, const char *options, const char *storytext)
 {
-	fz_context *ctx;
 	fz_document_writer *writer = NULL;
 	fz_story *story = NULL;
 	fz_buffer *buf = NULL;
@@ -350,25 +350,17 @@ int main(int argc, const char *argv[])
 	float margin = 10;
 	int more;
 
-	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
-	if (ctx == NULL)
-	{
-		fprintf(stderr, "Failed to create context");
-		return 1;
-	}
-
 	fz_var(writer);
 	fz_var(story);
 	fz_var(buf);
 	fz_var(dev);
 	fz_var(archive);
 
-	/* First one made with precooked content. */
 	fz_try(ctx)
 	{
-		writer = fz_new_pdf_writer(ctx, "out.pdf", "");
+		writer = fz_new_pdf_writer(ctx, filename, options);
 
-		buf = fz_new_buffer_from_copied_data(ctx, (unsigned char *)snark, strlen(snark)+1);
+		buf = fz_new_buffer_from_copied_data(ctx, (unsigned char *)storytext, strlen(storytext)+1);
 
 		archive = fz_open_directory(ctx, ".");
 
@@ -407,6 +399,324 @@ int main(int argc, const char *argv[])
 	{
 		fz_report_error(ctx);
 	}
+}
+
+static void
+test_positions(fz_context *ctx)
+{
+	const char *pos_static =
+		"<!DOCTYPE html><html><head><style>\n"
+		"div.test {\n"
+		"  width: 400px;\n"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"p.test {\n"
+		"  top: 10px;"
+		"  left: 20px;"
+		"}\n"
+		"p.test2 {\n"
+		"  bottom: 10px;"
+		"  right: 20px;"
+		"}\n"
+		"</style></head><body>\n"
+		"<div class=\"test\">"
+		"<p>This is text 1.</p>\n"
+		"<p>This is text 2.</p>\n"
+		"<p class=\"test\">This is text 3 (static).</p>\n"
+		"<p>This is text 4.</p>\n"
+		"<p class=\"test2\">This is text 5 (static).</p>\n"
+		"<p>This is text 6.</p>\n"
+		"<p>This is text 7.</p>\n"
+		"</div>\n"
+		"</body></html>\n";
+
+	const char *pos_relative =
+		"<!DOCTYPE html><html><head><style>\n"
+		"div.test {\n"
+		"  width: 400px;\n"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"p.reltest {\n"
+		"  position: relative;"
+		"  top: 10px;"
+		"  left: 20px;"
+		"}\n"
+		"p.reltest2 {\n"
+		"  position: relative;"
+		"  bottom: 10px;"
+		"  right: 20px;"
+		"}\n"
+		"</style></head><body>\n"
+		"<div class=\"test\">"
+		"<p>This is text 1.</p>\n"
+		"<p>This is text 2.</p>\n"
+		"<p class=\"reltest\">This is text 3 (relative).</p>\n"
+		"<p>This is text 4.</p>\n"
+		"<p class=\"reltest2\">This is text 5 (relative).</p>\n"
+		"<p>This is text 6.</p>\n"
+		"<p>This is text 7.</p>\n"
+		"</div>\n"
+		"</body></html>\n";
+
+	const char *pos_fixed =
+		"<!DOCTYPE html><html><head><style>\n"
+		"div.test {\n"
+		"  width: 400px;\n"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"p.fixedtest {\n"
+		"  position: fixed;"
+		"  top: 10px;"
+		"  left: 20px;"
+		"}\n"
+		"p.fixedtest2 {\n"
+		"  position: fixed;"
+		"  bottom: 10px;"
+		"  right: 20px;"
+		"}\n"
+		"</style></head><body>\n"
+		"<div class=\"test\">"
+		"<p>This is text 1.</p>\n"
+		"<p>This is text 2.</p>\n"
+		"<p class=\"fixedtest\">This is text 3 (fixed).</p>\n"
+		"<p>This is text 4.</p>\n"
+		"<p class=\"fixedtest2\">This is text 5 (fixed).</p>\n"
+		"<p>This is text 6.</p>\n"
+		"<p>This is text 7.</p>\n"
+		"</div>\n"
+		"</body></html>\n";
+
+	const char *pos_absolute =
+		"<!DOCTYPE html><html><head><style>\n"
+		"div.top {\n"
+		"  width: 400px;\n"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"div.inner {\n"
+		"  position: relative;\n"
+		"  width: 300px;\n"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"p.absolutetest {\n"
+		"  position: absolute;"
+		"  top: 10px;"
+		"  left: 20px;"
+		"}\n"
+		"p.absolutetest2 {\n"
+		"  position: absolute;"
+		"  bottom: 10px;"
+		"  right: 20px;"
+		"}\n"
+		"</style></head><body>\n"
+		"<div class=\"top\">"
+		"<p>This is text 1.</p>\n"
+		"<p>This is text 2.</p>\n"
+		"<div class=\"inner\">\n"
+		"<p class=\"absolutetest\">This is text 3 (absolute).</p>\n"
+		"</div>\n"
+		"<p>This is text 4.</p>\n"
+		"<div class=\"inner\">\n"
+		"<p class=\"absolutetest2\">This is text 5 (absolute).</p>\n"
+		"</div>\n"
+		"<p>This is text 6.</p>\n"
+		"<p>This is text 7.</p>\n"
+		"</div>\n"
+		"</body></html>\n";
+
+	const char *pos_fixed_sizes =
+		"<!DOCTYPE html><html><head><style>"
+		"div.test {"
+		"  position: relative;"
+		"  width: 450px;"
+		"  height: 450px;"
+		"  border: 3px solid #808080;"
+		"}"
+		"p.fltw {"
+		"  position: fixed;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  top: 20px;"
+		"  left: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.frtw {"
+		"  position: fixed;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  top: 20px;"
+		"  right: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.flbw {"
+		"  position: fixed;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  bottom: 20px;"
+		"  left: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.frbw {"
+		"  position: fixed;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  bottom: 20px;"
+		"  right: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.flt {"
+		"  position: fixed;"
+		"  top: 130px;"
+		"  left: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.frt {"
+		"  position: fixed;"
+		"  top: 130px;"
+		"  right: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.flb {"
+		"  position: fixed;"
+		"  bottom: 130px;"
+		"  left: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.frb {"
+		"  position: fixed;"
+		"  bottom: 130px;"
+		"  right: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"</style></head><body>"
+		"<div class=\"test\">"
+		"<p class=\"flt\">flt</p>"
+		"<p class=\"frt\">frt</p>"
+		"<p class=\"flb\">flb</p>"
+		"<p class=\"frb\">frb</p>"
+		"<p class=\"fltw\">fltw</p>"
+		"<p class=\"frtw\">frtw</p>"
+		"<p class=\"flbw\">flbw</p>"
+		"<p class=\"frbw\">frbw</p>"
+		"</div>"
+		"</body></html>";
+
+	const char *pos_absolute_sizes =
+		"<!DOCTYPE html><html><head><style>"
+		"div.test {"
+		"  position: relative;"
+		"  width: 450px;"
+		"  height: 450px;"
+		"  border: 3px solid #808080;"
+		"}"
+		"p.altw {"
+		"  position: absolute;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  top: 20px;"
+		"  left: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.artw {"
+		"  position: absolute;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  top: 20px;"
+		"  right: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.albw {"
+		"  position: absolute;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  bottom: 20px;"
+		"  left: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.arbw {"
+		"  position: absolute;"
+		"  width: 100px;"
+		"  height: 100px;"
+		"  bottom: 20px;"
+		"  right: 20px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.alt {"
+		"  position: absolute;"
+		"  top: 130px;"
+		"  left: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.art {"
+		"  position: absolute;"
+		"  top: 130px;"
+		"  right: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.alb {"
+		"  position: absolute;"
+		"  bottom: 130px;"
+		"  left: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"p.arb {"
+		"  position: absolute;"
+		"  bottom: 130px;"
+		"  right: 130px;"
+		"  border: 3px solid #800000;"
+		"}"
+		"</style></head><body>"
+		"<div class=\"test\">"
+		"<p class=\"altw\">altw</p>"
+		"<p class=\"artw\">artw</p>"
+		"<p class=\"albw\">albw</p>"
+		"<p class=\"arbw\">arbw</p>"
+		"<p class=\"alt\">alt</p>"
+		"<p class=\"art\">art</p>"
+		"<p class=\"alb\">alb</p>"
+		"<p class=\"arb\">arb</p>"
+		"</div>"
+		"</body></html>";
+
+	test_story(ctx, "pos_fixed_sizes.pdf", "", pos_fixed_sizes);
+
+	test_story(ctx, "pos_absolute_sizes.pdf", "", pos_absolute_sizes);
+
+	test_story(ctx, "pos_static.pdf", "", pos_static);
+
+	test_story(ctx, "pos_relative.pdf", "", pos_relative);
+
+	test_story(ctx, "pos_fixed.pdf", "", pos_fixed);
+
+	test_story(ctx, "pos_absolute.pdf", "", pos_absolute);
+}
+
+int main(int argc, const char *argv[])
+{
+	fz_context *ctx;
+	fz_document_writer *writer = NULL;
+	fz_story *story = NULL;
+	fz_buffer *buf = NULL;
+	fz_device *dev = NULL;
+	fz_archive *archive = NULL;
+	fz_rect mediabox = { 0, 0, 512, 640 };
+	float margin = 10;
+	int more;
+
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
+	if (ctx == NULL)
+	{
+		fprintf(stderr, "Failed to create context");
+		return 1;
+	}
+
+	fz_var(writer);
+	fz_var(story);
+	fz_var(buf);
+	fz_var(dev);
+	fz_var(archive);
+
+	/* First one made with precooked content. */
+	test_story(ctx, "out.pdf", "", snark);
 
 	/* Now one made with programmatic content. */
 	writer = NULL;
@@ -550,6 +860,8 @@ int main(int argc, const char *argv[])
 	}
 
 	test_write_stabilized_story(ctx);
+
+	test_positions(ctx);
 
 	fz_drop_context(ctx);
 
