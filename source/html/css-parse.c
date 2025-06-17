@@ -35,6 +35,7 @@ struct lexbuf
 	const unsigned char *s;
 	const char *file;
 	int line;
+	int nest;
 	int lookahead;
 	int c;
 	int string_len;
@@ -227,7 +228,11 @@ static void css_lex_next(struct lexbuf *buf)
 	if (buf->c == 0)
 		return;
 	buf->s += fz_chartorune(&buf->c, (const char *)buf->s);
-	if (buf->c == '\n')
+	if (buf->c == '{')
+		++buf->nest;
+	else if (buf->c == '}')
+		--buf->nest;
+	else if (buf->c == '\n')
 		++buf->line;
 	buf->lookahead = EOF;
 }
@@ -242,6 +247,7 @@ static void css_lex_init(fz_context *ctx, struct lexbuf *buf, fz_pool *pool, con
 	buf->c = -1;
 	buf->file = file;
 	buf->line = 1;
+	buf->nest = 0;
 	css_lex_next(buf);
 
 	buf->string_len = 0;
@@ -938,6 +944,22 @@ static fz_css_selector *parse_selector_list(struct lexbuf *buf)
 	return head;
 }
 
+static void parse_recover(struct lexbuf *buf)
+{
+	fz_rethrow_unless(buf->ctx, FZ_ERROR_SYNTAX);
+	fz_report_error(buf->ctx);
+	while (buf->lookahead != EOF)
+	{
+		if (accept(buf, '}') && buf->nest <= 0)
+		{
+			buf->nest = 0;
+			white(buf);
+			break;
+		}
+		next(buf);
+	}
+}
+
 static fz_css_rule *parse_ruleset(struct lexbuf *buf)
 {
 	fz_css_selector *s = NULL;
@@ -953,18 +975,7 @@ static fz_css_rule *parse_ruleset(struct lexbuf *buf)
 	}
 	fz_catch(buf->ctx)
 	{
-		fz_rethrow_unless(buf->ctx, FZ_ERROR_SYNTAX);
-		fz_report_error(buf->ctx);
-
-		while (buf->lookahead != EOF)
-		{
-			if (accept(buf, '}'))
-			{
-				white(buf);
-				break;
-			}
-			next(buf);
-		}
+		parse_recover(buf);
 		return NULL;
 	}
 
@@ -976,16 +987,24 @@ static fz_css_rule *parse_at_page(struct lexbuf *buf)
 	fz_css_selector *s = NULL;
 	fz_css_property *p = NULL;
 
-	white(buf);
-	if (accept(buf, ':'))
+	fz_try(buf->ctx)
 	{
-		expect(buf, CSS_KEYWORD);
+		white(buf);
+		if (accept(buf, ':'))
+		{
+			expect(buf, CSS_KEYWORD);
+			white(buf);
+		}
+		expect(buf, '{');
+		p = parse_declaration_list(buf);
+		expect(buf, '}');
 		white(buf);
 	}
-	expect(buf, '{');
-	p = parse_declaration_list(buf);
-	expect(buf, '}');
-	white(buf);
+	fz_catch(buf->ctx)
+	{
+		parse_recover(buf);
+		return NULL;
+	}
 
 	s = fz_new_css_selector(buf->ctx, buf->pool, "@page");
 	return fz_new_css_rule(buf->ctx, buf->pool, s, p);
@@ -996,11 +1015,19 @@ static fz_css_rule *parse_at_font_face(struct lexbuf *buf)
 	fz_css_selector *s = NULL;
 	fz_css_property *p = NULL;
 
-	white(buf);
-	expect(buf, '{');
-	p = parse_declaration_list(buf);
-	expect(buf, '}');
-	white(buf);
+	fz_try(buf->ctx)
+	{
+		white(buf);
+		expect(buf, '{');
+		p = parse_declaration_list(buf);
+		expect(buf, '}');
+		white(buf);
+	}
+	fz_catch(buf->ctx)
+	{
+		parse_recover(buf);
+		return NULL;
+	}
 
 	s = fz_new_css_selector(buf->ctx, buf->pool, "@font-face");
 	return fz_new_css_rule(buf->ctx, buf->pool, s, p);
@@ -1039,7 +1066,7 @@ static void parse_at_rule(struct lexbuf *buf)
 
 static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 {
-	fz_css_rule *rule, **nextp, *tail;
+	fz_css_rule *rule, **nextp, *tail, *x;
 
 	tail = chain;
 	if (tail)
@@ -1062,14 +1089,22 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 			if (buf->lookahead == CSS_KEYWORD && !strcmp(buf->string, "page"))
 			{
 				next(buf);
-				rule = *nextp = parse_at_page(buf);
-				nextp = &rule->next;
+				x = parse_at_page(buf);
+				if (x)
+				{
+					rule = *nextp = x;
+					nextp = &rule->next;
+				}
 			}
 			else if (buf->lookahead == CSS_KEYWORD && !strcmp(buf->string, "font-face"))
 			{
 				next(buf);
-				rule = *nextp = parse_at_font_face(buf);
-				nextp = &rule->next;
+				x = parse_at_font_face(buf);
+				if (x)
+				{
+					rule = *nextp = x;
+					nextp = &rule->next;
+				}
 			}
 			else
 			{
