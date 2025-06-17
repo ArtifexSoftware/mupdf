@@ -274,6 +274,7 @@ struct fz_css_style_s
 	fz_css_number margin[4];
 	fz_css_number padding[4];
 	fz_css_number border_width[4];
+	fz_css_number inset[4];
 	fz_css_number border_spacing;
 	fz_css_number text_indent;
 	fz_css_number text_stroke_width;
@@ -291,9 +292,10 @@ struct fz_css_style_s
 	unsigned int small_caps : 1;
 	unsigned int text_decoration: 2;
 	unsigned int overflow_wrap : 1;
+	unsigned int position : 2;
 	/* Ensure the extra bits in the bitfield are copied
 	 * on structure copies. */
-	unsigned int blank : 3;
+	unsigned int blank : 2;
 	fz_css_number line_height;
 	fz_css_number leading;
 	fz_css_color background_color;
@@ -549,6 +551,7 @@ const fz_css_style *fz_css_enlist(fz_context *ctx, const fz_css_style *style, fz
 float fz_from_css_number(fz_css_number number, float em, float percent_value, float auto_value);
 float fz_from_css_number_scale(fz_css_number number, float scale);
 int fz_css_number_defined(fz_css_number number);
+int fz_css_number_defined_not_auto(fz_css_number number);
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
 void fz_add_html_font_face(fz_context *ctx, fz_html_font_set *set,

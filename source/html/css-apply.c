@@ -1302,6 +1302,11 @@ int fz_css_number_defined(fz_css_number number)
 	return number.unit != N_UNDEFINED;
 }
 
+int fz_css_number_defined_not_auto(fz_css_number number)
+{
+	return number.unit != N_UNDEFINED && number.unit != N_AUTO;
+}
+
 float
 fz_from_css_number(fz_css_number number, float em, float percent_value, float auto_value)
 {
@@ -1581,6 +1586,15 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "justify")) style->text_align = TA_JUSTIFY;
 	}
 
+	value = value_from_property(match, PRO_POSITION);
+	if (value)
+	{
+		if (!strcmp(value->data, "static")) style->position = POS_STATIC;
+		else if (!strcmp(value->data, "fixed")) style->position = POS_FIXED;
+		else if (!strcmp(value->data, "relative")) style->position = POS_RELATIVE;
+		else if (!strcmp(value->data, "absolute")) style->position = POS_ABSOLUTE;
+	}
+
 	value = value_from_property(match, PRO_VERTICAL_ALIGN);
 	if (value)
 	{
@@ -1665,6 +1679,11 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->padding[1] = number_from_property(match, PRO_PADDING_RIGHT, 0, N_LENGTH);
 	style->padding[2] = number_from_property(match, PRO_PADDING_BOTTOM, 0, N_LENGTH);
 	style->padding[3] = number_from_property(match, PRO_PADDING_LEFT, 0, N_LENGTH);
+
+	style->inset[0] = number_from_property(match, PRO_INSET_TOP, 0, N_UNDEFINED);
+	style->inset[1] = number_from_property(match, PRO_INSET_RIGHT, 0, N_UNDEFINED);
+	style->inset[2] = number_from_property(match, PRO_INSET_BOTTOM, 0, N_UNDEFINED);
+	style->inset[3] = number_from_property(match, PRO_INSET_LEFT, 0, N_UNDEFINED);
 
 	style->color = color_from_property(match, PRO_COLOR, black);
 	style->text_fill_color = color_from_properties(match, PRO_TEXT_FILL_COLOR, PRO_COLOR, black);
