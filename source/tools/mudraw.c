@@ -1542,7 +1542,10 @@ static void drawrange(fz_context *ctx, fz_document *doc, const char *range)
 				fz_catch(ctx)
 				{
 					if (ignore_errors)
+					{
+						fz_report_error(ctx);
 						fz_warn(ctx, "ignoring error on page %d in '%s'", page, filename);
+					}
 					else
 						fz_rethrow(ctx);
 				}
@@ -1555,7 +1558,10 @@ static void drawrange(fz_context *ctx, fz_document *doc, const char *range)
 				fz_catch(ctx)
 				{
 					if (ignore_errors)
+					{
+						fz_report_error(ctx);
 						fz_warn(ctx, "ignoring error on page %d in '%s'", page, filename);
+					}
 					else
 						fz_rethrow(ctx);
 				}
