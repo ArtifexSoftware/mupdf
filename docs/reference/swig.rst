@@ -818,6 +818,14 @@ Notes
   manager, for example ``sudo apt install swig`` on Linux, or use
   ``./scripts/mupdfwrap.py --swig-windows-auto ...`` on Windows.
 
+*
+  C# ommisions.
+
+  Some functions are ommited from the C# API due to C# restrictions, for
+  example functions that return void* and have out-params (because tuples
+  cannot contain void* items). These will be marked with comments in the
+  generated mupdf.cs file.
+
 
 * More information about running ``scripts/mupdfwrap.py``.
 
