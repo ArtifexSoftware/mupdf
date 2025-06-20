@@ -1056,6 +1056,7 @@ def build_swig(
 
                 %pythoncode %{{
 
+                import codecs
                 import inspect
                 import os
                 import re
@@ -1064,6 +1065,25 @@ def build_swig(
 
                 def log( text):
                     print( text, file=sys.stderr)
+
+                # We modify SWIG code's default translation of C strings into
+                # Unicode to handle MuPDF's special-casing of zero bytes.
+                #
+                # SWIG's default is to call PyUnicode_DecodeUTF8()
+                # with errors="surrogateescape". We change this in the
+                # SWIG-generated C++ code to errors="surrogateescape_mupdf".
+                #
+                # And here in Python, we add a corresponding error handler.
+                #
+                surrogateescape = codecs.lookup_error('surrogateescape')
+
+                def surrogateescape_mupdf(e):
+                    if isinstance(e, (UnicodeDecodeError, UnicodeTranslateError)):
+                        if e.object[e.start:e.start+2] == b'\\xc0\\x80':
+                            return '\\0', e.start+2
+                    return surrogateescape(e)
+
+                codecs.register_error('surrogateescape_mupdf', surrogateescape_mupdf)
 
                 g_mupdf_trace_director = (os.environ.get('MUPDF_trace_director') == '1')
 
@@ -1806,21 +1826,44 @@ def build_swig(
 
             jlib.fs_update(text, path_out)
 
+        def modify_cpp(path_in, path_out):
+            a = jlib.fs_read(path_in)
+            # Change SWIG's call of
+            # PyUnicode_DecodeUTF8(str, len, "surrogateescape")
+            # to
+            # PyUnicode_DecodeUTF8(str, len, "surrogateescape_mupdf")
+            #
+            b = a.replace('"surrogateescape"', '"surrogateescape_mupdf"')
+            assert b != a
+            jlib.fs_write(path_out, b)
+
         jlib.fs_update( '', swig2_cpp)
         jlib.fs_remove( swig2_py)
 
-        # Make main mupdf .so.
-        command = make_command( 'mupdf', swig_cpp, swig_i)
+        # Make main mupdf .so. We use intermediate .cpp and .py filenames to
+        # allow us to post-process them.
+        swig_cpp_ = f'{build_dirs.dir_mupdf}/platform/python/mupdf.intermediate.cpp'
         swig_py_ = f'{build_dirs.dir_mupdf}/platform/python/mupdf.py'
+        command = make_command( 'mupdf', swig_cpp_, swig_i)
         rebuilt = jlib.build(
                 (swig_i, include1, include2),
-                (swig_cpp, swig_py_),
+                (swig_cpp_, swig_py_),
                 command,
                 force_rebuild,
                 )
         jlib.log(f'swig => {rebuilt=}.')
-        updated = modify_py( swig_py_, swig_py)
-        jlib.log(f'modify_py() => {updated=}.')
+        jlib.build(
+                (swig_py_, __file__),
+                swig_py,
+                lambda: modify_py(swig_py_, swig_py),
+                force_rebuild,
+                )
+        jlib.build(
+                (swig_cpp_, __file__),
+                swig_cpp,
+                lambda: modify_cpp(swig_cpp_, swig_cpp),
+                force_rebuild,
+                )
 
 
     elif language == 'csharp':
