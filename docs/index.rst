@@ -45,7 +45,7 @@ use from `Artifex Software, Inc <https://artifex.com/?utm_source=rtd-mupdf&utm_m
 	reference/common/index
 	reference/c/index
 	reference/javascript/index
-	reference/swig
+	reference/cxx-and-derived-bindings
 
 .. toctree::
 	:caption: Other
