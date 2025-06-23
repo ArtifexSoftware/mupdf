@@ -288,6 +288,9 @@ GETU(stext_block, fz_stext_line*, first_line, u.t.first_line)
 GETUP(stext_block, fz_matrix, transform, u.i.transform)
 GETU(stext_block, fz_image*, image, u.i.image)
 
+GETU(stext_block, int, v_flags, u.v.flags)
+GETU(stext_block, int, v_argb, u.v.argb)
+
 GET(stext_line, fz_stext_line*, next)
 GET(stext_line, int, wmode)
 GETP(stext_line, fz_point, dir)

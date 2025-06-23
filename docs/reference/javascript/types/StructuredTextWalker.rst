@@ -73,10 +73,13 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 	:param Matrix transform:
 	:param Image image:
 
-.. function:: onVector(flags, rgb)
+.. function:: onVector(bbox, flags, rgb)
 
 	Called for every vector in a `StructuredText` if its options
 	were set to collect vectors.
 
+	:param Rect bbox:
 	:param Object flags:
 	:param Array of number rgb:
+
+	The flags object is of the form `{ isStroked: boolean, isRectangle: boolean }`.

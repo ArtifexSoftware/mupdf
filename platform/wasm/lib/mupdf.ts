@@ -1459,6 +1459,7 @@ interface StructuredTextWalker {
 	onChar?(c: string, origin: Point, font: Font, size: number, quad: Quad, color: Color): void
 	endLine?(): void
 	endTextBlock?(): void
+	onVector?(bbox: Rect, flags: any, color: Color): void
 }
 
 type SelectMode = "chars" | "words" | "lines"
@@ -1482,13 +1483,7 @@ export class StructuredText extends Userdata<"fz_stext_page"> {
 			let block_type = libmupdf._wasm_stext_block_get_type(block)
 			let block_bbox = fromRect(libmupdf._wasm_stext_block_get_bbox(block))
 
-			if (block_type === 1) {
-				if (walker.onImageBlock) {
-					let matrix = fromMatrix(libmupdf._wasm_stext_block_get_transform(block))
-					let image = new Image(libmupdf._wasm_stext_block_get_image(block))
-					walker.onImageBlock(block_bbox, matrix, image)
-				}
-			} else {
+			if (block_type === 0) {
 				if (walker.beginTextBlock)
 					walker.beginTextBlock(block_bbox)
 
@@ -1525,6 +1520,28 @@ export class StructuredText extends Userdata<"fz_stext_page"> {
 
 				if (walker.endTextBlock)
 					walker.endTextBlock()
+			} else if (block_type === 1) {
+				/* image */
+				if (walker.onImageBlock) {
+					let matrix = fromMatrix(libmupdf._wasm_stext_block_get_transform(block))
+					let image = new Image(libmupdf._wasm_stext_block_get_image(block))
+					walker.onImageBlock(block_bbox, matrix, image)
+				}
+			} else if (block_type === 2) {
+				/* struct */
+			} else if (block_type === 3) {
+				/* vector */
+				if (walker.onVector) {
+					let v_flags_word = libmupdf._wasm_stext_block_get_v_flags(block)
+					let v_flags = {
+						isStroked: !!(v_flags_word & 1),
+						isRectangle: !!(v_flags_word & 2),
+					}
+					let v_color = colorFromNumber(libmupdf._wasm_stext_block_get_v_argb(block))
+					walker.onVector(block_bbox, v_flags, v_color)
+				}
+			} else if (block_type === 4) {
+				/* grid */
 			}
 
 			block = libmupdf._wasm_stext_block_get_next(block)

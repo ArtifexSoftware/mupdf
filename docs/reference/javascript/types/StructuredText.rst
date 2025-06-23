@@ -130,8 +130,8 @@ Instance methods
 			onImageBlock: function (bbox, transform, image) {
 				console.log("onImageBlock", bbox, transform, image)
 			},
-			onVector: function (isStroked, isRectangle, argb) {
-				console.log("onVector", isStroked, isRectangle, argb)
+			onVector: function (bbox, flags, argb) {
+				console.log("onVector", bbox, flags, argb)
 			},
 		})
 
