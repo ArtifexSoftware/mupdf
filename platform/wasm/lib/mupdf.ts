@@ -1898,7 +1898,7 @@ export class LinkDestination {
 	height: number
 	zoom: number
 
-	constructor(chapter=0, page=0, type="Fit", x=NaN, y=NaN, width=NaN, height=NaN, zoom=NaN) {
+	constructor(chapter=0, page=0, type:LinkDestType="Fit", x=NaN, y=NaN, width=NaN, height=NaN, zoom=NaN) {
 		this.chapter = chapter
 		this.page = page
 		this.type = type
@@ -1981,7 +1981,7 @@ export class Document extends Userdata<"any_document"> {
 			libmupdf._wasm_format_link_uri(this.pointer,
 				dest.chapter | 0,
 				dest.page | 0,
-				ENUM<LinkDestType>(dest.type, Document.LINK_DEST),
+				ENUM<LinkDestType>(dest.type, LinkDestination.LINK_DEST),
 				+dest.x,
 				+dest.y,
 				+dest.width,
@@ -2095,7 +2095,7 @@ export class Document extends Userdata<"any_document"> {
 		else
 			dest = libmupdf._wasm_resolve_link_dest(this.pointer, STRING(link))
 		return {
-			type: Document.LINK_DEST[libmupdf._wasm_link_dest_get_type(dest)] as LinkDestType,
+			type: LinkDestination.LINK_DEST[libmupdf._wasm_link_dest_get_type(dest)] as LinkDestType,
 			chapter: libmupdf._wasm_link_dest_get_chapter(dest),
 			page: libmupdf._wasm_link_dest_get_page(dest),
 			x: libmupdf._wasm_link_dest_get_x(dest),
