@@ -85,7 +85,8 @@ static const char *html_default_css =
 "var{font-style:italic}"
 "colgroup{display:table-column-group}"
 "col{display:table-column}"
-"caption{display:block;text-align:center}"
+"figcaption,caption{display:block;text-align:center}"
+"address,article,aside,figure,footer,header,hgroup,main,nav,section,search{display:block}"
 ;
 
 static const char *mobi_default_css =
