@@ -5,7 +5,7 @@
 Either [download a release](https://mupdf.com/releases) or clone the latest
 source from the Git repository:
 
-	git clone --recursive git://git.ghostscript.com/mupdf.git
+	git clone --recurse-submodules --shallow-submodules git://git.ghostscript.com/mupdf.git
 
 ## Build on Windows
 
