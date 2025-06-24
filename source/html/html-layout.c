@@ -1463,6 +1463,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box);
 // TODO: use CSS/HTML width on table-cell when computing maximum width
 
 struct column_width {
+	int fixed;
 	float min, max, actual;
 };
 
@@ -1648,6 +1649,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	fz_html_restarter *restart = ld->restart;
 	float spacing;
 	int eop = 0;
+	float avail_w;
 
 	position_data position;
 
@@ -1703,6 +1705,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		/* Calculate largest minimum and maximum column widths */
 		for (col = 0; col < ncol; ++col)
 		{
+			colw[col].fixed = 0;
 			colw[col].min = 0;
 			colw[col].max = 0;
 		}
@@ -1713,14 +1716,25 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 			for (col = 0, cell = row->down; cell; cell = cell->next, ++col)
 			{
 				float cell_pad = table_cell_padding(ctx, cell);
-				for (child = cell->down; child; child = child->next)
+				if (fz_css_number_defined_not_auto(cell->style->width))
 				{
-					float min = largest_min_width(ctx, child) + cell_pad;
-					float max = largest_max_width(ctx, child) + cell_pad;
-					if (min > colw[col].min)
-						colw[col].min = min;
-					if (max > colw[col].max)
-						colw[col].max = max;
+					float em = box->s.layout.em;
+					float w = fz_from_css_number(cell->style->width, em, em, 0) + cell_pad;
+					colw[col].fixed = 1;
+					colw[col].min = w;
+					colw[col].max = w;
+				}
+				else
+				{
+					for (child = cell->down; child; child = child->next)
+					{
+						float min = largest_min_width(ctx, child) + cell_pad;
+						float max = largest_max_width(ctx, child) + cell_pad;
+						if (min > colw[col].min)
+							colw[col].min = min;
+						if (max > colw[col].max)
+							colw[col].max = max;
+					}
 				}
 			}
 		}
@@ -1737,7 +1751,8 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		/* The minimum table width is equal to or wider than the available space.
 		 * In this case, assign the minimum widths and let the lines overflow...
 		 */
-		if (min_tabw >= box->s.layout.w)
+		avail_w = ld->bounds[R] - ld->bounds[L];
+		if (min_tabw >= avail_w)
 		{
 			for (col = 0; col < ncol; ++col)
 				colw[col].actual = colw[col].min;
@@ -1746,7 +1761,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		/* The maximum table width fits within the available space.
 		 * In this case, set the columns to their maximum widths.
 		 */
-		else if (max_tabw <= box->s.layout.w)
+		else if (max_tabw <= avail_w)
 		{
 			box->s.layout.w = max_tabw;
 			for (col = 0; col < ncol; ++col)
@@ -1767,18 +1782,19 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		 */
 		else
 		{
-			float W = (box->s.layout.w - min_tabw);
+			float W = (avail_w - min_tabw);
 			float D = (max_tabw - min_tabw);
 			for (col = 0; col < ncol; ++col)
 				colw[col].actual = colw[col].min + (colw[col].max - colw[col].min) * W / D;
 		}
 
 		/* Layout each row in turn. */
+		box->s.layout.w = avail_w;
 		for (row = box->down; row; row = row->next)
 		{
 			/* Position the row, zero height for now. */
 			row->s.layout.x = box->s.layout.x;
-			row->s.layout.w = box->s.layout.w;
+			row->s.layout.w = avail_w;
 			row->s.layout.y = row->s.layout.b = box->s.layout.b;
 			row->s.layout.b = row->s.layout.y;
 
