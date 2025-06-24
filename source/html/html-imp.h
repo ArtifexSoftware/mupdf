@@ -217,7 +217,7 @@ struct fz_css_match_s
 	fz_css_value *value[NUM_PROPERTIES];
 };
 
-enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL };
+enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL, DIS_TABLE_COLGROUP, DIS_TABLE_COL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM };
@@ -591,5 +591,43 @@ fz_html *fz_parse_html(fz_context *ctx,
 
 fz_buffer *fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in);
 
+/* The only styles valid on cols are:
+ *
+ *   width
+ *   visibility
+ *   background
+ *      background-color
+ *      background-image      UNSUPPORTED
+ *      background-position   UNSUPPORTED
+ *      background-size       UNSUPPORTED
+ *      background-repeat     UNSUPPORTED
+ *      background-origin     UNSUPPORTED
+ *      background-clip       UNSUPPORTED
+ *      background-attachment UNSUPPORTED
+ *   border
+ *      border-width
+ *      border-style
+ *      border-color
+ *
+ * We want to record both what these values are, and whether the col
+ * actually had them.
+ **/
+typedef struct
+{
+	unsigned int has_bg_col : 1;
+	unsigned int has_border_col : 4;
+	unsigned int has_border_width : 4;
+	unsigned int has_visibility : 1;
+	unsigned int has_width : 1;
+	fz_css_color background_color;
+	fz_css_color border_color[4];
+	fz_css_number border_width[4];
+	unsigned int visibility;
+	fz_css_number width;
+} col_style;
+
+/* Retrieve the col_style information. */
+void
+fz_css_colstyle(col_style *cs, fz_css_match *match);
 
 #endif

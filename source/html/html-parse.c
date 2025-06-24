@@ -201,6 +201,21 @@ static const char *find_known_fb2_tag(const char *tag)
 	return NULL;
 }
 
+typedef struct
+{
+	int maxcols;
+	int ncols;
+	col_style *styles;
+}
+table_styles;
+
+static void
+drop_table_styles(fz_context *ctx, table_styles *ts)
+{
+	fz_free(ctx, ts->styles);
+	ts->styles = NULL;
+}
+
 struct genstate
 {
 	fz_pool *pool;
@@ -220,6 +235,9 @@ struct genstate
 	fz_bidi_direction markup_dir;
 	fz_text_language markup_lang;
 	char *href;
+
+	table_styles tab_styles;
+	int col_num;
 
 	fz_css_style_splay *styles;
 };
@@ -917,6 +935,49 @@ static fz_html_box *gen2_block(fz_context *ctx, struct genstate *g, fz_html_box 
 	return this_box;
 }
 
+static void
+push_colstyle(fz_context *ctx, table_styles *ts, col_style cs)
+{
+	if (ts->ncols == ts->maxcols)
+	{
+		int newmax = ts->maxcols * 2;
+		if (newmax == 0)
+			newmax = 8;
+		ts->styles = fz_realloc(ctx, ts->styles, sizeof(ts->styles[0]) * newmax);
+		ts->maxcols = newmax;
+	}
+
+	ts->styles[ts->ncols++] = cs;
+}
+
+static void gen2_col(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *node, fz_css_match *match)
+{
+	const char *span = fz_xml_att(node, "span");
+	col_style cs = { 0 };
+	int i;
+	int n = span ? fz_atoi(span) : 1;
+	if (n < 1)
+		n = 1;
+
+	/* Get the col styles. */
+	fz_css_colstyle(&cs, match);
+
+	/* FIXME: width attr ? */
+
+	for (i = 0; i < n; i++)
+		push_colstyle(ctx, &g->tab_styles, cs);
+}
+
+/* All this does is give us a warning if we fail to be in a table. */
+static void gen2_colgroup(fz_context *ctx, fz_html_box *root_box)
+{
+	fz_html_box *look = root_box;
+	while (look && look->type != BOX_TABLE)
+		look = look->up;
+	if (!look)
+		fz_warn(ctx, "colgroup not inside table element");
+}
+
 static fz_html_box *gen2_table(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *node, fz_css_style *style)
 {
 	fz_html_box *this_box;
@@ -936,16 +997,49 @@ static fz_html_box *gen2_table_row(fz_context *ctx, struct genstate *g, fz_html_
 
 	this_box = new_box(ctx, g, node, BOX_TABLE_ROW, style);
 	append_box(ctx, table_box, this_box);
+	g->col_num = 0;
 	return this_box;
 }
 
 static fz_html_box *gen2_table_cell(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *node, fz_css_style *style)
 {
 	fz_html_box *this_box, *row_box;
+	fz_css_style style2;
 
 	row_box = find_table_cell_context(ctx, root_box);
 	if (!row_box)
 		return gen2_block(ctx, g, root_box, node, style);
+
+	if (g->col_num < g->tab_styles.ncols)
+	{
+		/* Make a local copy of the style, and overlay anything onto it from col. */
+		col_style *cs = &g->tab_styles.styles[g->col_num];
+		style2 = *style;
+		style = &style2;
+		if (cs->has_bg_col)
+			style->background_color = cs->background_color;
+		if (cs->has_border_col & 1)
+			style->border_color[0] = cs->border_color[0];
+		if (cs->has_border_col & 2)
+			style->border_color[1] = cs->border_color[1];
+		if (cs->has_border_col & 4)
+			style->border_color[2] = cs->border_color[2];
+		if (cs->has_border_col & 8)
+			style->border_color[3] = cs->border_color[3];
+		if (cs->has_border_width & 1)
+			style->border_width[0] = cs->border_width[0];
+		if (cs->has_border_width & 2)
+			style->border_width[1] = cs->border_width[1];
+		if (cs->has_border_width & 4)
+			style->border_width[2] = cs->border_width[2];
+		if (cs->has_border_width & 8)
+			style->border_width[3] = cs->border_width[3];
+		if (cs->has_visibility)
+			style->visibility = cs->visibility;
+		if (cs->has_width)
+			style->width = cs->width;
+	}
+	g->col_num++;
 
 	this_box = new_box(ctx, g, node, BOX_TABLE_CELL, style);
 	append_box(ctx, row_box, this_box);
@@ -1047,7 +1141,7 @@ static int get_heading_from_tag(fz_context *ctx, struct genstate *g, const char 
 static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *node,
 	fz_css_match *match, int display, fz_css_style *style)
 {
-	fz_html_box *this_box;
+	fz_html_box *this_box = NULL;
 	const char *tag;
 	const char *lang_att;
 	const char *dir_att;
@@ -1125,11 +1219,20 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 		this_box = gen2_table_cell(ctx, g, root_box, node, style);
 		break;
 
+	case DIS_TABLE_COLGROUP:
+		gen2_colgroup(ctx, root_box);
+		// no box for colgroup elements.
+		this_box = root_box;
+		break;
+
 	case DIS_INLINE:
 	default:
 		this_box = gen2_inline(ctx, g, root_box, node, style);
 		break;
 	}
+
+	if (this_box == NULL)
+		return;
 
 	if (tag && (!strcmp(tag, "ol") || !strcmp(tag, "ul") || !strcmp(tag, "dl")))
 	{
@@ -1144,6 +1247,26 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 		g->section_depth++;
 		gen2_children(ctx, g, this_box, node, match);
 		g->section_depth = save_section_depth;
+	}
+	else if (display == DIS_TABLE)
+	{
+		table_styles saved_styles = g->tab_styles;
+		int saved_col_num = g->col_num;
+		fz_try(ctx)
+		{
+			g->tab_styles.maxcols = 0;
+			g->tab_styles.ncols = 0;
+			g->tab_styles.styles = NULL;
+			gen2_children(ctx, g, this_box, node, match);
+		}
+		fz_always(ctx)
+		{
+			drop_table_styles(ctx, &g->tab_styles);
+			g->tab_styles = saved_styles;
+			g->col_num = saved_col_num;
+		}
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 	else
 	{
@@ -1186,6 +1309,10 @@ static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root
 			else if (tag[0]=='s' && tag[1]=='v' && tag[2]=='g' && tag[3]==0)
 			{
 				gen2_image_svg(ctx, g, root_box, node, display, &style);
+			}
+			else if (tag[0]=='c' && tag[1]=='o' && tag[2]=='l' && tag[3]==0)
+			{
+				gen2_col(ctx, g, root_box, node, &match);
 			}
 			else
 			{
@@ -2116,6 +2243,21 @@ fz_structure fz_html_tag_to_structure(const char *tag)
 	return FZ_STRUCTURE_INVALID;
 }
 
+static void fz_debug_css_number(int level, const char *label, fz_css_number number)
+{
+	if (number.unit == N_UNDEFINED || number.unit == N_AUTO)
+		return;
+	indent(level+1);
+	printf(">%s: ", label);
+	switch (number.unit) {
+	default:
+	case N_NUMBER: printf("%g (num)\n", number.value); break;
+	case N_LENGTH: printf("%g (len)\n", number.value); break;
+	case N_SCALE: printf("%g (scale)\n", number.value); break;
+	case N_PERCENT: printf("%g%%\n", number.value * 0.01f); break;
+	}
+}
+
 static void
 fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 {
@@ -2146,13 +2288,41 @@ fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 			printf(" href=(%s)", box->href);
 		printf("\n");
 
-		if (box->type == BOX_BLOCK || box->type == BOX_TABLE) {
-			indent(level+1);
-			printf(">margin=(%g %g %g %g)\n", box->u.block.margin[0], box->u.block.margin[1], box->u.block.margin[2], box->u.block.margin[3]);
-			//indent(level+1);
-			//printf(">padding=(%g %g %g %g)\n", box->u.block.padding[0], box->u.block.padding[1], box->u.block.padding[2], box->u.block.padding[3]);
-			//indent(level+1);
-			//printf(">border=(%g %g %g %g)\n", box->u.block.border[0], box->u.block.border[1], box->u.block.border[2], box->u.block.border[3]);
+		if (box->type == BOX_BLOCK || box->type == BOX_TABLE || box->type == BOX_TABLE_CELL) {
+			if (box->style->background_color.a != 0)
+			{
+				indent(level+1);
+				printf(">background-color=#%02x%02x%02x%02x\n",
+					box->style->background_color.a,
+					box->style->background_color.r,
+					box->style->background_color.g,
+					box->style->background_color.b);
+			}
+			if (box->style->position != POS_STATIC)
+			{
+				indent(level+1);
+				printf(">position: %s\n", box->style->position == POS_RELATIVE ? "relative" :
+					box->style->position == POS_FIXED ? "fixed" : "absolute");
+			}
+			fz_debug_css_number(level, "width", box->style->width);
+			fz_debug_css_number(level, "height", box->style->height);
+			if (box->u.block.margin[0] != 0 || box->u.block.margin[1] != 0 || box->u.block.margin[2] != 0 || box->u.block.margin[3] != 0)
+			{
+				indent(level+1);
+				printf(">margin=(%g %g %g %g)\n", box->u.block.margin[0], box->u.block.margin[1], box->u.block.margin[2], box->u.block.margin[3]);
+			}
+			if (box->u.block.border[0] != 0 || box->u.block.border[1] != 0 || box->u.block.border[2] != 0 || box->u.block.border[3] != 0)
+			{
+				indent(level+1);
+				printf(">border=(%g %g %g %g) #%02x%02x%02x%02x\n",
+					box->u.block.border[0], box->u.block.border[1], box->u.block.border[2], box->u.block.border[3],
+					box->style->border_color->a, box->style->border_color->r, box->style->border_color->g, box->style->border_color->b);
+			}
+			if (box->u.block.padding[0] != 0 || box->u.block.padding[1] != 0 || box->u.block.padding[2] != 0 || box->u.block.padding[3] != 0)
+			{
+				indent(level+1);
+				printf(">padding=(%g %g %g %g)\n", box->u.block.padding[0], box->u.block.padding[1], box->u.block.padding[2], box->u.block.padding[3]);
+			}
 		}
 
 		if (box->down)
