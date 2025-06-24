@@ -1267,21 +1267,49 @@ number_from_property(fz_css_match *match, int property, float initial, int initi
 	return number_from_value(value_from_property(match, property), initial, initial_unit);
 }
 
+static int
+has_number_from_property(fz_css_match *match, int property, float initial, int initial_unit, fz_css_number *num)
+{
+	fz_css_value *val = value_from_property(match, property);
+
+	if (val == NULL)
+		return 0;
+
+	*num = number_from_value(val, initial, initial_unit);
+
+	return 1;
+}
+
+static unsigned int
+has_border_width_from_property(fz_css_match *match, int property, fz_css_number *num)
+{
+	fz_css_value *value = value_from_property(match, property);
+	if (!value)
+	{
+		*num = make_number(2, N_LENGTH); /* initial: 'medium' */
+		return 0;
+	}
+	if (!strcmp(value->data, "thin"))
+		*num = make_number(1, N_LENGTH);
+	else if (!strcmp(value->data, "medium"))
+		*num = make_number(2, N_LENGTH);
+	else if (!strcmp(value->data, "thick"))
+		*num = make_number(4, N_LENGTH);
+	else
+		*num = number_from_value(value, 0, N_LENGTH);
+	*num = make_number(2, N_LENGTH); /* initial: 'medium' */
+
+	return 1;
+}
+
 static fz_css_number
 border_width_from_property(fz_css_match *match, int property)
 {
-	fz_css_value *value = value_from_property(match, property);
-	if (value)
-	{
-		if (!strcmp(value->data, "thin"))
-			return make_number(1, N_LENGTH);
-		if (!strcmp(value->data, "medium"))
-			return make_number(2, N_LENGTH);
-		if (!strcmp(value->data, "thick"))
-			return make_number(4, N_LENGTH);
-		return number_from_value(value, 0, N_LENGTH);
-	}
-	return make_number(2, N_LENGTH); /* initial: 'medium' */
+	fz_css_number num;
+
+	(void)has_border_width_from_property(match, property, &num);
+
+	return num;
 }
 
 static int
@@ -1444,6 +1472,20 @@ color_from_property(fz_css_match *match, int property, fz_css_color initial)
 	return color_from_value(value_from_property(match, property), initial);
 }
 
+static unsigned int
+has_color_from_property(fz_css_match *match, int property, fz_css_color *col)
+{
+	fz_css_color transparent = { 0, 0, 0, 0 };
+	fz_css_value *val = value_from_property(match, property);
+
+	if (val == NULL)
+		return 0;
+
+	*col = color_from_value(val, transparent);
+
+	return 1;
+}
+
 static fz_css_color
 color_from_properties(fz_css_match *match, int property, int property2, fz_css_color initial)
 {
@@ -1484,9 +1526,9 @@ fz_get_css_match_display(fz_css_match *match)
 		if (!strcmp(value->data, "table-footer-group"))
 			return DIS_TABLE_GROUP;
 		if (!strcmp(value->data, "table-column-group"))
-			return DIS_NONE;
+			return DIS_TABLE_COLGROUP;
 		if (!strcmp(value->data, "table-column"))
-			return DIS_NONE;
+			return DIS_TABLE_COL;
 	}
 	return DIS_INLINE;
 }
@@ -1518,17 +1560,31 @@ text_decoration_from_property(fz_css_match *match)
 	return TD_NONE;
 }
 
+static unsigned int
+has_visibility_from_property(fz_css_match *match, unsigned int *val)
+{
+	fz_css_value *value = value_from_property(match, PRO_VISIBILITY);
+	*val = V_VISIBLE;
+	if (!value)
+		return 0;
+	if (!strcmp(value->data, "visible"))
+		*val = V_VISIBLE;
+	else if (!strcmp(value->data, "hidden"))
+		*val = V_HIDDEN;
+	else if (!strcmp(value->data, "collapse"))
+		*val = V_COLLAPSE;
+
+	return 1;
+}
+
 static int
 visibility_from_property(fz_css_match *match)
 {
-	fz_css_value *value = value_from_property(match, PRO_VISIBILITY);
-	if (value)
-	{
-		if (!strcmp(value->data, "visible")) return V_VISIBLE;
-		else if (!strcmp(value->data, "hidden")) return V_HIDDEN;
-		else if (!strcmp(value->data, "collapse")) return V_COLLAPSE;
-	}
-	return V_VISIBLE;
+	unsigned int val;
+
+	(void)has_visibility_from_property(match, &val);
+
+	return val;
 }
 
 static int
@@ -1728,6 +1784,24 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		if (!style->font)
 			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic, style->small_caps);
 	}
+}
+
+void
+fz_css_colstyle(col_style *cs, fz_css_match *match)
+{
+	cs->has_bg_col = has_color_from_property(match, PRO_BACKGROUND_COLOR, &cs->background_color);
+	cs->has_border_col = has_color_from_property(match, PRO_BORDER_TOP_COLOR, &cs->border_color[0]);
+	cs->has_border_col |= has_color_from_property(match, PRO_BORDER_RIGHT_COLOR, &cs->border_color[1])<<1;
+	cs->has_border_col |= has_color_from_property(match, PRO_BORDER_BOTTOM_COLOR, &cs->border_color[2])<<2;
+	cs->has_border_col |= has_color_from_property(match, PRO_BORDER_LEFT_COLOR, &cs->border_color[3])<<3;
+
+	cs->has_border_width = has_border_width_from_property(match, PRO_BORDER_TOP_WIDTH, &cs->border_width[0]);
+	cs->has_border_width |= has_border_width_from_property(match, PRO_BORDER_RIGHT_WIDTH, &cs->border_width[1])<<1;
+	cs->has_border_width |= has_border_width_from_property(match, PRO_BORDER_BOTTOM_WIDTH, &cs->border_width[2])<<2;
+	cs->has_border_width |= has_border_width_from_property(match, PRO_BORDER_LEFT_WIDTH, &cs->border_width[3])<<3;
+
+	cs->has_visibility = has_visibility_from_property(match, &cs->visibility);
+	cs->has_width = has_number_from_property(match, PRO_WIDTH, 0, N_AUTO, &cs->width);
 }
 
 #ifdef DEBUG_CSS_SPLAY
