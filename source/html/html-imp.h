@@ -220,7 +220,7 @@ struct fz_css_match_s
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL, DIS_TABLE_COLGROUP, DIS_TABLE_COL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
-enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM };
+enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM, VA_MIDDLE };
 enum { BS_NONE, BS_SOLID };
 enum { V_VISIBLE, V_HIDDEN, V_COLLAPSE };
 enum { PB_AUTO, PB_ALWAYS, PB_AVOID, PB_LEFT, PB_RIGHT };
@@ -540,6 +540,7 @@ void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
 int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
 void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
+fz_css_color fz_css_color_from_string(const char *str);
 
 /*
 	Lookup style in the splay tree, returning a pointer
