@@ -690,6 +690,47 @@ test_positions(fz_context *ctx)
 	test_story(ctx, "pos_absolute.pdf", "", pos_absolute);
 }
 
+static void
+test_tables(fz_context *ctx)
+{
+	const char *tables =
+		"<!DOCTYPE html><html><head><style>\n"
+		"div.test {\n"
+		"  width: 450px;\n"
+		"  height: 450px;"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"td {"
+		"  border: 1px solid #800000;"
+		"}"
+		"</style></head><body>\n"
+		"<div class=\"test\">"
+		"<table>"
+		"<colgroup>"
+		"<col span=2 style=\"background-color: #80ffff; width: 100px;\">"
+		"</colgroup>"
+		"<tr style=\"height: 100px;\">"
+		"<th>Head 1"
+		"<th>Head 2"
+		"<th width=150>Head 3"
+		"<th border=1>Head 4"
+		"<tr>"
+		"<td>Contents 1"
+		"<td>Contents 2"
+		"<td>Contents 3"
+		"<td>Contents 4"
+		"<tr height=75>"
+		"<td style=\"width: 50px\">Contents 5"
+		"<td width=\"75\">Contents 6"
+		"<td bgcolor=#ff8040>Contents 7"
+		"<td bgcolor=\"green\">Contents 8"
+		"</table>"
+		"</div>\n"
+		"</body></html>\n";
+
+	test_story(ctx, "tables.pdf", "", tables);
+}
+
 int main(int argc, const char *argv[])
 {
 	fz_context *ctx;
@@ -862,6 +903,8 @@ int main(int argc, const char *argv[])
 	test_write_stabilized_story(ctx);
 
 	test_positions(ctx);
+
+	test_tables(ctx);
 
 	fz_drop_context(ctx);
 
