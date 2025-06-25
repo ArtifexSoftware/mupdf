@@ -1571,6 +1571,9 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 	float x = row->s.layout.x;
 	float y;
 	float saved_bounds[4];
+	float row_height;
+	float em = row->s.layout.em;
+	int fixed_height = 0;
 
 	/* Always layout the full row since we can't restart in the middle of a cell.
 	 * If the row doesn't fit fully, we'll postpone it to the next page.
@@ -1582,6 +1585,12 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 	/* Note: margin is ignored for table cells and rows */
 
 	TRBLCPY(saved_bounds, ld->bounds);
+
+	if (fz_css_number_defined_not_auto(row->style->height))
+	{
+		row_height = fz_from_css_number(row->style->height, em, em, 0);
+		fixed_height = 1;
+	}
 
 	/* For each cell in the row */
 	for (cell = row->down; cell; cell = cell->next)
@@ -1617,6 +1626,14 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 			}
 		}
 		cell->s.layout.b = ld->used[B];
+		if (fz_css_number_defined_not_auto(cell->style->height))
+		{
+			float cellheight = fz_from_css_number(cell->style->height, em, em, 0);
+			if (cell->s.layout.b < cell->s.layout.y + cellheight)
+			cell->s.layout.b = cell->s.layout.y + cellheight;
+		}
+		else if (fixed_height && cell->s.layout.b < cell->s.layout.y + row_height)
+			cell->s.layout.b = cell->s.layout.y + row_height;
 
 		/* Advance to next column */
 		x += colw[col].actual;
