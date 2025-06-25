@@ -1113,7 +1113,7 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 		}
 		else
 		{
-			fz_css_rule *x = parse_ruleset(buf);
+			x = parse_ruleset(buf);
 			if (x)
 			{
 				rule = *nextp = x;
