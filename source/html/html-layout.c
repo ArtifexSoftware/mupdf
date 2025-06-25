@@ -492,6 +492,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		case VA_BASELINE:
 		case VA_SUB:
 		case VA_SUPER:
+		case VA_MIDDLE:
 			va = node->box->s.layout.baseline;
 			break;
 

@@ -1278,6 +1278,67 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 	g->href = save_href;
 }
 
+static void
+apply_attributes_as_styles(fz_context *ctx, fz_css_style *style, fz_xml *node)
+{
+	const char *att;
+
+	att = fz_xml_att(node, "width");
+	if (att)
+	{
+		style->width.unit = N_LENGTH;
+		style->width.value = fz_atof(att);
+	}
+
+	att = fz_xml_att(node, "height");
+	if (att)
+	{
+		style->height.unit = N_LENGTH;
+		style->height.value = fz_atof(att);
+	}
+
+	att = fz_xml_att(node, "valign");
+	if (!att)
+	{}
+	else if (!strcmp(att, "top"))
+		style->vertical_align = VA_TOP;
+	else if (!strcmp(att, "middle"))
+		style->vertical_align = VA_MIDDLE;
+	else if (!strcmp(att, "bottom"))
+		style->vertical_align = VA_BOTTOM;
+	else if (!strcmp(att, "baseline"))
+		style->vertical_align = VA_BASELINE;
+
+	/* FIXME: We probably need to vary this based on node type;
+	 * for images, it'd need to be "float:left" etc. */
+	att = fz_xml_att(node, "align");
+	if (!att)
+	{}
+	else if (!strcmp(att, "left"))
+		style->text_align = TA_LEFT;
+	else if (!strcmp(att, "right"))
+		style->text_align = TA_RIGHT;
+	else if (!strcmp(att, "center"))
+		style->text_align = TA_CENTER;
+	else if (!strcmp(att, "justify"))
+		style->text_align = TA_JUSTIFY;
+
+	att = fz_xml_att(node, "bgcolor");
+	if (att)
+		style->background_color = fz_css_color_from_string(att);
+
+	att = fz_xml_att(node, "border");
+	if (att)
+	{
+		style->border_width[3].unit = style->border_width[2].unit = style->border_width[1].unit = style->border_width[0].unit = N_LENGTH;
+		style->border_width[3].value = style->border_width[2].value = style->border_width[1].value = style->border_width[0].value = fz_atof(att);
+	}
+
+	att = fz_xml_att(node, "hidden");
+	if(att)
+		style->visibility = V_HIDDEN;
+}
+
 static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *root_node, fz_css_match *root_match)
 {
 	fz_xml *node;
@@ -1293,6 +1354,7 @@ static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root
 		{
 			fz_match_css(ctx, &match, root_match, g->css, node);
 			fz_apply_css_style(ctx, g->set, &style, &match);
+			apply_attributes_as_styles(ctx, &style, node);
 			display = fz_get_css_match_display(&match);
 			if (tag[0]=='b' && tag[1]=='r' && tag[2]==0)
 			{

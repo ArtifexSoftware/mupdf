@@ -1376,7 +1376,66 @@ static int tohex(int c)
 {
 	if (c - '0' < 10)
 		return c - '0';
+	if (c <= 'F')
+		c += 'a' - 'A';
 	return (c | 32) - 'a' + 10;
+}
+
+static size_t
+hexlen(const char *data)
+{
+	size_t n = 0;
+
+	while ((*data >= '0' && *data <= '9') ||
+		(*data >= 'a' && *data <= 'f') ||
+		(*data >= 'A' && *data <= 'F'))
+	{
+		data++, n++;
+	}
+
+	return n;
+}
+
+static fz_css_color
+hash_color(const char *data)
+{
+	int r, g, b, a;
+	size_t n = hexlen(data);
+
+	if (n == 3)
+	{
+		r = tohex(data[0]) * 17;
+		g = tohex(data[1]) * 17;
+		b = tohex(data[2]) * 17;
+		a = 255;
+	}
+	else if (n == 4)
+	{
+		r = tohex(data[0]) * 17;
+		g = tohex(data[1]) * 17;
+		b = tohex(data[2]) * 17;
+		a = tohex(data[3]) * 17;
+	}
+	else if (n == 6)
+	{
+		r = tohex(data[0]) * 16 + tohex(data[1]);
+		g = tohex(data[2]) * 16 + tohex(data[3]);
+		b = tohex(data[4]) * 16 + tohex(data[5]);
+		a = 255;
+	}
+	else if (n == 8)
+	{
+		r = tohex(data[0]) * 16 + tohex(data[1]);
+		g = tohex(data[2]) * 16 + tohex(data[3]);
+		b = tohex(data[4]) * 16 + tohex(data[5]);
+		a = tohex(data[6]) * 16 + tohex(data[7]);
+	}
+	else
+	{
+		r = g = b = 0;
+		a = 255;
+	}
+	return make_color(r, g, b, a);
 }
 
 static fz_css_color
@@ -1387,44 +1446,8 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 
 	if (value->type == CSS_HASH)
 	{
-		int r, g, b, a;
-		size_t n;
 hex_color:
-		n = strlen(value->data);
-		if (n == 3)
-		{
-			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);
-			g = tohex(value->data[1]) * 16 + tohex(value->data[1]);
-			b = tohex(value->data[2]) * 16 + tohex(value->data[2]);
-			a = 255;
-		}
-		else if (n == 4)
-		{
-			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);
-			g = tohex(value->data[1]) * 16 + tohex(value->data[1]);
-			b = tohex(value->data[2]) * 16 + tohex(value->data[2]);
-			a = tohex(value->data[3]) * 16 + tohex(value->data[3]);
-		}
-		else if (n == 6)
-		{
-			r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
-			g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
-			b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
-			a = 255;
-		}
-		else if (n == 8)
-		{
-			r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
-			g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
-			b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
-			a = tohex(value->data[6]) * 16 + tohex(value->data[7]);
-		}
-		else
-		{
-			r = g = b = 0;
-			a = 255;
-		}
-		return make_color(r, g, b, a);
+		return hash_color(value->data);
 	}
 
 	if (value->type == '(' && !strcmp(value->data, "rgb"))
@@ -1464,6 +1487,19 @@ hex_color:
 	}
 
 	return initial;
+}
+
+fz_css_color
+fz_css_color_from_string(const char *str)
+{
+	const fz_css_color *named;
+
+	if (*str == '#')
+		return hash_color(str+1);
+	named = lookup_named_color(str);
+	if (named)
+		return *named;
+	return hash_color(str);
 }
 
 static fz_css_color
