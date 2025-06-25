@@ -1809,9 +1809,16 @@ ensure_combined_spun_haystack(fz_context *ctx, fz_search *search)
 	}
 	else
 	{
+		size_t i;
 		search->combined_spun_haystack = transform_text_with_index(ctx, search->transform, search->combined_haystack, &search->combined_index);
-		search->combined_spun_split = search->combined_index[search->combined_split];
 		search->combined_spun_length = strlen(search->combined_spun_haystack);
+		/* combined_spun_split needs to be the index into the combined_spun_haystack that corresponds to the split point
+		 * between the first and second pages of the haystack. Currently we just search for this. We could do this better
+		 * with a binary search if we were so minded. */
+		for (i = 0; i < search->combined_spun_length; i++)
+			if (search->combined_index[i] >= search->combined_split)
+				break;
+		search->combined_spun_split = i;
 	}
 }
 
