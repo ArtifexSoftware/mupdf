@@ -1482,14 +1482,24 @@ fz_new_jpx_image_from_buffer(fz_context *ctx, fz_buffer *buffer, fz_colorspace *
 	fz_compressed_buffer *bc;
 	fz_colorspace *cs = NULL;
 	int w, h, xres, yres;
+	fz_image *img = NULL;
 
 	fz_load_jpx_info(ctx, buffer->data, buffer->len, &w, &h, &xres, &yres, &cs, defcs);
 
-	bc = fz_new_compressed_buffer(ctx);
-	bc->buffer = fz_keep_buffer(ctx, buffer);
-	bc->params.type = FZ_IMAGE_JPX;
+	fz_try(ctx)
+	{
+		bc = fz_new_compressed_buffer(ctx);
+		bc->buffer = fz_keep_buffer(ctx, buffer);
+		bc->params.type = FZ_IMAGE_JPX;
 
-	return fz_new_image_from_compressed_buffer(ctx, w, h, 8, cs, xres, yres, 0, 0, NULL, NULL, bc, NULL);
+		img =  fz_new_image_from_compressed_buffer(ctx, w, h, 8, cs, xres, yres, 0, 0, NULL, NULL, bc, NULL);
+	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, cs);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return img;
 }
 
 int
