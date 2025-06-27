@@ -354,6 +354,12 @@ enum
 	FZ_HTML_RESTARTER_FLAGS_NO_OVERFLOW = 1
 };
 
+enum
+{
+	FZ_HTML_RESTARTER_START_END_FLAGS_LEFT_SIDE = 1,
+	FZ_HTML_RESTARTER_START_END_FLAGS_SPECIFIC_SIDE = 2
+};
+
 typedef struct {
 	/* start will be filled in on entry with the first node to start
 	 * operation on. NULL means start 'immediately'. As we traverse
@@ -366,6 +372,11 @@ typedef struct {
 	 * at which we should start. */
 	fz_html_flow *start_flow;
 
+	/* If the SPECIFIC_SIDE bit is set, then we should only restart
+	 * layout if we are on appropriate side (as given by the LEFT_SIDE
+	 * bit). */
+	int start_flags;
+
 
 	/* end should be NULL on entry. On exit, if it's NULL, then we
 	 * finished. Otherwise, this is where we should restart the
@@ -375,6 +386,11 @@ typedef struct {
 	/* If end is a BOX_FLOW, then end_flow will be the flow entry at which
 	 * we should restart next time. */
 	fz_html_flow *end_flow;
+
+	/* If the SPECIFIC_SIDE bit is set, then the next layout should only
+	 * restart if we are on appropriate side (as given by the LEFT_SIDE
+	 * bit). */
+	int end_flags;
 
 
 	/* Workspace used on the traversal of the tree to store a good place
@@ -386,6 +402,8 @@ typedef struct {
 	fz_html_restart_reason reason;
 
 	int flags;
+
+	int left_page;
 } fz_html_restarter;
 
 struct fz_story

@@ -731,6 +731,43 @@ test_tables(fz_context *ctx)
 	test_story(ctx, "tables.pdf", "", tables);
 }
 
+static void
+test_leftright(fz_context *ctx)
+{
+	const char *leftright =
+		"<!DOCTYPE html><html><head><style>\n"
+		"div.test {\n"
+		"  width: 450px;\n"
+		"  height: 450px;"
+		"  border: 3px solid #808080;\n"
+		"}\n"
+		"td {"
+		"  border: 1px solid #800000;"
+		"}"
+		"</style></head><body>\n"
+		"<p>Right. No gap.</p>"
+		// right -> left before
+		"<p style=\"page-break-before: left\">Left. Then gap.</p>"
+		// left -> left before
+		"<p style=\"page-break-before: left\">Left.</p>"
+		// left -> right before
+		"<p style=\"page-break-before: right\">No gap. Right.</p>"
+		// right -> right before
+		"<p style=\"page-break-before: right\">Gap. Right.</p>"
+		// right -> right after
+		"<p style=\"page-break-after: right\">Same page.</p>"
+		// right -> left after
+		"<p style=\"page-break-after: left\">Gap. Right.</p>"
+		// left -> left after
+		"<p style=\"page-break-after: left\">No Gap. Left.</p>"
+		// left- > right after
+		"<p style=\"page-break-after: right\">Gap. Left.</p>"
+		"<p>Right.</p>"
+		"</body></html>\n";
+
+	test_story(ctx, "leftright.pdf", "", leftright);
+}
+
 int main(int argc, const char *argv[])
 {
 	fz_context *ctx;
@@ -905,6 +942,8 @@ int main(int argc, const char *argv[])
 	test_positions(ctx);
 
 	test_tables(ctx);
+
+	test_leftright(ctx);
 
 	fz_drop_context(ctx);
 

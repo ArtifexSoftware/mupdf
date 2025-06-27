@@ -2576,14 +2576,17 @@ int fz_place_story_flags(fz_context *ctx, fz_story *story, fz_rect where, fz_rec
 	 * the correct struct though! */
 	story->restart_draw.start = story->restart_place.start;
 	story->restart_draw.start_flow = story->restart_place.start_flow;
+	story->restart_draw.start_flags = story->restart_place.start_flags;
 	story->restart_draw.end = NULL;
 	story->restart_draw.end_flow = NULL;
+	story->restart_draw.end_flags = 0;
 	story->restart_draw.reason = FZ_HTML_RESTART_REASON_NONE;
 	story->restart_draw.flags = flags;
 	story->bbox = where;
 	fz_restartable_layout_html(ctx, &story->tree, where.x0, where.y0, w, h, story->em, &story->restart_draw);
 	story->restart_draw.start = story->restart_place.start;
 	story->restart_draw.start_flow = story->restart_place.start_flow;
+	story->restart_draw.start_flags = story->restart_place.start_flags;
 
 	if (filled)
 	{

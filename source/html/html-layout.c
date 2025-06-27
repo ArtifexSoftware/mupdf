@@ -934,25 +934,69 @@ static float advance_for_spacing(fz_context *ctx, layout_data *ld, float start_b
 
 static int layout_block_page_break(fz_context *ctx, layout_data *ld, float *yp, int page_break)
 {
+	fz_html_restarter *restart = ld->restart;
 	float page_h = ld->page[B] - ld->page[T];
 	float page_top = ld->page[T];
+	float avail;
+	int side; /* 0 = right, 1 = left */
+
+	/* If we are skipping, nothing to do! */
+	if (WE_ARE_SKIPPING(restart))
+		return 0;
+
+	/* If the page height is screwy (or the rectangle height), then bale. */
 	if (page_h <= 0)
 		return 0;
-	if (page_break == PB_ALWAYS || page_break == PB_LEFT || page_break == PB_RIGHT)
+
+	/* If we aren't doing some kind of page break, bale. */
+	if (page_break != PB_ALWAYS && page_break != PB_LEFT && page_break != PB_RIGHT)
+		return 0;
+
+	/* How much space left on the page? */
+	avail = page_h - fmodf(*yp - page_top, page_h);
+
+	/* Which side of the page are we on? In restarting (i.e. story) contexts,
+	 * this is passed in explicitly. In traditional contexts, we calculate it
+	 * according to which page we're on. */
+	if (restart != NULL)
+		side = restart->left_page;
+	else
+		side = 1 & (int)((*yp - page_top) / page_h);
+
+	/* If we haven't used ANY of the page, then we might not need to do anything. */
+	if (avail == page_h)
 	{
-		float avail = page_h - fmodf(*yp - page_top, page_h);
-		int number = (*yp + (page_h * 0.1f)) / page_h;
-		if (avail > 0 && avail < page_h)
-		{
-			*yp += avail;
-			if (page_break == PB_LEFT && (number & 1) == 0) /* right side pages are even */
-				*yp += page_h;
-			if (page_break == PB_RIGHT && (number & 1) == 1) /* left side pages are odd */
-				*yp += page_h;
-			return 1;
-		}
+		if (page_break == PB_ALWAYS)
+			return 0;
+		if (page_break == PB_LEFT && side == 1)
+			return 0;
+		if (page_break == PB_RIGHT && side == 0)
+			return 0;
 	}
-	return 0;
+
+	/* Move us to the next page. */
+	if (avail > 0)
+		*yp += avail, side ^= 1;
+
+	/* Do we need to move further? */
+	if (page_break == PB_LEFT)
+	{
+		/* If we're restarting, make sure we only restart on a left page. */
+		if (SHOULD_STOP_FOR_RESTART(restart))
+			restart->end_flags = FZ_HTML_RESTARTER_START_END_FLAGS_SPECIFIC_SIDE | FZ_HTML_RESTARTER_START_END_FLAGS_LEFT_SIDE;
+		if (side == 0) /* right pages, side == 0 */
+			*yp += page_h;
+	}
+	if (page_break == PB_RIGHT)
+	{
+		/* If we're restarting, make sure we only restart on a right page. */
+		if (SHOULD_STOP_FOR_RESTART(restart))
+			restart->end_flags = FZ_HTML_RESTARTER_START_END_FLAGS_SPECIFIC_SIDE;
+		if (side == 1) /* left pages, side == 1 */
+			*yp += page_h;
+	}
+
+	return 1;
 }
 
 /* === POSITION LOGIC === */
@@ -1880,11 +1924,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		}
 	}
 
-	if (WE_ARE_SKIPPING(restart))
-	{
-		/* We're still skipping, don't check for pagebreak after! */
-	}
-	else if (layout_block_page_break(ctx, ld, &ld->used[B], box->style->page_break_after))
+	if (layout_block_page_break(ctx, ld, &ld->used[B], box->style->page_break_after))
 	{
 		if (SHOULD_STOP_FOR_RESTART(restart))
 			return 1;
@@ -1926,6 +1966,17 @@ static int layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		 * is the point at which we should restart. */
 		if (restart->start == box)
 		{
+			if (restart->start_flags & FZ_HTML_RESTARTER_START_END_FLAGS_SPECIFIC_SIDE)
+			{
+				/* If the side matches, then great. If not, we need to end here! */
+				if (!!(restart->start_flags & FZ_HTML_RESTARTER_START_END_FLAGS_LEFT_SIDE) != restart->left_page)
+				{
+					/* Skip straight to stopping! */
+					restart->end = box;
+					restart->end_flags = restart->start_flags;
+					return 1;
+				}
+			}
 			/* Set restart->start to be NULL to indicate that we aren't skipping
 			 * any more. */
 			restart->start = NULL;
@@ -1938,12 +1989,8 @@ static int layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	}
 
 	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
-	if (restart && restart->start != NULL)
-	{
-		/* We're still skipping, don't check for pagebreak before! */
-	}
-	else if (layout_block_page_break(ctx, ld, &ld->used[B], style->page_break_before))
-		eop = 1;
+	eop = layout_block_page_break(ctx, ld, &ld->used[B], style->page_break_before);
+
 
 	/* Cope with positioned blocks. */
 	eop |= pre_position(ctx, &position, ld, box);
@@ -3155,13 +3202,16 @@ void fz_draw_story(fz_context *ctx, fz_story *story, fz_device *dev, fz_matrix c
 			fz_rethrow(ctx);
 	}
 
+	story->restart_draw.left_page ^= 1;
 	story->restart_place = story->restart_draw;
 	if (dev)
 		fz_draw_restarted_html(ctx, dev, ctm, story->tree.root->down, 0, page_bot+page_top, &story->restart_place);
 	story->restart_place.start = story->restart_draw.end;
 	story->restart_place.start_flow = story->restart_draw.end_flow;
+	story->restart_place.start_flags = story->restart_draw.end_flags;
 	story->restart_place.end = NULL;
 	story->restart_place.end_flow = NULL;
+	story->restart_place.end_flags = 0;
 	story->rect_count++;
 
 	if (story->restart_place.start == NULL)
@@ -3178,12 +3228,18 @@ void fz_reset_story(fz_context *ctx, fz_story *story)
 
 	story->restart_place.start = NULL;
 	story->restart_place.start_flow = NULL;
+	story->restart_place.start_flags = 0;
 	story->restart_place.end = NULL;
 	story->restart_place.end_flow = NULL;
+	story->restart_place.end_flags = 0;
+	story->restart_place.left_page = 0;
 	story->restart_draw.start = NULL;
 	story->restart_draw.start_flow = NULL;
+	story->restart_draw.start_flags = 0;
 	story->restart_draw.end = NULL;
 	story->restart_draw.end_flow = NULL;
+	story->restart_draw.end_flags = 0;
+	story->restart_draw.left_page = 0;
 	story->rect_count = 0;
 	story->complete = 0;
 }
