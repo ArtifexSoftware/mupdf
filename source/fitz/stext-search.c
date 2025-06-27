@@ -1805,7 +1805,7 @@ ensure_combined_spun_haystack(fz_context *ctx, fz_search *search)
 	{
 		search->combined_spun_haystack = search->combined_haystack;
 		search->combined_spun_split = search->combined_split;
-		search->combined_spun_length = search->combined_spun_length;
+		search->combined_spun_length = search->combined_length;
 	}
 	else
 	{
