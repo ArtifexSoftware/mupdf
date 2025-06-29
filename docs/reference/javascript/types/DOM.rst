@@ -249,3 +249,23 @@ Instance methods
 	.. code-block::
 
 		var dict = xml.getAttributes()
+
+.. method:: DOM.prototype.getText()
+
+	Returns the text contents of the node.
+
+	:returns: string | null
+
+	.. code-block::
+
+		var text = xml.getText()
+
+.. method:: DOM.prototype.getTag()
+
+	Returns the tag name for the node.
+
+	:returns: string | null
+
+	.. code-block::
+
+		var text = xml.getTag()

@@ -6999,6 +6999,40 @@ static void ffi_DOM_getAttributes(js_State *J)
 	}
 }
 
+static void ffi_DOM_getText(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
+	const char *text;
+
+	fz_try(ctx)
+		text = fz_xml_text(dom);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (text)
+		js_pushstring(J, text);
+	else
+		js_pushnull(J);
+}
+
+static void ffi_DOM_getTag(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_xml *dom = js_touserdata(J, 0, "fz_xml");
+	const char *tag;
+
+	fz_try(ctx)
+		tag = fz_xml_tag(dom);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (tag)
+		js_pushstring(J, tag);
+	else
+		js_pushnull(J);
+}
+
 /* PDF specifics */
 
 #if FZ_ENABLE_PDF
@@ -11891,6 +11925,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "DOM.removeAttribute", ffi_DOM_removeAttribute, 1);
 		jsB_propfun(J, "DOM.attribute", ffi_DOM_getAttribute, 1);
 		jsB_propfun(J, "DOM.getAttributes", ffi_DOM_getAttributes, 0);
+		jsB_propfun(J, "DOM.getText", ffi_DOM_getText, 0);
+		jsB_propfun(J, "DOM.getTag", ffi_DOM_getTag, 0);
 	}
 	js_setregistry(J, "fz_xml");
 

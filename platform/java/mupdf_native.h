@@ -751,6 +751,22 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DOM_find
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DOM_findNext
   (JNIEnv *, jobject, jstring, jstring, jstring);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_DOM
+ * Method:    getText
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_DOM_getText
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_DOM
+ * Method:    getTag
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_DOM_getTag
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
