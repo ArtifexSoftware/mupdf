@@ -53,7 +53,9 @@ typedef struct
 {
 	fz_device super;
 
+	int text_as_path;
 	int text_as_text;
+	int text_is_invisible;
 	int reuse_images;
 
 	fz_output *real_out;
@@ -747,11 +749,13 @@ svg_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 		for (span = text->head; span; span = span->next)
 		{
 			fz_append_printf(ctx, out, "<text");
-			svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
+			if (sdev->text_is_invisible)
+				fz_append_printf(ctx, out, " class=\"hidden\"");
+			svg_dev_fill_color(ctx, sdev, colorspace, color, sdev->text_is_invisible ? alpha : 0, color_params);
 			svg_dev_text_span(ctx, sdev, ctm, span);
 		}
 	}
-	else
+	if (sdev->text_as_path)
 	{
 		for (span = text->head; span; span = span->next)
 		{
@@ -775,11 +779,13 @@ svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 		for (span = text->head; span; span = span->next)
 		{
 			fz_append_printf(ctx, out, "<text");
-			svg_dev_fill_color(ctx, sdev, colorspace, color, alpha, color_params);
+			if (sdev->text_is_invisible)
+				fz_append_printf(ctx, out, " class=\"hidden\"");
+			svg_dev_fill_color(ctx, sdev, colorspace, color, sdev->text_is_invisible ? 0 : alpha, color_params);
 			svg_dev_text_span(ctx, sdev, ctm, span);
 		}
 	}
-	else
+	if (sdev->text_as_path)
 	{
 		for (span = text->head; span; span = span->next)
 		{
@@ -812,11 +818,13 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_matri
 		for (span = text->head; span; span = span->next)
 		{
 			fz_append_printf(ctx, out, "<text");
-			svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), white, 1, fz_default_color_params);
+			if (sdev->text_is_invisible)
+				fz_append_printf(ctx, out, " class=\"hidden\"");
+			svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), white, sdev->text_is_invisible ? 0 : 1, fz_default_color_params);
 			svg_dev_text_span(ctx, sdev, ctm, span);
 		}
 	}
-	else
+	if (sdev->text_as_path)
 	{
 		for (span = text->head; span; span = span->next)
 		{
@@ -852,12 +860,14 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 		for (span = text->head; span; span = span->next)
 		{
 			fz_append_printf(ctx, out, "<text");
+			if (sdev->text_is_invisible)
+				fz_append_printf(ctx, out, " class=\"hidden\"");
 			svg_dev_stroke_state(ctx, sdev, stroke, fz_identity);
-			svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, 1, fz_default_color_params);
+			svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, sdev->text_is_invisible ? 0 : 1, fz_default_color_params);
 			svg_dev_text_span(ctx, sdev, ctm, span);
 		}
 	}
-	else
+	if (sdev->text_as_path)
 	{
 		for (span = text->head; span; span = span->next)
 		{
@@ -1325,6 +1335,14 @@ svg_dev_close_device(fz_context *ctx, fz_device *dev)
 	fz_write_printf(ctx, out, " width=\"%g\" height=\"%g\" viewBox=\"0 0 %g %g\">\n",
 		sdev->page_width, sdev->page_height, sdev->page_width, sdev->page_height);
 
+	/*
+	 * Invisible text layers are meant for Copy & Paste,
+	 * at least Firefox <= 138 requires absolute positioning for determining line breaks.
+	 */
+	if (sdev->text_is_invisible) {
+		fz_write_string(ctx, out, "<style> text.hidden {position: absolute; } </style>\n}");
+	}
+
 	if (sdev->defs->len > 0)
 	{
 		fz_write_printf(ctx, out, "<defs>\n");
@@ -1404,7 +1422,9 @@ fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page
 	dev->save_id = id;
 	dev->id = id ? *id : 1;
 	dev->layers = 0;
-	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
+	dev->text_as_path = (text_format == FZ_SVG_TEXT_AS_PATH || text_format == FZ_SVG_TEXT_AS_PATH_AND_TEXT);
+	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT || text_format == FZ_SVG_TEXT_AS_PATH_AND_TEXT);
+	dev->text_is_invisible = (text_format == FZ_SVG_TEXT_AS_PATH_AND_TEXT);
 	dev->reuse_images = reuse_images;
 	dev->page_width = page_width;
 	dev->page_height = page_height;
