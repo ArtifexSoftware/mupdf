@@ -1168,7 +1168,7 @@ Global
 		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.DebugExtra|x64.ActiveCfg = Debug|x64
 		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.Memento|ARM64.ActiveCfg = Disabled|ARM64
 		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.Memento|Win32.ActiveCfg = Disabled|Win32
-		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.Memento|x64.ActiveCfg = Disabled|x64
+		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.Memento|x64.ActiveCfg = Memento|x64
 		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.MementoCommercial|ARM64.ActiveCfg = Disabled|ARM64
 		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.MementoCommercial|Win32.ActiveCfg = Disabled|Win32
 		{240A4E6E-9679-4DED-BA0C-3DB35F2D6674}.MementoCommercial|x64.ActiveCfg = Disabled|x64

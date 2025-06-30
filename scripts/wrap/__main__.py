@@ -1351,6 +1351,7 @@ def build_so_windows(
         libs=(),
         libpaths=(),
         debug=False,
+        memento=False,
         export=None,
         force_rebuild=False,
         ):
@@ -1382,8 +1383,8 @@ def build_so_windows(
                 /diagnostics:caret
                 /nologo
                 /permissive-
-                {'' if debug else '/D "NDEBUG"'}
-                {'/MDd' if debug else '/MD'} # Multithread DLL run-time library
+                {'/MDd /Od /RTC1 /D _DEBUG' if (debug or memento) else '/MD /D "NDEBUG"'}
+                {'/D MEMENTO' if memento else ''}
             ''')
     if sys.maxsize != 2**31 - 1:
         command += f'  /D "WIN64"\n'
@@ -1827,6 +1828,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
 
                 dir_so_flags = os.path.basename( build_dirs.dir_so).split( '-')
                 debug = 'debug' in dir_so_flags
+                memento = 'memento' in dir_so_flags
 
                 if state.state_.windows:
                     if build_python:
@@ -1847,16 +1849,22 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                         path_cpp = os.path.relpath(path_cpp)    # So we don't expose build machine details in __FILE__.
                         assert os.path.exists(path_cpp), f'SWIG-generated file does not exist: {path_cpp}'
 
+                        path_o = f'{path_cpp}.o'
+
+                        libdir = f'{build_dirs.dir_mupdf}/platform/win32/'
+                        mupdfcpp_lib = f'{build_dirs.dir_mupdf}/platform/win32/'
+                        if build_dirs.cpu.bits == 64:
+                            libdir += 'x64/'
+                        libdir += 'Debug/' if debug else 'Memento/' if memento else 'Release/'
+                        libs = list()
+                        libs.append(libdir + ('mupdfcpp64.lib' if build_dirs.cpu.bits == 64 else 'mupdfcpp.lib'))
+                        if memento:
+                            libs.append(libdir + 'libmupdf.lib')
+
                         if 1:
                             # Build with direct invocation of cl.exe and link.exe.
                             pf = pipcl.PythonFlags()
                             path_o = f'{path_cpp}.o'
-                            mupdfcpp_lib = f'{build_dirs.dir_mupdf}/platform/win32/'
-
-                            if build_dirs.cpu.bits == 64:
-                                mupdfcpp_lib += 'x64/'
-                            mupdfcpp_lib += 'Debug/' if debug else 'Release/'
-                            mupdfcpp_lib += 'mupdfcpp64.lib' if build_dirs.cpu.bits == 64 else 'mupdfcpp.lib'
                             build_so_windows(
                                     build_dirs,
                                     path_cpp = path_cpp,
@@ -1871,9 +1879,10 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                         f'{build_dirs.dir_mupdf}/platform/c++/include',
                                         wp.include,
                                     ),
-                                    libs = mupdfcpp_lib,
+                                    libs = libs,
                                     libpaths = wp.libs,
                                     debug = debug,
+                                    memento = memento,
                                     export = 'PyInit__mupdf',
                                     )
                         else:
@@ -1925,11 +1934,6 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
 
                         if 1:
                             path_o = f'{path_cpp}.o'
-                            mupdfcpp_lib = f'{build_dirs.dir_mupdf}/platform/win32/'
-                            if build_dirs.cpu.bits == 64:
-                                mupdfcpp_lib += 'x64/'
-                            mupdfcpp_lib += 'Debug/' if debug else 'Release/'
-                            mupdfcpp_lib += 'mupdfcpp64.lib' if build_dirs.cpu.bits == 64 else 'mupdfcpp.lib'
                             build_so_windows(
                                     build_dirs,
                                     path_cpp = path_cpp,
@@ -1942,8 +1946,9 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                         f'{build_dirs.dir_mupdf}/include',
                                         f'{build_dirs.dir_mupdf}/platform/c++/include',
                                     ),
-                                    libs = mupdfcpp_lib,
+                                    libs = libs,
                                     debug = debug,
+                                    memento = memento,
                                     )
                         else:
                             win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)

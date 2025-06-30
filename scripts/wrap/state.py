@@ -309,9 +309,9 @@ class BuildDirs:
                 # `/Od` (no optimisation) and `/RTC1` (extra runtime checks)
                 # because these seem to be conventionally set in VS.
                 #
-                self.cpp_flags = '/MDd /Od /RTC1'
+                self.cpp_flags = '/MDd /Od /RTC1 /D _DEBUG'
             elif '-memento' in dir_so:
-                self.cpp_flags = '/MDd /Od /RTC1 /DMEMENTO'
+                self.cpp_flags = '/MDd /Od /RTC1 /D _DEBUG /DMEMENTO'
             else:
                 self.cpp_flags = None
                 jlib.log( 'Warning: unrecognised {dir_so=}, so cannot determine cpp_flags')
@@ -375,5 +375,7 @@ class BuildDirs:
             return 'Debug'
         elif 'release' in dir_so_flags:
             return 'Release'
+        elif 'memento' in dir_so_flags:
+            return 'Memento'
         else:
             assert 0, f'Expecting "-release-" or "-debug-" in build_dirs.dir_so={self.dir_so}'
