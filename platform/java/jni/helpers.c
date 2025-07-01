@@ -26,7 +26,7 @@ typedef struct {
 	int error;
 } search_state;
 
-static int hit_callback(fz_context *ctx, void *opaque, int quads, fz_quad *quad)
+static int hit_callback(fz_context *ctx, void *opaque, int quads, fz_quad *quad, int chapter, int page)
 {
 	search_state *state = (search_state *) opaque;
 	JNIEnv *env = state->env;

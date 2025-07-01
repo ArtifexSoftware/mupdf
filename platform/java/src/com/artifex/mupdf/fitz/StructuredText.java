@@ -53,6 +53,7 @@ public class StructuredText
 	public static final int SEARCH_KEEP_WHITESPACE = 8;
 	public static final int SEARCH_KEEP_LINES = 16;
 	public static final int SEARCH_KEEP_PARAGRAPHS = 32;
+	public static final int SEARCH_KEEP_HYPHENS = 64;
 
 	public native Quad[][] search(String needle, int style);
 	public Quad[][] search(String needle)
