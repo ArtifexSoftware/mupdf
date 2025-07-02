@@ -261,38 +261,37 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	 * 	https://bugs.ghostscript.com/show_bug.cgi?id=701797
 	 * 	http://www.open-std.org/jtc1/sc22//WG14/www/docs/n1339.pdf
 	 */
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(__MINGW64__)
+#define CLOBBER "x"
+#else
+#define CLOBBER ""
+#endif
+/* On windows, we use variants of fopen and remove that cope with utf8. */
 #ifdef _WIN32
+#define FOPEN fz_fopen_utf8
+#define REMOVE fz_remove_utf8
+#else
+#define FOPEN fopen
+#define REMOVE remove
+#endif
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
 	if (!append)
 	{
-		if (fz_remove_utf8(filename) < 0)
+		if (REMOVE(filename) < 0)
 			if (errno != ENOENT)
 				fz_throw(ctx, FZ_ERROR_SYSTEM, "cannot remove file '%s': %s", filename, strerror(errno));
 	}
-#if defined(__MINGW32__) || defined(__MINGW64__)
-	file = fz_fopen_utf8(filename, append ? "rb+" : "wb+"); /* 'x' flag not supported. */
-#else
-	file = fz_fopen_utf8(filename, append ? "rb+" : "wb+x");
-#endif
+	file = FOPEN(filename, append ? "rb+" : "wb+" CLOBBER);
 	if (append)
 	{
 		if (file == NULL)
-			file = fz_fopen_utf8(filename, "wb+");
+			file = FOPEN(filename, "wb+");
 		else
 			fseek(file, 0, SEEK_END);
 	}
-#else
-	/* Ensure we create a brand new file. We don't want to clobber our old file. */
-	if (!append)
-	{
-		if (remove(filename) < 0)
-			if (errno != ENOENT)
-				fz_throw(ctx, FZ_ERROR_SYSTEM, "cannot remove file '%s': %s", filename, strerror(errno));
-	}
-	file = fopen(filename, append ? "rb+" : "wb+x");
-	if (file == NULL && append)
-		file = fopen(filename, "wb+");
-#endif
+#undef FOPEN
+#undef REMOVE
+#undef CLOBBER
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_SYSTEM, "cannot open file '%s': %s", filename, strerror(errno));
 
