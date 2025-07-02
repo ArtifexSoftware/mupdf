@@ -32,6 +32,25 @@ here.
 
 	Disable ICC-profiles based operation.
 
+.. function:: mupdf.emptyStore()
+
+	|only_mutool|
+
+	Empty all cached entries from the store.
+
+.. function:: mupdf.shrinkStore(percent)
+
+	|only_mutool|
+
+	Remove cached entries from the store until it is no more
+	full than the passed percentage.
+
+	Returns true if the desired percentage could be obtained,
+	otherwise false.
+
+	:param number percent:
+	:returns boolean
+
 .. function:: mupdf.setUserCSS(stylesheet, useDocumentStyles)
 
 	Set a style sheet to apply to all reflowable documents.

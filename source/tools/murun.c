@@ -3635,6 +3635,28 @@ static void ffi_disableICC(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_emptyStore(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_try(ctx)
+		fz_empty_store(ctx);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_shrinkStore(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	int percent = js_tonumber(J, 1);
+	int success;
+	fz_try(ctx)
+		success = fz_shrink_store(ctx, percent);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, success);
+}
+
 static void ffi_readFile(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12621,6 +12643,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "readFile", ffi_readFile, 1);
 		jsB_propfun(J, "enableICC", ffi_enableICC, 0);
 		jsB_propfun(J, "disableICC", ffi_disableICC, 0);
+		jsB_propfun(J, "emptyStore", ffi_emptyStore, 0);
+		jsB_propfun(J, "shrinkStore", ffi_shrinkStore, 1);
 
 		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 
