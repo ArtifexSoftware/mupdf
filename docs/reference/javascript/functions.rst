@@ -38,11 +38,15 @@ here.
 
 .. function:: mupdf.shrinkStore(percent)
 
-	Remove cached entries from the store until it is no more
-	full than the passed percentage.
+	Remove cached entries from the store until it holds less
+	data than the specified threshold.
 
-	Returns true if the desired percentage could be obtained,
-	otherwise false.
+	If the store was initialized with a limit, the threshold is a
+	percentage of the limit. If the store is unlimited in size, the
+	threshold is a percentage of what the store currently holds.
+
+	Returns a boolean indicating whether or not the store was able to be
+	shrunk to below the threshold.
 
 	:param number percent:
 	:returns boolean
