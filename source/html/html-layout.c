@@ -1375,7 +1375,7 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 			else
 			{
 				/* Already fine */
-				box = box;
+				(void) box;
 			}
 		}
 		else
@@ -1406,7 +1406,7 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 			{
 				/* Top and page bottom determine the box. */
 				/* Leave the height as is. */
-				box = box;
+				(void) box;
 			}
 		}
 		else
@@ -1443,7 +1443,7 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 			else
 			{
 				/* Already fine */
-				box = box;
+				(void) box;
 			}
 		}
 		else
@@ -1473,7 +1473,7 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 			{
 				/* Top and ancestor bottom determine the box. */
 				/* Leave the height as is. */
-				box = box;
+				(void) box;
 			}
 		}
 		else
