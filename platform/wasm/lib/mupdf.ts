@@ -235,6 +235,14 @@ export function setUserCSS(text: string) {
 	libmupdf._wasm_set_user_css(STRING(text))
 }
 
+export function emptyStore() {
+	libmupdf._wasm_empty_store()
+}
+
+export function shrinkStore(percent: number): boolean {
+	return libmupdf._wasm_shrink_store(percent)
+}
+
 export function installLoadFontFunction(f: (name: string, script: string, bold: boolean, italic: boolean) => Font | null) {
 	$libmupdf_load_font_file_js = f
 }

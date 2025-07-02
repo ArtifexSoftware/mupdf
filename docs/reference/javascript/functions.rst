@@ -34,13 +34,9 @@ here.
 
 .. function:: mupdf.emptyStore()
 
-	|only_mutool|
-
 	Empty all cached entries from the store.
 
 .. function:: mupdf.shrinkStore(percent)
-
-	|only_mutool|
 
 	Remove cached entries from the store until it is no more
 	full than the passed percentage.

@@ -147,6 +147,18 @@ void wasm_set_user_css(char *text)
 }
 
 EXPORT
+void wasm_empty_store(void)
+{
+	VOID(fz_empty_store)
+}
+
+EXPORT
+boolean wasm_shrink_store(int percent)
+{
+	BOOLEAN(fz_shrink_store, percent)
+}
+
+EXPORT
 void wasm_Memento_checkAllMemory(void)
 {
 #ifdef MEMENTO
