@@ -1800,11 +1800,11 @@ export class Device extends Userdata<"fz_device"> {
 		libmupdf._wasm_end_group(this.pointer)
 	}
 
-	beginTile(area: Rect, view: Rect, xstep: number, ystep: number, ctm: Matrix, id: number) {
+	beginTile(area: Rect, view: Rect, xstep: number, ystep: number, ctm: Matrix, id: number, doc_id: number) {
 		checkRect(area)
 		checkRect(view)
 		checkMatrix(ctm)
-		return libmupdf._wasm_begin_tile(this.pointer, RECT(area), RECT2(view), xstep, ystep, MATRIX(ctm), id)
+		return libmupdf._wasm_begin_tile(this.pointer, RECT(area), RECT2(view), xstep, ystep, MATRIX(ctm), id, doc_id)
 	}
 
 	endTile() {
@@ -4155,7 +4155,7 @@ interface DeviceFunctions {
 	beginGroup?(bbox: Rect, colorspace: ColorSpace, isolated: boolean, knockout: boolean, blendmode: BlendMode, alpha: number): void,
 	endGroup?(): void,
 
-	beginTile?(area: Rect, view: Rect, xstep: number, ystep: number, ctm: Matrix, id: number): number,
+	beginTile?(area: Rect, view: Rect, xstep: number, ystep: number, ctm: Matrix, id: number, doc_id: number): number,
 	endTile?(): void,
 
 	beginLayer?(name: string): void,
@@ -4490,7 +4490,8 @@ globalThis.$libmupdf_device = {
 		xstep: number,
 		ystep: number,
 		ctm: Pointer<"fz_matrix">,
-		tile_id: number
+		tile_id: number,
+		doc_id: number
 	): number {
 		return $libmupdf_device_table.get(id)?.beginTile?.(
 			fromRect(area),
@@ -4498,7 +4499,8 @@ globalThis.$libmupdf_device = {
 			xstep,
 			ystep,
 			fromMatrix(ctm),
-			tile_id
+			tile_id,
+			doc_id
 		) || 0
 	},
 
