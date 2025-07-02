@@ -549,6 +549,9 @@ Usage:
 
     Args:
 
+        -a <env_args>
+            Read next arg(s) from environmental variables <env_args>.
+
         -b      [<args>] <actions>:
         --build [<args>] <actions>:
             Builds some or all of the C++ and python interfaces.
@@ -758,6 +761,19 @@ Usage:
             If not specified, we use $MUPDF_MAKE. If this is not set, we use
             `make` (or `gmake` on OpenBSD).
 
+        -o <os_names>
+            Control whether we do nothing on the current platform.
+            * <os_names> is a comma-separated list of names.
+            * If <os_names> is empty (the default), we always run normally.
+            * Otherwise we only run if an item in <os_names> matches (case
+              insensitive) platform.system().
+            * For example `-o linux,darwin` will do nothing unless on Linux or
+              MacOS.
+
+        -p 0|1
+            If 1 we install packages as required, for example with `sudo apt
+            install mono-devel`. Default is 0.
+
         --ref
             Copy generated C++ files to mupdfwrap_ref/ directory for use by --diff.
 
@@ -913,6 +929,8 @@ clang = state.clang
 assert sys.version_info[0] == 3 and sys.version_info[1] >= 6, (
         'We require python-3.6+')
 
+
+g_install_packages = False
 
 def compare_fz_usage(
         tu,
@@ -1545,6 +1563,10 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
 
     windows_build_type = build_dirs.windows_build_type()
     so_version = get_so_version( build_dirs)
+
+    if build_csharp:
+        if g_install_packages and platform.system() == 'Linux':
+            jlib.system(f'sudo apt install mono-devel')
 
     for action in actions:
         with jlib.LogPrefixScope( f'{action}: '):
@@ -2422,8 +2444,10 @@ def main2():
     #
     vs_upgrade = False
 
+    global g_install_packages
+
     args = jlib.Args( sys.argv[1:])
-    arg_i = 0
+    venv_arg_i = 0
     while 1:
         try:
             arg = args.next()
@@ -2431,12 +2455,19 @@ def main2():
             break
         #log( 'Handling {arg=}')
 
-        arg_i += 1
+        venv_arg_i += 1
 
         with jlib.LogPrefixScope( f'{arg}: '):
 
             if arg == '-h' or arg == '--help':
                 print( __doc__)
+
+            elif arg == '-a':
+                _name = args.next()
+                _value = os.environ.get(_name, '')
+                _args = shlex.split(_value) + list(args.items)
+                args = jlib.Args(_args)
+                venv_arg_i -= 1
 
             elif arg == '--build' or arg == '-b':
                 build( build_dirs, swig_command, args, vs_upgrade, make_command)
@@ -2527,6 +2558,9 @@ def main2():
             elif arg == '--make':
                 make_command = args.next()
 
+            elif arg == '-p':
+                g_install_packages = int(args.next())
+
             elif arg == '--ref':
                 assert 'mupdfwrap_ref' in build_dirs.ref_dir
                 jlib.system(
@@ -2547,6 +2581,16 @@ def main2():
                 d = args.next()
                 build_dirs.set_dir_so( d)
                 #jlib.log('Have set {build_dirs=}')
+
+            elif arg == '-o':
+                os_names = args.next()
+                if os_names:
+                    os_names = os_names.lower().split(',')
+                    if platform.system().lower() not in os_names:
+                        jlib.log(f'Not running because {platform.system().lower()=} not in {os_names=}')
+                        return
+                    # It's ok for '-o' to be before `--venv`.
+                    venv_arg_i -= 1
 
             elif arg == '--py-package-multi':
                 # Investigating different combinations of pip, pyproject.toml,
@@ -2971,7 +3015,7 @@ def main2():
 
             elif arg in ('--venv' '--venv-force-reinstall'):
                 force_reinstall = ' --force-reinstall' if arg == '--venv-force-reinstall' else ''
-                assert arg_i == 1, f'If specified, {arg} should be the first argument.'
+                assert venv_arg_i == 1, f'If specified, {arg} should be the first argument. {venv_arg_i=}'
                 venv = f'venv-mupdfwrap-{state.python_version()}-{state.cpu_name()}'
                 # Oddly, shlex.quote(sys.executable), which puts the name
                 # inside single quotes, doesn't work - we get error `The
