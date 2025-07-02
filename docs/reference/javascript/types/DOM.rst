@@ -252,6 +252,8 @@ Instance methods
 
 .. method:: DOM.prototype.getText()
 
+	|only_mutool|
+
 	Returns the text contents of the node.
 
 	:returns: string | null
@@ -261,6 +263,8 @@ Instance methods
 		var text = xml.getText()
 
 .. method:: DOM.prototype.getTag()
+
+	|only_mutool|
 
 	Returns the tag name for the node.
 
