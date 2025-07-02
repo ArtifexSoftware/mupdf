@@ -669,7 +669,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, int p
 	if (0)
 #endif
 	{
-		int cached = fz_begin_tile_id(ctx, pr->dev, local_area, pat->bbox, pat->xstep, pat->ystep, ptm, id);
+		int cached = fz_begin_tile_tid(ctx, pr->dev, local_area, pat->bbox, pat->xstep, pat->ystep, ptm, id, pat->document->super.id);
 		if (!cached)
 		{
 			gstate->ctm = ptm;

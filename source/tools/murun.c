@@ -2031,7 +2031,7 @@ js_dev_end_group(fz_context *ctx, fz_device *dev)
 
 static int
 js_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view,
-	float xstep, float ystep, fz_matrix ctm, int id)
+	float xstep, float ystep, fz_matrix ctm, int id, int doc_id)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -2045,7 +2045,8 @@ js_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view,
 		js_pushnumber(J, ystep);
 		ffi_pushmatrix(J, ctm);
 		js_pushnumber(J, id);
-		js_call(J, 6);
+		js_pushnumber(J, doc_id);
+		js_call(J, 7);
 		n = js_tointeger(J, -1);
 		js_pop(J, 1);
 		return n;
