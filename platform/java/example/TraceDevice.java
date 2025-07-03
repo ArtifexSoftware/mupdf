@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -36,7 +36,7 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 		return s + "] " + alpha;
 	}
 	public String traceStroke(StrokeState stroke) {
-		return "c=" + stroke.getStartCap() + "," + stroke.getDashCap() + "," + stroke.getEndCap() +
+		return "c=" + stroke.getLineCap() +
 			" j=" + stroke.getLineJoin() +
 			" m=" + stroke.getMiterLimit() +
 			" l=" + stroke.getLineWidth();

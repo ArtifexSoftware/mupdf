@@ -6915,26 +6915,10 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_StrokeState_newNativeStrokeS
 
 /*
  * Class:     com_artifex_mupdf_fitz_StrokeState
- * Method:    getStartCap
+ * Method:    getLineCap
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getStartCap
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_StrokeState
- * Method:    getDashCap
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getDashCap
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_StrokeState
- * Method:    getEndCap
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getEndCap
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_StrokeState_getLineCap
   (JNIEnv *, jobject);
 
 /*
