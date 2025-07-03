@@ -1853,6 +1853,17 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                 memento = 'memento' in dir_so_flags
 
                 if state.state_.windows:
+
+                    libdir = f'{build_dirs.dir_mupdf}/platform/win32/'
+                    mupdfcpp_lib = f'{build_dirs.dir_mupdf}/platform/win32/'
+                    if build_dirs.cpu.bits == 64:
+                        libdir += 'x64/'
+                    libdir += 'Debug/' if debug else 'Memento/' if memento else 'Release/'
+                    libs = list()
+                    libs.append(libdir + ('mupdfcpp64.lib' if build_dirs.cpu.bits == 64 else 'mupdfcpp.lib'))
+                    if memento:
+                        libs.append(libdir + 'libmupdf.lib')
+
                     if build_python:
                         wp = wdev.WindowsPython(build_dirs.cpu, build_dirs.python_version)
                         jlib.log( '{wp=}:')
@@ -1872,16 +1883,6 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                         assert os.path.exists(path_cpp), f'SWIG-generated file does not exist: {path_cpp}'
 
                         path_o = f'{path_cpp}.o'
-
-                        libdir = f'{build_dirs.dir_mupdf}/platform/win32/'
-                        mupdfcpp_lib = f'{build_dirs.dir_mupdf}/platform/win32/'
-                        if build_dirs.cpu.bits == 64:
-                            libdir += 'x64/'
-                        libdir += 'Debug/' if debug else 'Memento/' if memento else 'Release/'
-                        libs = list()
-                        libs.append(libdir + ('mupdfcpp64.lib' if build_dirs.cpu.bits == 64 else 'mupdfcpp.lib'))
-                        if memento:
-                            libs.append(libdir + 'libmupdf.lib')
 
                         if 1:
                             # Build with direct invocation of cl.exe and link.exe.
