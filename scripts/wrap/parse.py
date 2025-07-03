@@ -11,7 +11,8 @@ import jlib
 try:
     import clang
 except ImportError as e:
-    jlib.log( 'Warning, could not import clang: {e}')
+    if '--venv' not in sys.argv:
+        jlib.log( 'Warning, could not import clang: {e}')
     clang = None
 
 from . import classes

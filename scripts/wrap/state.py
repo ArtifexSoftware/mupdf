@@ -15,11 +15,12 @@ from . import parse
 try:
     import clang.cindex
 except Exception as e:
-    jlib.log('Warning: failed to import clang.cindex: {e=}\n'
-            f'We need Clang Python to build MuPDF python.\n'
-            f'Install with `pip install libclang` (typically inside a Python venv),\n'
-            f'or (OpenBSD only) `pkg_add py3-llvm.`\n'
-            )
+    if '--venv' not in sys.argv:
+        jlib.log('Warning: failed to import clang.cindex: {e=}\n'
+                f'We need Clang Python to build MuPDF python.\n'
+                f'Install with `pip install libclang` (typically inside a Python venv),\n'
+                f'or (OpenBSD only) `pkg_add py3-llvm.`\n'
+                )
     clang = None
 
 omit_fns = [
