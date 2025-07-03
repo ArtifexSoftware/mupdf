@@ -77,13 +77,14 @@ public class HelloWorld
             int received_exception = 0;
             try
             {
+                System.Console.WriteLine("Attempting to open non-existent file 'does not exist'");
                 mupdf.FzDocument document2 = new mupdf.FzDocument("does not exist");
                 System.Console.WriteLine("*** Error, did not get expected exception.");
             }
             catch (System.Exception e)
             {
                 received_exception = 1;
-                System.Console.WriteLine("Received exception: " + e.Message);
+                System.Console.WriteLine("Received expected exception: " + e.Message);
             }
             if (received_exception != 1)
             {
