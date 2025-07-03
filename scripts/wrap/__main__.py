@@ -1423,7 +1423,7 @@ def build_so_windows(
                 /DLL                    # Builds a DLL.
                 /IMPLIB:"{path_lib}"    # Name of generated .lib.
                 /OUT:"{path_so}"        # Name of generated .dll.
-                {'/DEBUG' if debug else ''}
+                {'/DEBUG' if (debug or memento) else ''}
                 {path_o}
             ''')
     for lib in libs:
@@ -1634,11 +1634,12 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                         command2 = f'{command} /Project {project}'
                         jlib.system(command2, verbose=1, out='log')
 
-                    jlib.fs_copy(
-                            f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.dll',
-                            f'{build_dirs.dir_so}/',
-                            verbose=1,
-                            )
+                    for suffix in ('.dll', '.pdb'):
+                        jlib.fs_copy(
+                                f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}{suffix}',
+                                f'{build_dirs.dir_so}/',
+                                verbose=1,
+                                )
 
                 else:
                     jlib.log( 'Compiling generated C++ source code to create libmupdfcpp.so ...')
