@@ -1368,7 +1368,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 	if (!tdev->metatext)
 		return; /* Mismatched pop. Live with it. */
 
-	if (tdev->metatext->type != FZ_METATEXT_ACTUALTEXT)
+	if (tdev->metatext->type != FZ_METATEXT_ACTUALTEXT || (tdev->opts.flags & FZ_STEXT_IGNORE_ACTUALTEXT) != 0)
 	{
 		/* We only deal with ActualText here. Just pop anything else off,
 		 * and we're done. */
@@ -1496,22 +1496,19 @@ static void
 fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
-	fz_rect *bounds = actualtext_bounds(tdev);
 	fz_matrix local_ctm;
 	fz_rect scissor;
 	fz_image *image;
 
-	/* If we aren't keeping images, but we are in a bound, update the bounds
-	 * without generating the entire image. */
-	if ((tdev->opts.flags & FZ_STEXT_PRESERVE_IMAGES) == 0 && bounds)
+	/* If we aren't preserving images, don't waste time making the shade. */
+	if ((tdev->opts.flags & FZ_STEXT_PRESERVE_IMAGES) == 0)
 	{
-		*bounds = fz_union_rect(*bounds, fz_bound_shade(ctx, shade, ctm));
+		/* But we do still need to handle actualtext bounds. */
+		fz_rect *bounds = actualtext_bounds(tdev);
+		if (bounds)
+			*bounds = fz_union_rect(*bounds, fz_bound_shade(ctx, shade, ctm));
 		return;
 	}
-
-	/* Unless we are preserving image, nothing to do here. */
-	if ((tdev->opts.flags & FZ_STEXT_PRESERVE_IMAGES) == 0)
-		return;
 
 	local_ctm = ctm;
 	scissor = fz_device_current_scissor(ctx, dev);
@@ -2534,7 +2531,9 @@ fz_new_stext_device_for_page(fz_context *ctx, fz_stext_page *page, const fz_stex
 	if (opts)
 		dev->opts = *opts;
 
-	if ((dev->flags & FZ_STEXT_PRESERVE_IMAGES) == 0)
+	/* If we are ignoring images, then it'd be nice to skip the decode costs. BUT we still need them to tell
+	 * us the bounds for ActualText, so we can only actually skip them if we are ignoring actualtext too. */
+	if ((dev->flags & FZ_STEXT_PRESERVE_IMAGES) == 0 && (dev->opts.flags & FZ_STEXT_IGNORE_ACTUALTEXT) != 0)
 		dev->super.hints |= FZ_DONT_DECODE_IMAGES;
 
 	dev->rect_max = 0;
