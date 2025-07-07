@@ -1746,6 +1746,35 @@ new_line:
 	}
 }
 
+/*	Return the current char that the stext points to. This might move the
+ *	current_stext stuff a bit, but it won't pass any characters.
+ */
+static int
+current_stext_char(fz_context *ctx, fz_search *search)
+{
+	while (1)
+	{
+		if (search->current_stext.ch)
+			return search->current_stext.ch->c;
+		if (search->current_stext.line != NULL)
+			search->current_stext.line = search->current_stext.line->next;
+new_line:
+		if (search->current_stext.line != NULL)
+		{
+			search->current_stext.ch = search->current_stext.line->first_char;
+			continue;
+		}
+		while (search->current_stext.block != NULL && search->current_stext.block != FZ_STEXT_BLOCK_TEXT)
+		{
+			search->current_stext.block = next_block(search->current_stext.block, &search->current_stext.struc);
+		}
+		if (search->current_stext.block == NULL)
+			return 0;
+		search->current_stext.line = search->current_stext.block->u.t.first_line;
+		goto new_line;
+	}
+}
+
 static void add_quad(fz_context *ctx, fz_search *search, search_page *page, fz_stext_line *line, fz_stext_char *ch)
 {
 	float vfuzz = ch->size * search->vfuzz;
@@ -2052,15 +2081,34 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 		 * actually move the current_pos, let alone the
 		 * current_spun_pos. So, loop a bit. */
 		size_t pos = search->current_spun_pos;
-		do
+		int c, d, c_len;
+		c_len = fz_chartorune(&c, &search->combined_spun_haystack[search->current_spun_pos]);
+		d = current_stext_char(ctx, search);
+		if (fz_is_unicode_whitespace(c) && !fz_is_unicode_whitespace(d))
 		{
-			if (step_char(search))
+			/* stext and pos are out of sync. This should only ever happen
+			 * where pos points to whitespace, and the whitespace isn't
+			 * present in the stext. We can just step the pos forwards over the
+			 * whitespace. */
+			do
 			{
-				/* We ran out of page. */
-				goto drop_page;
+				search->current_spun_pos += c_len;
+				c_len = fz_chartorune(&c, &search->combined_spun_haystack[search->current_spun_pos]);
 			}
+			while (fz_is_unicode_whitespace(c));
 		}
-		while (pos == search->current_spun_pos);
+		else
+		{
+			do
+			{
+				if (step_char(search))
+				{
+					/* We ran out of page. */
+					goto drop_page;
+				}
+			}
+			while (pos == search->current_spun_pos);
+		}
 	}
 
 	/* Search within the combined_spun_haystack onwards from current_spun_pos. */
@@ -2097,6 +2145,26 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 		{
 			begin = &search->combined_haystack[search->combined_index[spun_begin - search->combined_spun_haystack]];
 			end = &search->combined_haystack[search->combined_index[spun_end - search->combined_spun_haystack]];
+		}
+
+		/* Check for the horrible case of the search starting from 'implicit' whitespace. */
+		{
+			int c, d, c_len;
+			c_len = fz_chartorune(&c, &search->combined_haystack[search->current_pos]);
+			d = current_stext_char(ctx, search);
+			if (fz_is_unicode_whitespace(c) && !fz_is_unicode_whitespace(d))
+			{
+				/* stext and begin are out of sync. This should only ever happen
+				 * where pos points to whitespace, and the whitespace isn't
+				 * present in the stext. We can just step the pos forwards over
+				 * the whitespace. */
+				do
+				{
+					search->current_pos += c_len;
+					c_len = fz_chartorune(&c, &search->combined_haystack[search->current_pos]);
+				}
+				while (fz_is_unicode_whitespace(c));
+			}
 		}
 
 		/* Run forwards through the spun haystack until we reach the beginning of the match. */
