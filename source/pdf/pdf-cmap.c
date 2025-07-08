@@ -546,9 +546,12 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 				{
 					/* case 1, reduces to case 0 */
 					/* or case 2, deleting the node */
-					tree[current].out += high + 1 - tree[current].low;
-					tree[current].low = high + 1;
-					if (tree[current].low > tree[current].high)
+					if (!tree[current].many)
+					{
+						tree[current].out += high + 1 - tree[current].low;
+						tree[current].low = high + 1;
+					}
+					if (tree[current].low > tree[current].high || tree[current].many)
 					{
 						/* update lt/gt references that will be moved/stale after deleting current */
 						if (gt == (unsigned int) cmap->tlen - 1)
@@ -572,7 +575,8 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 					/* case 3, reduces to case 5 */
 					int new_high = tree[current].high;
 					tree[current].high = low-1;
-					add_range(ctx, cmap, high+1, new_high, tree[current].out + high + 1 - tree[current].low, 0, tree[current].many);
+					assert(!tree[current].many);
+					add_range(ctx, cmap, high+1, new_high, tree[current].out + high + 1 - tree[current].low, 0, 0);
 					tree = cmap->tree;
 				}
 				/* Now look for where to move to next (left for case 0, right for case 5) */
