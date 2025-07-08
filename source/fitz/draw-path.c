@@ -131,8 +131,9 @@ bezier(fz_context *ctx, fz_rasterizer *rast, fz_matrix ctm, float flatness,
 	bezier(ctx, rast, ctm, flatness, xabcd, yabcd, xbcd, ybcd, xcd, ycd, xd, yd, depth + 1);
 }
 
+/* AIX uses 'quad' as a definition, so we can't use that here. */
 static void
-quad(fz_context *ctx, fz_rasterizer *rast, fz_matrix ctm, float flatness,
+quadratic(fz_context *ctx, fz_rasterizer *rast, fz_matrix ctm, float flatness,
 	float xa, float ya,
 	float xb, float yb,
 	float xc, float yc, int depth)
@@ -166,8 +167,8 @@ quad(fz_context *ctx, fz_rasterizer *rast, fz_matrix ctm, float flatness,
 
 	xabc *= 0.25f; yabc *= 0.25f;
 
-	quad(ctx, rast, ctm, flatness, xa, ya, xab, yab, xabc, yabc, depth + 1);
-	quad(ctx, rast, ctm, flatness, xabc, yabc, xbc, ybc, xc, yc, depth + 1);
+	quadratic(ctx, rast, ctm, flatness, xa, ya, xab, yab, xabc, yabc, depth + 1);
+	quadratic(ctx, rast, ctm, flatness, xabc, yabc, xbc, ybc, xc, yc, depth + 1);
 }
 
 typedef struct
@@ -219,7 +220,7 @@ flatten_quadto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float 
 {
 	flatten_arg *arg = (flatten_arg *)arg_;
 
-	quad(ctx, arg->rast, arg->ctm, arg->flatness, arg->c.x, arg->c.y, x1, y1, x2, y2, 0);
+	quadratic(ctx, arg->rast, arg->ctm, arg->flatness, arg->c.x, arg->c.y, x1, y1, x2, y2, 0);
 	arg->c.x = x2;
 	arg->c.y = y2;
 }
