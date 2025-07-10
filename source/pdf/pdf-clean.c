@@ -952,6 +952,28 @@ rect_touches_redactions(fz_context *ctx, fz_rect area, struct redact_filter_stat
 }
 
 static void
+remove_page_link(fz_context *ctx, pdf_page *page, pdf_obj *obj)
+{
+	pdf_link **linkp = (pdf_link **)&page->links;
+	pdf_link *link;
+
+	while ((link = *linkp) != NULL)
+	{
+		if (link->obj == obj)
+		{
+			*linkp = (pdf_link *)link->super.next;
+			link->super.next = NULL;
+			fz_drop_link(ctx, &link->super);
+			break;
+		}
+		else
+		{
+			linkp = (pdf_link **)&link->super.next;
+		}
+	}
+}
+
+static void
 pdf_redact_page_links(fz_context *ctx, struct redact_filter_state *red)
 {
 	pdf_obj *annots;
@@ -970,6 +992,7 @@ pdf_redact_page_links(fz_context *ctx, struct redact_filter_state *red)
 			if (rect_touches_redactions(ctx, area, red))
 			{
 				pdf_array_delete(ctx, annots, k);
+				remove_page_link(ctx, red->page, link);
 				continue;
 			}
 		}
