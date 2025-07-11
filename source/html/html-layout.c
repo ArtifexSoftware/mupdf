@@ -1507,10 +1507,302 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box);
 // TODO: use CSS/HTML column-span/colspan on table-cell
 // TODO: use CSS/HTML width on table-cell when computing maximum width
 
-struct column_width {
+/* The column widths here should include any border widths and padding. */
+/* This is consistent with how the 'width' figures are understood in HTML. */
+typedef struct {
 	int fixed;
 	float min, max, actual;
-};
+} column_width;
+
+typedef struct
+{
+	unsigned int fixed : 1;
+	unsigned int spanned : 1;
+	float minw;
+	float maxw;
+	uint16_t rowspan;
+	uint16_t colspan;
+	fz_html_box *box;
+} table_cell;
+
+typedef struct
+{
+	/* How large the grid is allocated as */
+	int max_w;
+	int max_h;
+	/* How large the grid is populated */
+	int w;
+	int h;
+	/* Where are we in filling the grid */
+	int x;
+	int y;
+
+	float spacing;
+
+	table_cell *cells;
+
+	float *row_b;
+} table_grid;
+
+static table_grid *
+new_table_grid(fz_context *ctx, float spacing)
+{
+	table_grid *grid = fz_malloc_struct(ctx, table_grid);
+
+	grid->spacing = spacing;
+
+	return grid;
+}
+
+static void drop_table_grid(fz_context *ctx, table_grid *grid)
+{
+	if (grid)
+	{
+		fz_free(ctx, grid->cells);
+		fz_free(ctx, grid->row_b);
+		fz_free(ctx, grid);
+	}
+}
+
+static void resize_grid(fz_context *ctx, table_grid *grid, int w, int h)
+{
+	int y;
+
+	assert(w >= grid->max_w && h >= grid->max_h);
+
+	grid->cells = fz_realloc(ctx, grid->cells, sizeof(grid->cells[0]) * w * h);
+
+	if (grid->max_w != w)
+	{
+		for (y = grid->max_h-1; y >= 0; y--)
+		{
+			memmove(&grid->cells[y * w], &grid->cells[y * grid->max_w], sizeof(grid->cells[0]) * grid->max_w);
+			memset(&grid->cells[y * w + grid->max_w], 0, sizeof(grid->cells[0]) * (w - grid->max_w));
+		}
+	}
+	if (grid->max_h != h)
+		memset(&grid->cells[w * grid->max_h], 0, sizeof(grid->cells[0]) * w * (h - grid->max_h));
+	grid->max_w = w;
+	grid->max_h = h;
+}
+
+static table_cell *cell_at(fz_context *ctx, table_grid *grid, int x, int y)
+{
+	if (x >= grid->max_w || y >= grid->max_h)
+	{
+		int new_w = grid->max_w;
+		int new_h = grid->max_h;
+		if (new_w == 0)
+			new_w = 8;
+		if (new_h == 0)
+			new_h = 8;
+		while (x >= new_w)
+			new_w *= 2;
+		while (y >= new_h)
+			new_h *= 2;
+		resize_grid(ctx, grid, new_w, new_h);
+	}
+
+	if (x >= grid->w)
+		grid->w = x+1;
+	if (y >= grid->h)
+		grid->h = y+1;
+
+	return &grid->cells[grid->max_w * y + x];
+}
+
+static table_cell *next_table_cell(fz_context *ctx, table_grid *grid, fz_html_box *box, int colspan, int rowspan)
+{
+	table_cell *cell;
+	int x, y;
+
+	while (1)
+	{
+		cell = cell_at(ctx, grid, grid->x, grid->y);
+		if (!cell->spanned)
+			break;
+		grid->x++;
+	}
+
+	if (colspan < 1)
+		colspan = 1;
+	if (rowspan < 1)
+		rowspan = 1;
+
+	/* Mark all as being spanned. */
+	for (y = 0; y < rowspan; y++)
+		for (x = 0; x < colspan; x++)
+		{
+			table_cell *cell2 = cell_at(ctx, grid, grid->x + x, grid->y + y);
+			cell2->spanned = 1;
+		}
+
+	/* Reload the original cell (as it may have moved due to resizing) */
+	cell = cell_at(ctx, grid, grid->x, grid->y);
+	cell->spanned = 0;
+	cell->colspan = colspan;
+	cell->rowspan = rowspan;
+	cell->box = box;
+
+	grid->x += colspan;
+
+	return cell;
+}
+
+static void next_table_row(fz_context *ctx, table_grid *grid)
+{
+	grid->x = 0;
+	grid->y++;
+}
+
+static column_width *
+table_grid_complete(fz_context *ctx, table_grid *grid, float top)
+{
+	int w = grid->w;
+	int h = grid->h;
+	int x, y, x2;
+	column_width *colw = Memento_label(fz_calloc(ctx, grid->w, sizeof(column_width)), "column_width");
+
+	/* Abuse fixed to serve double duty as meaning "no clue" */
+	for (x = 0; x < w; x++)
+		colw[x].fixed = -1;
+
+	/* Look for widths, without colspan confusing them. */
+	for (x = 0; x < w; x++)
+	{
+		float minw = 0, maxw = 0;
+		int fixed = 0;
+		int found = 0;
+		for (y = 0; y < h; y++)
+		{
+			/* Can never throw, as x/y smaller than grid->w/h */
+			table_cell *cell = cell_at(ctx, grid, x, y);
+			if (cell->spanned || cell->colspan > 1)
+				continue;
+			if (cell->fixed)
+			{
+				fixed = 1;
+				minw = cell->minw;
+				maxw = cell->maxw;
+				found = 1;
+			}
+			else if (fixed)
+			{
+				/* We should ignore a fixed size if another cells minimum width is larger. */
+				if (cell->minw > minw)
+				{
+					minw = cell->minw;
+					if (minw > maxw)
+						maxw = minw;
+				}
+			}
+			else
+			{
+				/* Logic looks wrong, but isn't! */
+				if (!found || cell->minw > minw)
+					minw = cell->minw;
+				if (cell->maxw > maxw)
+					maxw = cell->maxw;
+				found = 1;
+			}
+		}
+		if (found)
+		{
+			colw[x].min = minw;
+			colw[x].max = maxw;
+			colw[x].fixed = fixed;
+		}
+	}
+
+	/* Now we look at colspanning cells. */
+	for (y = 0; y < h; y++)
+	{
+		for (x = 0; x < w; x++)
+		{
+			float minw;
+			int unknown, nonfixed;
+			table_cell *cell = cell_at(ctx, grid, x, y);
+			if (cell->spanned || cell->colspan == 1)
+				continue;
+
+			/* So, we have a spanning cell starting at (x, y) */
+			minw = 0;
+			unknown = 0;
+			nonfixed = 0;
+			for (x2 = x; x2 < x + cell->colspan; x2++)
+			{
+				if (colw[x2].fixed == -1)
+				{
+					unknown++;
+					continue;
+				}
+				if (!colw[x2].fixed)
+					nonfixed++;
+				minw += colw[x2].min;
+			}
+
+			if (minw < cell->minw)
+			{
+				/* We need to boost the minimum widths. */
+				float boost = (cell->minw - minw);
+				if (unknown > 0)
+				{
+					/* Divide the required space between 'unknown' columns
+					 * that currently have no width. */
+					boost /= unknown;
+					for (x2 = x; x2 < x + cell->colspan; x++)
+					{
+						if (colw[x2].fixed == -1)
+						{
+							colw[x2].fixed = cell->fixed;
+							colw[x2].min = boost;
+							colw[x2].max = colw[x2].min;
+						}
+					}
+				}
+				else if (nonfixed > 0)
+				{
+					/* Divide the required space between 'nonfixed' columns
+					 * that don't have fixed widths. */
+					boost /= nonfixed;
+					for (x2 = x; x2 < x + cell->colspan; x++)
+					{
+						if (colw[x2].fixed)
+							continue;
+						colw[x2].fixed = cell->fixed;
+						colw[x2].min += boost;
+						if (colw[x2].max < colw[x2].min)
+							colw[x2].max = colw[x2].min;
+					}
+				}
+				else
+				{
+					/* We need more space, but everything is fixed! There seems to be
+					 * a contradiction here. Just live with it. */
+				}
+			}
+		}
+	}
+
+	/* Everything should now be set. */
+	for (x = 0; x < w; x++)
+		assert(colw[x].fixed != -1);
+
+	fz_try(ctx)
+		grid->row_b = fz_malloc(ctx, grid->h * sizeof(float));
+	fz_catch(ctx)
+	{
+		fz_free(ctx, colw);
+		fz_rethrow(ctx);
+	}
+
+	/* Don't add any spacing in here, because we may be skipping!
+	 * We just want a good enough value to use for 'min'. */
+	for (y = 0; y < h; y++)
+		grid->row_b[y] = top;
+
+	return colw;
+}
 
 static float table_cell_padding(fz_context *ctx, fz_html_box *box)
 {
@@ -1609,7 +1901,7 @@ static void squish_block(fz_context *ctx, fz_html_box *box)
 		squish_block(ctx, child);
 }
 
-static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row, int ncol, struct column_width *colw, float spacing)
+static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid, int celly, fz_html_box *row, int ncol, column_width *colw, float spacing)
 {
 	fz_html_box *cell, *child;
 	int col = 0;
@@ -1619,6 +1911,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 	float row_height;
 	float em = row->s.layout.em;
 	int fixed_height = 0;
+	table_cell *tcell;
 
 	/* Always layout the full row since we can't restart in the middle of a cell.
 	 * If the row doesn't fit fully, we'll postpone it to the next page.
@@ -1641,13 +1934,37 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 	for (cell = row->down; cell; cell = cell->next)
 	{
 		float cell_pad = table_cell_padding(ctx, cell);
+		int colspan, rowspan;
+		float cellw;
+		int i;
+
+		/* Find the cell record in the grid. */
+		while (1)
+		{
+			assert(col < grid->w && celly <= grid->h);
+			tcell = cell_at(ctx, grid, col, celly);
+			if (tcell->box == cell)
+				break;
+			x += colw[col++].actual + spacing;
+		}
+		colspan = tcell->colspan;
+		if (colspan < 1)
+			colspan = 1;
+		rowspan = tcell->rowspan;
+		if (rowspan < 1)
+			rowspan = 1;
+
+		/* Find the actual width of this cell */
+		cellw = 0;
+		for (i = 0; i < colspan; i++)
+			cellw += colw[col+i].actual + (i != 0 ? spacing : 0);
 
 		x += spacing;
 
 		/* Position the cell */
 		ld->bounds[T] = row->s.layout.y + cell->u.block.padding[T] + cell->u.block.border[T];
 		ld->bounds[L] = x + cell->u.block.padding[L] + cell->u.block.border[L];
-		ld->bounds[R] = ld->bounds[L] + colw[col].actual - cell_pad;
+		ld->bounds[R] = ld->bounds[L] + cellw - cell_pad;
 		ld->bounds[B] = cell->s.layout.y;
 
 		cell->s.layout.x = ld->bounds[L];
@@ -1683,35 +2000,59 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, fz_html_box *row,
 		/* Advance to next column */
 		x += colw[col].actual;
 
-		/* Adjust row height if necessary */
+		/* Update row_b (most importantly for this row, but ensure the others
+		 * are plausibly increasing too). */
 		y = cell->s.layout.b + cell->u.block.padding[B] + cell->u.block.border[B];
-		if (y > row->s.layout.b)
-			row->s.layout.b = y;
+		for (i = celly + rowspan - 1; i < grid->h; i++)
+		{
+			if (grid->row_b[i] < y)
+				grid->row_b[i] = y;
+			y += spacing;
+		}
 
 		++col;
 	}
 
-	/* For each cell in the row - adjust final cell heights to fill the row */
-	for (cell = row->down; cell; cell = cell->next)
-	{
-		cell->s.layout.b = row->s.layout.b - (cell->u.block.padding[B] + cell->u.block.border[B]);
-	}
+	row->s.layout.b = grid->row_b[celly];
 
 	ld->restart = save_restart;
 
 	TRBLCPY(ld->bounds, saved_bounds);
 }
 
+static void
+fixup_cell_bottoms(fz_context *ctx, table_grid *grid, fz_html_box *box)
+{
+	fz_html_box *rowbox, *cell;
+	int row;
+
+	/* Second pass, set the bottoms of all cells in the tables. */
+	/* FIXME: Process valign here? */
+	for (row = 0, rowbox = box; row <= grid->h && rowbox; row++, rowbox = rowbox->next)
+	{
+		for (cell = rowbox->down; cell; cell = cell->next)
+		{
+			int rowspan = cell->style->rowspan;
+			if (rowspan < 1)
+				rowspan = 1;
+
+			cell->s.layout.b = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]);
+		}
+	}
+}
+
 static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 {
 	fz_html_box *row;
-	int col, ncol = 0;
+	int col, ncol;
 	float min_tabw, max_tabw;
-	struct column_width *colw;
+	column_width *colw = NULL;
 	fz_html_restarter *restart = ld->restart;
 	float spacing;
 	int eop = 0;
 	float avail_w;
+	table_grid *table;
+	int y;
 
 	position_data position;
 
@@ -1744,62 +2085,54 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	ld->used[B] += spacing;
 	box->s.layout.b += spacing;
 
-	/* Find the maximum number of columns. (Count 'col' for each row, biggest one gives ncol). */
-	for (row = box->down; row; row = row->next)
-	{
-		fz_html_box *cell;
-		col = 0;
-		for (cell = row->down; cell; cell = cell->next)
-			++col;
-		if (col > ncol)
-			ncol = col;
-	}
+	table = new_table_grid(ctx, spacing);
 
-	colw = fz_malloc_array(ctx, ncol, struct column_width);
-
-	// TODO: colgroups and colspan
+	fz_var(colw);
 
 	fz_try(ctx)
 	{
 		/* Table Autolayout algorithm from HTML */
 		/* https://www.w3.org/TR/REC-html40/appendix/notes.html#h-B.5.2 */
 
-		/* Calculate largest minimum and maximum column widths */
-		for (col = 0; col < ncol; ++col)
-		{
-			colw[col].fixed = 0;
-			colw[col].min = 0;
-			colw[col].max = 0;
-		}
-
 		for (row = box->down; row; row = row->next)
 		{
 			fz_html_box *cell, *child;
-			for (col = 0, cell = row->down; cell; cell = cell->next, ++col)
+			for (cell = row->down; cell; cell = cell->next)
 			{
+				table_cell *tc = next_table_cell(ctx, table, cell, cell->style->colspan, cell->style->rowspan);
 				float cell_pad = table_cell_padding(ctx, cell);
 				if (fz_css_number_defined_not_auto(cell->style->width))
 				{
 					float em = box->s.layout.em;
 					float w = fz_from_css_number(cell->style->width, em, em, 0) + cell_pad;
-					colw[col].fixed = 1;
-					colw[col].min = w;
-					colw[col].max = w;
+					tc->fixed = 1;
+					tc->minw = w;
+					tc->maxw = w;
 				}
 				else
 				{
+					float cellminw = 0;
+					float cellmaxw = 0;
 					for (child = cell->down; child; child = child->next)
 					{
 						float min = largest_min_width(ctx, child) + cell_pad;
 						float max = largest_max_width(ctx, child) + cell_pad;
-						if (min > colw[col].min)
-							colw[col].min = min;
-						if (max > colw[col].max)
-							colw[col].max = max;
+						/* The logic here looks screwy, but isn't! */
+						if (min > cellminw)
+							cellminw = min;
+						if (max > cellmaxw)
+							cellmaxw = max;
 					}
+					tc->fixed = 0;
+					tc->minw = cellminw;
+					tc->maxw = cellmaxw;
 				}
 			}
+			next_table_row(ctx, table);
 		}
+
+		colw = table_grid_complete(ctx, table, box->s.layout.b);
+		ncol = table->w;
 
 		min_tabw = max_tabw = 0;
 		for (col = 0; col < ncol; ++col)
@@ -1852,13 +2185,14 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 
 		/* Layout each row in turn. */
 		box->s.layout.w = avail_w;
-		for (row = box->down; row; row = row->next)
+		for (row = box->down, y = 0; row; row = row->next, y++)
 		{
 			/* Position the row, zero height for now. */
+			if (box->s.layout.b < table->row_b[y])
+				box->s.layout.b = table->row_b[y];
 			row->s.layout.x = box->s.layout.x;
 			row->s.layout.w = avail_w;
 			row->s.layout.y = row->s.layout.b = box->s.layout.b;
-			row->s.layout.b = row->s.layout.y;
 
 			if (restart && restart->start != NULL)
 			{
@@ -1871,7 +2205,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 				}
 			}
 
-			layout_table_row(ctx, ld, row, ncol, colw, spacing);
+			layout_table_row(ctx, ld, table, y, row, ncol, colw, spacing);
 
 			/* If the row doesn't fit on the current page, break here and put the row on the next page.
 			 * Unless the row was at the very start of the page, in which case it'll overflow instead.
@@ -1892,17 +2226,25 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 					else
 					{
 						row->s.layout.y += avail;
-						layout_table_row(ctx, ld, row, ncol, colw, spacing);
+						layout_table_row(ctx, ld, table, y, row, ncol, colw, spacing);
 					}
 				}
 			}
 
 			box->s.layout.b = row->s.layout.b + spacing;
+			ld->used[B] = box->s.layout.b;
 		}
+
+		/* And align the cell bottoms. */
+		fixup_cell_bottoms(ctx, table, box->down);
+
 		exit:;
 	}
 	fz_always(ctx)
+	{
+		drop_table_grid(ctx, table);
 		fz_free(ctx, colw);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 

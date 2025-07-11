@@ -732,6 +732,40 @@ test_tables(fz_context *ctx)
 }
 
 static void
+test_tablespans(fz_context *ctx)
+{
+	const char *tables =
+		"<!DOCTYPE html><html><head><style>\n"
+		"table, td, th {\n"
+		"  border: 1px solid #808080;\n"
+		"}\n"
+		"</style></head><body>\n"
+		"<table>"
+		"<tr>"
+		"<td colspan=2 style=\"border: 4px solid red\">A</td>"
+		"<td>B</td>"
+		"<td>C</td>"
+		"</tr>"
+		"<tr>"
+		"<td rowspan=2 style=\"border: 2px solid blue\">D</td>"
+		"<td colspan=3>E</td>"
+		"</tr>"
+		"<tr>"
+		"<td>F</td>"
+		"<td rowspan=2 colspan=2 style=\"border: 3px solid green\">G</td>"
+		"</tr>"
+		"<tr>"
+		"<td>H</td>"
+		"<td>I</td>"
+		"</tr>"
+		"</table>"
+		"</div>\n"
+		"</body></html>\n";
+
+	test_story(ctx, "tablespan.pdf", "", tables);
+}
+
+static void
 test_leftright(fz_context *ctx)
 {
 	const char *leftright =
@@ -942,6 +976,8 @@ int main(int argc, const char *argv[])
 	test_positions(ctx);
 
 	test_tables(ctx);
+
+	test_tablespans(ctx);
 
 	test_leftright(ctx);
 

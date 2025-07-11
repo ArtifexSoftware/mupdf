@@ -1297,7 +1297,6 @@ has_border_width_from_property(fz_css_match *match, int property, fz_css_number 
 		*num = make_number(4, N_LENGTH);
 	else
 		*num = number_from_value(value, 0, N_LENGTH);
-	*num = make_number(2, N_LENGTH); /* initial: 'medium' */
 
 	return 1;
 }

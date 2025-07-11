@@ -278,6 +278,8 @@ struct fz_css_style_s
 	fz_css_number border_spacing;
 	fz_css_number text_indent;
 	fz_css_number text_stroke_width;
+	uint16_t rowspan;
+	uint16_t colspan;
 	unsigned int visibility : 2;
 	unsigned int white_space : 3;
 	unsigned int text_align : 2;
