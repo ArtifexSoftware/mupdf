@@ -166,15 +166,18 @@ void
 pdf_nuke_annots(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot;
+	pdf_annot *next;
 
-	for (annot = page->annots; annot; annot = annot->next)
+	for (annot = page->annots; annot; annot = next)
 	{
+		next = annot->next;
 		pdf_drop_obj(ctx, annot->obj);
 		annot->obj = NULL;
 		pdf_drop_annot(ctx, annot);
 	}
-	for (annot = page->widgets; annot; annot = annot->next)
+	for (annot = page->widgets; annot; annot = next)
 	{
+		next = annot->next;
 		pdf_drop_obj(ctx, annot->obj);
 		annot->obj = NULL;
 		pdf_drop_annot(ctx, annot);
