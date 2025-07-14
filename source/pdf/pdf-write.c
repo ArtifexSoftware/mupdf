@@ -415,7 +415,11 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 
 			if (pdf_is_indirect(ctx, obj))
 			{
-				obj = pdf_new_indirect(ctx, doc, to, 0);
+				int o = pdf_to_num(ctx, obj);
+				if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
+					obj = PDF_NULL;
+				else
+					obj = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
 				fz_try(ctx)
 					pdf_update_object(ctx, doc, num, obj);
 				fz_always(ctx)
@@ -2610,6 +2614,9 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		{
 			complete_signatures(ctx, doc, opts);
 		}
+
+		pdf_sync_open_pages(ctx, doc);
+
 		pdf_end_operation(ctx, doc);
 	}
 	fz_always(ctx)
