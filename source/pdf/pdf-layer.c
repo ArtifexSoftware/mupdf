@@ -406,7 +406,7 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 {
 	pdf_ocg_descriptor *desc;
 	pdf_obj *ocprops;
-	pdf_obj *obj;
+	pdf_obj *obj, *name;
 
 	if (!info)
 		return;
@@ -431,8 +431,12 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 	else
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid layer config number");
 
-	info->creator = pdf_dict_get_string(ctx, obj, PDF_NAME(Creator), NULL);
-	info->name = pdf_dict_get_string(ctx, obj, PDF_NAME(Name), NULL);
+	info->creator = pdf_dict_get_text_string(ctx, obj, PDF_NAME(Creator));
+	name = pdf_dict_get(ctx, obj, PDF_NAME(Name));
+	if (config_num == -1 && !name)
+		info->name = "Default";
+	else
+		info->name = pdf_to_text_string(ctx, name);
 }
 
 void
