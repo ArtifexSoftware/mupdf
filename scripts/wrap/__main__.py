@@ -1372,6 +1372,7 @@ def build_so_windows(
         memento=False,
         export=None,
         force_rebuild=False,
+        vs=None,
         ):
     '''
     Compiles and links <path_cpp> into DLL <path_so> and .lib <path_lib>.
@@ -1380,7 +1381,8 @@ def build_so_windows(
     if isinstance(includes, str):   includes = includes,
     if isinstance(libs, str):       libs = libs,
     if isinstance(libpaths, str):   libpaths = libpaths,
-    vs = wdev.WindowsVS()
+    if vs is None:
+        vs = wdev.WindowsVS()
     path_cpp_rel = os.path.relpath(path_cpp)
     path_o = f'{path_cpp}.o'
     # Compile.
@@ -1908,6 +1910,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     debug = debug,
                                     memento = memento,
                                     export = 'PyInit__mupdf',
+                                    vs=windows_vs,
                                     )
                         else:
                             # Use VS devenv.
@@ -1973,6 +1976,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     libs = libs,
                                     debug = debug,
                                     memento = memento,
+                                    vs=windows_vs,
                                     )
                         else:
                             win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)
