@@ -581,9 +581,10 @@ pdf_layer_config_ui_info(fz_context *ctx, pdf_document *doc, int ui, pdf_layer_c
 	entry = &desc->ui[ui];
 	info->type = entry->button_flags;
 	info->depth = entry->depth;
-	info->selected = desc->ocgs[entry->ocg].state;
 	info->locked = entry->locked;
 	info->text = entry->name;
+	if (entry->ocg != -1)
+		info->selected = desc->ocgs[entry->ocg].state;
 }
 
 static int
