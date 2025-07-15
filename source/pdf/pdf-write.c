@@ -382,6 +382,24 @@ static void renumberobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 }
 
+static void
+renumber_stored_object_ref(fz_context *ctx, pdf_obj **objp, pdf_write_state *opts, pdf_document *doc, int xref_len)
+{
+	int o;
+	pdf_obj *obj;
+
+	if (objp == NULL || !pdf_is_indirect(ctx, *objp))
+		return;
+
+	o = pdf_to_num(ctx, *objp);
+	if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
+		obj = PDF_NULL;
+	else
+		obj = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
+	pdf_drop_obj(ctx, *objp);
+	*objp = obj;
+}
+
 static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
 	pdf_xref_entry *newxref = NULL;
@@ -428,6 +446,25 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 				renumberobj(ctx, doc, opts, obj);
 			}
 		}
+
+		/* Now walk the open pages, renumbering the page objects there. */
+		{
+			fz_page *page;
+
+			for (page = doc->super.open; page != NULL; page = page->next)
+			{
+				if (page->doc == NULL)
+					continue;
+				renumber_stored_object_ref(ctx, &((pdf_page*)page)->obj, opts, doc, xref_len);
+			}
+		}
+
+		/* Javascript stores a form object - need to renumber that. */
+		renumber_stored_object_ref(ctx, pdf_js_form_objectp(ctx, doc), opts, doc, xref_len);
+
+		/* And the OCGs store several. Just drop 'em all. */
+		pdf_drop_ocg(ctx, doc);
+		doc->ocg = NULL;
 
 		/* Create new table for the reordered, compacted xref */
 		newxref = Memento_label(fz_malloc_array(ctx, xref_len + 3, pdf_xref_entry), "pdf_xref_entries");
@@ -2458,6 +2495,9 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 		xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
 		expand_lists(ctx, opts, xref_len);
+
+		if (opts->do_garbage >= 1)
+			pdf_drop_page_tree_internal(ctx, doc);
 
 		do
 		{
