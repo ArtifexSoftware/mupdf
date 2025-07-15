@@ -322,20 +322,23 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 	ocprops = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
 	if (!ocprops)
 	{
-		if (config == 0)
+		if (config == -1)
 			return;
 		else
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unknown Layer config (None known!)");
 	}
 
-	cobj = pdf_array_get(ctx, pdf_dict_get(ctx, ocprops, PDF_NAME(Configs)), config);
-	if (!cobj)
+	if (config == -1)
 	{
-		if (config != 0)
-			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Illegal Layer config");
-		cobj = pdf_dict_get(ctx, obj, PDF_NAME(D));
+		cobj = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
 		if (!cobj)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "No default Layer config");
+	}
+	else
+	{
+		cobj = pdf_array_get(ctx, pdf_dict_get(ctx, ocprops, PDF_NAME(Configs)), config);
+		if (!cobj)
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Illegal Layer config");
 	}
 
 	pdf_drop_obj(ctx, desc->intent);
@@ -413,7 +416,7 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 	info->name = NULL;
 	info->creator = NULL;
 
-	if (config_num < 0 || config_num >= desc->num_configs)
+	if (config_num < -1 || config_num >= desc->num_configs)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid layer config number");
 
 	ocprops = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties");
@@ -421,10 +424,10 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 		return;
 
 	obj = pdf_dict_get(ctx, ocprops, PDF_NAME(Configs));
-	if (pdf_is_array(ctx, obj))
-		obj = pdf_array_get(ctx, obj, config_num);
-	else if (config_num == 0)
+	if (config_num == -1)
 		obj = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
+	else if (pdf_is_array(ctx, obj))
+		obj = pdf_array_get(ctx, obj, config_num);
 	else
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid layer config number");
 
@@ -815,7 +818,7 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		}
 		qsort(doc->ocg->ocgs, len, sizeof(doc->ocg->ocgs[0]), ocgcmp);
 
-		pdf_select_layer_config(ctx, doc, 0);
+		pdf_select_layer_config(ctx, doc, -1);
 	}
 	fz_catch(ctx)
 	{
