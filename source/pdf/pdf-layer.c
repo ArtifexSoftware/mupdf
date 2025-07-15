@@ -249,8 +249,8 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		*min = fz_mini(*min, ui->depth);
 		ui->ocg = j;
 		ui->name = pdf_dict_get_text_string(ctx, o, PDF_NAME(Name));
-		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
-		ui->locked = pdf_array_contains(ctx, o, locked);
+		ui->button_flags = pdf_array_contains(ctx, rbgroups, o) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
+		ui->locked = pdf_array_contains(ctx, locked, o);
 	}
 
 	/* After having iterated over all items at the top-level, the minimum depth is
