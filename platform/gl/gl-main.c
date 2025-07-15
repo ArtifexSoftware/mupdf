@@ -1404,9 +1404,8 @@ static void do_layers(void)
 		{
 			for (k = 0; k < configs; ++k)
 			{
-				pdf_layer_config info;
-				pdf_layer_config_info(ctx, pdf, k, &info);
-				if (ui_popup_item(info.name))
+				const char *name = pdf_layer_config_name(ctx, pdf, k);
+				if (ui_popup_item(name))
 				{
 					pdf_select_layer_config(ctx, pdf, k);
 					page_contents_changed = 1;

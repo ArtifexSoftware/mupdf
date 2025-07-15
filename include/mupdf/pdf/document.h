@@ -282,6 +282,27 @@ typedef struct
 void pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info);
 
 /*
+	Fetch the creator of the given layer config, or NULL if none exists.
+
+	doc: The document in question.
+
+	config_num: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_layer_configs.
+*/
+const char *pdf_layer_config_creator(fz_context *ctx, pdf_document *doc, int config_num);
+
+/*
+	Fetch the name of the given layer config, or NULL if none exists.
+
+	doc: The document in question.
+
+	config_num: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_layer_configs.
+
+*/
+const char *pdf_layer_config_name(fz_context *ctx, pdf_document *doc, int config_num);
+
+/*
 	Set the current configuration.
 	This updates the visibility of the optional content groups
 	within the document.

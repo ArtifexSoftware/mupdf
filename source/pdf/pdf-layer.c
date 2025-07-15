@@ -411,27 +411,21 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 	load_ui(ctx, desc, ocprops, cobj);
 }
 
-void
-pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info)
+static pdf_obj *
+get_layer_config(fz_context *ctx, pdf_document *doc, int config_num)
 {
 	pdf_ocg_descriptor *desc;
 	pdf_obj *ocprops;
-	pdf_obj *obj, *name;
-
-	if (!info)
-		return;
+	pdf_obj *obj;
 
 	desc = pdf_read_ocg(ctx, doc);
-
-	info->name = NULL;
-	info->creator = NULL;
 
 	if (config_num < -1 || config_num >= desc->num_configs)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid layer config number");
 
 	ocprops = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties");
 	if (!ocprops)
-		return;
+		return NULL;
 
 	obj = pdf_dict_get(ctx, ocprops, PDF_NAME(Configs));
 	if (config_num == -1)
@@ -441,12 +435,35 @@ pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_la
 	else
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid layer config number");
 
-	info->creator = pdf_dict_get_text_string(ctx, obj, PDF_NAME(Creator));
-	name = pdf_dict_get(ctx, obj, PDF_NAME(Name));
+	return obj;
+}
+
+const char *
+pdf_layer_config_creator(fz_context *ctx, pdf_document *doc, int config_num)
+{
+	pdf_obj *layer_config = get_layer_config(ctx, doc, config_num);
+	return pdf_dict_get_text_string(ctx, layer_config, PDF_NAME(Creator));
+}
+
+const char *
+pdf_layer_config_name(fz_context *ctx, pdf_document *doc, int config_num)
+{
+	pdf_obj *layer_config = get_layer_config(ctx, doc, config_num);
+	pdf_obj *name = pdf_dict_get(ctx, layer_config, PDF_NAME(Name));
 	if (config_num == -1 && !name)
-		info->name = "Default";
+		return "Default";
 	else
-		info->name = pdf_to_text_string(ctx, name);
+		return pdf_to_text_string(ctx, name);
+}
+
+void
+pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info)
+{
+	if (info)
+	{
+		info->creator = pdf_layer_config_creator(ctx, doc, config_num);
+		info->name = pdf_layer_config_name(ctx, doc, config_num);
+	}
 }
 
 void

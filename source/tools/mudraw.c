@@ -1826,9 +1826,9 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 {
 #if FZ_ENABLE_PDF
 	pdf_document *pdoc = pdf_specifics(ctx, doc);
+	const char *name, *creator;
 	int config;
 	int n, j;
-	pdf_layer_config info;
 
 	if (!pdoc)
 	{
@@ -1847,11 +1847,12 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 		for (config = 0; config < num_configs; config++)
 		{
 			fprintf(stderr, " %s%d:", config < 10 ? " " : "", config);
-			pdf_layer_config_info(ctx, pdoc, config, &info);
-			if (info.name)
-				fprintf(stderr, " Name=\"%s\"", info.name);
-			if (info.creator)
-				fprintf(stderr, " Creator=\"%s\"", info.creator);
+			name = pdf_layer_config_name(ctx, pdoc, config);
+			if (name)
+				fprintf(stderr, " Name=\"%s\"", name);
+			creator = pdf_layer_config_creator(ctx, pdoc, config);
+			if (creator)
+				fprintf(stderr, " Creator=\"%s\"", creator);
 			fprintf(stderr, "\n");
 		}
 		return;
@@ -1891,11 +1892,12 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 
 	/* Now list the final state of the config */
 	fprintf(stderr, "Layer Config %d:\n", config);
-	pdf_layer_config_info(ctx, pdoc, config, &info);
-	if (info.name)
-		fprintf(stderr, " Name=\"%s\"", info.name);
-	if (info.creator)
-		fprintf(stderr, " Creator=\"%s\"", info.creator);
+	name = pdf_layer_config_name(ctx, pdoc, config);
+	if (name)
+		fprintf(stderr, " Name=\"%s\"", name);
+	creator = pdf_layer_config_creator(ctx, pdoc, config);
+	if (creator)
+		fprintf(stderr, " Creator=\"%s\"", creator);
 	fprintf(stderr, "\n");
 	n = pdf_count_layer_config_ui(ctx, pdoc);
 	for (j = 0; j < n; j++)
