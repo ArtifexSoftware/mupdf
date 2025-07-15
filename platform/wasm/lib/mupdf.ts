@@ -2836,6 +2836,22 @@ export class PDFDocument extends Document {
 		libmupdf._wasm_pdf_bake_document(this.pointer, bakeAnnots, bakeWidgets)
 	}
 
+	countLayerConfigs(): number {
+		return libmupdf._wasm_pdf_count_layer_configs(this.pointer)
+	}
+
+	getLayerConfigCreator(config: number): string {
+		return libmupdf._wasm_pdf_layer_config_creator(this.pointer, config)
+	}
+
+	getLayerConfigName(config: number): string {
+		return libmupdf._wasm_pdf_layer_config_name(this.pointer, config)
+	}
+
+	selectLayerConfig(config: number) {
+		libmupdf._wasm_pdf_select_layer_confi
+	}
+
 	countLayers(): number {
 		return libmupdf._wasm_pdf_count_layers(this.pointer)
 	}

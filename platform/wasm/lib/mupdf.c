@@ -1602,6 +1602,30 @@ void wasm_pdf_bake_document(pdf_document *doc, boolean bake_annots, boolean bake
 }
 
 EXPORT
+int wasm_pdf_count_layer_configs(pdf_document *doc)
+{
+	INTEGER(pdf_count_layer_configs, doc)
+}
+
+EXPORT
+const char * wasm_pdf_layer_config_creator(pdf_document *doc, int config)
+{
+	POINTER(pdf_layer_config_creator, doc)
+}
+
+EXPORT
+const char * wasm_pdf_layer_config_name(pdf_document *doc, int config)
+{
+	POINTER(pdf_layer_config_name, doc)
+}
+
+EXPORT
+void wasm_pdf_select_layer_config(pdf_document *doc, int config)
+{
+	VOID(pdf_select_layer_config, doc, config)
+}
+
+EXPORT
 int wasm_pdf_count_layers(pdf_document *doc)
 {
 	INTEGER(pdf_count_layers, doc)

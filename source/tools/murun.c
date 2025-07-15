@@ -8530,6 +8530,58 @@ static void ffi_PDFDocument_bake(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_countLayerConfigs(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int count;
+	fz_try(ctx)
+		count = pdf_count_layer_configs(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, count);
+}
+
+static void ffi_PDFDocument_getLayerConfigCreator(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int config_num = js_tonumber(J, 1);
+	const char *creator = NULL;
+	fz_try(ctx)
+		creator = pdf_layer_config_creator(ctx, pdf, config_num);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, creator);
+}
+
+static void ffi_PDFDocument_getLayerConfigName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int config_num = js_tonumber(J, 1);
+	const char *name = NULL;
+	fz_try(ctx)
+		name = pdf_layer_config_name(ctx, pdf, config_num);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, name);
+}
+
+static void ffi_PDFDocument_selectLayerConfig(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int config_num = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_select_layer_config(ctx, pdf, config_num);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_appendDestToURI(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12338,6 +12390,11 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.getLangauge", ffi_PDFDocument_getLanguage, 0);
 		jsB_propfun(J, "PDFDocument.setLangauge", ffi_PDFDocument_setLanguage, 1);
 		jsB_propfun(J, "PDFDocument.bake", ffi_PDFDocument_bake, 2);
+
+		jsB_propfun(J, "PDFDocument.countLayerConfigs", ffi_PDFDocument_countLayerConfigs, 0);
+		jsB_propfun(J, "PDFDocument.getLayerConfigCreator", ffi_PDFDocument_getLayerConfigCreator, 1);
+		jsB_propfun(J, "PDFDocument.getLayerConfigName", ffi_PDFDocument_getLayerConfigName, 1);
+		jsB_propfun(J, "PDFDocument.selectLayerConfig", ffi_PDFDocument_selectLayerConfig, 1);
 	}
 	js_setregistry(J, "pdf_document");
 

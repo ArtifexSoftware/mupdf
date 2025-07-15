@@ -280,6 +280,11 @@ public class PDFDocument extends Document
 		}
 	}
 
+	public native int countLayerConfigs();
+	public native String getLayerConfigName(int config);
+	public native String getLayerConfigCreator(int config);
+	public native void selectLayerConfig(int config);
+
 	public native int countLayers();
 	public native boolean isLayerVisible(int layer);
 	public native void setLayerVisible(int layer, boolean visible);

@@ -936,6 +936,47 @@ Journalling
 Layers
 ------
 
+.. method:: PDFDocument.prototype.countLayerConfigs()
+
+	Return the number of optional content layer configurations in this document.
+
+	:returns: number
+
+	.. code-block::
+
+		var configs = pdfDocument.countLayerConfigs()
+
+.. method:: PDFDocument.prototype.getLayerConfigName(n)
+
+	Return the name of configuration number ``n``, where ``n`` is
+	``0 <= n < countLayerConfigs()``.
+
+	:returns: string
+
+	.. code-block::
+
+		var name = pdfDocument.getLayerConfigName(0)
+
+.. method:: PDFDocument.prototype.getLayerConfigInfo(n)
+
+	Return the creator of configuration number ``n``, where ``n`` is
+	``0 <= n < countLayerConfigs()``.
+
+	:returns: string
+
+	.. code-block::
+
+		var creator = pdfDocument.getLayerConfigCreator(0)
+
+.. method:: PDFDocument.prototype.selectLayerConfig(n)
+
+	Select layer configuration number ``n``, where ``n`` is
+	``0 <= n < countLayerConfigs()``.
+
+	.. code-block::
+
+		var info = pdfDocument.selectLayerConfig(1)
+
 .. method:: PDFDocument.prototype.countLayers()
 
 	Return the number of optional content layers in this document.
@@ -944,7 +985,7 @@ Layers
 
 	.. code-block::
 
-		var count = pdfDocument.countLayers()
+		var layers = pdfDocument.countLayers()
 
 .. method:: PDFDocument.prototype.isLayerVisible(n)
 
