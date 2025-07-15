@@ -314,13 +314,13 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 {
 	pdf_ocg_descriptor *desc;
 	int i, j, len, len2;
-	pdf_obj *obj, *cobj;
+	pdf_obj *obj, *cobj, *ocprops;
 	pdf_obj *name;
 
 	desc = pdf_read_ocg(ctx, doc);
 
-	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
-	if (!obj)
+	ocprops = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
+	if (!ocprops)
 	{
 		if (config == 0)
 			return;
@@ -328,7 +328,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unknown Layer config (None known!)");
 	}
 
-	cobj = pdf_array_get(ctx, pdf_dict_get(ctx, obj, PDF_NAME(Configs)), config);
+	cobj = pdf_array_get(ctx, pdf_dict_get(ctx, ocprops, PDF_NAME(Configs)), config);
 	if (!cobj)
 	{
 		if (config != 0)
@@ -395,7 +395,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 	desc->current = config;
 
 	drop_ui(ctx, desc);
-	load_ui(ctx, desc, obj, cobj);
+	load_ui(ctx, desc, ocprops, cobj);
 }
 
 void
