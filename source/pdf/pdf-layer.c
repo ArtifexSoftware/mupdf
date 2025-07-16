@@ -697,13 +697,7 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, const ch
 		obj2 = pdf_dict_gets(ctx, obj, usage);
 		es = pdf_dict_gets(ctx, obj2, event_state);
 		if (pdf_name_eq(ctx, es, PDF_NAME(OFF)))
-		{
 			return 1;
-		}
-		if (pdf_name_eq(ctx, es, PDF_NAME(ON)))
-		{
-			return 0;
-		}
 		return default_value;
 	}
 	else if (pdf_name_eq(ctx, type, PDF_NAME(OCMD)))
