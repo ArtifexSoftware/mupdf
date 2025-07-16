@@ -24,6 +24,7 @@
 #include "mupdf/pdf.h"
 
 #include <string.h>
+#include <limits.h>
 
 /*
 	Notes on OCGs etc.
@@ -206,12 +207,16 @@ find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 
 static int
 populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order, int depth, pdf_obj *rbgroups, pdf_obj *locked,
-	pdf_cycle_list *cycle_up)
+	int *min, pdf_cycle_list *cycle_up)
 {
 	pdf_cycle_list cycle;
 	int len = pdf_array_len(ctx, order);
 	int i, j;
 	pdf_ocg_ui *ui;
+	int mindepth = INT_MAX;
+
+	if (min == NULL)
+		min = &mindepth;
 
 	for (i = 0; i < len; i++)
 	{
@@ -221,13 +226,14 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 			if (pdf_cycle(ctx, &cycle, cycle_up, o))
 				continue;
 
-			fill = populate_ui(ctx, desc, fill, o, depth+1, rbgroups, locked, &cycle);
+			fill = populate_ui(ctx, desc, fill, o, depth+1, rbgroups, locked, min, &cycle);
 			continue;
 		}
 		if (pdf_is_string(ctx, o))
 		{
 			ui = get_ocg_ui(ctx, desc, fill++);
 			ui->depth = depth;
+			*min = fz_mini(*min, ui->depth);
 			ui->ocg = -1;
 			ui->name = pdf_to_text_string(ctx, o);
 			ui->button_flags = PDF_LAYER_UI_LABEL;
@@ -239,12 +245,23 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		if (j < 0)
 			continue; /* OCG not found in main list! Just ignore it */
 		ui = get_ocg_ui(ctx, desc, fill++);
-		ui->depth = depth;
+		ui->depth = depth + 1;
+		*min = fz_mini(*min, ui->depth);
 		ui->ocg = j;
 		ui->name = pdf_dict_get_text_string(ctx, o, PDF_NAME(Name));
 		ui->button_flags = pdf_array_contains(ctx, o, rbgroups) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, o, locked);
 	}
+
+	/* After having iterated over all items at the top-level, the minimum depth is
+	   known. Subtract that from the depth of each item, so that top-level items
+	   always start at depth == 0. */
+	if (depth == 0 && *min > 0)
+	{
+		for (i = 0; i < fill; i++)
+			desc->ui[i].depth -= *min;
+	}
+
 	return fill;
 }
 
@@ -283,7 +300,7 @@ load_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *ocprops, pdf_obj *oc
 	desc->ui = fz_malloc_struct_array(ctx, count, pdf_ocg_ui);
 	fz_try(ctx)
 	{
-		desc->num_ui_entries = populate_ui(ctx, desc, 0, order, 0, rbgroups, locked, NULL);
+		desc->num_ui_entries = populate_ui(ctx, desc, 0, order, 0, rbgroups, locked, NULL, NULL);
 	}
 	fz_catch(ctx)
 	{
