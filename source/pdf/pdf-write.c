@@ -2497,7 +2497,10 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		expand_lists(ctx, opts, xref_len);
 
 		if (opts->do_garbage >= 1)
+		{
 			pdf_drop_page_tree_internal(ctx, doc);
+			pdf_empty_store(ctx, doc);
+		}
 
 		do
 		{
