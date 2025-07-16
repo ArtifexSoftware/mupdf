@@ -211,7 +211,8 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 {
 	pdf_cycle_list cycle;
 	int len = pdf_array_len(ctx, order);
-	int i, j;
+	int len2;
+	int i, j, k;
 	pdf_ocg_ui *ui;
 	int mindepth = INT_MAX;
 
@@ -249,8 +250,17 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		*min = fz_mini(*min, ui->depth);
 		ui->ocg = j;
 		ui->name = pdf_dict_get_text_string(ctx, o, PDF_NAME(Name));
-		ui->button_flags = pdf_array_contains(ctx, rbgroups, o) ? PDF_LAYER_UI_RADIOBOX : PDF_LAYER_UI_CHECKBOX;
 		ui->locked = pdf_array_contains(ctx, locked, o);
+		ui->button_flags = PDF_LAYER_UI_CHECKBOX;
+		len2 = pdf_array_len(ctx, rbgroups);
+		for (k = 0; k < len2; ++k)
+		{
+			if (pdf_array_contains(ctx, pdf_array_get(ctx, rbgroups, k), o))
+			{
+				ui->button_flags = PDF_LAYER_UI_RADIOBOX;
+				break;
+			}
+		}
 	}
 
 	/* After having iterated over all items at the top-level, the minimum depth is
@@ -460,17 +470,25 @@ pdf_drop_ocg(fz_context *ctx, pdf_document *doc)
 }
 
 static void
-clear_radio_group(fz_context *ctx, pdf_document *doc, pdf_obj *ocg)
+clear_radio_group(fz_context *ctx, pdf_document *doc, int config_num, pdf_obj *ocg)
 {
-	pdf_obj *rbgroups = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties/RBGroups");
+	pdf_obj *ocprops, *cobj, *rbgroups;
 	int len, i;
+
+	ocprops = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
+	if (config_num >= 0)
+		cobj = pdf_array_get(ctx, pdf_dict_get(ctx, ocprops, PDF_NAME(Configs)), config_num);
+	if (config_num == -1 || (config_num >= 0 && !cobj))
+		cobj = pdf_dict_get(ctx, ocprops, PDF_NAME(D));
+
+	rbgroups = pdf_dict_get(ctx, cobj, PDF_NAME(RBGroups));
 
 	len = pdf_array_len(ctx, rbgroups);
 	for (i = 0; i < len; i++)
 	{
 		pdf_obj *group = pdf_array_get(ctx, rbgroups, i);
 
-		if (pdf_array_contains(ctx, ocg, group))
+		if (pdf_array_contains(ctx, group, ocg))
 		{
 			int len2 = pdf_array_len(ctx, group);
 			int j;
@@ -513,7 +531,7 @@ void pdf_select_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 		return;
 
 	if (entry->button_flags == PDF_LAYER_UI_RADIOBOX)
-		clear_radio_group(ctx, doc, desc->ocgs[entry->ocg].obj);
+		clear_radio_group(ctx, doc, desc->current, desc->ocgs[entry->ocg].obj);
 
 	desc->ocgs[entry->ocg].state = 1;
 }
@@ -537,7 +555,7 @@ void pdf_toggle_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 	selected = desc->ocgs[entry->ocg].state;
 
 	if (entry->button_flags == PDF_LAYER_UI_RADIOBOX)
-		clear_radio_group(ctx, doc, desc->ocgs[entry->ocg].obj);
+		clear_radio_group(ctx, doc, desc->current, desc->ocgs[entry->ocg].obj);
 
 	desc->ocgs[entry->ocg].state = !selected;
 }
