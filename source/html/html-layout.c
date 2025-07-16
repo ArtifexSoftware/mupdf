@@ -2158,6 +2158,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		avail_w = ld->bounds[R] - ld->bounds[L];
 		if (min_tabw >= avail_w)
 		{
+			box->s.layout.w = avail_w;
 			for (col = 0; col < ncol; ++col)
 				colw[col].actual = colw[col].min;
 		}
@@ -2188,12 +2189,12 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		{
 			float W = (avail_w - min_tabw);
 			float D = (max_tabw - min_tabw);
+			box->s.layout.w = avail_w;
 			for (col = 0; col < ncol; ++col)
 				colw[col].actual = colw[col].min + (colw[col].max - colw[col].min) * W / D;
 		}
 
 		/* Layout each row in turn. */
-		box->s.layout.w = avail_w;
 		for (row = box->down, y = 0; row; row = row->next, y++)
 		{
 			/* Position the row, zero height for now. */
