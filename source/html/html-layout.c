@@ -2027,16 +2027,25 @@ fixup_cell_bottoms(fz_context *ctx, table_grid *grid, fz_html_box *box)
 	int row;
 
 	/* Second pass, set the bottoms of all cells in the tables. */
-	/* FIXME: Process valign here? */
 	for (row = 0, rowbox = box; row <= grid->h && rowbox; row++, rowbox = rowbox->next)
 	{
 		for (cell = rowbox->down; cell; cell = cell->next)
 		{
+			float y;
 			int rowspan = cell->style->rowspan;
 			if (rowspan < 1)
 				rowspan = 1;
 
-			cell->s.layout.b = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]);
+			y = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]);
+			if (cell->style->vertical_align == VA_MIDDLE || cell->style->vertical_align == VA_BOTTOM)
+			{
+				float offset = (y - cell->s.layout.b);
+				if (cell->style->vertical_align == VA_MIDDLE)
+					offset /= 2;
+				shift_box_contents(cell, 0, offset);
+				cell->s.layout.y -= offset;
+			}
+			cell->s.layout.b = y;
 		}
 	}
 }
