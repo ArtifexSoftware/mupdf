@@ -1053,7 +1053,7 @@ typedef struct
  *	If this returns 1, then we are moving onto a new page.
  */
 static int
-pre_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *box)
+pre_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *box, int ignore_width)
 {
 	float em = box->s.layout.em;
 	float *margin = box->u.block.margin;
@@ -1087,14 +1087,17 @@ pre_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *b
 
 	/* Now calculate the bounds for any sub blocks. */
 	pd->has_width = fz_css_number_defined_not_auto(box->style->width);
-	pd->width = fz_from_css_number(box->style->width, em, em, 0);
+	pd->width = fz_from_css_number(box->style->width, em, ld->bounds[R] - ld->bounds[L], 0);
 	pd->has_height = fz_css_number_defined_not_auto(box->style->height);
-	pd->height = fz_from_css_number(box->style->height, em, em, 0);
+	pd->height = fz_from_css_number(box->style->height, em, ld->bounds[B] - ld->bounds[T], 0);
 
 	/* Adjust horizontally for Width and spacings */
 	auto_w = ld->bounds[R] - ld->bounds[L] - (margin[L] + margin[R] + border[L] + border[R] + padding[L] + padding[R]);
 	ld->bounds[L] = ld->bounds[L] + margin[L] + border[L] + padding[L];
-	ld->bounds[R] = ld->bounds[L] + fz_from_css_number(box->style->width, em, auto_w, auto_w);
+	if (ignore_width)
+		ld->bounds[R] = ld->bounds[L] + auto_w;
+	else
+		ld->bounds[R] = ld->bounds[L] + fz_from_css_number(box->style->width, em, auto_w, auto_w);
 
 	/* Adjust vertically for Height and spacings (noting that we have already done the top ones above!) */
 	auto_h = ld->bounds[B] - ld->bounds[T] - (margin[B] + border[B] + padding[B]);
@@ -1293,7 +1296,7 @@ pre_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *b
  *	Returns eop
  */
 static int
-post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *box)
+post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *box, int widths_set)
 {
 	int eop = 0; /* dummy */
 	fz_html_restarter *restart = ld->restart;
@@ -1312,7 +1315,7 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 	{
 		if (box->style->position == POS_STATIC || box->style->position == POS_RELATIVE)
 		{
-			if (pd->has_width && box->s.layout.w < pd->width)
+			if (pd->has_width && box->s.layout.w < pd->width && !widths_set)
 				box->s.layout.w = pd->width;
 			if (pd->has_height && box->s.layout.b - box->s.layout.y < pd->height)
 				box->s.layout.b = pd->height + box->s.layout.y;
@@ -2062,6 +2065,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	float avail_w;
 	table_grid *table;
 	int y;
+	int table_has_width;
 
 	position_data position;
 
@@ -2075,7 +2079,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	}
 
 	/* We honour positions on tables. We don't honour positions on elements of tables (like rows/cells etc). */
-	eop = pre_position(ctx, &position, ld, box);
+	eop = pre_position(ctx, &position, ld, box, 1);
 
 	if (eop)
 	{
@@ -2152,46 +2156,53 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		min_tabw += spacing * (ncol + 1);
 		max_tabw += spacing * (ncol + 1);
 
-		/* The minimum table width is equal to or wider than the available space.
-		 * In this case, assign the minimum widths and let the lines overflow...
-		 */
-		avail_w = ld->bounds[R] - ld->bounds[L];
+		avail_w = fz_from_css_number(box->style->width, box->s.layout.em, ld->bounds[R] - ld->bounds[L], ld->bounds[R] - ld->bounds[L]);
+		table_has_width = fz_css_number_defined_not_auto(box->style->width);
+
 		if (min_tabw >= avail_w)
 		{
-			box->s.layout.w = avail_w;
+			/* The minimum table width is equal to or wider than the available space.
+			 * Assign the minimum widths and let the lines overflow...
+			 */
+			box->s.layout.w = min_tabw;
 			for (col = 0; col < ncol; ++col)
 				colw[col].actual = colw[col].min;
 		}
-
-		/* The maximum table width fits within the available space.
-		 * In this case, set the columns to their maximum widths.
-		 */
-		else if (max_tabw <= avail_w)
+		else if (max_tabw <= avail_w && !table_has_width)
 		{
+			/* The maximum table width fits within the available space. */
+			/* Set the columns to their maximum widths. */
 			box->s.layout.w = max_tabw;
 			for (col = 0; col < ncol; ++col)
 				colw[col].actual = colw[col].max;
 		}
-
-		/* The maximum width of the table is greater than the available space, but
-		 * the minimum table width is smaller. In this case, find the difference
-		 * between the available space and the minimum table width, lets call it
-		 * W. Lets also call D the difference between maximum and minimum width of
-		 * the table.
-		 *
-		 * For each column, let d be the difference between maximum and minimum
-		 * width of that column. Now set the column's width to the minimum width
-		 * plus d times W over D. This makes columns with large differences
-		 * between minimum and maximum widths wider than columns with smaller
-		 * differences.
-		 */
 		else
 		{
+			/* The maximum width of the table is greater than the available space, but
+			 * the minimum table width is smaller. In this case, find the difference
+			 * between the available space and the minimum table width, lets call it
+			 * W. Lets also call D the difference between maximum and minimum width of
+			 * the table.
+			 *
+			 * For each column, let d be the difference between maximum and minimum
+			 * width of that column. Now set the column's width to the minimum width
+			 * plus d times W over D. This makes columns with large differences
+			 * between minimum and maximum widths wider than columns with smaller
+			 * differences.
+			 */
 			float W = (avail_w - min_tabw);
 			float D = (max_tabw - min_tabw);
 			box->s.layout.w = avail_w;
-			for (col = 0; col < ncol; ++col)
-				colw[col].actual = colw[col].min + (colw[col].max - colw[col].min) * W / D;
+			if (D == 0)
+			{
+				for (col = 0; col < ncol; ++col)
+					colw[col].actual = colw[col].min + W / ncol;
+			}
+			else
+			{
+				for (col = 0; col < ncol; ++col)
+					colw[col].actual = colw[col].min + (colw[col].max - colw[col].min) * W / D;
+			}
 		}
 
 		/* Layout each row in turn. */
@@ -2258,7 +2269,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	if (post_position(ctx, &position, ld, box))
+	if (post_position(ctx, &position, ld, box, 1))
 	{
 		if (SHOULD_STOP_FOR_RESTART(restart))
 		{
@@ -2345,7 +2356,7 @@ static int layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box)
 
 
 	/* Cope with positioned blocks. */
-	eop |= pre_position(ctx, &position, ld, box);
+	eop |= pre_position(ctx, &position, ld, box, 0);
 
 	if (eop)
 	{
@@ -2414,7 +2425,7 @@ static int layout_block(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		ld->bounds[T] = ld->used[B];
 	}
 
-	if (post_position(ctx, &position, ld, box))
+	if (post_position(ctx, &position, ld, box, 0))
 	{
 		if (SHOULD_STOP_FOR_RESTART(restart))
 		{

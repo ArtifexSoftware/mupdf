@@ -766,6 +766,56 @@ test_tablespans(fz_context *ctx)
 }
 
 static void
+test_tablewidths(fz_context *ctx)
+{
+	const char *tables =
+		"<!DOCTYPE html><html><head><style>\n"
+		"table, td, th {\n"
+		"  border: 1px solid #808080;\n"
+		"}\n"
+		"</style></head><body>\n"
+		"<table>"
+		"<tr>"
+		"<td>un</td>"
+		"<td>widthed</td>"
+		"<td>table</td>"
+		"</tr>"
+		"</table>"
+		"<table width=10%>"
+		"<tr>"
+		"<td>10</td>"
+		"<td>%</td>"
+		"<td>table</td>"
+		"</tr>"
+		"</table>"
+		"<table width=50%>"
+		"<tr>"
+		"<td>50</td>"
+		"<td>%</td>"
+		"<td>table</td>"
+		"</tr>"
+		"</table>"
+		"<table width=90%>"
+		"<tr>"
+		"<td>90</td>"
+		"<td>%</td>"
+		"<td>table</td>"
+		"</tr>"
+		"</table>"
+		"<table width=100%>"
+		"<tr>"
+		"<td>100</td>"
+		"<td>%</td>"
+		"<td>table</td>"
+		"</tr>"
+		"</table>"
+		"</div>\n"
+		"</body></html>\n";
+
+	test_story(ctx, "tablewidths.pdf", "", tables);
+}
+
+static void
 test_leftright(fz_context *ctx)
 {
 	const char *leftright =
@@ -978,6 +1028,8 @@ int main(int argc, const char *argv[])
 	test_tables(ctx);
 
 	test_tablespans(ctx);
+
+	test_tablewidths(ctx);
 
 	test_leftright(ctx);
 

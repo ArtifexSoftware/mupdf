@@ -860,15 +860,21 @@ apply_attributes_as_styles(fz_context *ctx, fz_css_style *style, fz_xml *node)
 	att = fz_xml_att(node, "width");
 	if (att)
 	{
-		style->width.unit = N_LENGTH;
 		style->width.value = fz_atof(att);
+		if (strchr(att,'%'))
+			style->width.unit = N_PERCENT;
+		else
+			style->width.unit = N_LENGTH;
 	}
 
 	att = fz_xml_att(node, "height");
 	if (att)
 	{
-		style->height.unit = N_LENGTH;
 		style->height.value = fz_atof(att);
+		if (strchr(att,'%'))
+			style->height.unit = N_PERCENT;
+		else
+			style->height.unit = N_LENGTH;
 	}
 
 	att = fz_xml_att(node, "valign");
