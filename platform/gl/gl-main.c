@@ -1390,27 +1390,63 @@ static void do_undo(void)
 
 static void do_layers(void)
 {
-	const char *name;
-	int n, i, on;
+	int n, i, k, configs;
 
 	ui_layout(L, BOTH, NW, 0, 0);
 	ui_panel_begin(outline_w, 0, ui.padsize*2, ui.padsize*2, 1);
 	ui_layout(T, X, NW, ui.padsize, ui.padsize);
+
+	if (pdf)
+	{
+		configs = pdf_count_layer_configs(ctx, pdf);
+
+		if (ui_popup("LayerConfigPopup", "Config...", 1, configs))
+		{
+			for (k = 0; k < configs; ++k)
+			{
+				pdf_layer_config info;
+				pdf_layer_config_info(ctx, pdf, k, &info);
+				if (ui_popup_item(info.name))
+				{
+					pdf_select_layer_config(ctx, pdf, k);
+					page_contents_changed = 1;
+				}
+			}
+			ui_popup_end();
+		}
+		ui_layout(T, X, NW, ui.padsize*2, ui.padsize);
+	}
+
 	ui_label("Layers:");
 	ui_layout(T, X, NW, ui.padsize*2, ui.padsize);
 
 	if (pdf)
 	{
-		n = pdf_count_layers(ctx, pdf);
+		n = pdf_count_layer_config_ui(ctx, pdf);
 		for (i = 0; i < n; ++i)
 		{
-			name = pdf_layer_name(ctx, pdf, i);
-			on = pdf_layer_is_enabled(ctx, pdf, i);
-			if (ui_checkbox(name, &on))
+			pdf_layer_config_ui info;
+			pdf_layer_config_ui_info(ctx, pdf, i, &info);
+
+			ui_panel_begin(0, ui.lineheight, 0, 0, 0);
 			{
-				pdf_enable_layer(ctx, pdf, i, on);
-				page_contents_changed = 1;
+				ui_layout(L, Y, NW, 0, 0);
+				ui_pack((1 + info.depth) * ui.lineheight / 2, 0);
+
+				if (info.type == PDF_LAYER_UI_LABEL)
+				{
+					ui_label(info.text);
+				}
+				else if (ui_checkbox_aux(info.text, &info.selected, !!info.locked))
+				{
+					if (info.selected)
+						pdf_select_layer_config_ui(ctx, pdf, i);
+					else
+						pdf_deselect_layer_config_ui(ctx, pdf, i);
+					page_contents_changed = 1;
+				}
 			}
+			ui_panel_end();
 		}
 		if (n == 0)
 			ui_label("None");
