@@ -221,7 +221,7 @@ enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TAB
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM, VA_MIDDLE };
-enum { BS_NONE, BS_SOLID };
+enum { BS_NONE, BS_SOLID, BS_DOTTED, BS_DASHED, BS_DOUBLE, BS_GROOVE, BS_RIDGE, BS_INSET, BS_OUTSET };
 enum { V_VISIBLE, V_HIDDEN, V_COLLAPSE };
 enum { PB_AUTO, PB_ALWAYS, PB_AVOID, PB_LEFT, PB_RIGHT };
 enum { TD_NONE, TD_UNDERLINE, TD_LINE_THROUGH };
@@ -278,25 +278,25 @@ struct fz_css_style_s
 	fz_css_number border_spacing;
 	fz_css_number text_indent;
 	fz_css_number text_stroke_width;
-	uint16_t rowspan;
-	uint16_t colspan;
-	unsigned int visibility : 2;
+	/* First group of 32 */
+	unsigned int rowspan : 10; /* Needs to be able to represent 1-1000 */
+	unsigned int colspan : 10; /* Needs to be able to represent 1-1000 */
 	unsigned int white_space : 3;
-	unsigned int text_align : 2;
 	unsigned int vertical_align : 3;
-	unsigned int list_style_type : 4;
 	unsigned int page_break_before : 3;
 	unsigned int page_break_after : 3;
-	unsigned int border_style_0 : 1;
-	unsigned int border_style_1 : 1;
-	unsigned int border_style_2 : 1;
-	unsigned int border_style_3 : 1;
+	/* Second group of 32 */
+	unsigned int visibility : 2;
+	unsigned int text_align : 2;
+	unsigned int list_style_type : 4;
+	unsigned int border_style_0 : 4;
+	unsigned int border_style_1 : 4;
+	unsigned int border_style_2 : 4;
+	unsigned int border_style_3 : 4;
 	unsigned int small_caps : 1;
 	unsigned int text_decoration: 2;
 	unsigned int overflow_wrap : 1;
 	unsigned int position : 2;
-	/* Ensure the extra bits in the bitfield are copied
-	 * on structure copies. */
 	unsigned int blank : 2;
 	fz_css_number line_height;
 	fz_css_number leading;

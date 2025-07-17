@@ -1320,6 +1320,13 @@ border_style_from_property(fz_css_match *match, int property)
 		if (!strcmp(value->data, "none")) return BS_NONE;
 		else if (!strcmp(value->data, "hidden")) return BS_NONE;
 		else if (!strcmp(value->data, "solid")) return BS_SOLID;
+		else if (!strcmp(value->data, "dotted")) return BS_DOTTED;
+		else if (!strcmp(value->data, "dashed")) return BS_DASHED;
+		else if (!strcmp(value->data, "double")) return BS_DOUBLE;
+		else if (!strcmp(value->data, "groove")) return BS_GROOVE;
+		else if (!strcmp(value->data, "ridge")) return BS_RIDGE;
+		else if (!strcmp(value->data, "inset")) return BS_INSET;
+		else if (!strcmp(value->data, "outset")) return BS_OUTSET;
 	}
 	return BS_NONE;
 }

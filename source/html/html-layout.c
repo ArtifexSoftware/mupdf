@@ -3122,12 +3122,16 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 
 static void draw_rect(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_css_color color, float x0, float y0, float x1, float y1)
 {
-	if (color.a > 0)
+	float rgb[3];
+	fz_path *path;
+
+	if (color.a <= 0)
+		return;
+
+	path = fz_new_path(ctx);
+
+	fz_try(ctx)
 	{
-		float rgb[3];
-
-		fz_path *path = fz_new_path(ctx);
-
 		fz_moveto(ctx, path, x0, y0 - page_top);
 		fz_lineto(ctx, path, x1, y0 - page_top);
 		fz_lineto(ctx, path, x1, y1 - page_top);
@@ -3139,9 +3143,97 @@ static void draw_rect(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page
 		rgb[2] = color.b / 255.0f;
 
 		fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f, fz_default_color_params);
+	}
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
 
+static void draw_quad(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_css_color color,
+	float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	float rgb[3];
+	fz_path *path;
+
+	if (color.a <= 0)
+		return;
+
+	path = fz_new_path(ctx);
+
+	fz_try(ctx)
+	{
+		fz_moveto(ctx, path, x0, y0);
+		fz_lineto(ctx, path, x1, y1);
+		fz_lineto(ctx, path, x2, y2);
+		fz_lineto(ctx, path, x3, y3);
+		fz_closepath(ctx, path);
+
+		rgb[0] = color.r / 255.0f;
+		rgb[1] = color.g / 255.0f;
+		rgb[2] = color.b / 255.0f;
+
+		fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f, fz_default_color_params);
+	}
+	fz_always(ctx)
+		fz_drop_path(ctx, path);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void draw_dotted_line(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_css_color color, int dashed, float w,
+	float x0, float y0, float x1, float y1)
+{
+	float rgb[3];
+	fz_path *path;
+	fz_stroke_state *stroke;
+
+	if (color.a <= 0 || w <= 0)
+		return;
+
+	path = fz_new_path(ctx);
+	stroke = NULL;
+
+	fz_var(stroke);
+
+	fz_try(ctx)
+	{
+		fz_moveto(ctx, path, x0, y0);
+		fz_lineto(ctx, path, x1, y1);
+
+		rgb[0] = color.r / 255.0f;
+		rgb[1] = color.g / 255.0f;
+		rgb[2] = color.b / 255.0f;
+
+		stroke = fz_new_stroke_state_with_dash_len(ctx, 2);
+		stroke->linewidth = w;
+		stroke->dash_len = 2;
+		if (dashed)
+		{
+			stroke->start_cap = FZ_LINECAP_SQUARE;
+			stroke->dash_cap = FZ_LINECAP_SQUARE;
+			stroke->end_cap = FZ_LINECAP_SQUARE;
+			stroke->dash_list[0] = w;
+			stroke->dash_list[1] = w*2;
+		}
+		else
+		{
+			stroke->start_cap = FZ_LINECAP_ROUND;
+			stroke->dash_cap = FZ_LINECAP_ROUND;
+			stroke->end_cap = FZ_LINECAP_ROUND;
+			stroke->dash_list[0] = 0;
+			stroke->dash_list[1] = w*2;
+		}
+
+		fz_stroke_path(ctx, dev, path, stroke, ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f, fz_default_color_params);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stroke_state(ctx, stroke);
 		fz_drop_path(ctx, path);
 	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static const char *roman_uc[3][10] = {
@@ -3344,24 +3436,377 @@ static int draw_box(fz_context *ctx, fz_html_box *box, float page_top, float pag
 	return ret;
 }
 
+static fz_css_color
+brighten(fz_css_color c)
+{
+	int delta;
+	float S;
+	float C;
+	float H;
+
+	if (c.r > c.g)
+	{
+		if (c.b > c.r)
+		{
+			/* b  > r > g */
+			/* All 6 cases are very similar, we'll just comment the first one. */
+			delta = c.b - c.g; /* Never zero */
+			S = delta/(float)c.b;
+			/* A proper conversion from RGB -> HSV would map H into a sextant;
+			 * given we're going to convert back, we don't bother. */
+			H = (c.r - c.g)/(float)delta; /* Proper H would be: 4 <= H < 5 */
+			c.b = (c.b>>1) + 128;
+			/* v = cmax = c.b */
+			C = c.b * S;
+			/* m = cmax - C */
+			c.g = c.b - C;
+			c.r = c.g + C * H;
+			c.b = c.g + C;
+		}
+		else if (c.b > c.g)
+		{
+			/* r >= b > g */
+			delta = c.r - c.g; /* Never zero */
+			S = delta/(float)c.r;
+			H = (c.b - c.g)/(float)delta; /* Proper H would be: 5 <= H < 6 */
+			c.r = (c.r>>1) + 128;
+			C = c.r * S;
+			c.g = c.r - C;
+			c.b = c.g + C * H;
+			c.r = c.g + C;
+		}
+		else
+		{
+			/* r > g >= b */
+			delta = c.r - c.b; /* Never zero */
+			S = delta/(float)c.r;
+			H = (c.g - c.b)/(float)delta; /* Proper H would be: 0 <= H < 1 */
+			c.r = (c.r>>1) + 128;
+			C = c.r * S;
+			c.g = c.r - C;
+			c.g = c.b + C * H;
+			c.r = c.b + C;
+		}
+	}
+	else
+	{
+		if (c.b > c.g)
+		{
+			/* b > g >= r */
+			delta = c.b - c.r; /* Never zero */
+			S = delta/(float)c.b;
+			H = (c.g - c.r)/(float)delta; /* Proper H would be: 3 <= H < 4 */
+			c.b = (c.b>>1) + 128;
+			C = c.b * S;
+			c.r = c.b - C;
+			c.g = c.r + C * H;
+			c.b = c.r + C;
+		}
+		else if (c.r > c.b)
+		{
+			/* g >= r > b */
+			delta = c.g - c.b; /* Never zero */
+			S = delta/(float)c.g;
+			H = (c.r - c.b)/(float)delta; /* Proper H would be: 1 <= H < 2 */
+			c.g = (c.g>>1) + 128;
+			C = c.g * S;
+			c.b = c.g - C;
+			c.r = c.b + C * H;
+			c.g = c.b + C;
+		}
+		else if (c.g == c.b && c.g == c.r)
+		{
+			/* r = g = b */
+			H = 0;
+			c.g = (c.g>>1) + 128;
+			c.r = c.g;
+			c.b = c.g;
+		}
+		else
+		{
+			/* g >= b >= r */
+			delta = c.g - c.r; /* Never zero */
+			S = delta/(float)c.g;
+			H = (c.b - c.r)/(float)delta; /* Proper H would be: 2 <= H < 3 */
+			c.g = (c.g>>1) + 128;
+			C = c.g * S;
+			c.r = c.g - C;
+			c.b = c.r + C * H;
+			c.g = c.r + C;
+		}
+	}
+
+	return c;
+}
+
+static fz_css_color
+darken(fz_css_color c)
+{
+	int delta;
+	float S;
+	float C;
+	float H;
+
+	if (c.r > c.g)
+	{
+		if (c.b > c.r)
+		{
+			/* b  > r > g */
+			/* All 6 cases are very similar, we'll just comment the first one. */
+			delta = c.b - c.g; /* Never zero */
+			S = delta/(float)c.b;
+			/* A proper conversion from RGB -> HSV would map H into a sextant;
+			 * given we're going to convert back, we don't bother. */
+			H = (c.r - c.g)/(float)delta; /* Proper H would be: 4 <= H < 5 */
+			c.b >>= 1;
+			/* v = cmax = c.b */
+			C = c.b * S;
+			/* m = cmax - C */
+			c.g = c.b - C;
+			c.r = c.g + C * H;
+			c.b = c.g + C;
+		}
+		else if (c.b > c.g)
+		{
+			/* r >= b > g */
+			delta = c.r - c.g; /* Never zero */
+			S = delta/(float)c.r;
+			H = (c.b - c.g)/(float)delta; /* Proper H would be: 5 <= H < 6 */
+			c.r >>= 1;
+			C = c.r * S;
+			c.g = c.r - C;
+			c.b = c.g + C * H;
+			c.r = c.g + C;
+		}
+		else
+		{
+			/* r > g >= b */
+			delta = c.r - c.b; /* Never zero */
+			S = delta/(float)c.r;
+			H = (c.g - c.b)/(float)delta; /* Proper H would be: 0 <= H < 1 */
+			c.r >>= 1;
+			C = c.r * S;
+			c.g = c.r - C;
+			c.g = c.b + C * H;
+			c.r = c.b + C;
+		}
+	}
+	else
+	{
+		if (c.b > c.g)
+		{
+			/* b > g >= r */
+			delta = c.b - c.r; /* Never zero */
+			S = delta/(float)c.b;
+			H = (c.g - c.r)/(float)delta; /* Proper H would be: 3 <= H < 4 */
+			c.b >>= 1;
+			C = c.b * S;
+			c.r = c.b - C;
+			c.g = c.r + C * H;
+			c.b = c.r + C;
+		}
+		else if (c.r > c.b)
+		{
+			/* g >= r > b */
+			delta = c.g - c.b; /* Never zero */
+			S = delta/(float)c.g;
+			H = (c.r - c.b)/(float)delta; /* Proper H would be: 1 <= H < 2 */
+			c.g >>= 1;
+			C = c.g * S;
+			c.b = c.g - C;
+			c.r = c.b + C * H;
+			c.g = c.b + C;
+		}
+		else if (c.g == c.b && c.g == c.r)
+		{
+			/* r = g = b */
+			H = 0;
+			c.g >>= 1;
+			c.r = c.g;
+			c.b = c.g;
+		}
+		else
+		{
+			/* g >= b >= r */
+			delta = c.g - c.r; /* Never zero */
+			S = delta/(float)c.g;
+			H = (c.b - c.r)/(float)delta; /* Proper H would be: 2 <= H < 3 */
+			c.g >>= 1;
+			C = c.g * S;
+			c.r = c.g - C;
+			c.b = c.r + C * H;
+			c.g = c.r + C;
+		}
+	}
+
+	return c;
+}
+
+static void
+draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, int edge, float x0, float y0, float x1, float y1)
+{
+	float *border = box->u.block.border;
+	const fz_css_style *style = box->style;
+
+	switch (edge)
+	{
+	case T:
+		switch (style->border_style_0)
+		{
+		case BS_NONE:
+			return; /* Should never happen */
+		case BS_OUTSET:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y0 - border[T], x0, y0, x1, y0, x1 + border[R], y0 - border[T]);
+			break;
+		case BS_INSET:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y0 - border[T], x0, y0, x1, y0, x1 + border[R], y0 - border[T]);
+			break;
+		case BS_RIDGE:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x1 + border[R]/2, y0 - border[T]/2, x1 + border[R], y0 - border[T]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x1, y0, x1 + border[R]/2, y0 - border[T]/2);
+			break;
+		case BS_GROOVE:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x1 + border[R]/2, y0 - border[T]/2, x1 + border[R], y0 - border[T]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x1, y0, x1 + border[R]/2, y0 - border[T]/2);
+			break;
+		case BS_DOUBLE:
+			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L], y0 - border[T], x0 - 2*border[L]/3, y0 - 2*border[T]/3, x1 + 2*border[R]/3, y0 - 2*border[T]/3, x1 + border[R], y0 - border[T]);
+			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y0 - border[T]/3, x0, y0, x1, y0, x1 + border[R]/3, y0 - border[T]/3);
+			break;
+		case BS_DOTTED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[T]/2, x0 - border[L]/2, y0 - border[T]/2, x1 + border[R]/2, y0 - border[T]/2);
+			break;
+		case BS_DASHED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[T]/2, x0 - border[L]/2, y0 - border[T]/2, x1 + border[R]/2, y0 - border[T]/2);
+			break;
+		case BS_SOLID:
+			draw_rect(ctx, dev, ctm, 0, style->border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
+			break;
+		}
+		break;
+	case R:
+		switch (style->border_style_1)
+		{
+		case BS_NONE:
+			return; /* Should never happen */
+		case BS_OUTSET:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x1 + border[R], y0 - border[T], x1, y0, x1, y1, x1 + border[R], y1 + border[B]);
+			break;
+		case BS_INSET:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x1 + border[R], y0 - border[T], x1, y0, x1, y1, x1 + border[R], y1 + border[B]);
+			break;
+		case BS_RIDGE:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x1 + border[R], y0 - border[T], x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x1 + border[R]/2, y0 - border[T]/2, x1, y0, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_GROOVE:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x1 + border[R], y0 - border[T], x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x1 + border[R]/2, y0 - border[T]/2, x1, y0, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_DOUBLE:
+			draw_quad(ctx, dev, ctm, style->border_color[T], x1 + border[R], y0 - border[T], x1 + 2*border[R]/3, y0 - 2*border[T]/3, x1 + 2*border[R]/3, y1 + 2*border[B]/3, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, style->border_color[T], x1 + border[R]/3, y0 - border[T]/3, x1, y0, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
+			break;
+		case BS_DOTTED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[R]/2, x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_DASHED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[R]/2, x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_SOLID:
+			draw_rect(ctx, dev, ctm, 0, style->border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
+			break;
+		}
+		break;
+	case B:
+		switch (style->border_style_2)
+		{
+		case BS_NONE:
+			return; /* Should never happen */
+		case BS_OUTSET:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y1 + border[B], x0, y1, x1, y1, x1 + border[R], y1 + border[B]);
+			break;
+		case BS_INSET:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y1 + border[B], x0, y1, x1, y1, x1 + border[R], y1 + border[B]);
+			break;
+		case BS_RIDGE:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y1 + border[B], x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L]/2, y1 + border[B]/2, x0, y1, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_GROOVE:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y1 + border[B], x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L]/2, y1 + border[B]/2, x0, y1, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_DOUBLE:
+			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L], y1 + border[B], x0 - 2*border[L]/3, y1 + 2*border[B]/3, x1 + 2*border[R]/3, y1 + 2*border[B]/3, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y1 + border[B]/3, x0, y1, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
+			break;
+		case BS_DOTTED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[B]/2, x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_DASHED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[B]/2, x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2);
+			break;
+		case BS_SOLID:
+			draw_rect(ctx, dev, ctm, 0, style->border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
+			break;
+		}
+		break;
+	case L:
+		switch (style->border_style_3)
+		{
+		case BS_NONE:
+			return; /* Should never happen */
+		case BS_OUTSET:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y0 - border[T], x0, y0, x0, y1, x0 - border[L], y1 + border[B]);
+			break;
+		case BS_INSET:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y0 - border[T], x0, y0, x0, y1, x0 - border[L], y1 + border[B]);
+			break;
+		case BS_RIDGE:
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x0, y1, x0 - border[L]/2, y1 + border[B]/2);
+			break;
+		case BS_GROOVE:
+			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x0, y1, x0 - border[L]/2, y1 + border[B]/2);
+			break;
+		case BS_DOUBLE:
+			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L], y0 - border[T], x0 - 2*border[L]/3, y0 - 2*border[T]/3, x0 - 2*border[L]/3, y1 + 2*border[B]/3, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y0 - border[T]/3, x0, y0, x0, y1, x0 - border[L]/3, y1 + border[B]/3);
+			break;
+		case BS_DOTTED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[L]/2, x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2);
+			break;
+		case BS_DASHED:
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[L]/2, x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2);
+			break;
+		case BS_SOLID:
+			draw_rect(ctx, dev, ctm, 0, style->border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
+			break;
+		}
+		break;
+	}
+}
+
 static void
 do_borders(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_html_box *box, int suppress)
 {
 	float *border = box->u.block.border;
 	float *padding = box->u.block.padding;
 	float x0 = box->s.layout.x - padding[L];
-	float y0 = box->s.layout.y - padding[T];
+	float y0 = box->s.layout.y - padding[T] - page_top;
 	float x1 = box->s.layout.x + box->s.layout.w + padding[R];
-	float y1 = box->s.layout.b + padding[B];
+	float y1 = box->s.layout.b + padding[B] - page_top;
 
 	if (border[T] > 0 && !(suppress & (1<<T)))
-		draw_rect(ctx, dev, ctm, page_top, box->style->border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
+		draw_border(ctx, dev, ctm, box, T, x0, y0, x1, y1);
 	if (border[R] > 0 && !(suppress & (1<<R)))
-		draw_rect(ctx, dev, ctm, page_top, box->style->border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
+		draw_border(ctx, dev, ctm, box, R, x0, y0, x1, y1);
 	if (border[B] > 0 && !(suppress & (1<<B)))
-		draw_rect(ctx, dev, ctm, page_top, box->style->border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
+		draw_border(ctx, dev, ctm, box, B, x0, y0, x1, y1);
 	if (border[L] > 0 && !(suppress & (1<<L)))
-		draw_rect(ctx, dev, ctm, page_top, box->style->border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
+		draw_border(ctx, dev, ctm, box, L, x0, y0, x1, y1);
 }
 
 static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart)
