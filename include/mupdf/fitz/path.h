@@ -473,5 +473,13 @@ int fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm);
 */
 int fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm, fz_rect *bounds);
 
+/**
+	Check whether a given path has all its segments closed.
+
+	This includes both explicit closepaths, and where segments are implicitly
+	closed by segments that end where they started.
+*/
+int fz_path_is_closed(fz_context *ctx, const fz_path *path);
+
 
 #endif

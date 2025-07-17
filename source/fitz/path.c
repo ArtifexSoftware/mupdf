@@ -1896,3 +1896,82 @@ fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm,
 	}
 	return 0;
 }
+
+typedef struct
+{
+	int unclosed;
+	int active;
+	float move_x;
+	float move_y;
+	float last_x;
+	float last_y;
+} closed_arg;
+
+static void
+closed_moveto(fz_context *ctx, void *arg_, float x, float y)
+{
+	closed_arg *arg = (closed_arg *)arg_;
+
+	if (arg->active)
+	{
+		if (arg->move_x != arg->last_x || arg->move_y != arg->last_y)
+			arg->unclosed = 1;
+	}
+	arg->active = 0;
+	arg->move_x = x;
+	arg->move_y = y;
+	arg->last_x = x;
+	arg->last_y = y;
+}
+
+static void
+closed_lineto(fz_context *ctx, void *arg_, float x, float y)
+{
+	closed_arg *arg = (closed_arg *)arg_;
+
+	arg->active = 1;
+	arg->last_x = x;
+	arg->last_y = y;
+}
+
+static void
+closed_curveto(fz_context *ctx, void *arg_, float x0, float y0, float x1, float y1, float x2, float y2)
+{
+	closed_arg *arg = (closed_arg *)arg_;
+
+	arg->active = 1;
+	arg->last_x = x2;
+	arg->last_y = y2;
+}
+
+static void
+closed_close(fz_context *ctx, void *arg_)
+{
+	closed_arg *arg = (closed_arg *)arg_;
+
+	arg->active = 0;
+}
+
+static const fz_path_walker closed_path_walker =
+{
+	closed_moveto,
+	closed_lineto,
+	closed_curveto,
+	closed_close
+};
+
+int
+fz_path_is_closed(fz_context *ctx, const fz_path *path)
+{
+	closed_arg arg = { 0 };
+
+	fz_walk_path(ctx, path, &closed_path_walker, &arg);
+
+	if (arg.active)
+	{
+		if (arg.move_x != arg.last_x || arg.move_y != arg.last_y)
+			arg.unclosed = 1;
+	}
+
+	return !arg.unclosed;
+}
