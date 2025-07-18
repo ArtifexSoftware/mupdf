@@ -1056,9 +1056,9 @@ static int
 pre_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *box, int ignore_width)
 {
 	float em = box->s.layout.em;
-	float *margin = box->u.block.margin;
-	float *border = box->u.block.border;
-	float *padding = box->u.block.padding;
+	const float *margin = box->u.block.margin;
+	const float *border = box->u.block.border;
+	const float *padding = box->u.block.padding;
 	float auto_w, auto_h;
 	fz_html_restarter *restart = ld->restart;
 	int eop = 0;
@@ -1301,9 +1301,9 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 	int eop = 0; /* dummy */
 	fz_html_restarter *restart = ld->restart;
 	float em = box->s.layout.em;
-	float *margin = box->u.block.margin;
-	float *border = box->u.block.border;
-	float *padding = box->u.block.padding;
+	const float *margin = box->u.block.margin;
+	const float *border = box->u.block.border;
+	const float *padding = box->u.block.padding;
 
 	/* Restore the bounds */
 	TRBLCPY(ld->bounds, pd->bounds);
@@ -1915,6 +1915,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 	float em = row->s.layout.em;
 	int fixed_height = 0;
 	table_cell *tcell;
+	float max_cell_spacing_above, max_cell_spacing_below;
 
 	/* Always layout the full row since we can't restart in the middle of a cell.
 	 * If the row doesn't fit fully, we'll postpone it to the next page.
@@ -1931,6 +1932,17 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 	{
 		row_height = fz_from_css_number(row->style->height, em, em, 0);
 		fixed_height = 1;
+	}
+
+	/* Find the maximum cell border in this row. */
+	max_cell_spacing_above = 0;
+	max_cell_spacing_below = 0;
+	for (cell = row->down; cell; cell = cell->next)
+	{
+		if (max_cell_spacing_above < cell->u.block.border[T] + cell->u.block.padding[T])
+			max_cell_spacing_above = cell->u.block.border[T] + cell->u.block.padding[T];
+		if (max_cell_spacing_below < cell->u.block.border[B] + cell->u.block.padding[B])
+			max_cell_spacing_below = cell->u.block.border[B] + cell->u.block.padding[B];
 	}
 
 	/* For each cell in the row */
@@ -1965,10 +1977,14 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 		x += spacing;
 
 		/* Position the cell */
-		ld->bounds[T] = row->s.layout.y + cell->u.block.padding[T] + cell->u.block.border[T];
+		ld->bounds[T] = row->s.layout.y + max_cell_spacing_above;
 		ld->bounds[L] = x + cell->u.block.padding[L] + cell->u.block.border[L];
 		ld->bounds[R] = ld->bounds[L] + cellw - cell_pad;
 		ld->bounds[B] = cell->s.layout.y;
+
+		/* Reuse T and B margins to allow for the required inner cell alignment spacing */
+		cell->u.block.margin[T] = max_cell_spacing_above - cell->u.block.padding[T] - cell->u.block.border[T];
+		cell->u.block.margin[B] = max_cell_spacing_below - cell->u.block.padding[B] - cell->u.block.border[B];
 
 		cell->s.layout.x = ld->bounds[L];
 		cell->s.layout.w = ld->bounds[R] - ld->bounds[L];
@@ -2005,7 +2021,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 
 		/* Update row_b (most importantly for this row, but ensure the others
 		 * are plausibly increasing too). */
-		y = cell->s.layout.b + cell->u.block.padding[B] + cell->u.block.border[B];
+		y = cell->s.layout.b + cell->u.block.padding[B] + cell->u.block.border[B] + cell->u.block.margin[B];
 		for (i = celly + rowspan - 1; i < grid->h; i++)
 		{
 			if (grid->row_b[i] < y)
@@ -2039,7 +2055,7 @@ fixup_cell_bottoms(fz_context *ctx, table_grid *grid, fz_html_box *box)
 			if (rowspan < 1)
 				rowspan = 1;
 
-			y = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]);
+			y = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B] + cell->u.block.margin[B]);
 			if (cell->style->vertical_align == VA_MIDDLE || cell->style->vertical_align == VA_BOTTOM)
 			{
 				float offset = (y - cell->s.layout.b);
@@ -3792,12 +3808,14 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 static void
 do_borders(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_html_box *box, int suppress)
 {
+	float cell_adjust_top = box->type == BOX_TABLE_CELL ? box->u.block.margin[T] : 0;
+	float cell_adjust_bot = box->type == BOX_TABLE_CELL ? box->u.block.margin[B] : 0;
 	float *border = box->u.block.border;
 	float *padding = box->u.block.padding;
 	float x0 = box->s.layout.x - padding[L];
-	float y0 = box->s.layout.y - padding[T] - page_top;
+	float y0 = box->s.layout.y - padding[T] - page_top - cell_adjust_top;
 	float x1 = box->s.layout.x + box->s.layout.w + padding[R];
-	float y1 = box->s.layout.b + padding[B] - page_top;
+	float y1 = box->s.layout.b + padding[B] - page_top + cell_adjust_bot;
 
 	if (border[T] > 0 && !(suppress & (1<<T)))
 		draw_border(ctx, dev, ctm, box, T, x0, y0, x1, y1);
