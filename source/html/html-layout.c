@@ -3437,15 +3437,45 @@ static void draw_quad(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_css_col
 		fz_rethrow(ctx);
 }
 
+static void
+fudge_len(float *wp, float len, int count, float extra)
+{
+	/* We have a line of length len, in which we have to fit n*count+extra sections
+	 * for some integer n, n > 1. We'd like to find n s.t. each of those sections is
+	 * approximately w.
+	 *
+	 * So, ideally len = (n*count+extra)*w
+	 * (len/w - extra)/count = n
+	 * ((len - w*extra)/count/w = n
+	 */
+	float w = *wp;
+	int n = 0;
+
+	assert(w > 0 && count > 0);
+
+	if (len > w*extra)
+		n = ((len - w*extra) + (count*w)/2) / (count*w);
+	if (n < 1)
+		n = 1;
+
+	*wp = len / (n * count + extra);
+}
+
 static void draw_dotted_line(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_css_color color, int dashed, float w,
 	float x0, float y0, float x1, float y1)
 {
 	float rgb[3];
 	fz_path *path;
 	fz_stroke_state *stroke;
+	float len;
 
 	if (color.a <= 0 || w <= 0)
 		return;
+
+	/* Rely on the fact that we only draw othogonal lines here! */
+	len = x1 - x0 + y1 - y0;
+	if (len < 0)
+		len = -len;
 
 	path = fz_new_path(ctx);
 	stroke = NULL;
@@ -3466,14 +3496,16 @@ static void draw_dotted_line(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_
 		stroke->dash_len = 2;
 		if (dashed)
 		{
+			fudge_len(&w, len, 4, 1);
 			stroke->start_cap = FZ_LINECAP_SQUARE;
 			stroke->dash_cap = FZ_LINECAP_SQUARE;
 			stroke->end_cap = FZ_LINECAP_SQUARE;
 			stroke->dash_list[0] = w;
-			stroke->dash_list[1] = w*2;
+			stroke->dash_list[1] = w*3;
 		}
 		else
 		{
+			fudge_len(&w, len, 2, 0.01f);
 			stroke->start_cap = FZ_LINECAP_ROUND;
 			stroke->dash_cap = FZ_LINECAP_ROUND;
 			stroke->end_cap = FZ_LINECAP_ROUND;
@@ -3943,11 +3975,19 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y0 - border[T]/3, x0, y0, x1, y0, x1 + border[R]/3, y0 - border[T]/3);
 			break;
 		case BS_DOTTED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[T]/2, x0 - border[L]/2, y0 - border[T]/2, x1 + border[R]/2, y0 - border[T]/2);
+		{
+			float left = border[L] - border[T]/2;
+			float right = border[R] - border[T]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[T], x0 - left, y0 - border[T]/2, x1 + right, y0 - border[T]/2);
 			break;
+		}
 		case BS_DASHED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[T]/2, x0 - border[L]/2, y0 - border[T]/2, x1 + border[R]/2, y0 - border[T]/2);
+		{
+			float left = border[L] - border[T]/2;
+			float right = border[R] - border[T]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[T], x0 - left, y0 - border[T]/2, x1 + right, y0 - border[T]/2);
 			break;
+		}
 		case BS_SOLID:
 			draw_rect(ctx, dev, ctm, 0, style->border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
 			break;
@@ -3959,29 +3999,37 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 		case BS_NONE:
 			return; /* Should never happen */
 		case BS_OUTSET:
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x1 + border[R], y0 - border[T], x1, y0, x1, y1, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[R]), x1 + border[R], y0 - border[T], x1, y0, x1, y1, x1 + border[R], y1 + border[B]);
 			break;
 		case BS_INSET:
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x1 + border[R], y0 - border[T], x1, y0, x1, y1, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[R]), x1 + border[R], y0 - border[T], x1, y0, x1, y1, x1 + border[R], y1 + border[B]);
 			break;
 		case BS_RIDGE:
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x1 + border[R], y0 - border[T], x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x1 + border[R]/2, y0 - border[T]/2, x1, y0, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[R]), x1 + border[R], y0 - border[T], x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[R]), x1 + border[R]/2, y0 - border[T]/2, x1, y0, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
 			break;
 		case BS_GROOVE:
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x1 + border[R], y0 - border[T], x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x1 + border[R]/2, y0 - border[T]/2, x1, y0, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[R]), x1 + border[R], y0 - border[T], x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[R]), x1 + border[R]/2, y0 - border[T]/2, x1, y0, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
 			break;
 		case BS_DOUBLE:
-			draw_quad(ctx, dev, ctm, style->border_color[T], x1 + border[R], y0 - border[T], x1 + 2*border[R]/3, y0 - 2*border[T]/3, x1 + 2*border[R]/3, y1 + 2*border[B]/3, x1 + border[R], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, style->border_color[T], x1 + border[R]/3, y0 - border[T]/3, x1, y0, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
+			draw_quad(ctx, dev, ctm, style->border_color[R], x1 + border[R], y0 - border[T], x1 + 2*border[R]/3, y0 - 2*border[T]/3, x1 + 2*border[R]/3, y1 + 2*border[B]/3, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, style->border_color[R], x1 + border[R]/3, y0 - border[T]/3, x1, y0, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
 			break;
 		case BS_DOTTED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[R]/2, x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2);
+		{
+			float top = border[T] - border[R]/2;
+			float bottom = border[B] - border[R]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[R], 0, border[R], x1 + border[R]/2, y0 - top, x1 + border[R]/2, y1 + bottom);
 			break;
+		}
 		case BS_DASHED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[R]/2, x1 + border[R]/2, y0 - border[T]/2, x1 + border[R]/2, y1 + border[B]/2);
+		{
+			float top = border[T] - border[R]/2;
+			float bottom = border[B] - border[R]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[R], 1, border[R], x1 + border[R]/2, y0 - top, x1 + border[R]/2, y1 + bottom);
 			break;
+		}
 		case BS_SOLID:
 			draw_rect(ctx, dev, ctm, 0, style->border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
 			break;
@@ -3993,29 +4041,37 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 		case BS_NONE:
 			return; /* Should never happen */
 		case BS_OUTSET:
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y1 + border[B], x0, y1, x1, y1, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[B]), x0 - border[L], y1 + border[B], x0, y1, x1, y1, x1 + border[R], y1 + border[B]);
 			break;
 		case BS_INSET:
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y1 + border[B], x0, y1, x1, y1, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[B]), x0 - border[L], y1 + border[B], x0, y1, x1, y1, x1 + border[R], y1 + border[B]);
 			break;
 		case BS_RIDGE:
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y1 + border[B], x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L]/2, y1 + border[B]/2, x0, y1, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[B]), x0 - border[L], y1 + border[B], x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[B]), x0 - border[L]/2, y1 + border[B]/2, x0, y1, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
 			break;
 		case BS_GROOVE:
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y1 + border[B], x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L]/2, y1 + border[B]/2, x0, y1, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[B]), x0 - border[L], y1 + border[B], x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[B]), x0 - border[L]/2, y1 + border[B]/2, x0, y1, x1, y1, x1 + border[R]/2, y1 + border[B]/2);
 			break;
 		case BS_DOUBLE:
-			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L], y1 + border[B], x0 - 2*border[L]/3, y1 + 2*border[B]/3, x1 + 2*border[R]/3, y1 + 2*border[B]/3, x1 + border[R], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y1 + border[B]/3, x0, y1, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
+			draw_quad(ctx, dev, ctm, style->border_color[B], x0 - border[L], y1 + border[B], x0 - 2*border[L]/3, y1 + 2*border[B]/3, x1 + 2*border[R]/3, y1 + 2*border[B]/3, x1 + border[R], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, style->border_color[B], x0 - border[L]/3, y1 + border[B]/3, x0, y1, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
 			break;
 		case BS_DOTTED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x0 - border[L]/2, y1 + border[B]/2);
+		{
+			float left = border[L] - border[B]/2;
+			float right = border[R] - border[B]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[B], 0, border[B], x1 + right, y1 + border[B]/2, x0 - left, y1 + border[B]/2);
 			break;
+		}
 		case BS_DASHED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x0 - border[L]/2, y1 + border[B]/2);
+		{
+			float left = border[L] - border[B]/2;
+			float right = border[R] - border[B]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[B], 1, border[B], x1 + right, y1 + border[B]/2, x0 - left, y1 + border[B]/2);
 			break;
+		}
 		case BS_SOLID:
 			draw_rect(ctx, dev, ctm, 0, style->border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
 			break;
@@ -4027,29 +4083,37 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 		case BS_NONE:
 			return; /* Should never happen */
 		case BS_OUTSET:
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y0 - border[T], x0, y0, x0, y1, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[L]), x0 - border[L], y0 - border[T], x0, y0, x0, y1, x0 - border[L], y1 + border[B]);
 			break;
 		case BS_INSET:
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y0 - border[T], x0, y0, x0, y1, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[L]), x0 - border[L], y0 - border[T], x0, y0, x0, y1, x0 - border[L], y1 + border[B]);
 			break;
 		case BS_RIDGE:
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x0, y1, x0 - border[L]/2, y1 + border[B]/2);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[L]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[L]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x0, y1, x0 - border[L]/2, y1 + border[B]/2);
 			break;
 		case BS_GROOVE:
-			draw_quad(ctx, dev, ctm, darken(style->border_color[T]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, brighten(style->border_color[T]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x0, y1, x0 - border[L]/2, y1 + border[B]/2);
+			draw_quad(ctx, dev, ctm, darken(style->border_color[L]), x0 - border[L], y0 - border[T], x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, brighten(style->border_color[L]), x0 - border[L]/2, y0 - border[T]/2, x0, y0, x0, y1, x0 - border[L]/2, y1 + border[B]/2);
 			break;
 		case BS_DOUBLE:
-			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L], y0 - border[T], x0 - 2*border[L]/3, y0 - 2*border[T]/3, x0 - 2*border[L]/3, y1 + 2*border[B]/3, x0 - border[L], y1 + border[B]);
-			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y0 - border[T]/3, x0, y0, x0, y1, x0 - border[L]/3, y1 + border[B]/3);
+			draw_quad(ctx, dev, ctm, style->border_color[L], x0 - border[L], y0 - border[T], x0 - 2*border[L]/3, y0 - 2*border[T]/3, x0 - 2*border[L]/3, y1 + 2*border[B]/3, x0 - border[L], y1 + border[B]);
+			draw_quad(ctx, dev, ctm, style->border_color[L], x0 - border[L]/3, y0 - border[T]/3, x0, y0, x0, y1, x0 - border[L]/3, y1 + border[B]/3);
 			break;
 		case BS_DOTTED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[L]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L]/2, y0 - border[T]/2);
+		{
+			float top = border[T] - border[L]/2;
+			float bottom = border[B] - border[L]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[L], 0, border[L], x0 - border[L]/2, y1 + bottom, x0 - border[L]/2, y0 - top);
 			break;
+		}
 		case BS_DASHED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[L]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L]/2, y0 - border[T]/2);
+		{
+			float top = border[T] - border[L]/2;
+			float bottom = border[B] - border[L]/2;
+			draw_dotted_line(ctx, dev, ctm, style->border_color[L], 1, border[L], x0 - border[L]/2, y1 + bottom, x0 - border[L]/2, y0 - top);
 			break;
+		}
 		case BS_SOLID:
 			draw_rect(ctx, dev, ctm, 0, style->border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
 			break;
