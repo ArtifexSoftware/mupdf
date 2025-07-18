@@ -3758,10 +3758,10 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y1 + border[B]/3, x0, y1, x1, y1, x1 + border[R]/3, y1 + border[B]/3);
 			break;
 		case BS_DOTTED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[B]/2, x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2);
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x0 - border[L]/2, y1 + border[B]/2);
 			break;
 		case BS_DASHED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[B]/2, x0 - border[L]/2, y1 + border[B]/2, x1 + border[R]/2, y1 + border[B]/2);
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[B]/2, x1 + border[R]/2, y1 + border[B]/2, x0 - border[L]/2, y1 + border[B]/2);
 			break;
 		case BS_SOLID:
 			draw_rect(ctx, dev, ctm, 0, style->border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
@@ -3792,10 +3792,10 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 			draw_quad(ctx, dev, ctm, style->border_color[T], x0 - border[L]/3, y0 - border[T]/3, x0, y0, x0, y1, x0 - border[L]/3, y1 + border[B]/3);
 			break;
 		case BS_DOTTED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[L]/2, x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2);
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 0, border[L]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L]/2, y0 - border[T]/2);
 			break;
 		case BS_DASHED:
-			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[L]/2, x0 - border[L]/2, y0 - border[T]/2, x0 - border[L]/2, y1 + border[B]/2);
+			draw_dotted_line(ctx, dev, ctm, style->border_color[T], 1, border[L]/2, x0 - border[L]/2, y1 + border[B]/2, x0 - border[L]/2, y0 - border[T]/2);
 			break;
 		case BS_SOLID:
 			draw_rect(ctx, dev, ctm, 0, style->border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
