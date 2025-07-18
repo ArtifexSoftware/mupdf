@@ -740,6 +740,7 @@ test_tablespans(fz_context *ctx)
 		"  border: 1px solid #808080;\n"
 		"}\n"
 		"</style></head><body>\n"
+		"<p>Using attributes:</p>"
 		"<table>"
 		"<tr>"
 		"<td align=center colspan=2 style=\"border: 4px solid red\">A</td>"
@@ -753,6 +754,26 @@ test_tablespans(fz_context *ctx)
 		"<tr>"
 		"<td width=125>F</td>"
 		"<td align=center valign=bottom rowspan=2 colspan=2 style=\"border: 3px solid green\">G</td>"
+		"</tr>"
+		"<tr>"
+		"<td>H</td>"
+		"<td>I</td>"
+		"</tr>"
+		"</table>"
+		"<p>Using styles:</p>"
+		"<table>"
+		"<tr>"
+		"<td colspan=2 style=\"border: 4px solid red; text-align: center\">A</td>"
+		"<td style=\"width: 75px\">B</td>"
+		"<td style=\"width: 50px; text-align: right\">C</td>"
+		"</tr>"
+		"<tr>"
+		"<td rowspan=2 style=\"width: 100px; border: 2px solid blue; vertical-align: middle\">D</td>"
+		"<td colspan=3>E</td>"
+		"</tr>"
+		"<tr>"
+		"<td style=\"width: 125px\">F</td>"
+		"<td rowspan=2 colspan=2 style=\"border: 3px solid green; text-align: center; vertical-align:bottom\">G</td>"
 		"</tr>"
 		"<tr>"
 		"<td>H</td>"
@@ -792,6 +813,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px outset #220000;\">2</td>"
 		"<td style=\"border: 8px outset #110000;\">1</td>"
 		"<td style=\"border: 8px outset #000000;\">0</td>"
+		"<td style=\"border: 8px #ff0000; border-style: none outset;\">F</td>"
+		"<td style=\"border: 8px #ff0000; border-style: outset none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px inset #00ff00;\">F</td>"
@@ -810,6 +833,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px inset #002200;\">2</td>"
 		"<td style=\"border: 8px inset #001100;\">1</td>"
 		"<td style=\"border: 8px inset #000000;\">0</td>"
+		"<td style=\"border: 8px #00ff00; border-style: none inset;\">F</td>"
+		"<td style=\"border: 8px #00ff00; border-style: inset none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px ridge #0000ff;\">F</td>"
@@ -828,6 +853,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px ridge #000022;\">2</td>"
 		"<td style=\"border: 8px ridge #000011;\">1</td>"
 		"<td style=\"border: 8px ridge #000000;\">0</td>"
+		"<td style=\"border: 8px #0000ff; border-style: none ridge;\">F</td>"
+		"<td style=\"border: 8px #0000ff; border-style: ridge none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px groove #7800ff;\">F</td>"
@@ -846,6 +873,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px groove #100022;\">2</td>"
 		"<td style=\"border: 8px groove #080011;\">1</td>"
 		"<td style=\"border: 8px groove #000000;\">0</td>"
+		"<td style=\"border: 8px #7800ff; border-style: none groove;\">F</td>"
+		"<td style=\"border: 8px #7800ff; border-style: groove none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px double #ff7800;\">F</td>"
@@ -864,6 +893,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px double #221000;\">2</td>"
 		"<td style=\"border: 8px double #110800;\">1</td>"
 		"<td style=\"border: 8px double #000000;\">0</td>"
+		"<td style=\"border: 8px #ff7800; border-style: none double;\">F</td>"
+		"<td style=\"border: 8px #ff7800; border-style: double none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px solid #ff0078;\">F</td>"
@@ -882,6 +913,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px solid #220010;\">2</td>"
 		"<td style=\"border: 8px solid #110008;\">1</td>"
 		"<td style=\"border: 8px solid #000000;\">0</td>"
+		"<td style=\"border: 8px #ff0078; border-style: none solid;\">F</td>"
+		"<td style=\"border: 8px #ff0078; border-style: solid none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px dashed #00ff78;\">F</td>"
@@ -900,6 +933,8 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px dashed #002210;\">2</td>"
 		"<td style=\"border: 8px dashed #001108;\">1</td>"
 		"<td style=\"border: 8px dashed #000000;\">0</td>"
+		"<td style=\"border: 8px #00ff78; border-style: none dashed;\">F</td>"
+		"<td style=\"border: 8px #00ff78; border-style: dashed none;\">F</td>"
 		"</tr>"
 		"<tr>"
 		"<td style=\"border: 8px dotted #ffffff;\">F</td>"
@@ -918,12 +953,48 @@ test_tableborders(fz_context *ctx)
 		"<td style=\"border: 8px dotted #222222;\">2</td>"
 		"<td style=\"border: 8px dotted #111111;\">1</td>"
 		"<td style=\"border: 8px dotted #000000;\">0</td>"
+		"<td style=\"border: 8px #888888; border-style: none dotted;\">F</td>"
+		"<td style=\"border: 8px #888888; border-style: dotted none;\">F</td>"
 		"</tr>"
 		"</table>"
 		"</div>\n"
 		"</body></html>\n";
 
 	test_story(ctx, "tableborders.pdf", "", tables);
+}
+
+static void
+test_tableborderwidths(fz_context *ctx)
+{
+	const char *tables =
+		"<!DOCTYPE html><html><head><style>\n"
+		"</style></head><body>\n"
+		"<table>"
+		"<tr>"
+		"<td style=\"border: 1px #ff0000; border-style: solid\">1</td>"
+		"<td style=\"border: 2px #ff0000; border-style: solid\">2</td>"
+		"<td style=\"border: 3px #ff0000; border-style: solid\">3</td>"
+		"<td style=\"border: 4px #ff0000; border-style: solid\">4</td>"
+		"<td style=\"border: 5px #ff0000; border-style: solid\">5</td>"
+		"<td style=\"border: 6px #ff0000; border-style: solid\">6</td>"
+		"<td style=\"border: 7px #ff0000; border-style: solid\">7</td>"
+		"<td style=\"border: 8px #ff0000; border-style: solid\">8</td>"
+		"</tr>"
+		"<tr>"
+		"<td style=\"border: 8px #ff0000; border-style: solid\">8</td>"
+		"<td style=\"border: 7px #ff0000; border-style: solid\">7</td>"
+		"<td style=\"border: 6px #ff0000; border-style: solid\">6</td>"
+		"<td style=\"border: 5px #ff0000; border-style: solid\">5</td>"
+		"<td style=\"border: 4px #ff0000; border-style: solid\">4</td>"
+		"<td style=\"border: 3px #ff0000; border-style: solid\">3</td>"
+		"<td style=\"border: 2px #ff0000; border-style: solid\">2</td>"
+		"<td style=\"border: 1px #ff0000; border-style: solid\">1</td>"
+		"</tr>"
+		"</table>"
+		"</div>\n"
+		"</body></html>\n";
+
+	test_story(ctx, "tableborderwidths.pdf", "", tables);
 }
 
 static void
@@ -1193,6 +1264,8 @@ int main(int argc, const char *argv[])
 	test_tablewidths(ctx);
 
 	test_tableborders(ctx);
+
+	test_tableborderwidths(ctx);
 
 	test_leftright(ctx);
 
