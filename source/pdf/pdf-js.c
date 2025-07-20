@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -524,7 +524,10 @@ static void doc_resetForm(js_State *J)
 		for (i = 0; i < n; ++i)
 		{
 			js_getindex(J, 1, i);
-			field = pdf_lookup_field(ctx, js->form, js_tostring(J, -1));
+			fz_try(ctx)
+				field = pdf_lookup_field(ctx, form, js_tostring(J, -1));
+			fz_catch(ctx)
+				rethrow(js);
 			if (field)
 				pdf_field_reset(ctx, js->doc, field);
 			js_pop(J, 1);
@@ -534,14 +537,14 @@ static void doc_resetForm(js_State *J)
 	/* No argument or null passed in means reset all. */
 	else
 	{
-		n = pdf_array_len(ctx, js->form);
-		for (i = 0; i < n; i++)
+		fz_try(ctx)
 		{
-			fz_try(ctx)
+			n = pdf_array_len(ctx, js->form);
+			for (i = 0; i < n; i++)
 				pdf_field_reset(ctx, js->doc, pdf_array_get(ctx, js->form, i));
-			fz_catch(ctx)
-				rethrow(js);
 		}
+		fz_catch(ctx)
+			rethrow(js);
 	}
 }
 
