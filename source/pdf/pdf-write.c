@@ -459,9 +459,6 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			}
 		}
 
-		/* Javascript stores a form object - need to renumber that. */
-		renumber_stored_object_ref(ctx, pdf_js_form_objectp(ctx, doc), opts, doc, xref_len);
-
 		/* And the OCGs store several. Just drop 'em all. */
 		pdf_drop_ocg(ctx, doc);
 		doc->ocg = NULL;
