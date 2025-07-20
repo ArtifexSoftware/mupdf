@@ -489,7 +489,7 @@ pdf_drop_ocg(fz_context *ctx, pdf_document *doc)
 static void
 clear_radio_group(fz_context *ctx, pdf_document *doc, int config_num, pdf_obj *ocg)
 {
-	pdf_obj *ocprops, *cobj, *rbgroups;
+	pdf_obj *ocprops, *rbgroups, *cobj = NULL;
 	int len, i;
 
 	ocprops = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(OCProperties));
