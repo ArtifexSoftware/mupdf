@@ -3483,7 +3483,7 @@ brighten(fz_css_color c)
 			H = (c.g - c.b)/(float)delta; /* Proper H would be: 0 <= H < 1 */
 			c.r = (c.r>>1) + 128;
 			C = c.r * S;
-			c.g = c.r - C;
+			c.b = c.r - C;
 			c.g = c.b + C * H;
 			c.r = c.b + C;
 		}
@@ -3586,7 +3586,7 @@ darken(fz_css_color c)
 			H = (c.g - c.b)/(float)delta; /* Proper H would be: 0 <= H < 1 */
 			c.r >>= 1;
 			C = c.r * S;
-			c.g = c.r - C;
+			c.b = c.r - C;
 			c.g = c.b + C * H;
 			c.r = c.b + C;
 		}
