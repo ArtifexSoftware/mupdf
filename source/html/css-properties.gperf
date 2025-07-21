@@ -16,6 +16,7 @@ border-bottom-color,PRO_BORDER_BOTTOM_COLOR
 border-bottom-style,PRO_BORDER_BOTTOM_STYLE
 border-bottom-width,PRO_BORDER_BOTTOM_WIDTH
 border-color,PRO_BORDER_COLOR
+border-collapse,PRO_BORDER_COLLAPSE
 border-left,PRO_BORDER_LEFT
 border-left-color,PRO_BORDER_LEFT_COLOR
 border-left-style,PRO_BORDER_LEFT_STYLE

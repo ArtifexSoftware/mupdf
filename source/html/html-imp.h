@@ -130,6 +130,7 @@ enum
 	PRO_BORDER_BOTTOM_COLOR,
 	PRO_BORDER_BOTTOM_STYLE,
 	PRO_BORDER_BOTTOM_WIDTH,
+	PRO_BORDER_COLLAPSE,
 	PRO_BORDER_LEFT_COLOR,
 	PRO_BORDER_LEFT_STYLE,
 	PRO_BORDER_LEFT_WIDTH,
@@ -297,7 +298,8 @@ struct fz_css_style_s
 	unsigned int text_decoration: 2;
 	unsigned int overflow_wrap : 1;
 	unsigned int position : 2;
-	unsigned int blank : 2;
+	unsigned int border_collapse : 1;
+	unsigned int blank : 1;
 	fz_css_number line_height;
 	fz_css_number leading;
 	fz_css_color background_color;

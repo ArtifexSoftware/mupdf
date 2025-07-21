@@ -1,5 +1,5 @@
 /* ANSI-C code produced by gperf version 3.1 */
-/* Command-line: gperf source/html/css-properties.gperf  */
+/* Command-line: 'C:\\Program Files\\Bin\\gperf.exe' source/html/css-properties.gperf  */
 /* Computed positions: -k'1-2,$' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -32,7 +32,7 @@
 #line 1 "source/html/css-properties.gperf"
 struct css_property_info { const char *name; int key; };
 
-#define TOTAL_KEYWORDS 77
+#define TOTAL_KEYWORDS 78
 #define MIN_WORD_LENGTH 3
 #define MAX_WORD_LENGTH 25
 #define MIN_HASH_VALUE 6
@@ -84,57 +84,59 @@ css_property_hash (register const char *str, register size_t len)
 static struct css_property_info css_property_list[] =
   {
     {""}, {""}, {""}, {""}, {""}, {""},
-#line 71 "source/html/css-properties.gperf"
+#line 72 "source/html/css-properties.gperf"
     {"quotes",PRO_QUOTES},
     {""},
-#line 78 "source/html/css-properties.gperf"
+#line 79 "source/html/css-properties.gperf"
     {"top",PRO_INSET_TOP},
-#line 49 "source/html/css-properties.gperf"
+#line 50 "source/html/css-properties.gperf"
     {"left",PRO_INSET_LEFT},
     {""}, {""}, {""}, {""}, {""}, {""},
-#line 76 "source/html/css-properties.gperf"
+#line 77 "source/html/css-properties.gperf"
     {"text-indent",PRO_TEXT_INDENT},
     {""},
-#line 62 "source/html/css-properties.gperf"
+#line 63 "source/html/css-properties.gperf"
     {"overflow-wrap",PRO_OVERFLOW_WRAP},
     {""},
-#line 29 "source/html/css-properties.gperf"
+#line 30 "source/html/css-properties.gperf"
     {"border-top",PRO_BORDER_TOP},
-#line 19 "source/html/css-properties.gperf"
+#line 20 "source/html/css-properties.gperf"
     {"border-left",PRO_BORDER_LEFT},
-#line 23 "source/html/css-properties.gperf"
+#line 24 "source/html/css-properties.gperf"
     {"border-right",PRO_BORDER_RIGHT},
     {""}, {""}, {""}, {""},
-#line 28 "source/html/css-properties.gperf"
+#line 29 "source/html/css-properties.gperf"
     {"border-style",PRO_BORDER_STYLE},
-    {""}, {""}, {""},
-#line 31 "source/html/css-properties.gperf"
+    {""}, {""},
+#line 19 "source/html/css-properties.gperf"
+    {"border-collapse",PRO_BORDER_COLLAPSE},
+#line 32 "source/html/css-properties.gperf"
     {"border-top-style",PRO_BORDER_TOP_STYLE},
-#line 21 "source/html/css-properties.gperf"
+#line 22 "source/html/css-properties.gperf"
     {"border-left-style",PRO_BORDER_LEFT_STYLE},
-#line 25 "source/html/css-properties.gperf"
+#line 26 "source/html/css-properties.gperf"
     {"border-right-style",PRO_BORDER_RIGHT_STYLE},
 #line 16 "source/html/css-properties.gperf"
     {"border-bottom-style",PRO_BORDER_BOTTOM_STYLE},
     {""},
-#line 67 "source/html/css-properties.gperf"
+#line 68 "source/html/css-properties.gperf"
     {"padding-top",PRO_PADDING_TOP},
-#line 65 "source/html/css-properties.gperf"
-    {"padding-left",PRO_PADDING_LEFT},
 #line 66 "source/html/css-properties.gperf"
+    {"padding-left",PRO_PADDING_LEFT},
+#line 67 "source/html/css-properties.gperf"
     {"padding-right",PRO_PADDING_RIGHT},
     {""}, {""},
-#line 34 "source/html/css-properties.gperf"
+#line 35 "source/html/css-properties.gperf"
     {"bottom",PRO_INSET_BOTTOM},
-#line 61 "source/html/css-properties.gperf"
+#line 62 "source/html/css-properties.gperf"
     {"orphans",PRO_ORPHANS},
     {""},
-#line 77 "source/html/css-properties.gperf"
+#line 78 "source/html/css-properties.gperf"
     {"text-transform",PRO_TEXT_TRANSFORM},
     {""},
 #line 13 "source/html/css-properties.gperf"
     {"border",PRO_BORDER},
-#line 69 "source/html/css-properties.gperf"
+#line 70 "source/html/css-properties.gperf"
     {"page-break-before",PRO_PAGE_BREAK_BEFORE},
 #line 14 "source/html/css-properties.gperf"
     {"border-bottom",PRO_BORDER_BOTTOM},
@@ -142,133 +144,133 @@ static struct css_property_info css_property_list[] =
 #line 18 "source/html/css-properties.gperf"
     {"border-color",PRO_BORDER_COLOR},
     {""}, {""}, {""},
-#line 30 "source/html/css-properties.gperf"
+#line 31 "source/html/css-properties.gperf"
     {"border-top-color",PRO_BORDER_TOP_COLOR},
-#line 20 "source/html/css-properties.gperf"
+#line 21 "source/html/css-properties.gperf"
     {"border-left-color",PRO_BORDER_LEFT_COLOR},
-#line 24 "source/html/css-properties.gperf"
+#line 25 "source/html/css-properties.gperf"
     {"border-right-color",PRO_BORDER_RIGHT_COLOR},
 #line 15 "source/html/css-properties.gperf"
     {"border-bottom-color",PRO_BORDER_BOTTOM_COLOR},
-#line 60 "source/html/css-properties.gperf"
+#line 61 "source/html/css-properties.gperf"
     {"margin-top",PRO_MARGIN_TOP},
-#line 58 "source/html/css-properties.gperf"
-    {"margin-left",PRO_MARGIN_LEFT},
 #line 59 "source/html/css-properties.gperf"
+    {"margin-left",PRO_MARGIN_LEFT},
+#line 60 "source/html/css-properties.gperf"
     {"margin-right",PRO_MARGIN_RIGHT},
-#line 70 "source/html/css-properties.gperf"
+#line 71 "source/html/css-properties.gperf"
     {"position",PRO_POSITION},
-#line 64 "source/html/css-properties.gperf"
+#line 65 "source/html/css-properties.gperf"
     {"padding-bottom",PRO_PADDING_BOTTOM},
-#line 74 "source/html/css-properties.gperf"
+#line 75 "source/html/css-properties.gperf"
     {"text-align",PRO_TEXT_ALIGN},
-#line 47 "source/html/css-properties.gperf"
+#line 48 "source/html/css-properties.gperf"
     {"height",PRO_HEIGHT},
     {""}, {""},
-#line 79 "source/html/css-properties.gperf"
+#line 80 "source/html/css-properties.gperf"
     {"vertical-align",PRO_VERTICAL_ALIGN},
-#line 75 "source/html/css-properties.gperf"
+#line 76 "source/html/css-properties.gperf"
     {"text-decoration",PRO_TEXT_DECORATION},
-#line 68 "source/html/css-properties.gperf"
+#line 69 "source/html/css-properties.gperf"
     {"page-break-after",PRO_PAGE_BREAK_AFTER},
     {""}, {""},
-#line 50 "source/html/css-properties.gperf"
+#line 51 "source/html/css-properties.gperf"
     {"letter-spacing",PRO_LETTER_SPACING},
     {""},
 #line 12 "source/html/css-properties.gperf"
     {"background-color",PRO_BACKGROUND_COLOR},
-#line 33 "source/html/css-properties.gperf"
+#line 34 "source/html/css-properties.gperf"
     {"border-width",PRO_BORDER_WIDTH},
 #line 9 "source/html/css-properties.gperf"
     {"-webkit-text-fill-color",PRO_TEXT_FILL_COLOR},
-#line 27 "source/html/css-properties.gperf"
+#line 28 "source/html/css-properties.gperf"
     {"border-spacing",PRO_BORDER_SPACING},
 #line 10 "source/html/css-properties.gperf"
     {"-webkit-text-stroke-color",PRO_TEXT_STROKE_COLOR},
-#line 32 "source/html/css-properties.gperf"
+#line 33 "source/html/css-properties.gperf"
     {"border-top-width",PRO_BORDER_TOP_WIDTH},
-#line 22 "source/html/css-properties.gperf"
+#line 23 "source/html/css-properties.gperf"
     {"border-left-width",PRO_BORDER_LEFT_WIDTH},
-#line 26 "source/html/css-properties.gperf"
+#line 27 "source/html/css-properties.gperf"
     {"border-right-width",PRO_BORDER_RIGHT_WIDTH},
 #line 17 "source/html/css-properties.gperf"
     {"border-bottom-width",PRO_BORDER_BOTTOM_WIDTH},
     {""},
-#line 51 "source/html/css-properties.gperf"
+#line 52 "source/html/css-properties.gperf"
     {"line-height",PRO_LINE_HEIGHT},
-#line 63 "source/html/css-properties.gperf"
+#line 64 "source/html/css-properties.gperf"
     {"padding",PRO_PADDING},
-#line 57 "source/html/css-properties.gperf"
+#line 58 "source/html/css-properties.gperf"
     {"margin-bottom",PRO_MARGIN_BOTTOM},
     {""},
-#line 52 "source/html/css-properties.gperf"
+#line 53 "source/html/css-properties.gperf"
     {"list-style",PRO_LIST_STYLE},
-#line 81 "source/html/css-properties.gperf"
+#line 82 "source/html/css-properties.gperf"
     {"white-space",PRO_WHITE_SPACE},
-#line 84 "source/html/css-properties.gperf"
+#line 85 "source/html/css-properties.gperf"
     {"word-spacing",PRO_WORD_SPACING},
     {""}, {""},
-#line 55 "source/html/css-properties.gperf"
+#line 56 "source/html/css-properties.gperf"
     {"list-style-type",PRO_LIST_STYLE_TYPE},
-#line 53 "source/html/css-properties.gperf"
+#line 54 "source/html/css-properties.gperf"
     {"list-style-image",PRO_LIST_STYLE_IMAGE},
-#line 37 "source/html/css-properties.gperf"
+#line 38 "source/html/css-properties.gperf"
     {"columns",PRO_COLUMNS},
     {""},
 #line 8 "source/html/css-properties.gperf"
     {"-mupdf-leading",PRO_LEADING},
-#line 40 "source/html/css-properties.gperf"
+#line 41 "source/html/css-properties.gperf"
     {"float",PRO_FLOAT},
-#line 82 "source/html/css-properties.gperf"
+#line 83 "source/html/css-properties.gperf"
     {"widows",PRO_WIDOWS},
     {""}, {""},
-#line 41 "source/html/css-properties.gperf"
+#line 42 "source/html/css-properties.gperf"
     {"font",PRO_FONT},
 #line 11 "source/html/css-properties.gperf"
     {"-webkit-text-stroke-width",PRO_TEXT_STROKE_WIDTH},
-#line 56 "source/html/css-properties.gperf"
+#line 57 "source/html/css-properties.gperf"
     {"margin",PRO_MARGIN},
     {""}, {""}, {""},
-#line 72 "source/html/css-properties.gperf"
+#line 73 "source/html/css-properties.gperf"
     {"right",PRO_INSET_RIGHT},
-#line 46 "source/html/css-properties.gperf"
+#line 47 "source/html/css-properties.gperf"
     {"font-weight",PRO_FONT_WEIGHT},
-#line 45 "source/html/css-properties.gperf"
+#line 46 "source/html/css-properties.gperf"
     {"font-variant",PRO_FONT_VARIANT},
     {""},
-#line 43 "source/html/css-properties.gperf"
-    {"font-size",PRO_FONT_SIZE},
 #line 44 "source/html/css-properties.gperf"
+    {"font-size",PRO_FONT_SIZE},
+#line 45 "source/html/css-properties.gperf"
     {"font-style",PRO_FONT_STYLE},
     {""}, {""},
-#line 73 "source/html/css-properties.gperf"
+#line 74 "source/html/css-properties.gperf"
     {"src",PRO_SRC},
     {""},
-#line 35 "source/html/css-properties.gperf"
+#line 36 "source/html/css-properties.gperf"
     {"clear",PRO_CLEAR},
     {""}, {""}, {""}, {""},
-#line 36 "source/html/css-properties.gperf"
+#line 37 "source/html/css-properties.gperf"
     {"color",PRO_COLOR},
     {""}, {""}, {""}, {""},
-#line 48 "source/html/css-properties.gperf"
+#line 49 "source/html/css-properties.gperf"
     {"inset",PRO_INSET},
     {""},
-#line 39 "source/html/css-properties.gperf"
+#line 40 "source/html/css-properties.gperf"
     {"display",PRO_DISPLAY},
     {""},
-#line 38 "source/html/css-properties.gperf"
+#line 39 "source/html/css-properties.gperf"
     {"direction",PRO_DIRECTION},
-#line 80 "source/html/css-properties.gperf"
+#line 81 "source/html/css-properties.gperf"
     {"visibility",PRO_VISIBILITY},
     {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
-#line 54 "source/html/css-properties.gperf"
+#line 55 "source/html/css-properties.gperf"
     {"list-style-position",PRO_LIST_STYLE_POSITION},
     {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
     {""},
-#line 83 "source/html/css-properties.gperf"
+#line 84 "source/html/css-properties.gperf"
     {"width",PRO_WIDTH},
     {""}, {""}, {""}, {""}, {""},
-#line 42 "source/html/css-properties.gperf"
+#line 43 "source/html/css-properties.gperf"
     {"font-family",PRO_FONT_FAMILY}
   };
 

@@ -1919,6 +1919,13 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else style->overflow_wrap = OVERFLOW_WRAP_NORMAL;
 	}
 
+	value = value_from_property(match, PRO_BORDER_COLLAPSE);
+	if (value)
+	{
+		if (!strcmp(value->data, "collapse")) style->border_collapse = 1;
+		else style->border_collapse = 0;
+	}
+
 	style->line_height = number_from_property(match, PRO_LINE_HEIGHT, 1.2f, N_SCALE);
 	style->leading = number_from_property(match, PRO_LEADING, 0, N_UNDEFINED);
 
