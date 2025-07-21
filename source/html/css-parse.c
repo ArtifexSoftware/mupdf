@@ -777,6 +777,23 @@ static char *parse_attrib_value(struct lexbuf *buf)
 	fz_css_error(buf, "expected attribute value");
 }
 
+static char *css_lex_pseudo_expr(struct lexbuf *buf)
+{
+	buf->string_len = 0;
+	for (;;)
+	{
+		if (buf->c == 0)
+			return NULL;
+		if (css_lex_accept(buf, ')'))
+		{
+			css_push_zero(buf);
+			return fz_pool_strdup(buf->ctx, buf->pool, buf->string);
+		}
+		css_push_char(buf, buf->c);
+		css_lex_next(buf);
+	}
+}
+
 static fz_css_condition *parse_condition(struct lexbuf *buf)
 {
 	fz_css_condition *c;
@@ -786,14 +803,15 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 		(void)accept(buf, ':'); /* swallow css3 :: syntax and pretend it's a normal pseudo-class */
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_css_error(buf, "expected keyword after ':'");
-		c = fz_new_css_condition(buf->ctx, buf->pool, ':', "pseudo", buf->string);
+		c = fz_new_css_condition(buf->ctx, buf->pool, ':', buf->string, NULL);
 		next(buf);
-		if (accept(buf, '('))
+
+		// TODO -- parse :is, :not, :where, :has logical combinations with selector list as argument
+
+		if (buf->lookahead == '(')
 		{
-			white(buf);
-			if (accept(buf, CSS_KEYWORD))
-				white(buf);
-			expect(buf, ')');
+			c->val = css_lex_pseudo_expr(buf);
+			next(buf);
 		}
 		return c;
 	}

@@ -483,6 +483,166 @@ match_att_has_condition(fz_xml *node, const char *att, const char *needle)
 }
 
 static int
+match_nth(int count, int a, int b)
+{
+	if (a == 0)
+	{
+		return count == b;
+	}
+	else
+	{
+		/* (count - b) / a is positive or (count - b) is 0 */
+		int delta = count - b;
+		if (((delta > 0) == (a > 0)) || delta == 0)
+			/* (count - b) / a is integer */
+			return (delta % a == 0);
+		return 0;
+	}
+}
+
+static int
+count_siblings_before(fz_xml *target)
+{
+	fz_xml *node;
+	int count = 0;
+	for (node = fz_xml_down(fz_xml_up(target)); node && node != target; node = fz_xml_next(node))
+		if (fz_xml_tag(node) != NULL)
+			++count;
+	return count;
+}
+
+static int
+count_siblings_after(fz_xml *node)
+{
+	int count = 0;
+	for (; node; node = fz_xml_next(node))
+		if (fz_xml_tag(node) != NULL)
+			++count;
+	return count;
+}
+
+static int
+count_siblings_of_type_before(fz_xml *target)
+{
+	const char *tag = fz_xml_tag(target);
+	fz_xml *node;
+	int count = 0;
+	for (node = fz_xml_down(fz_xml_up(target)); node && node != target; node = fz_xml_next(node))
+		if (fz_xml_is_tag(node, tag))
+			++count;
+	return count;
+}
+
+static int
+count_siblings_of_type_after(fz_xml *node)
+{
+	const char *tag = fz_xml_tag(node);
+	int count = 0;
+	for (; node; node = fz_xml_next(node))
+		if (fz_xml_is_tag(node, tag))
+			++count;
+	return count;
+}
+
+static int
+match_nth_child(fz_xml *target, int a, int b)
+{
+	return match_nth(count_siblings_before(target) + 1, a, b);
+}
+
+static int
+match_nth_last_child(fz_xml *target, int a, int b)
+{
+	return match_nth(count_siblings_after(target) + 1, a, b);
+}
+
+static int
+match_nth_of_type(fz_xml *target, int a, int b)
+{
+	return match_nth(count_siblings_of_type_before(target) + 1, a, b);
+}
+
+static int
+match_nth_last_of_type(fz_xml *target, int a, int b)
+{
+	return match_nth(count_siblings_of_type_after(target) + 1, a, b);
+}
+
+static int
+match_an_plus_b_microsyntax(fz_xml *node, const char *val, int (*callback)(fz_xml *node, int a, int b))
+{
+	// see https://www.w3.org/TR/css-syntax-3/#anb-microsyntax
+	// - A is 0 for nth-child(B) -- same as nth-child(0n+B)
+	// - A is 1 for nth-child(n+B) -- same as nth-child(1n+B)
+	// - A is -1 for nth-child(-n+B) -- same as nth-child(-1n+B)
+
+	int a, b, n;
+	int m = strlen(val);
+
+	if (sscanf(val, " even %n", &n) == 0 && n == m)
+		return callback(node, 2, 0);
+	if (sscanf(val, " odd %n", &n) == 0 && n == m)
+		return callback(node, 2, 1);
+
+	if (sscanf(val, " %dn + %d %n", &a, &b, &n) == 2 && n == m)
+		return callback(node, a, b);
+	if (sscanf(val, " %dn - %d %n", &a, &b, &n) == 2 && n == m)
+		return callback(node, a, -b);
+	if (sscanf(val, " %dn %n", &a, &n) == 1 && n == m)
+		return callback(node, a, 0);
+	if (sscanf(val, " %d %n", &b, &n) == 1 && n == m)
+		return callback(node, 0, b);
+
+	if (sscanf(val, " -n + %d %n", &b, &n) == 1 && n == m)
+		return callback(node, -1, b);
+	if (sscanf(val, " -n - %d %n", &b, &n) == 1 && n == m)
+		return callback(node, -1, -b);
+
+	if (sscanf(val, " n + %d %n", &b, &n) == 1 && n == m)
+		return callback(node, 1, b);
+	if (sscanf(val, " n - %d %n", &b, &n) == 1 && n == m)
+		return callback(node, 1, -b);
+
+	if (sscanf(val, " n %n", &n) == 0 && n == m)
+		return 1;
+
+	return 0;
+}
+
+static int
+match_pseudo_condition(fz_xml *node, const char *key, const char *val)
+{
+	if (!strcmp(key, "empty"))
+		return fz_xml_down(node) == NULL;
+	if (!strcmp(key, "root"))
+		return fz_xml_up(node) == NULL;
+
+	if (!strcmp(key, "first-child"))
+		return count_siblings_before(node) == 0;
+	if (!strcmp(key, "last-child"))
+		return count_siblings_after(node) == 0;
+	if (!strcmp(key, "only-child"))
+		return count_siblings_before(node) == 0 && count_siblings_after(node) == 0;
+	if (!strcmp(key, "nth-child") && val != NULL)
+		return match_an_plus_b_microsyntax(node, val, match_nth_child);
+	if (!strcmp(key, "nth-last-child") && val != NULL)
+		return match_an_plus_b_microsyntax(node, val, match_nth_last_child);
+
+	if (!strcmp(key, "first-of-type"))
+		return count_siblings_of_type_before(node) == 0;
+	if (!strcmp(key, "last-of-type"))
+		return count_siblings_of_type_after(node) == 0;
+	if (!strcmp(key, "only-of-type"))
+		return count_siblings_of_type_before(node) == 0 && count_siblings_of_type_after(node) == 0;
+	if (!strcmp(key, "nth-of-type") && val != NULL)
+		return match_an_plus_b_microsyntax(node, val, match_nth_of_type);
+	if (!strcmp(key, "nth-last-of-type") && val != NULL)
+		return match_an_plus_b_microsyntax(node, val, match_nth_last_of_type);
+
+	return 0;
+}
+
+static int
 match_condition(fz_css_condition *cond, fz_xml *node)
 {
 	if (!cond)
@@ -490,7 +650,7 @@ match_condition(fz_css_condition *cond, fz_xml *node)
 
 	switch (cond->type) {
 	default: return 0;
-	case ':': return 0; /* don't support pseudo-classes */
+	case ':': if (!match_pseudo_condition(node, cond->key, cond->val)) return 0; break;
 	case '#': if (!match_att_is_condition(node, "id", cond->val)) return 0; break;
 	case '.': if (!match_att_has_condition(node, "class", cond->val)) return 0; break;
 	case '[': if (!match_att_exists_condition(node, cond->key)) return 0; break;
@@ -2065,6 +2225,10 @@ static void print_condition(fz_css_condition *cond)
 		printf("[%s=%s]", cond->key, cond->val);
 	else if (cond->type == '[')
 		printf("[%s]", cond->key);
+	else if (cond->type == ':' && cond->val)
+		printf(":%s(%s)", cond->key, cond->val);
+	else if (cond->type == ':' && !cond->val)
+		printf(":%s", cond->key);
 	else
 		printf("%c%s", cond->type, cond->val);
 	if (cond->next)
