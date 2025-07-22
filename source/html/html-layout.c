@@ -1505,13 +1505,14 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box);
 
 /* === LAYOUT TABLE === */
 
-// TODO: apply CSS from colgroup and col definition to table cells
-// TODO: use CSS border-collapse on table
-// TODO: use CSS/HTML column-span/colspan on table-cell
-// TODO: use CSS/HTML width on table-cell when computing maximum width
-
-/* The column widths here should include any border widths and padding. */
-/* This is consistent with how the 'width' figures are understood in HTML. */
+/* The column widths here should include any border widths and padding.
+ * This is consistent with how the 'width' figures are understood in HTML.
+ *
+ * For the border-collapse cases, this is modified slightly.
+ * Each column only contains half of each border as they are shared with
+ * their neighbours. The exception to this is for the edges of the table,
+ * when they contain the full widths.
+ */
 typedef struct {
 	int fixed;
 	float min, max, actual;
@@ -1545,6 +1546,7 @@ typedef struct
 	table_cell *cells;
 
 	float *row_b;
+	float *row_max_bottom_border;
 } table_grid;
 
 static table_grid *
@@ -1563,6 +1565,7 @@ static void drop_table_grid(fz_context *ctx, table_grid *grid)
 	{
 		fz_free(ctx, grid->cells);
 		fz_free(ctx, grid->row_b);
+		fz_free(ctx, grid->row_max_bottom_border);
 		fz_free(ctx, grid);
 	}
 }
@@ -1792,7 +1795,10 @@ table_grid_complete(fz_context *ctx, table_grid *grid, float top)
 		assert(colw[x].fixed != -1);
 
 	fz_try(ctx)
+	{
 		grid->row_b = fz_malloc(ctx, grid->h * sizeof(float));
+		grid->row_max_bottom_border = fz_calloc(ctx, grid->h, sizeof(float));
+	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, colw);
@@ -1812,6 +1818,22 @@ static float table_cell_padding(fz_context *ctx, fz_html_box *box)
 	return (
 		box->u.block.padding[L] + box->u.block.border[L] +
 		box->u.block.padding[R] + box->u.block.border[R]
+	);
+}
+
+typedef struct
+{
+	float max_left_border;
+	float max_right_border;
+} border_collapse_info;
+
+static float table_cell_padding_collapsed(fz_context *ctx, fz_html_box *box, border_collapse_info *bci, int leftmost, int rightmost)
+{
+	float left = leftmost ? bci->max_left_border : box->u.block.border[L]/2;
+	float right = rightmost ? bci->max_right_border : box->u.block.border[R]/2;
+	return (
+		box->u.block.padding[L] + left +
+		box->u.block.padding[R] + right
 	);
 }
 
@@ -1904,7 +1926,7 @@ static void squish_block(fz_context *ctx, fz_html_box *box)
 		squish_block(ctx, child);
 }
 
-static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid, int celly, fz_html_box *row, int ncol, column_width *colw, float spacing)
+static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid, int celly, fz_html_box *row, int ncol, column_width *colw, float spacing, border_collapse_info *border_collapse)
 {
 	fz_html_box *cell, *child;
 	int col = 0;
@@ -1915,7 +1937,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 	float em = row->s.layout.em;
 	int fixed_height = 0;
 	table_cell *tcell;
-	float max_cell_spacing_above, max_cell_spacing_below;
+	float max_cell_border_above, max_cell_border_below;
 
 	/* Always layout the full row since we can't restart in the middle of a cell.
 	 * If the row doesn't fit fully, we'll postpone it to the next page.
@@ -1935,14 +1957,14 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 	}
 
 	/* Find the maximum cell border in this row. */
-	max_cell_spacing_above = 0;
-	max_cell_spacing_below = 0;
+	max_cell_border_above = 0;
+	max_cell_border_below = 0;
 	for (cell = row->down; cell; cell = cell->next)
 	{
-		if (max_cell_spacing_above < cell->u.block.border[T] + cell->u.block.padding[T])
-			max_cell_spacing_above = cell->u.block.border[T] + cell->u.block.padding[T];
-		if (max_cell_spacing_below < cell->u.block.border[B] + cell->u.block.padding[B])
-			max_cell_spacing_below = cell->u.block.border[B] + cell->u.block.padding[B];
+		if (max_cell_border_above < cell->u.block.border[T])
+			max_cell_border_above = cell->u.block.border[T];
+		if (max_cell_border_below < cell->u.block.border[B])
+			max_cell_border_below = cell->u.block.border[B];
 	}
 
 	/* For each cell in the row */
@@ -1963,11 +1985,9 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 			x += colw[col++].actual + spacing;
 		}
 		colspan = tcell->colspan;
-		if (colspan < 1)
-			colspan = 1;
+		assert(colspan >= 1);
 		rowspan = tcell->rowspan;
-		if (rowspan < 1)
-			rowspan = 1;
+		assert(rowspan >= 1);
 
 		/* Find the actual width of this cell */
 		cellw = 0;
@@ -1977,14 +1997,36 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 		x += spacing;
 
 		/* Position the cell */
-		ld->bounds[T] = row->s.layout.y + max_cell_spacing_above;
+		ld->bounds[T] = row->s.layout.y + max_cell_border_above + cell->u.block.padding[T];
 		ld->bounds[L] = x + cell->u.block.padding[L] + cell->u.block.border[L];
 		ld->bounds[R] = ld->bounds[L] + cellw - cell_pad;
 		ld->bounds[B] = cell->s.layout.y;
-
-		/* Reuse T and B margins to allow for the required inner cell alignment spacing */
-		cell->u.block.margin[T] = max_cell_spacing_above - cell->u.block.padding[T] - cell->u.block.border[T];
-		cell->u.block.margin[B] = max_cell_spacing_below - cell->u.block.padding[B] - cell->u.block.border[B];
+		if (border_collapse)
+		{
+			if (col == 0)
+			{
+				/* Adjust the left hand edge so that all the borders line up */
+				ld->bounds[L] += border_collapse->max_left_border/2;
+			}
+			/* We share half the border with our predecessor, so move back a bit. */
+			ld->bounds[L] -= cell->u.block.border[L]/2;
+			if (col + colspan == grid->w)
+			{
+				/* Adjust the right hand edge so that all the borders line up */
+				ld->bounds[R] -= border_collapse->max_right_border/2;
+			}
+			/* We share half the border with our successor, so move on a bit. */
+			ld->bounds[R] += cell->u.block.border[R]/2;
+			/* Reuse T and B margins to allow for the required inner cell alignment spacing */
+			cell->u.block.margin[T] = (max_cell_border_above - cell->u.block.border[T])/2;
+			cell->u.block.margin[B] = (max_cell_border_below - cell->u.block.border[B])/2;
+		}
+		else
+		{
+			/* Reuse T and B margins to allow for the required inner cell alignment spacing */
+			cell->u.block.margin[T] = max_cell_border_above - cell->u.block.border[T];
+			cell->u.block.margin[B] = max_cell_border_below - cell->u.block.border[B];
+		}
 
 		cell->s.layout.x = ld->bounds[L];
 		cell->s.layout.w = ld->bounds[R] - ld->bounds[L];
@@ -2022,11 +2064,22 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 		/* Update row_b (most importantly for this row, but ensure the others
 		 * are plausibly increasing too). */
 		y = cell->s.layout.b + cell->u.block.padding[B] + cell->u.block.border[B] + cell->u.block.margin[B];
+		if (border_collapse)
+		{
+			/* Half our border is shared with the next cell. */
+			y -= cell->u.block.border[B]/2;
+		}
 		for (i = celly + rowspan - 1; i < grid->h; i++)
 		{
 			if (grid->row_b[i] < y)
 				grid->row_b[i] = y;
 			y += spacing;
+		}
+
+		if (border_collapse)
+		{
+			if (grid->row_max_bottom_border[celly + rowspan - 1] < cell->u.block.border[B])
+				grid->row_max_bottom_border[celly + rowspan - 1] = cell->u.block.border[B];
 		}
 
 		++col;
@@ -2037,6 +2090,53 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 	ld->restart = save_restart;
 
 	TRBLCPY(ld->bounds, saved_bounds);
+}
+
+static inline int
+cell_rowspan(fz_html_box *cell)
+{
+	int r = cell->style->rowspan;
+	if (r < 1)
+		return 1;
+	return r;
+}
+
+static inline int
+cell_colspan(fz_html_box *cell)
+{
+	int c = cell->style->colspan;
+	if (c < 1)
+		return 1;
+	return c;
+}
+
+static void
+fixup_collapsed_cell_bottoms_for_row(fz_context *ctx, table_grid *grid, int row, fz_html_box *box)
+{
+	int row0;
+	fz_html_box *rowbox, *cell;
+
+	for (row0 = 0, rowbox = box; row0 <= row && rowbox; row0++, rowbox = rowbox->next)
+	{
+		for (cell = rowbox->down; cell; cell = cell->next)
+		{
+			float y;
+			int rowspan = cell_rowspan(cell);
+			if (row0 + rowspan - 1 != row)
+				continue;
+
+			y = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]/2 + cell->u.block.margin[B]);
+			if (cell->style->vertical_align == VA_MIDDLE || cell->style->vertical_align == VA_BOTTOM)
+			{
+				float offset = (y - cell->s.layout.b);
+				if (cell->style->vertical_align == VA_MIDDLE)
+					offset /= 2;
+				shift_box_contents(cell, 0, offset);
+				cell->s.layout.y -= offset;
+			}
+			cell->s.layout.b = y;
+		}
+	}
 }
 
 static void
@@ -2051,9 +2151,7 @@ fixup_cell_bottoms(fz_context *ctx, table_grid *grid, fz_html_box *box)
 		for (cell = rowbox->down; cell; cell = cell->next)
 		{
 			float y;
-			int rowspan = cell->style->rowspan;
-			if (rowspan < 1)
-				rowspan = 1;
+			int rowspan = cell_rowspan(cell);
 
 			y = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B] + cell->u.block.margin[B]);
 			if (cell->style->vertical_align == VA_MIDDLE || cell->style->vertical_align == VA_BOTTOM)
@@ -2069,6 +2167,111 @@ fixup_cell_bottoms(fz_context *ctx, table_grid *grid, fz_html_box *box)
 	}
 }
 
+static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_collapse_info *bci)
+{
+	int w = grid->w;
+	int h = grid->h;
+	int x, y, x1, y1;
+
+	/* Collapse columns */
+	bci->max_right_border = 0;
+	for (x = 0; x < w-1; x++)
+	{
+		for (y = 0; y < h; y++)
+		{
+			table_cell *cell0 = cell_at(ctx, grid, x, y);
+			table_cell *cell1;
+			float b0, b1;
+
+			if (cell0->spanned == 1)
+				continue;
+
+			cell0->box->collapsed_cell = 1;
+
+			x1 = x + cell0->colspan;
+			if (x1 == w)
+			{
+				if (bci->max_right_border < cell0->box->u.block.border[R])
+					bci->max_right_border = cell0->box->u.block.border[R];
+				continue;
+			}
+
+			cell1 = cell_at(ctx, grid, x1, y);
+			b0 = cell0->box->u.block.border[R];
+			b1 = cell1->box->u.block.border[L];
+
+			if (b0 < b1 && b1 >= 0)
+			{
+				cell0->box->u.block.border[R] = b1;
+				cell0->box->suppress_border |= 1<<R;
+			}
+			else
+			{
+				cell1->box->u.block.border[L] = b0;
+				cell1->box->suppress_border |= 1<<L;
+			}
+		}
+	}
+	for (y = 0; y < h; y++)
+	{
+		table_cell *cell0 = cell_at(ctx, grid, w-1, y);
+
+		if (cell0->spanned == 1)
+			continue;
+
+		x1 = x + cell0->colspan;
+		if (x1 == w)
+		{
+			if (bci->max_right_border < cell0->box->u.block.border[R])
+				bci->max_right_border = cell0->box->u.block.border[R];
+			continue;
+		}
+	}
+	bci->max_left_border = 0;
+	for (y = 0; y < h; y++)
+	{
+		table_cell *cell0 = cell_at(ctx, grid, 0, y);
+
+		if (cell0->spanned)
+			continue;
+		if (bci->max_left_border < cell0->box->u.block.border[L])
+			bci->max_left_border = cell0->box->u.block.border[L];
+	}
+
+	/* Collapse rows */
+	for (y = 0; y < h-1; y++)
+	{
+		for (x = 0; x < w; x++)
+		{
+			table_cell *cell0 = cell_at(ctx, grid, x, y);
+			table_cell *cell1;
+			float b0, b1;
+
+			if (cell0->spanned == 1)
+				continue;
+
+			y1 = y + cell0->rowspan;
+			if (y1 >= h)
+				continue;
+
+			cell1 = cell_at(ctx, grid, x, y1);
+			b0 = cell0->box->u.block.border[B];
+			b1 = cell1->box->u.block.border[T];
+
+			if (b0 < b1 && b1 >= 0)
+			{
+				cell0->box->u.block.border[B] = b1;
+				cell0->box->suppress_border |= 1<<B;
+			}
+			else
+			{
+				cell1->box->u.block.border[T] = b0;
+				cell1->box->suppress_border |= 1<<T;
+			}
+		}
+	}
+}
+
 static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 {
 	fz_html_box *row;
@@ -2080,12 +2283,16 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 	int eop = 0;
 	float avail_w;
 	table_grid *table;
-	int y;
+	int x, y;
 	int table_has_width;
+	int border_collapse = box->style->border_collapse;
+	border_collapse_info bci;
 
 	position_data position;
 
 	spacing = fz_from_css_number(box->style->border_spacing, box->s.layout.em, box->s.layout.w, 0);
+	if (border_collapse)
+		spacing = 0;
 
 	if (restart)
 	{
@@ -2123,13 +2330,37 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		/* Table Autolayout algorithm from HTML */
 		/* https://www.w3.org/TR/REC-html40/appendix/notes.html#h-B.5.2 */
 
+		/* Make the grid. */
 		for (row = box->down; row; row = row->next)
 		{
-			fz_html_box *cell, *child;
+			fz_html_box *cell;
 			for (cell = row->down; cell; cell = cell->next)
+				next_table_cell(ctx, table, cell, cell->style->colspan, cell->style->rowspan);
+			next_table_row(ctx, table);
+		}
+
+		/* Collapse the cell borders if required. */
+		if (border_collapse)
+			collapse_table_borders(ctx, table, &bci);
+
+		/* Now walk the cells, populating minw/maxw/fixed. */
+		for (y = 0; y < table->h; y++)
+		{
+			for (x = 0; x < table->w; x++)
 			{
-				table_cell *tc = next_table_cell(ctx, table, cell, cell->style->colspan, cell->style->rowspan);
-				float cell_pad = table_cell_padding(ctx, cell);
+				fz_html_box *cell, *child;
+				float cell_pad;
+				table_cell *tc = cell_at(ctx, table, x, y);
+
+				if (tc->spanned)
+					continue;
+
+				cell = tc->box;
+
+				if (border_collapse)
+					cell_pad = table_cell_padding_collapsed(ctx, cell, &bci, x == 0, x + tc->colspan == table->w);
+				else
+					cell_pad = table_cell_padding(ctx, cell);
 				if (fz_css_number_defined_not_auto(cell->style->width))
 				{
 					float em = box->s.layout.em;
@@ -2157,9 +2388,9 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 					tc->maxw = cellmaxw;
 				}
 			}
-			next_table_row(ctx, table);
 		}
 
+		/* Now we can calculate the column widths. */
 		colw = table_grid_complete(ctx, table, box->s.layout.b);
 		ncol = table->w;
 
@@ -2242,7 +2473,15 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 				}
 			}
 
-			layout_table_row(ctx, ld, table, y, row, ncol, colw, spacing);
+			if (border_collapse && y > 0)
+			{
+				/* When border collapsing, every row's borders overlap the ones from
+				 * the one above. */
+				row->s.layout.y -= table->row_max_bottom_border[y-1]/2;
+			}
+			layout_table_row(ctx, ld, table, y, row, ncol, colw, spacing, border_collapse ? &bci : NULL);
+			if (border_collapse)
+				fixup_collapsed_cell_bottoms_for_row(ctx, table, y, box);
 
 			/* If the row doesn't fit on the current page, break here and put the row on the next page.
 			 * Unless the row was at the very start of the page, in which case it'll overflow instead.
@@ -2263,7 +2502,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 					else
 					{
 						row->s.layout.y += avail;
-						layout_table_row(ctx, ld, table, y, row, ncol, colw, spacing);
+						layout_table_row(ctx, ld, table, y, row, ncol, colw, spacing, border_collapse ? &bci : NULL);
 					}
 				}
 			}
@@ -2273,7 +2512,8 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		}
 
 		/* And align the cell bottoms. */
-		fixup_cell_bottoms(ctx, table, box->down);
+		if (!border_collapse)
+			fixup_cell_bottoms(ctx, table, box->down);
 
 		exit:;
 	}
@@ -3658,16 +3898,29 @@ darken(fz_css_color c)
 	return c;
 }
 
+static int collapse_border_style(int style, int collapsed)
+{
+	if (collapsed)
+	{
+		if (style == BS_INSET)
+			style = BS_RIDGE;
+		if (style == BS_OUTSET)
+			style = BS_GROOVE;
+	}
+	return style;
+}
+
 static void
 draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, int edge, float x0, float y0, float x1, float y1)
 {
 	float *border = box->u.block.border;
 	const fz_css_style *style = box->style;
+	int collapsed = box->collapsed_cell;
 
 	switch (edge)
 	{
 	case T:
-		switch (style->border_style_0)
+		switch (collapse_border_style(style->border_style_0, collapsed))
 		{
 		case BS_NONE:
 			return; /* Should never happen */
@@ -3701,7 +3954,7 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 		}
 		break;
 	case R:
-		switch (style->border_style_1)
+		switch (collapse_border_style(style->border_style_1, collapsed))
 		{
 		case BS_NONE:
 			return; /* Should never happen */
@@ -3735,7 +3988,7 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 		}
 		break;
 	case B:
-		switch (style->border_style_2)
+		switch (collapse_border_style(style->border_style_2, collapsed))
 		{
 		case BS_NONE:
 			return; /* Should never happen */
@@ -3769,7 +4022,7 @@ draw_border(fz_context *ctx, fz_device *dev, fz_matrix ctm, fz_html_box *box, in
 		}
 		break;
 	case L:
-		switch (style->border_style_3)
+		switch (collapse_border_style(style->border_style_3, collapsed))
 		{
 		case BS_NONE:
 			return; /* Should never happen */
@@ -3809,13 +4062,17 @@ static void
 do_borders(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_html_box *box, int suppress)
 {
 	float cell_adjust_top = box->type == BOX_TABLE_CELL ? box->u.block.margin[T] : 0;
+	float cell_adjust_right = box->type == BOX_TABLE_CELL ? box->u.block.margin[R] : 0;
 	float cell_adjust_bot = box->type == BOX_TABLE_CELL ? box->u.block.margin[B] : 0;
+	float cell_adjust_left = box->type == BOX_TABLE_CELL ? box->u.block.margin[L] : 0;
 	float *border = box->u.block.border;
 	float *padding = box->u.block.padding;
-	float x0 = box->s.layout.x - padding[L];
+	float x0 = box->s.layout.x - padding[L] - cell_adjust_left;
 	float y0 = box->s.layout.y - padding[T] - page_top - cell_adjust_top;
-	float x1 = box->s.layout.x + box->s.layout.w + padding[R];
+	float x1 = box->s.layout.x + box->s.layout.w + padding[R] + cell_adjust_right;
 	float y1 = box->s.layout.b + padding[B] - page_top + cell_adjust_bot;
+
+	suppress |= box->suppress_border;
 
 	if (border[T] > 0 && !(suppress & (1<<T)))
 		draw_border(ctx, dev, ctm, box, T, x0, y0, x1, y1);
