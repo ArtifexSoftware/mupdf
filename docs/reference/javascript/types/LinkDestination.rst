@@ -77,11 +77,11 @@ Instance properties
 
 .. attribute:: LinkDestination.prototype.width
 
-    The width of the zoomed in region. Used for "XYZ".
+    The width of the zoomed in region. Used for "FitR".
 
 .. attribute:: LinkDestination.prototype.height
 
-    The height of the zoomed in region. Used for "XYZ".
+    The height of the zoomed in region. Used for "FitR".
 
 .. attribute:: LinkDestination.prototype.zoom
 
