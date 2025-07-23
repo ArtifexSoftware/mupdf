@@ -312,7 +312,7 @@ const char *postfix_js =
 	"	readFileSync: readFile,\n"
 	"	writeFileSync: function (fn, buf) { buf.save(fn) }\n"
 	"}\n"
-	"var process = { argv: [] }\n"
+	"var process = { argv: [], exit: quit }\n"
 	"require.cache.mupdf = mupdf\n"
 	"require.cache.fs = fs\n"
 	"\n"
