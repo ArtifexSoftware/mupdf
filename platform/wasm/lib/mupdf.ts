@@ -1663,8 +1663,10 @@ export class Device extends Userdata<"fz_device"> {
 	static readonly BLEND_COLOR = "Color"
 	static readonly BLEND_LUMINOSITY = "Luminosity"
 
-	constructor(pointer: Pointer<"fz_device">)
 	constructor(callbacks: DeviceFunctions)
+
+	// PRIVATE
+	constructor(pointer: Pointer<"fz_device">)
 
 	constructor(pointer_or_callbacks: Pointer<"fz_device"> | DeviceFunctions) {
 		if (typeof pointer_or_callbacks === "number")
@@ -2364,7 +2366,6 @@ export class PDFDocument extends Document {
 	// PRIVATE
 	constructor(clone: PDFDocument)
 	constructor(pointer: Pointer<"any_document">)
-	constructor(data: Buffer | ArrayBuffer | Uint8Array | Stream)
 
 	constructor(arg1?: Pointer<"any_document"> | Buffer | ArrayBuffer | Uint8Array | Stream | PDFDocument | string) {
 		if (typeof arg1 === "undefined")
