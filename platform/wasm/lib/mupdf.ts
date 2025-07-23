@@ -1872,6 +1872,7 @@ export class Document extends Userdata<"any_document"> {
 
 	static openDocument(from: Buffer | ArrayBuffer | Uint8Array | Stream | string, magic?: string): Document {
 		let pointer = 0 as Pointer<"any_document">
+		let free_from = false
 
 		if (typeof from === "string") {
 			magic = from
@@ -1886,14 +1887,23 @@ export class Document extends Userdata<"any_document"> {
 
 		checkType(magic, "string")
 
-		if (from instanceof ArrayBuffer || from instanceof Uint8Array)
+		if (from instanceof ArrayBuffer || from instanceof Uint8Array) {
 			from = new Buffer(from)
+			free_from = true
+		}
 		if (from instanceof Buffer)
 			pointer = libmupdf._wasm_open_document_with_buffer(STRING(magic), from.pointer)
 		else if (from instanceof Stream)
 			pointer = libmupdf._wasm_open_document_with_stream(STRING(magic), from.pointer)
 		else
 			throw new Error("not a Buffer or Stream")
+
+		if (free_from) {
+			// Destroy any implicit Buffer instances immediately!
+			// This may help the GC and FinalizationRegistry out when
+			// processing many documents without a pause.
+			from.destroy()
+		}
 
 		let pdf = libmupdf._wasm_pdf_document_from_fz_document(pointer)
 		if (pdf)
