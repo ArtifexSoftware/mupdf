@@ -1814,57 +1814,95 @@ pop_any_pending_mcid_changes(fz_context *ctx, pdf_run_processor *pr)
 	pr->pending_mcid_pop = NULL;
 }
 
-struct line
+static pdf_obj **
+get_lineage(fz_context *ctx, pdf_obj *a, int *lenp)
 {
-	pdf_obj *obj;
-	struct line *child;
-};
+	int max = 0;
+	int len = 0;
+	pdf_obj **line = NULL;
+	int slow = 0;
+	int slow_counter = 0;
 
-static pdf_obj *
-find_most_recent_common_ancestor_imp(fz_context *ctx, pdf_obj *a, struct line *line_a, pdf_obj *b, struct line *line_b, pdf_cycle_list *cycle_up_a, pdf_cycle_list *cycle_up_b)
-{
-	struct line line;
-	pdf_obj *common = NULL;
-	pdf_cycle_list cycle;
-	pdf_obj *parent;
+	fz_var(line);
 
-	/* First ascend one lineage. */
-	if (pdf_is_dict(ctx, a))
+	fz_try(ctx)
 	{
-		if (pdf_cycle(ctx, &cycle, cycle_up_a, a))
-			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in structure tree");
-		line.obj = a;
-		line.child = line_a;
-		parent = pdf_dict_get(ctx, a, PDF_NAME(P));
-		return find_most_recent_common_ancestor_imp(ctx, parent, &line, b, NULL, &cycle, NULL);
+		while (1)
+		{
+			/* Put a into lineage. */
+			if (max == len)
+			{
+				max *= 2;
+				if (max == 0)
+					max = 32;
+				line = fz_realloc(ctx, line, sizeof(*line) * max);
+			}
+			line[len++] = a;
+
+			a = pdf_dict_get(ctx, a, PDF_NAME(P));
+			if (a == NULL)
+				break;
+
+			if (a == line[slow])
+				fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in structure tree");
+
+			slow_counter ^= 1;
+			if (slow_counter == 0)
+				slow++;
+		}
 	}
-	/* Then ascend the other lineage. */
-	else if (pdf_is_dict(ctx, b))
+	fz_catch(ctx)
 	{
-		if (pdf_cycle(ctx, &cycle, cycle_up_b, b))
-			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in structure tree");
-		line.obj = b;
-		line.child = line_b;
-		parent = pdf_dict_get(ctx, b, PDF_NAME(P));
-		return find_most_recent_common_ancestor_imp(ctx, a, line_a, parent, &line, cycle_up_a, &cycle);
+		fz_free(ctx, line);
+		fz_rethrow(ctx);
 	}
 
-	/* Once both lineages are know, traverse top-down to find most recent common ancestor. */
-	while (line_a && line_b && !pdf_objcmp(ctx, line_a->obj, line_b->obj))
-	{
-		common = line_a->obj;
-		line_a = line_a->child;
-		line_b = line_b->child;
-	}
-	return common;
+	*lenp = len;
+
+	return line;
 }
 
-static pdf_obj *
+pdf_obj *
 find_most_recent_common_ancestor(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 {
+	/* First ascend one lineage. */
+	int a_len, b_len;
+	pdf_obj **line_a = NULL;
+	pdf_obj **line_b = NULL;
+	pdf_obj *common;
+
 	if (!pdf_is_dict(ctx, a) || !pdf_is_dict(ctx, b))
 		return NULL;
-	return find_most_recent_common_ancestor_imp(ctx, a, NULL, b, NULL, NULL, NULL);
+
+	fz_var(line_a);
+	fz_var(line_b);
+
+	fz_try(ctx)
+	{
+		line_a = get_lineage(ctx, a, &a_len);
+		line_b = get_lineage(ctx, b, &b_len);
+
+		assert(a_len > 0 && b_len > 0);
+
+		/* Once both lineages are know, traverse top-down to find most recent common ancestor. */
+		if (line_a[a_len-1] != line_b[b_len-1])
+			fz_throw(ctx, FZ_ERROR_FORMAT, "No common ancestor in structure tree");
+
+		while (a_len > 0 && b_len > 0 && line_a[a_len-1] == line_b[b_len-1])
+			a_len--, b_len--;
+
+		common = line_a[a_len];
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, line_a);
+		fz_free(ctx, line_b);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+	return common;
 }
 
 static int
