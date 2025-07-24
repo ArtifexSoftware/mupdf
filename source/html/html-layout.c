@@ -1520,8 +1520,10 @@ typedef struct {
 
 typedef struct
 {
-	unsigned int fixed : 1;
+	/* If set, this bit means this cell is either spanned, or omitted from the definition. */
 	unsigned int spanned : 1;
+	/* If set, this bit means that the cell is defined with a "fixed" width. */
+	unsigned int fixed : 1;
 	float minw;
 	float maxw;
 	uint16_t rowspan;
@@ -1609,10 +1611,19 @@ static table_cell *cell_at(fz_context *ctx, table_grid *grid, int x, int y)
 		resize_grid(ctx, grid, new_w, new_h);
 	}
 
-	if (x >= grid->w)
-		grid->w = x+1;
 	if (y >= grid->h)
 		grid->h = y+1;
+	if (x >= grid->w)
+	{
+		/* If we're widening the active area, make sure the unused cells above
+		 * are marked as spanning. */
+		int x0, y0;
+		for (y0 = 0; y0 < grid->y-1; y0++)
+			for (x0 = grid->w; x0 <= x; x0++)
+				grid->cells[grid->max_w * y0 + x0].spanned = 1;
+		grid->w = x+1;
+	}
+
 
 	return &grid->cells[grid->max_w * y + x];
 }
@@ -1657,6 +1668,12 @@ static table_cell *next_table_cell(fz_context *ctx, table_grid *grid, fz_html_bo
 
 static void next_table_row(fz_context *ctx, table_grid *grid)
 {
+	while (grid->x < grid->w)
+	{
+		table_cell *cell = cell_at(ctx, grid, grid->x, grid->y);
+		cell->spanned = 1;
+		grid->x++;
+	}
 	grid->x = 0;
 	grid->y++;
 }
@@ -1694,7 +1711,7 @@ table_grid_complete(fz_context *ctx, table_grid *grid, float top)
 			}
 			else if (fixed)
 			{
-				/* We should ignore a fixed size if another cells minimum width is larger. */
+				/* We should ignore a fixed size if another cell's minimum width is larger. */
 				if (cell->minw > minw)
 				{
 					minw = cell->minw;
@@ -1790,9 +1807,18 @@ table_grid_complete(fz_context *ctx, table_grid *grid, float top)
 		}
 	}
 
-	/* Everything should now be set. */
+	/* Everything should now be set.
+	 * But it might not be.
+	 * <table><tbody><tr><th colspan="3">A</th></tr>
+	 *        <tr><td>B</td><td>C</td>
+	 * </tbody></table>
+	 * will give us a 3 column table, with no clue what the size should be for column 3.
+	*/
 	for (x = 0; x < w; x++)
-		assert(colw[x].fixed != -1);
+	{
+		if (colw[x].fixed == -1)
+			colw[x].fixed = 0;
+	}
 
 	fz_try(ctx)
 	{
@@ -2360,6 +2386,8 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 					continue;
 
 				cell = tc->box;
+				if (cell == NULL)
+					continue;
 
 				if (border_collapse)
 					cell_pad = table_cell_padding_collapsed(ctx, cell, &bci, x == 0, x + tc->colspan == table->w);
