@@ -2800,8 +2800,11 @@ static void layout_update_widths(fz_context *ctx, fz_html_box *box, fz_html_box 
 			for (node = box->u.flow.head; node; node = node->next)
 			{
 				if (node->type == FLOW_IMAGE)
+				{
 					/* start with "native" size (only used for table width calculations) */
 					node->w = node->content.image->w * 72.0f / 96.0f;
+					node->w = fz_from_css_number(node->box->style->width, top->s.layout.em, node->w, node->w);
+				}
 				else if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 					measure_string_w(ctx, node, hb_buf);
 			}
