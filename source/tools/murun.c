@@ -731,6 +731,7 @@ static void ffi_gc_fz_outline_iterator(js_State *J, void *iter)
 	fz_drop_outline_iterator(ctx, iter);
 }
 
+#if FZ_ENABLE_HTML_ENGINE
 static void ffi_gc_fz_story(js_State *J, void *story)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -742,6 +743,7 @@ static void ffi_gc_fz_xml(js_State *J, void *xml)
 	fz_context *ctx = js_getcontext(J);
 	fz_drop_xml(ctx, xml);
 }
+#endif
 
 static void ffi_gc_fz_stroke_state(js_State *J, void *stroke)
 {
@@ -755,6 +757,7 @@ static void ffi_pushoutlineiterator(js_State *J, fz_outline_iterator *iter)
 	js_newuserdata(J, "fz_outline_iterator", iter, ffi_gc_fz_outline_iterator);
 }
 
+#if FZ_ENABLE_HTML_ENGINE
 static void ffi_pushdom(js_State *J, fz_xml *dom)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -770,6 +773,7 @@ static void ffi_pushdom(js_State *J, fz_xml *dom)
 	else
 		js_pushnull(J);
 }
+#endif
 
 static void ffi_pushpixmap(js_State *J, fz_pixmap *pixmap)
 {
@@ -6667,6 +6671,7 @@ static void ffi_DocumentWriter_close(js_State *J)
 		rethrow(J);
 }
 
+#if FZ_ENABLE_HTML_ENGINE
 static void ffi_new_Story(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -7055,6 +7060,7 @@ static void ffi_DOM_getTag(js_State *J)
 	else
 		js_pushnull(J);
 }
+#endif
 
 /* PDF specifics */
 
@@ -12007,6 +12013,7 @@ int murun_main(int argc, char **argv)
 	}
 	js_setglobal(J, "Document");
 
+#if FZ_ENABLE_HTML_ENGINE
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
@@ -12042,6 +12049,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "DOM.getTag", ffi_DOM_getTag, 0);
 	}
 	js_setregistry(J, "fz_xml");
+#endif
 
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
@@ -12732,7 +12740,9 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 2);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
+#if FZ_ENABLE_HTML_ENGINE
 		jsB_propcon(J, "fz_story", "Story", ffi_new_Story, 4);
+#endif
 		jsB_propcon(J, "fz_stroke_state", "StrokeState", ffi_new_StrokeState, 1);
 #if FZ_ENABLE_PDF
 		jsB_propcon(J, "pdf_pkcs7_signer", "PDFPKCS7Signer", ffi_new_PDFPKCS7Signer, 2);
