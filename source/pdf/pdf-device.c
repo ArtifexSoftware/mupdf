@@ -124,7 +124,11 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 
 	if (stroke_state == gs->stroke_state)
 		return;
-	if (gs->stroke_state && !memcmp(stroke_state, gs->stroke_state, sizeof(*stroke_state)))
+	if (gs->stroke_state &&
+		!memcmp(stroke_state, gs->stroke_state, sizeof(*stroke_state))
+		&& gs->stroke_state->dash_len == stroke_state->dash_len &&
+			(stroke_state->dash_len == 0 ||
+			!memcmp(&gs->stroke_state->dash_list[0], &stroke_state->dash_list[0], sizeof(stroke_state->dash_list[0]) * stroke_state->dash_len)))
 		return;
 	if (!gs->stroke_state || gs->stroke_state->linewidth != stroke_state->linewidth)
 	{
