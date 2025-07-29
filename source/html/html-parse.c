@@ -1891,6 +1891,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	}
 	fz_catch(ctx)
 	{
+		drop_table_styles(ctx, &g.tab_styles);
 		fz_drop_tree(ctx, g.images, (void(*)(fz_context*,void*))fz_drop_image);
 		fz_drop_css(ctx, g.css);
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
@@ -1968,6 +1969,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	}
 	fz_always(ctx)
 	{
+		drop_table_styles(ctx, &g.tab_styles);
 		fz_drop_tree(ctx, g.images, (void(*)(fz_context*,void*))fz_drop_image);
 		fz_drop_css(ctx, g.css);
 	}
