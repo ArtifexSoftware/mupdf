@@ -213,6 +213,7 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 	fz_var(buffer);
 	fz_var(res);
 	fz_var(new_buf);
+	fz_var(top);
 
 	/* We cannot combine instancing with type3 fonts. The new names for
 	 * instanced form/image resources would clash, since they start over for
