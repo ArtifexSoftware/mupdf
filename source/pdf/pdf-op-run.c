@@ -1447,7 +1447,11 @@ pdf_show_text(fz_context *ctx, pdf_run_processor *pr, pdf_obj *text)
 			if (pdf_is_string(ctx, item))
 				show_string(ctx, pr, (unsigned char *)pdf_to_str_buf(ctx, item), pdf_to_str_len(ctx, item));
 			else
+			{
+				/* Bug 708615: pdf_show_char inside show_string can realloc gstate. */
+				gstate = pr->gstate + pr->gtop;
 				pdf_show_space(ctx, pr, - pdf_to_real(ctx, item) * gstate->text.size * 0.001f);
+			}
 		}
 	}
 	else if (pdf_is_string(ctx, text))
