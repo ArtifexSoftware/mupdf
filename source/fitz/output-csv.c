@@ -340,9 +340,6 @@ fz_new_csv_writer(fz_context *ctx, const char *path, const char *options)
 	fz_try(ctx)
 		wri = fz_new_csv_writer_with_output(ctx, out, options);
 	fz_catch(ctx)
-	{
-		fz_drop_output(ctx, out);
 		fz_rethrow(ctx);
-	}
 	return wri;
 }

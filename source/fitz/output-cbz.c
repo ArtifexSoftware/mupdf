@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -118,10 +118,7 @@ fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 	fz_try(ctx)
 		wri = fz_new_cbz_writer_with_output(ctx, out, options);
 	fz_catch(ctx)
-	{
-		fz_drop_output(ctx, out);
 		fz_rethrow(ctx);
-	}
 	return wri;
 }
 
