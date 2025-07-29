@@ -1756,7 +1756,7 @@ table_grid_complete(fz_context *ctx, table_grid *grid, float top)
 					/* Divide the required space between 'unknown' columns
 					 * that currently have no width. */
 					boost /= unknown;
-					for (x2 = x; x2 < x + cell->colspan; x++)
+					for (x2 = x; x2 < x + cell->colspan; x2++)
 					{
 						if (colw[x2].fixed == -1)
 						{
@@ -1771,7 +1771,7 @@ table_grid_complete(fz_context *ctx, table_grid *grid, float top)
 					/* Divide the required space between 'nonfixed' columns
 					 * that don't have fixed widths. */
 					boost /= nonfixed;
-					for (x2 = x; x2 < x + cell->colspan; x++)
+					for (x2 = x; x2 < x + cell->colspan; x2++)
 					{
 						if (colw[x2].fixed)
 							continue;
@@ -2197,6 +2197,8 @@ static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_col
 			}
 
 			cell1 = cell_at(ctx, grid, x1, y);
+			if (cell1->box == NULL)
+				continue;
 			b0 = cell0->box->u.block.border[R];
 			b1 = cell1->box->u.block.border[L];
 
@@ -2255,6 +2257,8 @@ static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_col
 				continue;
 
 			cell1 = cell_at(ctx, grid, x, y1);
+			if (cell1->box == NULL)
+				continue;
 			b0 = cell0->box->u.block.border[B];
 			b1 = cell1->box->u.block.border[T];
 
