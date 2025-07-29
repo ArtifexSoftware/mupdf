@@ -2485,7 +2485,7 @@ static int layout_table(fz_context *ctx, layout_data *ld, fz_html_box *box)
 		}
 
 		/* Layout each row in turn. */
-		for (row = box->down, y = 0; row; row = row->next, y++)
+		for (row = box->down, y = 0; row && y < table->h; row = row->next, y++)
 		{
 			/* Position the row, zero height for now. */
 			if (box->s.layout.b < table->row_b[y])
