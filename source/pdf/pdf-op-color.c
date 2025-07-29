@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -888,6 +888,12 @@ pdf_color_Q(fz_context *ctx, pdf_processor *proc)
 		fz_free(ctx, gs);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	if (!p->gstate)
+	{
+		p->gstate = fz_malloc_struct(ctx, gstate_stack);
+		p->gstate->ctm = fz_identity;
+	}
 }
 
 /* text state */
