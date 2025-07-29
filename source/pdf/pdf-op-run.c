@@ -1820,8 +1820,6 @@ get_lineage(fz_context *ctx, pdf_obj *a, int *lenp)
 	int max = 0;
 	int len = 0;
 	pdf_obj **line = NULL;
-	int slow = 0;
-	int slow_counter = 0;
 
 	fz_var(line);
 
@@ -1843,12 +1841,8 @@ get_lineage(fz_context *ctx, pdf_obj *a, int *lenp)
 			if (a == NULL)
 				break;
 
-			if (a == line[slow])
+			if (a == line[len>>1])
 				fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in structure tree");
-
-			slow_counter ^= 1;
-			if (slow_counter == 0)
-				slow++;
 		}
 	}
 	fz_catch(ctx)
