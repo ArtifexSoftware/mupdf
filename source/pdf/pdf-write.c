@@ -2286,7 +2286,7 @@ objstm_gather(fz_context *ctx, pdf_xref_entry *x, int i, pdf_document *doc, objs
 	/* Ensure the object is loaded! */
 	if (i == 0)
 		return; /* pdf_cache_object does not like being called for i == 0 which should be free. */
-	pdf_cache_object(ctx, doc, i);
+	(void) pdf_cache_object(ctx, doc, i);
 
 	/* Both normal objects and stream objects can get put into objstms (because we've already
 	 * unpacked stream objects from objstms earlier!) Stream objects that are non-incremental
@@ -2386,7 +2386,7 @@ prepass(fz_context *ctx, pdf_document *doc)
 		if (pdf_object_exists(ctx, doc, num))
 		{
 			fz_try(ctx)
-				pdf_cache_object(ctx, doc, num);
+				(void) pdf_cache_object(ctx, doc, num);
 			fz_catch(ctx)
 				fz_report_error(ctx);
 		}

@@ -1898,14 +1898,13 @@ filter_file(fz_context *ctx, fz_output *out, const char *filename)
 				for (; i <n; i++)
 				{
 					pdf_xref_entry *entry = pdf_cache_object(ctx, pdf, i);
-					int is_in_objstm = entry->type == 'o';
 					pdf_obj *type, *subtype;
 					char text[128];
 
-					if (entry->obj == NULL)
+					if (entry == NULL || entry->obj == NULL)
 						continue;
-					oi[i].is_in_objstm = is_in_objstm;
-					if (!is_in_objstm)
+					oi[i].is_in_objstm = entry->type == 'o';
+					if (!oi[i].is_in_objstm)
 					{
 						sprintf(text, "%d 0 obj\nendobj\n", i);
 						oi[i].overhead = strlen(text);

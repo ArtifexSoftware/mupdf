@@ -43,7 +43,9 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 		return 0;
 	}
 
-	return entry->stm_ofs != 0 || entry->stm_buf;
+	if (entry)
+		return entry->stm_ofs != 0 || entry->stm_buf;
+	return 0;
 }
 
 int
@@ -456,7 +458,7 @@ pdf_open_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 	int orig_num, orig_gen;
 
 	x = pdf_cache_object(ctx, doc, num);
-	if (x->stm_ofs == 0)
+	if (!x || x->stm_ofs == 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "object is not a stream");
 
 	return pdf_open_raw_filter(ctx, doc->file, doc, x->obj, num, &orig_num, &orig_gen, x->stm_ofs);
@@ -468,7 +470,7 @@ pdf_open_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	pdf_xref_entry *x;
 
 	x = pdf_cache_object(ctx, doc, num);
-	if (x->stm_ofs == 0 && x->stm_buf == NULL)
+	if (!x || (x->stm_ofs == 0 && x->stm_buf == NULL))
 		fz_throw(ctx, FZ_ERROR_FORMAT, "object is not a stream");
 
 	return pdf_open_filter(ctx, doc, doc->file, x->obj, num, x->stm_ofs, params, might_be_image);
