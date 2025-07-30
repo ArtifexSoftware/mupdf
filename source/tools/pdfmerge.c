@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -335,6 +335,8 @@ int pdfmerge_main(int argc, char **argv)
 	{
 		doc_src = NULL;
 		input = argv[fz_optind++];
+
+		fz_var(doc_src);
 
 		fz_try(ctx)
 		{

@@ -213,6 +213,9 @@ static void showgrep(fz_context *ctx)
 		pdf_xref_entry *entry = pdf_get_xref_entry_no_null(ctx, doc, i);
 		if (entry->type == 'n' || entry->type == 'o')
 		{
+			ref = NULL;
+
+			fz_var(ref);
 			fz_try(ctx)
 			{
 				ref = pdf_new_indirect(ctx, doc, i, 0);

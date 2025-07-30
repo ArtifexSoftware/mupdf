@@ -255,7 +255,7 @@ static int mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *p
 int mugrep_main(int argc, char **argv)
 {
 	fz_context *ctx;
-	fz_document *doc;
+	fz_document *doc = NULL;
 	char *password = NULL; /* don't throw errors if encrypted */
 	char *filename;
 	char *pattern;
