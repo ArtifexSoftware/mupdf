@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -222,7 +222,7 @@ int pdfposter_main(int argc, char **argv)
 	char *password = "";
 	int c;
 	pdf_write_options opts = pdf_default_write_options;
-	pdf_document *doc;
+	pdf_document *doc = NULL;
 	fz_context *ctx;
 	int ret = 0;
 
