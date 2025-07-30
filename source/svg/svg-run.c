@@ -359,6 +359,12 @@ svg_parse_polygon_imp(fz_context *ctx, svg_document *doc, fz_xml *node, int docl
 				str = svg_lex_number(&number, str);
 				args[nargs++] = number;
 			}
+			else
+			{
+				/* Don't know what this is. Just skip it. */
+				fz_warn(ctx, "syntax error in polygon points");
+				str++;
+			}
 
 			if (nargs == 2)
 			{
@@ -426,7 +432,7 @@ svg_run_polygon(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		path = svg_parse_polygon_imp(ctx, doc, node, 1);
-			svg_draw_path(ctx, dev, doc, path, &local_state);
+		svg_draw_path(ctx, dev, doc, path, &local_state);
 	}
 	fz_always(ctx)
 	{
