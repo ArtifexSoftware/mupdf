@@ -146,16 +146,16 @@ $(OUT)/source/%.o : source/%.cpp
 
 ifeq ($(HAVE_TESSERACT),yes)
 $(OUT)/source/fitz/tessocr.o : source/fitz/tessocr.cpp
-	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(TESSERACT_CFLAGS) $(TESSERACT_DEFINES) $(TESSERACT_LANGFLAGS) $(LEPTONICA_CFLAGS)
+	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(TESSERACT_CFLAGS) $(TESSERACT_LANGFLAGS) $(LEPTONICA_CFLAGS)
 endif
 
 ifeq ($(HAVE_LEPTONICA),yes)
 $(OUT)/source/fitz/leptonica-wrap.o : source/fitz/leptonica-wrap.c
-	$(CC_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(LEPTONICA_CFLAGS) $(LEPTONICA_DEFINES)
+	$(CC_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(LEPTONICA_CFLAGS)
 endif
 
 $(OUT)/source/fitz/barcode.o : source/fitz/barcode.cpp
-	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_LANGFLAGS)
+	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS)
 
 $(OUT)/platform/%.o : platform/%.c
 	$(CC_CMD) $(WARNING_CFLAGS)
