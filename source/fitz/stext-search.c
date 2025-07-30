@@ -1605,6 +1605,9 @@ dehyphenate:
 	spos->ch = spos->ch->next;
 	if (spos->ch)
 	{
+		/* Soft hyphens were always removed. */
+		if (spos->ch->c == 0xad)
+			goto dehyphenate;
 		/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
 		if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
 			goto dehyphenate;
@@ -1625,9 +1628,12 @@ dehyphenate:
 			}
 			else
 			{
-				/* If there wasn't whitespace, it must be because we're in
-				 * the middle of a squashed run. */
-				assert(search->squashing_whitespace);
+				/* If there wasn't whitespace, it must be
+				 * because we've got two lines that are joined
+				 * with a soft-hyphen that didn't add a space,
+				 * nor set the FZ_STEXT_LINE_FLAGS_JOINED flag.
+				 */
+				search->squashing_whitespace = 0;
 			}
 		}
 		spos->line = spos->line->next;
@@ -1636,6 +1642,9 @@ dehyphenate:
 		spos->ch = spos->line->first_char;
 		if (spos->ch)
 		{
+			/* Soft hyphens were always removed. */
+			if (spos->ch->c == 0xad)
+				goto dehyphenate;
 			/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
 			if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
 				goto dehyphenate;
@@ -1659,16 +1668,17 @@ dehyphenate:
 		{
 			/* If there wasn't whitespace, it must be because we're in
 			 * the middle of a squashed run. OR it could be because we reached
-			 * the end of a page which ended in a hyphen that we dehypehenated... */
-#ifndef NDEBUG
-			fz_stext_struct *struc = spos->struc;
-			assert(search->squashing_whitespace ||
-				next_block(spos->block, &struc) == NULL);
-#endif
+			 * the end of a page which ended in a hyphen that we dehyphenated,
+			 * or we removed a soft-hyphen (see comment in "step the line" above).
+			 */
+			search->squashing_whitespace = 0;
 		}
 		spos->block = next_block(spos->block, &spos->struc);
 		if (spos->block == NULL)
 		{
+			/* Soft hyphens were always removed. */
+			if (spos->ch->c == 0xad)
+				goto dehyphenate;
 			/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
 			if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
 				goto dehyphenate;
@@ -1683,6 +1693,9 @@ dehyphenate:
 				spos->ch = spos->line->first_char;
 				if (spos->ch)
 				{
+					/* Soft hyphens were always removed. */
+					if (spos->ch->c == 0xad)
+						goto dehyphenate;
 					/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
 					if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
 						goto dehyphenate;
