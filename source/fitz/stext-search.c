@@ -1677,10 +1677,10 @@ dehyphenate:
 		if (spos->block == NULL)
 		{
 			/* Soft hyphens were always removed. */
-			if (spos->ch->c == 0xad)
+			if (spos->ch != NULL && spos->ch->c == 0xad)
 				goto dehyphenate;
 			/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
-			if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
+			if (spos->ch && spos->line && (spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
 				goto dehyphenate;
 			search->current_pos = pos - search->combined_haystack;
 			return 1; /* End of stext */
