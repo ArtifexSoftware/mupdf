@@ -2142,7 +2142,7 @@ fixup_collapsed_cell_bottoms_for_row(fz_context *ctx, table_grid *grid, int row,
 	int row0;
 	fz_html_box *rowbox, *cell;
 
-	for (row0 = 0, rowbox = box; row0 <= row && rowbox; row0++, rowbox = rowbox->next)
+	for (row0 = 0, rowbox = box->down; row0 <= row && rowbox; row0++, rowbox = rowbox->next)
 	{
 		for (cell = rowbox->down; cell; cell = cell->next)
 		{
