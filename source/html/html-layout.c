@@ -2209,7 +2209,7 @@ static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_col
 			table_cell *cell1;
 			float b0, b1;
 
-			if (cell0->spanned == 1)
+			if (cell0->spanned == 1 || cell0->box == NULL)
 				continue;
 
 			cell0->box->collapsed_cell = 1;
