@@ -267,6 +267,10 @@ static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_sta
 					continue;
 			}
 
+			/* Never common up pages! */
+			if (pdf_name_eq(ctx, pdf_dict_get(ctx, a, PDF_NAME(Type)), PDF_NAME(Page)))
+				continue;
+
 			/* Keep the lowest numbered object */
 			newnum = fz_mini(num, other);
 			opts->renumber_map[num] = newnum;
@@ -2390,6 +2394,22 @@ prepass(fz_context *ctx, pdf_document *doc)
 }
 
 static void
+pdf_ensure_pages_are_pages(fz_context *ctx, pdf_document *doc)
+{
+	int i;
+
+	if (!doc->fwd_page_map)
+		return;
+
+	for (i = 0; i < doc->map_page_count; i++)
+	{
+		pdf_obj *type = pdf_dict_get(ctx, doc->fwd_page_map[i], PDF_NAME(Type));
+		if (type == NULL)
+			pdf_dict_put(ctx, doc->fwd_page_map[i], PDF_NAME(Type), PDF_NAME(Page));
+	}
+}
+
+static void
 do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, const pdf_write_options *in_opts)
 {
 	int lastfree;
@@ -2495,6 +2515,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 		if (opts->do_garbage >= 1)
 		{
+			pdf_ensure_pages_are_pages(ctx, doc);
 			pdf_drop_page_tree_internal(ctx, doc);
 			pdf_empty_store(ctx, doc);
 		}
