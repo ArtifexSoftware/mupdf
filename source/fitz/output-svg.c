@@ -39,6 +39,8 @@ const char *fz_svg_write_options_usage =
 	"SVG output options:\n"
 	"\ttext=text: Emit text as <text> elements (inaccurate fonts).\n"
 	"\ttext=path: Emit text as <path> elements (accurate fonts).\n"
+	"\ttext=both: Emit text as <path> elements (accurate fonts) with invisible\n"
+	"\t           <text> overlay for selection.\n"
 	"\tno-reuse-images: Do not reuse images using <symbol> definitions.\n"
 	"\n"
 	;
@@ -113,6 +115,8 @@ fz_new_svg_writer(fz_context *ctx, const char *path, const char *args)
 				wri->text_format = FZ_SVG_TEXT_AS_TEXT;
 			else if (fz_option_eq(val, "path"))
 				wri->text_format = FZ_SVG_TEXT_AS_PATH;
+			else if (fz_option_eq(val, "both"))
+				wri->text_format = FZ_SVG_TEXT_AS_PATH_AND_TEXT;
 		}
 		if (fz_has_option(ctx, args, "no-reuse-images", &val))
 			if (fz_option_eq(val, "yes"))
