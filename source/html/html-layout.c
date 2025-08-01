@@ -2152,7 +2152,7 @@ fixup_collapsed_cell_bottoms_for_row(fz_context *ctx, table_grid *grid, int row,
 			if (row0 + rowspan - 1 != row)
 				continue;
 
-			y = grid->row_b[row + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]/2 + cell->u.block.margin[B]);
+			y = grid->row_b[row0 + rowspan - 1] - (cell->u.block.padding[B] + cell->u.block.border[B]/2 + cell->u.block.margin[B]);
 			if (cell->style->vertical_align == VA_MIDDLE || cell->style->vertical_align == VA_BOTTOM)
 			{
 				float offset = (y - cell->s.layout.b);
