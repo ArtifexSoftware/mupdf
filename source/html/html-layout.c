@@ -2073,6 +2073,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 			{
 				layout_flow(ctx, ld, child, cell);
 			}
+			ld->bounds[T] = ld->used[B];
 		}
 		cell->s.layout.b = ld->used[B];
 		if (fz_css_number_defined_not_auto(cell->style->height))
