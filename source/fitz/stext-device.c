@@ -528,6 +528,9 @@ font_equiv(fz_context *ctx, fz_font *f, fz_font *g)
 	if (strcmp(f->name, g->name) != 0)
 		return 0;
 
+	if (f->buffer == NULL || g->buffer == NULL)
+		return 0;
+
 	fz_font_digest(ctx, f, fdigest);
 	fz_font_digest(ctx, g, gdigest);
 
