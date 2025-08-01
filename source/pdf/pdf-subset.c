@@ -42,6 +42,7 @@ typedef struct resources_stack
 
 typedef struct
 {
+	/* We have one of these records for each fontfile. */
 	int num;
 	int gen;
 	int is_ttf;
@@ -206,9 +207,10 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 	}
 	else if (pdf_name_eq(ctx, subtype, PDF_NAME(Type0)))
 	{
-		dict = pdf_array_get(ctx, pdf_dict_get(ctx, dict, PDF_NAME(DescendantFonts)), 0);
-		subtype = pdf_dict_get(ctx, dict, PDF_NAME(Subtype));
-		fontdesc = pdf_dict_get(ctx, dict, PDF_NAME(FontDescriptor));
+		/* In this case, we keep dict pointing to the parent font, not the descendant font. */
+		pdf_obj *ddict = pdf_array_get(ctx, pdf_dict_get(ctx, dict, PDF_NAME(DescendantFonts)), 0);
+		subtype = pdf_dict_get(ctx, ddict, PDF_NAME(Subtype));
+		fontdesc = pdf_dict_get(ctx, ddict, PDF_NAME(FontDescriptor));
 		if (subtype == PDF_NAME(CIDFontType0))
 		{
 			// fontfile subtype is either CIDFontType0C or OpenType
@@ -631,41 +633,60 @@ prefix_font_name(fz_context *ctx, pdf_document *doc, pdf_obj *font, pdf_obj *fil
 {
 	fz_buffer *buf;
 	uint32_t digest[4], v;
-	pdf_obj *fontdesc = get_fontdesc(ctx, font);
-	const char *name = pdf_dict_get_name(ctx, fontdesc, PDF_NAME(FontName));
+	pdf_obj *descendant;
+	pdf_obj *fontdesc;
+	const char *fontdesc_name;
 	char new_name[256];
 	size_t len;
 
-	/* If there is no name, just exit. Possibly should throw here. */
-	if (name == NULL)
-		return;
-
-	len = strlen(name);
-	if (len > 6 && name[6] == '+')
-		return; /* Already a subset name */
+	descendant = pdf_array_get(ctx, pdf_dict_get(ctx, font, PDF_NAME(DescendantFonts)), 0);
+	if (descendant)
+		fontdesc = get_fontdesc(ctx, descendant);
+	else
+		fontdesc = get_fontdesc(ctx, font);
+	fontdesc_name = pdf_dict_get_name(ctx, fontdesc, PDF_NAME(FontName));
 
 	buf = pdf_load_stream(ctx, file);
 	fz_md5_buffer(ctx, buf, (uint8_t *)digest);
 	fz_drop_buffer(ctx, buf);
 
-	v = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-	new_name[0] = 'A' + (v % 26);
-	v /= 26;
-	new_name[1] = 'A' + (v % 26);
-	v /= 26;
-	new_name[2] = 'A' + (v % 26);
-	v /= 26;
-	new_name[3] = 'A' + (v % 26);
-	v /= 26;
-	new_name[4] = 'A' + (v % 26);
-	v /= 26;
-	new_name[5] = 'A' + (v % 26);
-	new_name[6] = '+';
+	len = fontdesc_name == NULL ? 0 : strlen(fontdesc_name);
+	if (len >= 6 && fontdesc_name[6] == '+')
+	{
+		/* Already prefixed. */
+		memcpy(new_name, fontdesc_name, len > sizeof(new_name)-1 ? sizeof(new_name)-1 : len+1);
+	}
+	else
+	{
+		/* Invent a prefix */
+		v = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
+		new_name[0] = 'A' + (v % 26);
+		v /= 26;
+		new_name[1] = 'A' + (v % 26);
+		v /= 26;
+		new_name[2] = 'A' + (v % 26);
+		v /= 26;
+		new_name[3] = 'A' + (v % 26);
+		v /= 26;
+		new_name[4] = 'A' + (v % 26);
+		v /= 26;
+		new_name[5] = 'A' + (v % 26);
+		new_name[6] = '+';
 
-	memcpy(new_name+7, name, len > sizeof(new_name)-8 ? sizeof(new_name)-8 : len+1);
-	new_name[sizeof(new_name)-1] = 0;
+		if (fontdesc_name)
+			memcpy(new_name+7, fontdesc_name, len > sizeof(new_name)-8 ? sizeof(new_name)-8 : len+1);
+		else
+			memcpy(new_name+7, "Anonymous", 10);
+		new_name[sizeof(new_name)-1] = 0;
 
-	pdf_dict_put_name(ctx, fontdesc, PDF_NAME(FontName), new_name);
+		pdf_dict_put_name(ctx, fontdesc, PDF_NAME(FontName), new_name);
+	}
+
+	/* Always set font_name to the same as fontdesc. */
+	pdf_dict_put_name(ctx, font, PDF_NAME(BaseFont), new_name);
+
+	if (descendant)
+		pdf_dict_put_name(ctx, descendant, PDF_NAME(BaseFont), new_name);
 }
 
 static int
