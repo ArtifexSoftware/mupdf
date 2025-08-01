@@ -1376,9 +1376,9 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, in
 	for (i = i0; i < i0 + i1; i++)
 	{
 		pdf_xref_entry *entry = &table[i-i0];
-		int a = 0;
+		int64_t a = 0;
 		int64_t b = 0;
-		int c = 0;
+		int64_t c = 0;
 
 		if (fz_is_eof(ctx, stm))
 			fz_throw(ctx, FZ_ERROR_FORMAT, "truncated xref stream");
@@ -1465,16 +1465,16 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc)
 		w1 = pdf_array_get_int(ctx, obj, 1);
 		w2 = pdf_array_get_int(ctx, obj, 2);
 
-		if (w0 < 0)
+		if (w0 < 0 || w0 > 8)
 			fz_warn(ctx, "xref stream objects have corrupt type");
-		if (w1 < 0)
+		if (w1 < 0 || w1 > 8)
 			fz_warn(ctx, "xref stream objects have corrupt offset");
-		if (w2 < 0)
+		if (w2 < 0 || w2 > 8)
 			fz_warn(ctx, "xref stream objects have corrupt generation");
 
-		w0 = w0 < 0 ? 0 : w0;
-		w1 = w1 < 0 ? 0 : w1;
-		w2 = w2 < 0 ? 0 : w2;
+		w0 = w0 < 0 ? 0 : w0 > 8 ? 8 : w0;
+		w1 = w1 < 0 ? 0 : w1 > 8 ? 8 : w1;
+		w2 = w2 < 0 ? 0 : w2 > 8 ? 8 : w2;
 
 		index = pdf_dict_get(ctx, trailer, PDF_NAME(Index));
 
