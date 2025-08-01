@@ -1731,6 +1731,9 @@ fz_get_css_match_display(fz_css_match *match)
 			return DIS_TABLE_COLGROUP;
 		if (!strcmp(value->data, "table-column"))
 			return DIS_TABLE_COL;
+		/* Not ideal, but it'll do. */
+		if (!strcmp(value->data, "inline-table"))
+			return DIS_TABLE;
 	}
 	return DIS_INLINE;
 }
