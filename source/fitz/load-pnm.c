@@ -517,7 +517,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image width must be > 0");
-	if (pnm->bitdepth == 1)
+	if (bitmap)
 	{
 		/* Overly sensitive test, but we can live with it. */
 		if ((size_t)pnm->width > SIZE_MAX / (unsigned int)n)
