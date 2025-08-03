@@ -430,39 +430,48 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 		int w, h, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, NULL, 0);
-		dp = img->samples;
 
-		w = img->w;
-		h = img->h;
-		n = img->n;
-
-		if (bitmap)
+		fz_try(ctx)
 		{
-			for (y = 0; y < h; y++)
+			dp = img->samples;
+
+			w = img->w;
+			h = img->h;
+			n = img->n;
+
+			if (bitmap)
 			{
-				for (x = 0; x < w; x++)
+				for (y = 0; y < h; y++)
 				{
-					int v = 0;
-					p = pnm_read_whites_and_eols(ctx, p, e, 0);
-					p = pnm_read_digit(ctx, p, e, &v);
-					p = pnm_read_whites_and_eols(ctx, p, e, 0);
-					*dp++ = v ? 0x00 : 0xff;
-				}
-			}
-		}
-		else
-		{
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-					for (k = 0; k < n; k++)
+					for (x = 0; x < w; x++)
 					{
 						int v = 0;
 						p = pnm_read_whites_and_eols(ctx, p, e, 0);
-						p = pnm_read_int(ctx, p, e, &v);
+						p = pnm_read_digit(ctx, p, e, &v);
 						p = pnm_read_whites_and_eols(ctx, p, e, 0);
-						v = fz_clampi(v, 0, pnm->maxval);
-						*dp++ = map_color(ctx, v, pnm->maxval, 255);
+						*dp++ = v ? 0x00 : 0xff;
 					}
+				}
+			}
+			else
+			{
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
+						for (k = 0; k < n; k++)
+						{
+							int v = 0;
+							p = pnm_read_whites_and_eols(ctx, p, e, 0);
+							p = pnm_read_int(ctx, p, e, &v);
+							p = pnm_read_whites_and_eols(ctx, p, e, 0);
+							v = fz_clampi(v, 0, pnm->maxval);
+							*dp++ = map_color(ctx, v, pnm->maxval, 255);
+						}
+			}
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_pixmap(ctx, img);
+			fz_rethrow(ctx);
 		}
 	}
 
@@ -548,47 +557,56 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 		int w, h;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, NULL, 0);
-		dp = img->samples;
 
-		w = img->w;
-		h = img->h;
-		n = img->n;
+		fz_try(ctx)
+		{
+			dp = img->samples;
 
-		if (pnm->maxval == 255)
-		{
-			memcpy(dp, p, (size_t)w * h * n);
-			p += n * w * h;
-		}
-		else if (bitmap)
-		{
-			for (y = 0; y < h; y++)
+			w = img->w;
+			h = img->h;
+			n = img->n;
+
+			if (pnm->maxval == 255)
 			{
-				for (x = 0; x < w; x++)
+				memcpy(dp, p, (size_t)w * h * n);
+				p += n * w * h;
+			}
+			else if (bitmap)
+			{
+				for (y = 0; y < h; y++)
 				{
-					*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0x00 : 0xff;
-					if ((x & 0x7) == 7)
+					for (x = 0; x < w; x++)
+					{
+						*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0x00 : 0xff;
+						if ((x & 0x7) == 7)
+							p++;
+					}
+					if (w & 0x7)
 						p++;
 				}
-				if (w & 0x7)
-					p++;
+			}
+			else if (pnm->maxval < 255)
+			{
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
+						for (k = 0; k < n; k++)
+							*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
+			}
+			else
+			{
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
+						for (k = 0; k < n; k++)
+						{
+							*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
+							p += 2;
+						}
 			}
 		}
-		else if (pnm->maxval < 255)
+		fz_catch(ctx)
 		{
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-					for (k = 0; k < n; k++)
-						*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
-		}
-		else
-		{
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-					for (k = 0; k < n; k++)
-					{
-						*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
-						p += 2;
-					}
+			fz_drop_pixmap(ctx, img);
+			fz_rethrow(ctx);
 		}
 	}
 
