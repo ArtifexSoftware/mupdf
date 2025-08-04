@@ -155,7 +155,7 @@ $(OUT)/source/fitz/leptonica-wrap.o : source/fitz/leptonica-wrap.c
 endif
 
 $(OUT)/source/fitz/barcode.o : source/fitz/barcode.cpp
-	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS)
+	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_LANGFLAGS)
 
 $(OUT)/platform/%.o : platform/%.c
 	$(CC_CMD) $(WARNING_CFLAGS)
