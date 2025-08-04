@@ -1021,7 +1021,7 @@ static const char *linejoin_table[] = { "miter", "round", "bevel" };
 static void
 svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
 {
-	fz_stroke_state *stroke = state->stroke;
+	fz_stroke_state *stroke = state->stroke = fz_unshare_stroke_state(ctx, state->stroke);
 
 	char *transform_att = fz_xml_att(node, "transform");
 
