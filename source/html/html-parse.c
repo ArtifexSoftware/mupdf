@@ -2091,7 +2091,7 @@ fz_parse_html_tree(fz_context *ctx,
 	xml = parse_to_xml(ctx, buf, try_xml, try_html5);
 
 	if (patch_mobi)
-		patch_mobi_html(ctx, xml->u.doc.pool, xml);
+		patch_mobi_html(ctx, xml->u.doc.pool, fz_xml_root(xml));
 
 	fz_try(ctx)
 		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi);
