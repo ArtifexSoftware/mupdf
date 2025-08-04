@@ -2430,6 +2430,19 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 		newblock->prev = gt->prev;
 		if (gt->prev)
 			gt->prev->next = newblock;
+		else if (page->last_struct)
+		{
+			/* We're linking it in at the start under another struct! */
+			assert(page->last_struct->first_block == gt);
+			assert(page->last_struct->last_block != NULL);
+			page->last_struct->first_block = newblock;
+		}
+		else
+		{
+			/* We're linking it in at the start of the page! */
+			assert(page->first_block == gt);
+			page->first_block = newblock;
+		}
 		gt->prev = newblock;
 		newblock->next = gt;
 	}
@@ -2438,6 +2451,16 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 		/* Link it in at the end of the list (i.e. after 'block') */
 		newblock->prev = block;
 		block->next = newblock;
+		if (page->last_struct)
+		{
+			assert(page->last_struct->last_block == block);
+			page->last_struct->last_block = newblock;
+		}
+		else
+		{
+			assert(page->last_block == block);
+			page->last_block = newblock;
+		}
 	}
 	else if (page->last_struct)
 	{
