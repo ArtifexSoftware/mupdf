@@ -240,7 +240,9 @@ svg_dev_stroke_state(fz_context *ctx, svg_device *sdev, const fz_stroke_state *s
 		exp = 1;
 	exp = stroke_state->linewidth/exp;
 
-	fz_append_printf(ctx, out, " stroke-width=\"%g\"", exp);
+	/* Leave 0 width lines as the default "1px". */
+	if (exp != 0)
+		fz_append_printf(ctx, out, " stroke-width=\"%g\"", exp);
 	fz_append_printf(ctx, out, " stroke-linecap=\"%s\"",
 		(stroke_state->start_cap == FZ_LINECAP_SQUARE ? "square" :
 			(stroke_state->start_cap == FZ_LINECAP_ROUND ? "round" : "butt")));
