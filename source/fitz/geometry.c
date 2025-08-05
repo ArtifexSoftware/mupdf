@@ -125,10 +125,9 @@ fz_rotate(float theta)
 	float s;
 	float c;
 
-	while (theta < 0)
+	theta = fmod(theta, 360);
+	if (theta < 0)
 		theta += 360;
-	while (theta >= 360)
-		theta -= 360;
 
 	if (fabsf(0 - theta) < FLT_EPSILON)
 	{
@@ -165,10 +164,9 @@ fz_rotate(float theta)
 fz_matrix
 fz_pre_rotate(fz_matrix m, float theta)
 {
-	while (theta < 0)
+	theta = fmod(theta, 360);
+	if (theta < 0)
 		theta += 360;
-	while (theta >= 360)
-		theta -= 360;
 
 	if (fabsf(0 - theta) < FLT_EPSILON)
 	{
