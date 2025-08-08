@@ -2185,7 +2185,8 @@ int mudraw_main(int argc, char **argv)
 
 		if (band_height == 0)
 		{
-			fprintf(stderr, "Using multiple threads without banding is pointless\n");
+			fprintf(stderr, "multiple threads without banding is pointless\n");
+			exit(1);
 		}
 	}
 
