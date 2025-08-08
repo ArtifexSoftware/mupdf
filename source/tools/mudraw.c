@@ -361,6 +361,7 @@ static int alpha;
 static int useaccel = 1;
 static char *filename;
 static int files = 0;
+static int max_num_workers = 0;
 static int num_workers = 0;
 static worker_t *workers;
 static fz_band_writer *bander = NULL;
@@ -444,9 +445,9 @@ static int usage(void)
 		"\t-b -\tuse named page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox)\n"
 		"\t-B -\tmaximum band_height (pXm, pcl, pclm, ocr.pdf, ps, psd and png output only)\n"
 #ifndef DISABLE_MUTHREADS
-		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
+		"\t-T -\tmaximum number of rendering threads (banded mode only, limited to number of bands per page)\n"
 #else
-		"\t-T -\tnumber of threads to use for rendering (disabled in this non-threading build)\n"
+		"\t-T -\tmaximum number of rendering threads (disabled in this non-threading build)\n"
 #endif
 		"\n"
 		"\t-W -\tpage width for EPUB layout\n"
@@ -674,6 +675,8 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_m
 		fz_rethrow(ctx);
 	}
 }
+
+static void worker_thread(void *arg);
 
 static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps)
 {
@@ -1077,6 +1080,28 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				bands = (totalheight + band_height-1)/band_height;
 				tbounds.y1 = tbounds.y0 + band_height + 2;
 				DEBUG_THREADS(("Using %d Bands\n", bands));
+			}
+
+			if (num_workers < bands && max_num_workers >= bands)
+			{
+				int i;
+				int fail = 0;
+				for (i = num_workers; i < fz_mini(bands, max_num_workers); ++i)
+				{
+					workers[i].ctx = fz_clone_context(ctx);
+					workers[i].num = i;
+					fail |= mu_create_semaphore(&workers[i].start);
+					fail |= mu_create_semaphore(&workers[i].stop);
+					printf("create worker_thread %d\n", i);
+					fail |= mu_create_thread(&workers[i].thread, worker_thread, &workers[i]);
+					if (!fail)
+						num_workers++;
+				}
+				if (fail)
+				{
+					fprintf(stderr, "worker startup failed\n");
+					exit(1);
+				}
 			}
 
 			if (num_workers > 0)
@@ -2118,7 +2143,7 @@ int mudraw_main(int argc, char **argv)
 
 		case 'T':
 #ifndef DISABLE_MUTHREADS
-			num_workers = atoi(fz_optarg); break;
+			max_num_workers = atoi(fz_optarg); break;
 #else
 			fprintf(stderr, "Threads not enabled in this build\n");
 			break;
@@ -2175,7 +2200,7 @@ int mudraw_main(int argc, char **argv)
 	if (fz_optind == argc)
 		return usage();
 
-	if (num_workers > 0)
+	if (max_num_workers > 0)
 	{
 		if (uselist == 0)
 		{
@@ -2269,25 +2294,9 @@ int mudraw_main(int argc, char **argv)
 			}
 		}
 
-		if (num_workers > 0)
-		{
-			int i;
-			int fail = 0;
-			workers = fz_calloc(ctx, num_workers, sizeof(*workers));
-			for (i = 0; i < num_workers; i++)
-			{
-				workers[i].ctx = fz_clone_context(ctx);
-				workers[i].num = i;
-				fail |= mu_create_semaphore(&workers[i].start);
-				fail |= mu_create_semaphore(&workers[i].stop);
-				fail |= mu_create_thread(&workers[i].thread, worker_thread, &workers[i]);
-			}
-			if (fail)
-			{
-				fprintf(stderr, "worker startup failed\n");
-				exit(1);
-			}
-		}
+		if (max_num_workers > 0)
+			workers = fz_calloc(ctx, max_num_workers, sizeof(*workers));
+
 #endif /* DISABLE_MUTHREADS */
 
 		if (layout_css)
