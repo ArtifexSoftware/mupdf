@@ -2183,11 +2183,27 @@ int mudraw_main(int argc, char **argv)
 			exit(1);
 		}
 
+		if (band_height < 0)
+		{
+			fprintf(stderr, "band height must be > 0\n");
+			exit(1);
+		}
+
 		if (band_height == 0)
 		{
 			fprintf(stderr, "multiple threads without banding is pointless\n");
 			exit(1);
 		}
+	}
+	else if (max_num_workers < 0)
+	{
+		fprintf(stderr, "number of threads must be > 0\n");
+		exit(1);
+	}
+	else if (band_height != 0)
+	{
+		fprintf(stderr, "banding without multiple threads is pointless\n");
+		exit(1);
 	}
 
 	if (bgprint.active)
@@ -2280,11 +2296,6 @@ int mudraw_main(int argc, char **argv)
 		fz_set_use_document_css(ctx, layout_use_doc_css);
 
 		/* Determine output type */
-		if (band_height < 0)
-		{
-			fprintf(stderr, "Bandheight must be > 0\n");
-			exit(1);
-		}
 
 		output_format = OUT_PNG;
 		if (format)
