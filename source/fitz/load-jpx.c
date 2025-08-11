@@ -210,30 +210,24 @@ void * opj_aligned_realloc(void *ptr, size_t size)
 static void fz_opj_error_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
-	char buf[200];
-	size_t n;
-	fz_strlcpy(buf, msg, sizeof buf);
-	n = strlen(buf);
-	if (buf[n-1] == '\n')
-		buf[n-1] = 0;
-	fz_warn(ctx, "openjpeg error: %s", buf);
+	// strlen-1 to trim trailing newline
+	fz_warn(ctx, "openjpeg error: %.*s", (int) strlen(msg)-1, msg);
 }
 
 static void fz_opj_warning_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
-	char buf[200];
-	size_t n;
-	fz_strlcpy(buf, msg, sizeof buf);
-	n = strlen(buf);
-	if (buf[n-1] == '\n')
-		buf[n-1] = 0;
-	fz_warn(ctx, "openjpeg warning: %s", buf);
+	// strlen-1 to trim trailing newline
+	fz_warn(ctx, "openjpeg warning: %.*s", (int) strlen(msg)-1, msg);
 }
 
 static void fz_opj_info_callback(const char *msg, void *client_data)
 {
-	/* fz_warn("openjpeg info: %s", msg); */
+#if 0
+	fz_context *ctx = (fz_context *)client_data;
+	// strlen-1 to trim trailing newline
+	fz_warn(ctx, "openjpeg info: %.*s", (int) strlen(msg)-1, msg);
+#endif
 }
 
 static OPJ_SIZE_T fz_opj_stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_data)

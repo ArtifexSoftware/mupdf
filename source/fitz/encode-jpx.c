@@ -146,25 +146,27 @@ static OPJ_BOOL seek_stm(OPJ_OFF_T p_nb_bytes, void *p_user_data)
 static void
 info_callback(const char *msg, void *client_data)
 {
+#if 0
 	fz_context *ctx = (fz_context *)client_data;
-
-	fz_warn(ctx, "INFO: %s", msg);
+	// strlen-1 to trim trailing newline
+	fz_warn(ctx, "openjpeg info: %.*s", (int) strlen(msg)-1, msg);
+#endif
 }
 
 static void
 warning_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
-
-	fz_warn(ctx, "WARNING: %s", msg);
+	// strlen-1 to trim trailing newline
+	fz_warn(ctx, "openjpeg warning: %.*s", (int) strlen(msg)-1, msg);
 }
 
 static void
 error_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
-
-	fz_warn(ctx, "ERROR: %s", msg);
+	// strlen-1 to trim trailing newline
+	fz_warn(ctx, "openjpeg error: %.*s", (int) strlen(msg)-1, msg);
 }
 
 void
