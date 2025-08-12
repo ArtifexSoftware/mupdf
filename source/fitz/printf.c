@@ -472,7 +472,7 @@ void
 fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args)
 {
 	struct fmtbuf out;
-	int c, s, z, p, w, q;
+	int c, s, z, p, ps, w, q;
 	int i, n;
 	int32_t i32;
 	int64_t i64;
@@ -533,6 +533,7 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 
 			/* precision */
 			p = 6;
+			ps = -1;
 			if (c == '.') {
 				c = *fmt++;
 				if (c == 0)
@@ -548,6 +549,7 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 						c = *fmt++;
 					}
 				}
+				ps = p;
 			}
 			if (c == 0)
 				break;
@@ -696,9 +698,9 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 				str = va_arg(args, const char*);
 				if (!str)
 					str = "(null)";
-				if (p > 0)
+				if (ps >= 0)
 				{
-					for (i=0; i < p && ((c = *str++) != 0); ++i)
+					for (i=0; i < ps && ((c = *str++) != 0); ++i)
 						fmtputc(&out, c);
 				}
 				else
