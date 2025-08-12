@@ -575,6 +575,7 @@ done_SC:
 			gstate->sent.text = gstate->pending.text;
 			gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
 			gstate->sent.text.fontname = fz_keep_string(ctx, gstate->pending.text.fontname);
+			copy_resource(ctx, p, PDF_NAME(Font), fz_cstring_from_string(gstate->sent.text.fontname));
 
 			if (p->tos.tlm.a != p->sent_tlm.a ||
 				p->tos.tlm.b != p->sent_tlm.b ||
@@ -2026,7 +2027,6 @@ pdf_filter_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_d
 	pdf_drop_font(ctx, p->gstate->pending.text.font);
 	p->gstate->pending.text.font = pdf_keep_font(ctx, font);
 	p->gstate->pending.text.size = size;
-	copy_resource(ctx, p, PDF_NAME(Font), name);
 }
 
 static void
