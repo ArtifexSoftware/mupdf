@@ -450,6 +450,81 @@ find_flow_encloser(fz_context *ctx, fz_html_box *flow)
 	return flow;
 }
 
+static void
+generate_text_run(fz_context *ctx, fz_html_box *box, fz_html_box *flow, const char *mark, const char *end, int lang, struct genstate *g)
+{
+	fz_pool *pool = g->pool;
+	int bsp = box->style->white_space & WS_ALLOW_BREAK_SPACE;
+	const char *text = mark;
+	const char *prev;
+	int c;
+
+	while (text < end)
+	{
+		prev = text;
+		text += fz_chartorune(&c, text);
+		if (c == 0xAD) /* soft hyphen */
+		{
+			if (mark != prev)
+				add_flow_word(ctx, pool, flow, box, mark, prev, lang);
+			if (box->style->hyphens != HYP_NONE)
+				add_flow_shyphen(ctx, pool, flow, box);
+			mark = text;
+			g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a soft hyphen */
+		}
+		else if (bsp) /* allow soft breaks */
+		{
+			int this_brk_cls = ucdn_get_resolved_linebreak_class(c);
+			if (this_brk_cls <= UCDN_LINEBREAK_CLASS_ZWJ)
+			{
+				int brk = pairbrk[g->last_brk_cls][this_brk_cls];
+
+				/* we handle spaces elsewhere, so ignore these classes */
+				if (brk == '@') brk = '^';
+				if (brk == '#') brk = '^';
+				if (brk == '%') brk = '^';
+
+				if (brk == '_')
+				{
+					if (mark != prev)
+						add_flow_word(ctx, pool, flow, box, mark, prev, lang);
+					add_flow_sbreak(ctx, pool, flow, box);
+					mark = prev;
+				}
+
+				g->last_brk_cls = this_brk_cls;
+			}
+		}
+	}
+	if (mark != text)
+		add_flow_word(ctx, pool, flow, box, mark, text, lang);
+}
+
+static void
+generate_text_run_with_hyphens(fz_context *ctx, fz_html_box *box, fz_html_box *flow, const char *mark, const char *end, int lang, fz_hyphenator *hyph, struct genstate *g)
+{
+	char word[256];
+	int size = end - mark;
+	if (size < 64)
+	{
+		fz_hyphenate_word(ctx, hyph, mark, size, word, sizeof word);
+		generate_text_run(ctx, box, flow, word, word + strlen(word), lang, g);
+	}
+	else
+	{
+		generate_text_run(ctx, box, flow, mark, end, lang, g);
+	}
+}
+
+static int fz_isletter_or_apos(int c)
+{
+	int cat;
+	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '\'' || c == 0x2019)
+		return 1;
+	cat = ucdn_get_general_category(c);
+	return cat >= UCDN_GENERAL_CATEGORY_LL && cat <= UCDN_GENERAL_CATEGORY_LU;
+}
+
 static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, int lang, struct genstate *g)
 {
 	fz_html_box *flow;
@@ -457,12 +532,24 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, i
 	int collapse = box->style->white_space & WS_COLLAPSE;
 	int bsp = box->style->white_space & WS_ALLOW_BREAK_SPACE;
 	int bnl = box->style->white_space & WS_FORCE_BREAK_NEWLINE;
+	fz_hyphenator *hyph = NULL;
+	int c, n;
 
 	static const char *space = " ";
 
 	flow = find_flow_encloser(ctx, box);
 	if (flow == NULL)
 		return;
+
+	if (box->style->hyphens == HYP_AUTO && lang != FZ_LANG_UNSET)
+	{
+		hyph = fz_lookup_hyphenator(ctx, lang);
+		if (!hyph)
+		{
+			char tmp[8];
+			fz_warn(ctx, "no hyphenation table for lang='%s'", fz_string_from_text_language(tmp, lang));
+		}
+	}
 
 	while (*text)
 	{
@@ -500,8 +587,7 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, i
 		}
 		else
 		{
-			const char *prev, *mark = text;
-			int c;
+			const char *mark = text;
 
 			flush_space(ctx, flow, lang, g);
 
@@ -509,43 +595,45 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, i
 				g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ;
 
 			while (*text && !iswhite(*text))
+				++text;
+
+			if (hyph)
 			{
-				prev = text;
-				text += fz_chartorune(&c, text);
-				if (c == 0xAD) /* soft hyphen */
+				// split word into letter and non-letter runs for hyphenator
+				const char *p = mark;
+				n = fz_chartorune(&c, p);
+				while (p < text)
 				{
-					if (mark != prev)
-						add_flow_word(ctx, pool, flow, box, mark, prev, lang);
-					add_flow_shyphen(ctx, pool, flow, box);
-					mark = text;
-					g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a soft hyphen */
-				}
-				else if (bsp) /* allow soft breaks */
-				{
-					int this_brk_cls = ucdn_get_resolved_linebreak_class(c);
-					if (this_brk_cls <= UCDN_LINEBREAK_CLASS_ZWJ)
+					p += n;
+					if (fz_isletter_or_apos(c))
 					{
-						int brk = pairbrk[g->last_brk_cls][this_brk_cls];
-
-						/* we handle spaces elsewhere, so ignore these classes */
-						if (brk == '@') brk = '^';
-						if (brk == '#') brk = '^';
-						if (brk == '%') brk = '^';
-
-						if (brk == '_')
+						while (p < text)
 						{
-							if (mark != prev)
-								add_flow_word(ctx, pool, flow, box, mark, prev, lang);
-							add_flow_sbreak(ctx, pool, flow, box);
-							mark = prev;
+							n = fz_chartorune(&c, p);
+							if (!fz_isletter_or_apos(c))
+								break;
+							p += n;
 						}
-
-						g->last_brk_cls = this_brk_cls;
+						generate_text_run_with_hyphens(ctx, box, flow, mark, p, lang, hyph, g);
 					}
+					else
+					{
+						while (p < text)
+						{
+							n = fz_chartorune(&c, p);
+							if (fz_isletter_or_apos(c))
+								break;
+							p += n;
+						}
+						generate_text_run(ctx, box, flow, mark, p, lang, g);
+					}
+					mark = p;
 				}
 			}
-			if (mark != text)
-				add_flow_word(ctx, pool, flow, box, mark, text, lang);
+			else
+			{
+				generate_text_run(ctx, box, flow, mark, text, lang, g);
+			}
 
 			g->at_bol = 0;
 		}

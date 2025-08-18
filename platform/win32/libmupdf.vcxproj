@@ -788,6 +788,7 @@
     <ClCompile Include="..\..\source\fitz\harfbuzz.c" />
     <ClCompile Include="..\..\source\fitz\hash.c" />
     <ClCompile Include="..\..\source\fitz\heap.c" />
+    <ClCompile Include="..\..\source\fitz\hyphen.c" />
     <ClCompile Include="..\..\source\fitz\image.c" />
     <ClCompile Include="..\..\source\fitz\jmemcust.c" />
     <ClCompile Include="..\..\source\fitz\json.c" />

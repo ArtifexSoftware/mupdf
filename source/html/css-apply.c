@@ -1263,6 +1263,7 @@ is_inheritable_property(int name)
 		name == PRO_WHITE_SPACE ||
 		name == PRO_WIDOWS ||
 		name == PRO_WORD_SPACING ||
+		name == PRO_HYPHENS ||
 		// Strictly speaking, text-decoration is not an inherited property,
 		// but since when drawing an underlined element, all children are also underlined,
 		// we may as well make it inherited.
@@ -1816,6 +1817,7 @@ fz_default_css_style(fz_context *ctx, fz_css_style *style)
 	style->vertical_align = VA_BASELINE;
 	style->white_space = WS_NORMAL;
 	style->list_style_type = LST_DISC;
+	style->hyphens = HYP_MANUAL;
 	style->font_size = make_number(1, N_SCALE);
 	style->width = make_number(0, N_AUTO);
 	style->height = make_number(0, N_AUTO);
@@ -1937,6 +1939,14 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 
 	style->width = number_from_property(match, PRO_WIDTH, 0, N_AUTO);
 	style->height = number_from_property(match, PRO_HEIGHT, 0, N_AUTO);
+
+	value = value_from_property(match, PRO_HYPHENS);
+	if (value)
+	{
+		if (!strcmp(value->data, "none")) style->hyphens = HYP_NONE;
+		else if (!strcmp(value->data, "manual")) style->hyphens = HYP_MANUAL;
+		else if (!strcmp(value->data, "auto")) style->hyphens = HYP_AUTO;
+	}
 
 	style->margin[0] = number_from_property(match, PRO_MARGIN_TOP, 0, N_LENGTH);
 	style->margin[1] = number_from_property(match, PRO_MARGIN_RIGHT, 0, N_LENGTH);

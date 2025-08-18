@@ -312,6 +312,10 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <bin2coff__zip_ Include="..\..\resources\hyphen\hyph-all.zip" />
+    <bin2coff__zip_ Include="..\..\resources\hyphen\hyph-std.zip" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="bin2coff.targets" />

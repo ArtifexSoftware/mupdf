@@ -130,6 +130,8 @@ $(OUT)/platform/gl/%.o : platform/gl/%.c
 ifeq ($(HAVE_OBJCOPY),yes)
   $(OUT)/source/fitz/noto.o : source/fitz/noto.c
 	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement -DHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
+  $(OUT)/source/fitz/hyphen.o : source/fitz/hyphen.c
+	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement -DHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
 endif
 
 $(OUT)/source/fitz/memento.o : source/fitz/memento.c
@@ -256,6 +258,30 @@ else
 endif
 
 generate: $(FONT_GEN)
+
+# --- Generated hyphenation patterns ---
+
+ifeq (,$(findstring -DFZ_ENABLE_HYPHEN=0,$(CFLAGS)))
+  ifeq (,$(findstring -DFZ_ENABLE_HYPHEN_ALL=0,$(CFLAGS)))
+    HYPH_BIN = resources/hyphen/hyph-all.zip
+  else
+    HYPH_BIN = resources/hyphen/hyph-std.zip
+  endif
+endif
+
+HYPH_GEN := $(HYPH_BIN:%=generated/%.c)
+
+generated/%.zip.c : %.zip $(HEXDUMP_SH) ; $(QUIET_GEN) $(MKTGTDIR) ; bash $(HEXDUMP_SH) > $@ $<
+
+ifeq ($(HAVE_OBJCOPY),yes)
+  MUPDF_OBJ += $(HYPH_BIN:%.zip=$(OUT)/%.zip.o)
+  $(OUT)/%.zip.o : %.zip ; $(OBJCOPY_CMD)
+else
+  MUPDF_OBJ += $(HYPH_GEN:%.c=$(OUT)/%.o)
+endif
+
+# NOTE: Run scripts/runhyphen.sh to generate new hyphenation zip files.
+generate: $(HYPH_GEN)
 
 # --- Generated ICC profiles ---
 

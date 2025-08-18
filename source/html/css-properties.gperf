@@ -46,6 +46,7 @@ font-style,PRO_FONT_STYLE
 font-variant,PRO_FONT_VARIANT
 font-weight,PRO_FONT_WEIGHT
 height,PRO_HEIGHT
+hyphens,PRO_HYPHENS
 inset,PRO_INSET
 left,PRO_INSET_LEFT
 letter-spacing,PRO_LETTER_SPACING
