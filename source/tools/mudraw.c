@@ -743,7 +743,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 	}
 
-	if (output_format == OUT_XMLTEXT)
+	else if (output_format == OUT_XMLTEXT)
 	{
 		fz_try(ctx)
 		{
