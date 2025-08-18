@@ -440,25 +440,41 @@ pdf_drop_material(fz_context *ctx, pdf_material *mat)
 static void
 pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *dst, const pdf_gstate *src)
 {
-	pdf_font_desc *old_font = dst->text.font;
-
 	dst->ctm = src->ctm;
 
+	// stroke state
+	fz_drop_stroke_state(ctx, dst->stroke_state);
+	dst->stroke_state = fz_keep_stroke_state(ctx, src->stroke_state);
+
+	// text state
+	pdf_drop_font(ctx, dst->text.font);
+	fz_drop_string(ctx, dst->text.fontname);
 	dst->text = src->text;
 	pdf_keep_font(ctx, src->text.font);
-	pdf_drop_font(ctx, old_font);
+	fz_keep_string(ctx, src->text.fontname);
 
+	// extgstate
+	dst->fill.alpha = src->fill.alpha;
+	dst->stroke.alpha = src->stroke.alpha;
+
+	// transparency
+	dst->blendmode = src->blendmode;
 	pdf_drop_obj(ctx, dst->softmask);
 	dst->softmask = pdf_keep_obj(ctx, src->softmask);
 
 	pdf_drop_obj(ctx, dst->softmask_resources);
 	dst->softmask_resources = pdf_keep_obj(ctx, src->softmask_resources);
 
+	pdf_drop_obj(ctx, dst->softmask_tr);
+	dst->softmask_tr = pdf_keep_obj(ctx, src->softmask_tr);
+
+	dst->softmask_ctm = src->softmask_ctm;
+
 	fz_drop_colorspace(ctx, dst->softmask_cs);
 	dst->softmask_cs = fz_keep_colorspace(ctx, src->softmask_cs);
+	memcpy(dst->softmask_bc, src->softmask_bc, sizeof dst->softmask_bc);
 
-	fz_drop_stroke_state(ctx, dst->stroke_state);
-	dst->stroke_state = fz_keep_stroke_state(ctx, src->stroke_state);
+	dst->luminosity = src->luminosity;
 }
 
 static void
