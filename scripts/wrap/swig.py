@@ -1007,6 +1007,9 @@ def build_swig(
     if language == 'python':
         text += generated.swig_python_exceptions.getvalue()
 
+    if language == 'csharp':
+        text += generated.swig_csharp_exceptions.getvalue()
+
     text += textwrap.dedent(f'''
             // Ensure SWIG handles OUTPUT params.
             //
@@ -1999,33 +2002,129 @@ def test_swig():
             )
 
 
-def test_swig_csharp():
+def test_swig_csharp_internal(name, code_i, code_test):
+    '''
+    Builds and tests a SWIG-generated C# library.
+
+    name:
+        Name of module to build from <code_i>.
+    code_i
+        Module SWIG input.
+    code_test
+        C# test code.
+
+    In a temporary directory (whose name contains <name>):
+
+    * Writes swig input <code_i> to <name>.i
+    * Writes <code_test> to test.cs.
+    * Uses swig and c++ to build <name>.i into <name>.dll and <name>.cs.
+    * Builds test.cs and <name>.cs into an executable 'test.exe'.
+    * Runs the executable.
+    '''
+
+    build_dir = f'test_swig_csharp_{name}'
+    os.makedirs( build_dir, exist_ok=True)
+
+    with open(f'{build_dir}/{name}.i', 'w') as f:
+        f.write(f'%module {name}\n')
+        f.write(code_i)
+
+    # Run swig on `{name}.i` to generate `{name}.cs` and `{name}.cpp`.
+    #
+    jlib.system(
+            f'''
+            cd {build_dir} && swig
+                -D_WIN32
+                -c++
+                -csharp
+                -Wextra
+                -Wall
+                -dllimport {name}.dll
+                -outdir .
+                -outfile {name}.cs
+                -o {name}.cpp
+                {name}.i
+            ''')
+
+    # Compile/link {name}.cpp to create {name}.dll.
+    #
+    if state.state_.windows:
+        import wdev
+        vs = wdev.WindowsVS()
+        jlib.system(
+                f'''
+                cd {build_dir} && "{vs.vcvars}"&&"{vs.cl}"
+                    /nologo                     #
+                    /c                          # Compiles without linking.
+                    /EHsc                       # Enable "Standard C++ exception handling".
+                    /MD
+                    /Tp{name}.cpp               # /Tp specifies C++ source file.
+                    /Fo{name}.cpp.obj           # Output file.
+                    /permissive-                # Set standard-conformance mode.
+                    /FC                         # Display full path of source code files passed to cl.exe in diagnostic text.
+                    /W3                         # Sets which warning level to output. /W3 is IDE default.
+                    /diagnostics:caret          # Controls the format of diagnostic messages.
+                ''')
+
+        jlib.system(
+                f'''
+                cd {build_dir} && "{vs.vcvars}"&&"{vs.link}"
+                    /nologo                     #
+                    /DLL
+                    /IMPLIB:{name}.lib        # Overrides the default import library name.
+                    /OUT:{name}.dll           # Specifies the output file name.
+                    /nologo
+                    {name}.cpp.obj
+                ''')
+    else:
+        jlib.system(
+                f'''
+                cd {build_dir} && c++
+                    -fPIC
+                    --shared
+                    -o {name}.dll
+                    {name}.cpp
+                ''')
+
+    # Build C# test programme.
+    with open(f'{build_dir}/test.cs', 'w') as f:
+        f.write(code_test)
+
+    # Use `csc` to compile `test.cs` and `{name}.cs`, and create `test.exe`.
+    #
+    csc, mono, _ = csharp.csharp_settings(None)
+    jlib.system(f'cd {build_dir} && "{csc}" -out:test.exe test.cs {name}.cs')
+
+    # Run `test.exe`.
+    #
+    jlib.system(f'cd {build_dir} && {mono} test.exe')
+
+
+def test_swig_csharp_unicode():
     '''
     Checks behaviour with and without our custom string marshalling code from
     _csharp_unicode_prefix().
     '''
-    test_swig_csharp_internal(fix=0)
-    test_swig_csharp_internal(fix=1)
+    test_swig_csharp_unicode_internal(fix=0)
+    test_swig_csharp_unicode_internal(fix=1)
 
 
-def test_swig_csharp_internal(fix):
+def test_swig_csharp_unicode_internal(fix):
     '''
     Test utf8 string handling, with/without use of _csharp_unicode_prefix().
+
+    Todo: use test_swig_csharp_internal().
     '''
     # We create C++/C# source directly from this function, and explicitly run
     # C++ and .NET/Mono build commands.
     #
 
-    build_dir = f'test_swig_{fix}'
-    os.makedirs( build_dir, exist_ok=True)
-
     print('')
-    print(f'### test_swig_internal(): {fix=}', flush=1)
+    print(f'### test_swig_csharp_unicode_internal(): {fix=}', flush=1)
 
-    # Create SWIG input file `test.i`.
-    #
-    test_i = '%module test\n'
+    name = f'test_swig_unicode_{fix}'
 
+    test_i = ''
     if fix:
         test_i += _csharp_unicode_prefix()
 
@@ -2092,70 +2191,8 @@ def test_swig_csharp_internal(fix):
                 }}
             %}}
             ''')
-    with open(f'{build_dir}/test.i', 'w') as f:
-        f.write(test_i)
 
-    # Run swig on `test.i` to generate `test.cs` and `test.cpp`.
-    #
-    jlib.system(
-            f'''
-            cd {build_dir} && swig
-                {'-DSWIG_CSHARP_NO_STRING_HELPER=1 -DSWIG_CSHARP_NO_EXCEPTION_HELPER=1' if 0 and fix else ''}
-                -D_WIN32
-                -c++
-                -csharp
-                -Wextra
-                -Wall
-                -dllimport test.dll
-                -outdir .
-                -outfile test.cs
-                -o test.cpp
-                test.i
-            ''')
-
-    # Compile/link test.cpp to create test.dll.
-    #
-    if state.state_.windows:
-        import wdev
-        vs = wdev.WindowsVS()
-        jlib.system(
-                f'''
-                cd {build_dir} && "{vs.vcvars}"&&"{vs.cl}"
-                    /nologo                     #
-                    /c                          # Compiles without linking.
-                    /EHsc                       # Enable "Standard C++ exception handling".
-                    /MD
-                    /Tptest.cpp                 # /Tp specifies C++ source file.
-                    /Fotest.cpp.obj             # Output file.
-                    /permissive-                # Set standard-conformance mode.
-                    /FC                         # Display full path of source code files passed to cl.exe in diagnostic text.
-                    /W3                         # Sets which warning level to output. /W3 is IDE default.
-                    /diagnostics:caret          # Controls the format of diagnostic messages.
-                ''')
-
-        jlib.system(
-                f'''
-                cd {build_dir} && "{vs.vcvars}"&&"{vs.link}"
-                    /nologo                     #
-                    /DLL
-                    /IMPLIB:test.lib        # Overrides the default import library name.
-                    /OUT:test.dll           # Specifies the output file name.
-                    /nologo
-                    test.cpp.obj
-                ''')
-    else:
-        jlib.system(
-                f'''
-                cd {build_dir} && c++
-                    -fPIC
-                    --shared
-                    -o test.dll
-                    test.cpp
-                ''')
-
-    # Create C# test programme `testfoo.cs`.
-    #
-    cs = textwrap.dedent(f'''
+    code_test = textwrap.dedent(f'''
             public class HelloWorld
             {{
                 public static void Main(string[] args)
@@ -2168,19 +2205,19 @@ def test_swig_csharp_internal(fix):
                     string text = System.Text.Encoding.UTF8.GetString(text_utf8);
 
                     // Escaped representation of text_utf8, as returned by
-                    // calls of test.foo1() and test.foo2() below.
+                    // calls of {name}.foo1() and {name}.foo2() below.
                     //
                     string text_utf8_escaped = " \\\\xf0 \\\\x90 \\\\x90 \\\\xb7";
                     string incorrect_utf8_escaped = " \\\\x3f \\\\x3f";
 
-                    // test.foo1()/test.foo2() return a `const
+                    // {name}.foo1()/{name}.foo2() return a `const
                     // char*`/`std::string` containing an escaped
                     // representation of the string that they were given. If
                     // things are working correctly, this will be an escaped
                     // representation of `text_utf8`.
                     //
 
-                    string foo1 = test.foo1(text);
+                    string foo1 = {name}.foo1(text);
                     System.Console.WriteLine("foo1: " + foo1);
                     string foo_expected_escaped = (expect_fix) ? text_utf8_escaped : incorrect_utf8_escaped;
                     if (foo1 != foo_expected_escaped)
@@ -2191,7 +2228,7 @@ def test_swig_csharp_internal(fix):
                                 );
                     }}
 
-                    string foo2 = test.foo2(text);
+                    string foo2 = {name}.foo2(text);
                     System.Console.WriteLine("foo2: " + foo2);
                     if (foo2 != foo_expected_escaped)
                     {{
@@ -2201,7 +2238,7 @@ def test_swig_csharp_internal(fix):
                                 );
                     }}
 
-                    // test.bar1() and test.bar2() return a `const
+                    // {name}.bar1() and {name}.bar2() return a `const
                     // char*`/`std::string` containing the bytes of
                     // `text_utf8`. If things are working correctly we will see
                     // exactly these bytes.
@@ -2209,7 +2246,7 @@ def test_swig_csharp_internal(fix):
                     byte[] bar_expected_utf8_incorrect = {{ 0xc3, 0xb0, 0xc2, 0x90, 0xc2, 0x90, 0xc2, 0xb7, }};
                     byte[] bar_expected_utf8 = (expect_fix) ? text_utf8 : bar_expected_utf8_incorrect;
 
-                    string ret3 = test.bar();
+                    string ret3 = {name}.bar();
                     byte[] ret3_utf8 = System.Text.Encoding.UTF8.GetBytes(ret3);
                     print_bytes_as_string("ret3_utf8:", ret3_utf8);
                     if (!equal(ret3_utf8, bar_expected_utf8))
@@ -2217,7 +2254,7 @@ def test_swig_csharp_internal(fix):
                         throw new System.Exception("ret3 != bar_expected_utf8");
                     }}
 
-                    string ret4 = test.bar2();
+                    string ret4 = {name}.bar2();
                     byte[] ret4_utf8 = System.Text.Encoding.UTF8.GetBytes(ret4);
                     print_bytes_as_string("ret4_utf8:", ret4_utf8);
                     if (!equal(ret4_utf8, bar_expected_utf8))
@@ -2248,14 +2285,96 @@ def test_swig_csharp_internal(fix):
                 }}
             }}
             ''')
-    with open(f'{build_dir}/testfoo.cs', 'w') as f:
-        f.write(cs)
 
-    # Use `csc` to compile `testfoo.cs` and create `testfoo.exe`.
-    #
-    csc, mono, _ = csharp.csharp_settings(None)
-    jlib.system(f'cd {build_dir} && "{csc}" -out:testfoo.exe testfoo.cs test.cs')
+    test_swig_csharp_internal(name, test_i, code_test)
 
-    # Run `testfoo.exe`.
+
+def test_swig_charp_exceptions():
+
+    '''
+    Test SWIG-generated handling of C++ exceptions.
+
+    As of 2025-08-20, works ok on Windows, fails on Linux/Mono.
+    '''
+
+    code_i = textwrap.dedent(f'''
+            %include "std_string.i"
+            ''')
+
+    # On Windows, exceptions are automatically converted into
+    # System.Runtime.InteropServices.SEHException instances.
     #
-    jlib.system(f'cd {build_dir} && {mono} testfoo.exe')
+    # On Mono this doesn't seem to happen and std::terminate() is called.
+    #
+    # So if we are not on Windows we use swig's `%exception {...}` to
+    # explicitly convert exceptions to .net. In the fuiture we could follow
+    # the Python bindings and convert each of the various MuPDF C++ exception
+    # classes into the equivalent C# class.
+    #
+    if not state.state_.windows:
+        code_i += textwrap.dedent(f'''
+                %exception
+                {{
+                    try
+                    {{
+                        $action
+                    }}
+                    catch (std::exception& e)
+                    {{
+                        std::cout << "%exception: Received exception: " << e.what() << "\\n" << std::flush;
+                        SWIG_CSharpSetPendingException(SWIG_CSharpApplicationException, e.what());
+                        std::cout << "%exception: after SWIG_CSharpSetPendingException.\\n" << std::flush;
+                    }}
+                }}
+                ''')
+
+    code_i += textwrap.dedent(f'''
+            int check1();
+            int check2();
+
+            %{{
+                #include <stdexcept>
+                #include <iostream>
+
+                // Returns string containing escaped description of `text`.
+                int check1()
+                {{
+                    return 0;
+                }}
+
+                int check2()
+                {{
+                    throw std::runtime_error("check2() deliberate exception.");
+                    return 0;
+                }}
+
+            %}}
+            ''')
+
+    code_test = textwrap.dedent(f'''
+            public class HelloWorld
+            {{
+                public static void Main(string[] args)
+                {{
+                    int i1 = exceptions.check1();
+                    System.Console.WriteLine("exceptions.check1() => " + i1);
+                    int received_exception = 0;
+                    try
+                    {{
+                        int i2 = exceptions.check2();
+                    }}
+                    catch (System.Exception e)
+                    {{
+                        received_exception = 1;
+                        System.Console.WriteLine("Received expected exception: " + e.Message);
+                        System.Console.WriteLine("e.GetType(): " + e.GetType());
+                    }}
+                    if (received_exception != 1)
+                    {{
+                        throw new System.Exception("Did not receive expected exception");
+                    }}
+                }}
+            }}
+            ''')
+
+    test_swig_csharp_internal('exceptions', code_i, code_test)
