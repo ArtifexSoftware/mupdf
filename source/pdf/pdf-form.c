@@ -2407,7 +2407,13 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 
 	res = pdf_dict_get(ctx, page, PDF_NAME(Resources));
 	if (!res)
-		res = pdf_dict_put_dict(ctx, page, PDF_NAME(Resources), 4);
+	{
+		res = pdf_dict_get_inheritable(ctx, page, PDF_NAME(Resources));
+		if (res)
+			pdf_dict_put(ctx, page, PDF_NAME(Resources), res);
+		else
+			res = pdf_dict_put_dict(ctx, page, PDF_NAME(Resources), 4);
+	}
 
 	res_xobj = pdf_dict_get(ctx, res, PDF_NAME(XObject));
 	if (!res_xobj)
