@@ -1574,6 +1574,7 @@ step_stext(fz_search *search)
 	fz_stext_position *spos = &search->current_stext;
 	const char *pos = search->combined_haystack + search->current_pos;
 	int c;
+	int have_stepped_ws = search->squashing_whitespace;
 
 	/* Step current_pos forward over the current char (this might actually
 	 * step 0 chars if we are squashing whitespace). */
@@ -1587,14 +1588,19 @@ step_stext(fz_search *search)
 			assert(fz_is_unicode_whitespace(*pos));
 			pos += fz_chartorune(&c, pos);
 			search->squashing_whitespace = 1;
+			have_stepped_ws = 1;
 		}
 		else if (fz_is_unicode_whitespace(*pos))
+		{
 			pos += fz_chartorune(&c, pos);
+			have_stepped_ws = 1;
+		}
 	}
 	else
 	{
 		/* We want to swallow one non-whitespace char from the haystack. */
 		search->squashing_whitespace = 0;
+		have_stepped_ws = 0;
 		pos += fz_chartorune(&c, pos);
 		assert(!fz_is_unicode_whitespace(c));
 	}
@@ -1625,6 +1631,7 @@ dehyphenate:
 			{
 				pos += fz_chartorune(&c, pos);
 				search->squashing_whitespace = 1;
+				have_stepped_ws = 1;
 			}
 			else
 			{
@@ -1633,7 +1640,7 @@ dehyphenate:
 				 * with a soft-hyphen that didn't add a space,
 				 * nor set the FZ_STEXT_LINE_FLAGS_JOINED flag.
 				 */
-				search->squashing_whitespace = 0;
+				search->squashing_whitespace = have_stepped_ws;
 			}
 		}
 		spos->line = spos->line->next;
@@ -1671,7 +1678,7 @@ dehyphenate:
 			 * the end of a page which ended in a hyphen that we dehyphenated,
 			 * or we removed a soft-hyphen (see comment in "step the line" above).
 			 */
-			search->squashing_whitespace = 0;
+			search->squashing_whitespace = have_stepped_ws;
 		}
 		spos->block = next_block(spos->block, &spos->struc);
 		if (spos->block == NULL)
