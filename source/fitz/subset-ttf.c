@@ -1794,8 +1794,14 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 				fz_throw(ctx, FZ_ERROR_FORMAT, "Glyph name index out of range in post table");
 			}
 
-			for (k = 0; k < *q; k++)
+			for (k = 0; k < *q && q + 1 + k < end; k++)
 				buf[k] = *(q + 1 + k);
+
+			if (k < *q)
+			{
+				fz_free(ctx, heap.heap);
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Glyph name extends past end of post table");
+			}
 
 			macidx = find_macroman_string(buf);
 
