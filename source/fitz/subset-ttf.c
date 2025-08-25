@@ -1825,10 +1825,16 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		uint8_t slen;
 
 		if (len < 1)
+		{
+			fz_free(ctx, heap.heap);
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+		}
 		slen = *d+1;
 		if (len < slen)
+		{
+			fz_free(ctx, heap.heap);
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed post table");
+		}
 		len -= slen;
 
 		if (j >= heap.len || heap.heap[j].a != i)
