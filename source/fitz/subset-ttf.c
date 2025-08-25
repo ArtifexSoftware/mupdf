@@ -1751,6 +1751,10 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 		fz_int2 i2;
 		p += 2;
 
+		/* Treat TrueType reserved numbers as .notdef */
+		if (!ttf->is_otf && o >= 32768)
+			o = 0;
+
 		if (o >= 258)
 			old_strings++;
 
