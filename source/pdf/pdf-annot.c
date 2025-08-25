@@ -288,7 +288,11 @@ pdf_load_annots(fz_context *ctx, pdf_page *page)
 
 	/* We need to run a resynth pass on the annotations on this
 	 * page. That means rerunning it on the complete document. */
-	page->doc->resynth_required = 1;
+	if (page->annots || page->widgets)
+	{
+		page->doc->resynth_required = 1;
+	}
+
 	/* And actually update the page so that any annotations required
 	 * get synthesised. */
 	pdf_update_page(ctx, page);
