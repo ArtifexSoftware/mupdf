@@ -1781,8 +1781,14 @@ subset_post2(fz_context *ctx, ttf_t *ttf, uint8_t *d, size_t len, int *gids, int
 			int k;
 			char buf[257] = { 0 };
 			int macidx;
-			for (k = 0; k < o - 258; k++)
+			for (k = 0; k < o - 258 && q < d0 + len; k++)
 				q += 1 + *q;
+			if (q >= d0 + len)
+			{
+				fz_free(ctx, heap.heap);
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Glyph name index out of range in post table");
+			}
+
 			for (k = 0; k < *q; k++)
 				buf[k] = *(q + 1 + k);
 
