@@ -2289,6 +2289,7 @@ fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 		case FLOW_IMAGE: printf("image"); break;
 		case FLOW_ANCHOR: printf("anchor"); break;
 		}
+		printf(" script=%d", flow->script);
 		// printf(" y=%g x=%g w=%g", flow->y, flow->x, flow->w);
 		if (flow->type == FLOW_IMAGE)
 			printf(" h=%g", flow->h);
