@@ -45,6 +45,9 @@ typedef struct fz_css_value_s fz_css_value;
 typedef struct fz_css_number_s fz_css_number;
 typedef struct fz_css_color_s fz_css_color;
 
+/* Enable the following to get sequence numbers in the html boxes to aid debugging. */
+//#define DEBUG_HTML_SEQ
+
 struct fz_html_font_face_s
 {
 	char *family;
@@ -468,6 +471,9 @@ struct fz_html_box_s
 
 	const char *tag, *id, *href;
 	const fz_css_style *style;
+#ifdef DEBUG_HTML_SEQ
+	int seq;
+#endif
 
 	union {
 		/* Only needed during build stage */

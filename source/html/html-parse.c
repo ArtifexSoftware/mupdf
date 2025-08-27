@@ -726,6 +726,13 @@ static fz_html_box *new_box(fz_context *ctx, struct genstate *g, fz_xml *node, i
 	box->heading = 0;
 	box->list_item = 0;
 
+#ifdef DEBUG_HTML_SEQ
+	{
+		static int seq = 0;
+		box->seq = seq++;
+	}
+#endif
+
 	box->style = fz_css_enlist(ctx, style, &g->styles, g->pool);
 
 	if (tag)
@@ -2354,6 +2361,9 @@ fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 	{
 		indent(level);
 		printf("box ");
+#ifdef DEBUG_HTML_SEQ
+		printf("seq=%d ", box->seq);
+#endif
 		switch (box->type) {
 		case BOX_BLOCK: printf("block"); break;
 		case BOX_FLOW: printf("flow"); break;
@@ -2413,6 +2423,8 @@ fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 				printf(">padding=(%g %g %g %g)\n", box->u.block.padding[0], box->u.block.padding[1], box->u.block.padding[2], box->u.block.padding[3]);
 			}
 		}
+		indent(level+1);
+		printf(">layout=(%g %g)->(%g %g)\n", box->s.layout.x, box->s.layout.y, box->s.layout.w + box->s.layout.x, box->s.layout.b);
 
 		if (box->down)
 			fz_debug_html_box(ctx, box->down, level + 1);
