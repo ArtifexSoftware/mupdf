@@ -1308,7 +1308,8 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 	/* Restore the bounds */
 	TRBLCPY(ld->bounds, pd->bounds);
 
-	box->s.layout.b = ld->used[B];
+	if (ld->used[B] > box->s.layout.b)
+		box->s.layout.b = ld->used[B];
 
 	/* Unless we're still skipping, add the padding/border/margin on the bottom. */
 	if (!WE_ARE_SKIPPING(restart))
@@ -1331,6 +1332,8 @@ post_position(fz_context *ctx, position_data *pd, layout_data *ld, fz_html_box *
 	ld->used[T] = box->s.layout.y;
 	ld->used[R] = box->s.layout.x + box->s.layout.w + padding[R] + border[R] + margin[R];
 	ld->used[L] = box->s.layout.x;
+	if (ld->used[B] < box->s.layout.b)
+		ld->used[B] = box->s.layout.b;
 
 	/* So in the common case, we're done! */
 	if (box->style->position == POS_STATIC)
