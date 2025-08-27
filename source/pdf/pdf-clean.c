@@ -256,8 +256,8 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 
 			if (i > 0)
 			{
+				// reset all chained processors (and clear the buffer)
 				pdf_reset_processor(ctx, top);
-				fz_clear_buffer(ctx, buffer);
 			}
 			pdf_process_raw_contents(ctx, top, doc, in_res, val, NULL);
 

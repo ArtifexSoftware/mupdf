@@ -346,6 +346,8 @@ buffer_drop(fz_context *ctx, void *opaque)
 static void
 buffer_reset(fz_context *ctx, void *opaque)
 {
+	fz_buffer *buffer = opaque;
+	fz_clear_buffer(ctx, buffer);
 }
 
 fz_output *
