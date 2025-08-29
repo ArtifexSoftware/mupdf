@@ -3658,6 +3658,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 	pdf_obj *root;
 	pdf_obj *pages;
 	pdf_obj *trailer = NULL;
+	pdf_obj *info;
 
 	fz_var(trailer);
 
@@ -3680,6 +3681,9 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		pdf_dict_put(ctx, pages, PDF_NAME(Type), PDF_NAME(Pages));
 		pdf_dict_put_int(ctx, pages, PDF_NAME(Count), 0);
 		pdf_dict_put_array(ctx, pages, PDF_NAME(Kids), 1);
+
+		info = pdf_dict_put_dict(ctx, root, PDF_NAME(Info), 1);
+		pdf_dict_put_text_string(ctx, info, PDF_NAME(Producer), "MuPDF " FZ_VERSION);
 
 		/* Set the trailer of the final xref section. */
 		doc->xref_sections[0].trailer = trailer;
