@@ -1438,8 +1438,6 @@ add_h_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, 
 	int yidx = find_grid_pos(ctx, gd, 1, y, 0);
 	int i;
 
-	assert(start >= 0 && end > 0);
-
 	for (i = start; i < end; i++)
 		get_cell(gd->cells, i, yidx)->h_line++;
 }
