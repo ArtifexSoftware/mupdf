@@ -1158,6 +1158,7 @@ typedef struct
 	fz_stext_grid_positions *xpos;
 	fz_stext_grid_positions *ypos;
 	fz_rect bounds;
+	int has_background;
 } grid_walker_data;
 
 static cell_t *
@@ -1469,6 +1470,160 @@ add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0,
 			get_cell(gd->cells, ix1, i)->v_line++;
 		}
 	}
+}
+
+/* Many PDFs with tables in them start by clearing the area of the table to white
+ * by one big rectangle. Let's try and spot that. */
+enum
+{
+	KEEP_SEARCHING = 0,
+	BACKGROUND_FOUND = 1,
+	NON_BACKGROUND_FOUND = 2
+};
+
+static fz_rect
+whittle_background(fz_context *ctx, fz_stext_block *block0, fz_rect obounds, fz_rect bounds)
+{
+	fz_stext_block *block;
+
+	for (block = block0; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (!block->u.s.down)
+				continue;
+			obounds = whittle_background(ctx, block->u.s.down->first_block, obounds, bounds);
+			continue;
+		}
+		else if (block->type == FZ_STEXT_BLOCK_VECTOR ||
+			block->type == FZ_STEXT_BLOCK_TEXT)
+		{
+			fz_rect r = block->bbox;
+
+			if (r.y1 >= bounds.y0 && r.y0 <= bounds.y1)
+			{
+				if (r.x1 <= bounds.x0)
+					obounds.x0 = fz_max(obounds.x0, r.x1);
+				if (r.x0 >= bounds.x1)
+					obounds.x1 = fz_min(obounds.x1, r.x0);
+			}
+			if (r.x1 >= bounds.x0 && r.x0 <= bounds.x1)
+			{
+				if (r.y1 <= bounds.y0)
+					obounds.y0 = fz_max(obounds.y0, r.y1);
+				if (r.y0 >= bounds.y1)
+					obounds.y1 = fz_min(obounds.y1, r.y0);
+			}
+		}
+	}
+
+	return obounds;
+}
+
+/* Can we find a fill that covers bounds, but not obounds, before any content impinges on bounds? */
+static int
+background_hunt(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block0, fz_rect bounds, fz_rect obounds)
+{
+	int found;
+	fz_stext_block *block;
+
+	for (block = block0; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (!block->u.s.down)
+				continue;
+			found = background_hunt(ctx, gd, block->u.s.down->first_block, bounds, obounds);
+			if (found)
+				return found;
+			continue;
+		}
+		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
+		{
+			fz_rect r = block->bbox;
+			fz_rect s;
+
+			r = fz_intersect_rect(r, gd->bounds);
+			s = fz_intersect_rect(r, bounds);
+
+			if (!fz_is_valid_rect(s))
+				continue;
+
+			/* Only rectangular && non-stroked blocks can possibly be background
+			 * fills. */
+			if ((block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0 ||
+				(block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED) != 0)
+			{
+				if (r.x0 < obounds.x0 || r.x1 > obounds.x1 || r.y0 < obounds.y0 || r.y1 > obounds.y1)
+				{
+					/* If this extends outside the outer bounds of the table, then maybe it's
+					 * a background fill? Just continue. */
+				}
+				/* Otherwise, this might be content. Stop searching for the background fill. */
+				return NON_BACKGROUND_FOUND;
+			}
+
+			/* Rectangle */
+			if (r.x0 <= bounds.x0 && r.x1 >= bounds.x1 && r.y0 <= bounds.y0 && r.y1 >= bounds.y1)
+			{
+				/* This rectangle covers the entire table. */
+				if (r.x0 < obounds.x0 || r.x1 > obounds.x1 || r.y0 < obounds.y0 || r.y1 > obounds.y1)
+				{
+					/* But it's too big for the table! Maybe it's a page fill? Just ignore it. */
+					continue;
+				}
+				/* So let's extend the table. */
+				gd->xpos->list[0].min = gd->xpos->list[0].pos = gd->xpos->list[0].max = r.x0;
+				gd->xpos->list[gd->xpos->len-1].min = gd->xpos->list[gd->xpos->len-1].pos = gd->xpos->list[gd->xpos->len-1].max = r.x1;
+				gd->ypos->list[0].min = gd->ypos->list[0].pos = gd->ypos->list[0].max = r.y0;
+				gd->ypos->list[gd->ypos->len-1].min = gd->ypos->list[gd->ypos->len-1].pos = gd->ypos->list[gd->ypos->len-1].max = r.y1;
+
+				/* And stop searching */
+				return BACKGROUND_FOUND;
+			}
+			else
+			{
+				/* No background for the table found. */
+				return NON_BACKGROUND_FOUND;
+			}
+		}
+		else if (block->type == FZ_STEXT_BLOCK_TEXT)
+		{
+			fz_rect r = block->bbox;
+			fz_rect s;
+
+			s = fz_intersect_rect(r, gd->bounds);
+			s = fz_intersect_rect(s, bounds);
+
+			if (!fz_is_valid_rect(s))
+				continue;
+
+			return NON_BACKGROUND_FOUND;
+		}
+	}
+
+	return KEEP_SEARCHING;
+}
+
+static int
+walk_for_background(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block0)
+{
+	fz_rect bounds, obounds;
+
+	/* So the smallest covering for our table needs to be this big. */
+	bounds.x0 = gd->xpos->list[0].min;
+	bounds.x1 = gd->xpos->list[gd->xpos->len-1].max;
+	bounds.y0 = gd->ypos->list[0].min;
+	bounds.y1 = gd->ypos->list[gd->ypos->len-1].max;
+
+	obounds = fz_infinite_rect;
+
+	/* What is the biggest margin around this table?
+	/* Start with an infinite box, and whittle it down by any content that
+	 * isn't covered by the bounds. */
+	obounds = whittle_background(ctx, block0, obounds, bounds);
+
+	return background_hunt(ctx, gd, block0, bounds, obounds);
 }
 
 /* Shared internal routine with stext-boxer.c  */
@@ -2918,6 +3073,7 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 	div_list xs = { 0 };
 	div_list ys = { 0 };
 	int failed = 1;
+	int bg;
 
 	fz_try(ctx)
 	{
@@ -2934,6 +3090,10 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 		gd->xpos = make_table_positions(ctx, &xs, bounds.x0, bounds.x1);
 		gd->ypos = make_table_positions(ctx, &ys, bounds.y0, bounds.y1);
 		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
+
+		bg = walk_for_background(ctx, gd, content);
+		if (bg == BACKGROUND_FOUND)
+			gd->has_background = 1;
 
 		/* Walk the content looking for grid lines. These
 		 * lines refine our positions. */
@@ -2974,7 +3134,7 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 }
 
 static int
-do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
+do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background)
 {
 	fz_stext_block *block;
 	int count;
@@ -3001,7 +3161,10 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 		{
 			if (block->u.s.down)
 			{
-				num_subtables += do_table_hunt(ctx, page, block->u.s.down);
+				int background = 0;
+				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background);
+				if (background)
+					*has_background = 1;
 				count++;
 			}
 		}
@@ -3013,6 +3176,11 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 	/* We only need a single block, because a single text block can
 	 * contain an entire unbordered table. */
 	if (count < 1)
+		return num_subtables;
+
+	/* If at least one of the subtables we found has a background on it, then
+	 * probably they all do, and we've probably got a good match. */
+	if (*has_background)
 		return num_subtables;
 
 	/* We only look for a table at this level if we either at the top
@@ -3031,6 +3199,8 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 
 		if (find_table_within_bounds(ctx, &gd, *first_block, bounds))
 			break;
+
+		*has_background = gd.has_background;
 
 		if (num_subtables > 0)
 		{
@@ -3102,12 +3272,14 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
 void
 fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 {
+	int has_background = 0;
+
 	if (page == NULL)
 		return;
 
 	assert(verify_stext(ctx, page, NULL));
 
-	do_table_hunt(ctx, page, NULL);
+	do_table_hunt(ctx, page, NULL, &has_background);
 
 	assert(verify_stext(ctx, page, NULL));
 }
