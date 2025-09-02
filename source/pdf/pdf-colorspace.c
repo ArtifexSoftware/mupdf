@@ -479,6 +479,54 @@ pdf_load_colorspace(fz_context *ctx, pdf_obj *obj)
 	return pdf_load_colorspace_imp(ctx, obj, NULL);
 }
 
+/*
+ * Lightweight function to get the number of colorspace components without parsing the full colorspace.
+ * Return zero if it cannot be determined.
+ */
+int
+pdf_guess_colorspace_components(fz_context *ctx, pdf_obj *obj)
+{
+	if (pdf_is_name(ctx, obj))
+	{
+		if (obj == PDF_NAME(Pattern)) return 1;
+		if (obj == PDF_NAME(G)) return 1;
+		if (obj == PDF_NAME(RGB)) return 3;
+		if (obj == PDF_NAME(CMYK)) return 4;
+		if (obj == PDF_NAME(DeviceGray)) return 1;
+		if (obj == PDF_NAME(DeviceRGB)) return 3;
+		if (obj == PDF_NAME(DeviceCMYK)) return 4;
+	}
+	else if (pdf_is_array(ctx, obj))
+	{
+		pdf_obj *name = pdf_array_get(ctx, obj, 0);
+		if (name == PDF_NAME(I)) return 1;
+		if (name == PDF_NAME(Indexed)) return 1;
+		if (name == PDF_NAME(G)) return 1;
+		if (name == PDF_NAME(RGB)) return 3;
+		if (name == PDF_NAME(CMYK)) return 4;
+		if (name == PDF_NAME(DeviceGray)) return 1;
+		if (name == PDF_NAME(DeviceRGB)) return 3;
+		if (name == PDF_NAME(DeviceCMYK)) return 4;
+		if (name == PDF_NAME(CalGray)) return 1;
+		if (name == PDF_NAME(CalRGB)) return 3;
+		if (name == PDF_NAME(CalCMYK)) return 4;
+		if (name == PDF_NAME(Lab)) return 3;
+		if (name == PDF_NAME(Separation)) return 1;
+		if (name == PDF_NAME(ICCBased))
+			return fz_clampi(pdf_dict_get_int(ctx, pdf_array_get(ctx, obj, 1), PDF_NAME(N)), 0, 4);
+		if (name == PDF_NAME(DeviceN))
+			return fz_clampi(pdf_array_len(ctx, pdf_array_get(ctx, obj, 1)), 0, FZ_MAX_COLORS);
+		if (name == PDF_NAME(Pattern))
+		{
+			obj = pdf_array_get(ctx, obj, 1);
+			if (pdf_array_get(ctx, obj, 0) == PDF_NAME(Pattern))
+				return 0; // underlying color space cannot be another Pattern color space
+			return pdf_guess_colorspace_components(ctx, obj);
+		}
+	}
+	return 0; // unknown color space
+}
+
 #if FZ_ENABLE_ICC
 
 static fz_colorspace *

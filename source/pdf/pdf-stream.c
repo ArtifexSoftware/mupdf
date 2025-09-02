@@ -618,10 +618,8 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	int i, n;
 	size_t len;
 	fz_buffer *buf;
-	fz_colorspace *cs = NULL;
 
 	fz_var(buf);
-	fz_var(cs);
 
 	if (num > 0 && num < pdf_xref_len(ctx, doc))
 	{
@@ -652,19 +650,10 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 		{
 			int64_t w = pdf_dict_get_int64(ctx, dict, PDF_NAME(Width));
 			int64_t h = pdf_dict_get_int64(ctx, dict, PDF_NAME(Height));
-			int64_t bpc = pdf_dict_get_int64(ctx, dict, PDF_NAME(BitsPerComponent));
-			pdf_obj *pcs = pdf_dict_get(ctx, dict, PDF_NAME(ColorSpace));
-			int nc = 1;
-			if (w > 0 && h > 0)
+			int bpc = pdf_dict_get_int_default(ctx, dict, PDF_NAME(BitsPerComponent), 8);
+			int nc = pdf_guess_colorspace_components(ctx, pdf_dict_get(ctx, dict, PDF_NAME(ColorSpace)));
+			if (w > 0 && h > 0 && bpc > 0 && nc > 0)
 			{
-				if (bpc < 0)
-					bpc = 8;
-				if (pcs)
-				{
-					cs = pdf_load_colorspace(ctx, pcs);
-					if (cs)
-						nc = cs->n;
-				}
 				worst_case = (size_t)(((w * nc * bpc + 7) >> 3) * h);
 				if (worst_case < len)
 					worst_case = len;
@@ -673,7 +662,6 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 	}
 	fz_always(ctx)
 	{
-		fz_drop_colorspace(ctx, cs);
 		pdf_drop_obj(ctx, dict);
 	}
 	fz_catch(ctx)
