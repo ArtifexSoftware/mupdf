@@ -1344,6 +1344,12 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 		else if (x <= pos->list[i].max)
 		{
 			/* We are in the range for the ith divider. */
+			if (i == 0 || i == pos->len-1)
+			{
+				/* Never move the outermost pos in, because they have been
+				 * calculated to be just big enough already. */
+				return i;
+			}
 			if (pos->list[i].reinforcement == 0)
 			{
 				/* If we've not been reinforced before, reinforce now. */
