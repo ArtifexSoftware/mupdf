@@ -2108,6 +2108,7 @@ typedef struct
 	uint32_t argb;
 	uint32_t flags;
 	fz_stext_page *page;
+	fz_rect seg_bounds;
 	fz_rect leftovers;
 	fz_rect pending;
 	int count;
@@ -2120,6 +2121,7 @@ maybe_rect(fz_context *ctx, split_path_data *sp)
 {
 	int rect = 0;
 	int i;
+	fz_rect leftovers;
 
 	if (sp->count >= 0)
 	{
@@ -2154,10 +2156,19 @@ maybe_rect(fz_context *ctx, split_path_data *sp)
 			sp->pending = bounds;
 			return;
 		}
-
-		for (i = 0; i < sp->count; i++)
-			sp->leftovers = fz_include_point_in_rect(sp->leftovers, sp->p[i]);
 	}
+
+	/* We aren't a rectangle! */
+	leftovers = sp->seg_bounds;
+
+	if (sp->dev->flags & (FZ_STEXT_CLIP_RECT | FZ_STEXT_CLIP))
+		leftovers = fz_intersect_rect(leftovers, current_clip(ctx, sp->dev));
+
+	if (fz_is_valid_rect(leftovers))
+		sp->leftovers = fz_union_rect(sp->leftovers, leftovers);
+
+	/* Remember we're not a rect. */
+	sp->count = -1;
 }
 
 static void
@@ -2169,6 +2180,8 @@ split_move(fz_context *ctx, void *arg, float x, float y)
 	maybe_rect(ctx, sp);
 	sp->p[0] = p;
 	sp->count = 1;
+	sp->seg_bounds.x0 = sp->seg_bounds.x1 = p.x;
+	sp->seg_bounds.y0 = sp->seg_bounds.y1 = p.y;
 }
 
 static void
@@ -2176,7 +2189,8 @@ split_line(fz_context *ctx, void *arg, float x, float y)
 {
 	split_path_data *sp = (split_path_data *)arg;
 	fz_point p = fz_transform_point_xy(x, y, sp->ctm);
-	int i;
+
+	sp->seg_bounds = fz_include_point_in_rect(sp->seg_bounds, p);
 
 	if (sp->count >= 0)
 	{
@@ -2201,37 +2215,22 @@ split_line(fz_context *ctx, void *arg, float x, float y)
 				return;
 			}
 		}
-		/* We can no longer be a rect. Output the points we had saved. */
-		for (i = 0; i < sp->count; i++)
-			sp->leftovers = fz_include_point_in_rect(sp->leftovers, sp->p[i]);
-		/* Remember we're not a rect. */
+		/* We can no longer be a rect. */
 		sp->count = -1;
 	}
-	/* Roll this point into the non-rect bounds. */
-	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p);
 }
 
 static void
 split_curve(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
 {
 	split_path_data *sp = (split_path_data *)arg;
-	fz_point p1 = fz_transform_point_xy(x1, y1, sp->ctm);
-	fz_point p2 = fz_transform_point_xy(x2, y2, sp->ctm);
-	fz_point p3 = fz_transform_point_xy(x3, y3, sp->ctm);
-	int i;
 
-	if (sp->count >= 0)
-	{
-		/* We can no longer be a rect. Output the points we had saved. */
-		for (i = 0; i < sp->count; i++)
-			sp->leftovers = fz_include_point_in_rect(sp->leftovers, sp->p[i]);
-		/* Remember we're not a rect. */
-		sp->count = -1;
-	}
-	/* Roll these points into the non-rect bounds. */
-	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p1);
-	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p2);
-	sp->leftovers = fz_include_point_in_rect(sp->leftovers, p3);
+	sp->seg_bounds = fz_include_point_in_rect(sp->seg_bounds, fz_transform_point_xy(x1, y1, sp->ctm));
+	sp->seg_bounds = fz_include_point_in_rect(sp->seg_bounds, fz_transform_point_xy(x2, y2, sp->ctm));
+	sp->seg_bounds = fz_include_point_in_rect(sp->seg_bounds, fz_transform_point_xy(x3, y3, sp->ctm));
+
+	/* We can no longer be a rect. */
+	sp->count = -1;
 }
 
 static void
@@ -2267,6 +2266,7 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 	sp.page = page;
 	sp.count = 0;
 	sp.leftovers = fz_empty_rect;
+	sp.seg_bounds = fz_empty_rect;
 	sp.pending = fz_empty_rect;
 	sp.id = id;
 	fz_walk_path(ctx, path, &split_path_rects, &sp);
