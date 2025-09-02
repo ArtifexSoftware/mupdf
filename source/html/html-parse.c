@@ -951,25 +951,38 @@ static void
 apply_attributes_as_styles(fz_context *ctx, fz_css_style *style, fz_xml *node)
 {
 	const char *att;
+	const char *tag = fz_xml_tag(node);
 
-	att = fz_xml_att(node, "width");
-	if (att)
-	{
-		style->width.value = fz_atof(att);
-		if (strchr(att,'%'))
-			style->width.unit = N_PERCENT;
-		else
-			style->width.unit = N_LENGTH;
-	}
+	if (tag == NULL)
+		return; /* No tag -> no attributes. */
 
-	att = fz_xml_att(node, "height");
-	if (att)
+	if (!strcmp(tag, "canvas") ||
+		!strcmp(tag, "embed") ||
+		!strcmp(tag, "iframe") ||
+		!strcmp(tag, "img") ||
+		!strcmp(tag, "input") ||
+		!strcmp(tag, "object") ||
+		!strcmp(tag, "video"))
 	{
-		style->height.value = fz_atof(att);
-		if (strchr(att,'%'))
-			style->height.unit = N_PERCENT;
-		else
-			style->height.unit = N_LENGTH;
+		att = fz_xml_att(node, "width");
+		if (att)
+		{
+			style->width.value = fz_atof(att);
+			if (strchr(att,'%'))
+				style->width.unit = N_PERCENT;
+			else
+				style->width.unit = N_LENGTH;
+		}
+
+		att = fz_xml_att(node, "height");
+		if (att)
+		{
+			style->height.value = fz_atof(att);
+			if (strchr(att,'%'))
+				style->height.unit = N_PERCENT;
+			else
+				style->height.unit = N_LENGTH;
+		}
 	}
 
 	att = fz_xml_att(node, "valign");
@@ -984,18 +997,22 @@ apply_attributes_as_styles(fz_context *ctx, fz_css_style *style, fz_xml *node)
 	else if (!strcmp(att, "baseline"))
 		style->vertical_align = VA_BASELINE;
 
-	att = fz_xml_att(node, "rowspan");
-	if (att)
+	if (!strcmp(tag, "td") ||
+		!strcmp(tag, "th"))
 	{
-		int i = fz_atoi(att);
-		style->rowspan = fz_clampi(i, 1, 1000);
-	}
+		att = fz_xml_att(node, "rowspan");
+		if (att)
+		{
+			int i = fz_atoi(att);
+			style->rowspan = fz_clampi(i, 1, 1000);
+		}
 
-	att = fz_xml_att(node, "colspan");
-	if (att)
-	{
-		int i = fz_atoi(att);
-		style->colspan = fz_clampi(i, 1, 1000);
+		att = fz_xml_att(node, "colspan");
+		if (att)
+		{
+			int i = fz_atoi(att);
+			style->colspan = fz_clampi(i, 1, 1000);
+		}
 	}
 
 	/* FIXME: We probably need to vary this based on node type;
