@@ -2397,12 +2397,13 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, fz_rect area, fz_colorspac
 	fz_irect bbox;
 	fz_pixmap *dest;
 	fz_draw_state *state = &dev->stack[dev->top];
-	fz_colorspace *model = state->dest->colorspace;
+	fz_colorspace *model;
 	fz_rect trect;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, fz_default_color_params /* FIXME */, dev->default_cs);
 
+	model = state->dest->colorspace;
 	if (cs != NULL)
 		model = fz_default_colorspace(ctx, dev->default_cs, cs);
 
