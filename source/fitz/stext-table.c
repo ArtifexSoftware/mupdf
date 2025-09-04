@@ -627,11 +627,16 @@ div_list_push(fz_context *ctx, div_list *div, int left, int weak, float pos)
 	{
 		if (div->list[i].pos > pos)
 			break;
-		else if (div->list[i].pos == pos && div->list[i].left == left)
+		else if (div->list[i].pos == pos)
 		{
-			div->list[i].freq++;
-			div->list[i].weak &= weak;
-			return;
+			if (div->list[i].left == left)
+			{
+				div->list[i].freq++;
+				div->list[i].weak &= weak;
+				return;
+			}
+			if (div->list[i].left == 0)
+				break;
 		}
 	}
 
