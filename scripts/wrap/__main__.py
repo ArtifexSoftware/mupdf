@@ -730,12 +730,25 @@ Usage:
                 -d build/shared-debug
                 -d build/shared-release [default]
 
-            On Windows one can specify the CPU and Python version; we then
-            use 'py -0f' to find the matching installed Python along with its
-            Python.h and python.lib. For example:
+            Windows specifics:
 
-                -d build/shared-release-x32-py3.8
-                -d build/shared-release-x64-py3.9
+                * On Windows we support building for specific cpus and python
+                  versions.
+
+                * We use `py -0f' to find the matching installed Python along
+                  with its Python.h and python.lib.
+
+                * We append -x32 or -x64 for current system if not already
+                  present.
+
+                * We append -py<current_python_version> if '-py...' is not
+                  already present.
+
+                For example:
+
+                    -d build/shared-release-x32
+                    -d build/shared-release-x32-py3.8
+                    -d build/shared-release-x64-py3.9
 
         --doc <languages>
             Generates documentation for the different APIs in
@@ -1502,7 +1515,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
     devenv = 'devenv.com'
     if state.state_.windows:
         # Search for devenv.com in standard locations.
-        windows_vs = wdev.WindowsVS()
+        windows_vs = wdev.WindowsVS(cpu=wdev.WindowsCpu(build_dirs.cpu.name))
         devenv = windows_vs.devenv
 
     #jlib.log('{build_dirs.dir_so=}')
@@ -2897,7 +2910,7 @@ def main2():
                     jlib.build(
                             (f'{build_dirs.dir_mupdf}/scripts/mupdfwrap_test.cs', mupdf_cs),
                             out,
-                            f'"{csc}" -out:{{OUT}} {{IN}}',
+                            f'"{csc}"{" -platform:x86" if build_dirs.cpu.name == "x32" else ""} -out:{{OUT}} {{IN}}',
                             )
                     if state.state_.windows:
                         out_rel = os.path.relpath( out, build_dirs.dir_so)
@@ -2915,10 +2928,10 @@ def main2():
                 if 1:
                     # Build and run test using minimal swig library to test
                     # handling of Unicode strings.
-                    swig.test_swig_csharp_unicode()
+                    swig.test_swig_csharp_unicode(x32 = build_dirs.cpu.name == 'x32')
 
             elif arg == '--test-csharp-exceptions':
-                swig.test_swig_charp_exceptions()
+                swig.test_swig_charp_exceptions(x32 = build_dirs.cpu.name == 'x32')
 
             elif arg == '--test-csharp-gui':
                 csc, mono, mupdf_cs = csharp.csharp_settings(build_dirs)

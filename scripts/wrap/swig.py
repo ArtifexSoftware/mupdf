@@ -2002,7 +2002,7 @@ def test_swig():
             )
 
 
-def test_swig_csharp_internal(name, code_i, code_test):
+def test_swig_csharp_internal(name, code_i, code_test, x32):
     '''
     Builds and tests a SWIG-generated C# library.
 
@@ -2012,6 +2012,8 @@ def test_swig_csharp_internal(name, code_i, code_test):
         Module SWIG input.
     code_test
         C# test code.
+    x32
+        If true we build for x32-only with `csc -platform:x86`.
 
     In a temporary directory (whose name contains <name>):
 
@@ -2050,7 +2052,7 @@ def test_swig_csharp_internal(name, code_i, code_test):
     #
     if state.state_.windows:
         import wdev
-        vs = wdev.WindowsVS()
+        vs = wdev.WindowsVS(cpu = wdev.WindowsCpu('x32') if x32 else None)
         jlib.system(
                 f'''
                 cd {build_dir} && "{vs.vcvars}"&&"{vs.cl}"
@@ -2077,6 +2079,7 @@ def test_swig_csharp_internal(name, code_i, code_test):
                     {name}.cpp.obj
                 ''')
     else:
+        assert not x32, '.net x32 builds not supported on non-windows.'
         jlib.system(
                 f'''
                 cd {build_dir} && c++
@@ -2093,27 +2096,25 @@ def test_swig_csharp_internal(name, code_i, code_test):
     # Use `csc` to compile `test.cs` and `{name}.cs`, and create `test.exe`.
     #
     csc, mono, _ = csharp.csharp_settings(None)
-    jlib.system(f'cd {build_dir} && "{csc}" -out:test.exe test.cs {name}.cs')
+    jlib.system(f'cd {build_dir} && "{csc}"{" -platform:x86" if x32 else ""} -out:test.exe test.cs {name}.cs')
 
     # Run `test.exe`.
     #
     jlib.system(f'cd {build_dir} && {mono} test.exe')
 
 
-def test_swig_csharp_unicode():
+def test_swig_csharp_unicode(x32):
     '''
     Checks behaviour with and without our custom string marshalling code from
     _csharp_unicode_prefix().
     '''
-    test_swig_csharp_unicode_internal(fix=0)
-    test_swig_csharp_unicode_internal(fix=1)
+    test_swig_csharp_unicode_internal(x32, fix=0)
+    test_swig_csharp_unicode_internal(x32, fix=1)
 
 
-def test_swig_csharp_unicode_internal(fix):
+def test_swig_csharp_unicode_internal(x32, fix):
     '''
     Test utf8 string handling, with/without use of _csharp_unicode_prefix().
-
-    Todo: use test_swig_csharp_internal().
     '''
     # We create C++/C# source directly from this function, and explicitly run
     # C++ and .NET/Mono build commands.
@@ -2150,7 +2151,7 @@ def test_swig_csharp_unicode_internal(fix):
                 std::string foo2(const std::string& text)
                 {{
                     std::string ret;
-                    for (int i=0; i<text.size(); ++i)
+                    for (unsigned i=0; i<text.size(); ++i)
                     {{
                         char buffer[8];
                         snprintf(buffer, sizeof(buffer), " \\\\x%02x", (unsigned char) text[i]);
@@ -2286,10 +2287,10 @@ def test_swig_csharp_unicode_internal(fix):
             }}
             ''')
 
-    test_swig_csharp_internal(name, test_i, code_test)
+    test_swig_csharp_internal(name, test_i, code_test, x32)
 
 
-def test_swig_charp_exceptions():
+def test_swig_charp_exceptions(x32):
 
     '''
     Test SWIG-generated handling of C++ exceptions.
@@ -2377,4 +2378,4 @@ def test_swig_charp_exceptions():
             }}
             ''')
 
-    test_swig_csharp_internal('exceptions', code_i, code_test)
+    test_swig_csharp_internal('exceptions', code_i, code_test, x32)
