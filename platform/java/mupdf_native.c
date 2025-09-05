@@ -824,6 +824,7 @@ static int check_enums()
 
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE == PDF_REDACT_TEXT_REMOVE;
 	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_NONE == PDF_REDACT_TEXT_NONE;
+	valid &= com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE_INVISIBLE == PDF_REDACT_TEXT_REMOVE_INVISIBLE;
 
 	valid &= com_artifex_mupdf_fitz_Pixmap_DESKEW_BORDER_INCREASE == FZ_DESKEW_BORDER_INCREASE;
 	valid &= com_artifex_mupdf_fitz_Pixmap_DESKEW_BORDER_MAINTAIN == FZ_DESKEW_BORDER_MAINTAIN;

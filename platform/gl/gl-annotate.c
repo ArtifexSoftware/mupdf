@@ -889,7 +889,7 @@ static const char *font_names[] = { "Cour", "Helv", "TiRo" };
 static const char *lang_names[] = { "", "ja", "ko", "zh-Hans", "zh-Hant" };
 static const char *im_redact_names[] = { "Keep images", "Remove images", "Erase pixels" };
 static const char *la_redact_names[] = { "Keep line art", "Remove covered line art", "Remove touched line art" };
-static const char *tx_redact_names[] = { "Remove text", "Keep text" };
+static const char *tx_redact_names[] = { "Remove text", "Keep text", "Remove invisible text" };
 static const char *border_styles[] = { "Solid", "Dashed", "Dotted" };
 static const char *border_intensities[] = { "None", "Small clouds", "Large clouds", "Enormous clouds" };
 

@@ -530,7 +530,7 @@ pdf_redact_end_page(fz_context *ctx, fz_buffer *buf, void *opaque)
 }
 
 static int
-pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix trm, fz_matrix ctm, fz_rect bbox)
+pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix trm, fz_matrix ctm, fz_rect bbox, int tr, float ca, float CA)
 {
 	struct redact_filter_state *red = opaque;
 	pdf_page *page = red->page;
@@ -584,6 +584,33 @@ pdf_redact_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, f
 	}
 
 	return 0;
+}
+
+static int
+pdf_redact_invisible_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix trm, fz_matrix ctm, fz_rect bbox, int tr, float ca, float CA)
+{
+	int invisible = 0;
+
+	switch (tr)
+	{
+		case 0: /* Fill */
+			invisible == (ca == 0);
+			break;
+		case 1: /* Stroke */
+			invisible == (CA == 0);
+			break;
+		case 2: /* Fill + Stroke */
+			invisible == (ca == 0 && CA == 0);
+			break;
+		case 3: /* Neither Fill nor stroke */
+			invisible = 1;
+			break;
+	}
+
+	if (!invisible)
+		return 0;
+
+	return pdf_redact_text_filter(ctx, opaque, ucsbuf, ucslen, trm, ctm, bbox, tr, ca, CA);
 }
 
 static fz_pixmap *
@@ -1068,6 +1095,8 @@ void init_redact_filter(fz_context *ctx, pdf_redact_options *redact_opts, struct
 	red->sanitize_opts.opaque = red;
 	if (text == PDF_REDACT_TEXT_REMOVE)
 		red->sanitize_opts.text_filter = pdf_redact_text_filter;
+	if (text == PDF_REDACT_TEXT_REMOVE_INVISIBLE)
+		red->sanitize_opts.text_filter = pdf_redact_invisible_text_filter;
 	if (image_method == PDF_REDACT_IMAGE_PIXELS)
 		red->sanitize_opts.image_filter = pdf_redact_image_filter_pixels;
 	if (image_method == PDF_REDACT_IMAGE_REMOVE)

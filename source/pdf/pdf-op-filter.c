@@ -83,6 +83,10 @@ typedef struct filter_gstate
 	pdf_filter_gstate pending;
 	pdf_filter_gstate sent;
 	clip_op_t clip_op;
+	/* Opacity values are not queued, so don't go into pending/sent.
+	 * We only track these for invisible text removal. */
+	float ca;
+	float CA;
 } filter_gstate;
 
 typedef struct
@@ -660,7 +664,7 @@ filter_show_char(fz_context *ctx, pdf_sanitize_processor *p, int cid, int *unico
 		}
 
 		if (p->options->text_filter)
-			remove = p->options->text_filter(ctx, p->options->opaque, ucsbuf, ucslen, trm, ctm, bbox);
+			remove = p->options->text_filter(ctx, p->options->opaque, ucsbuf, ucslen, trm, ctm, bbox, gstate->pending.text.render, gstate->ca, gstate->CA);
 		if (p->options->culler && !remove)
 		{
 			ctm = fz_concat(trm, ctm);
@@ -1217,6 +1221,8 @@ pdf_filter_gs_CA(fz_context *ctx, pdf_processor *proc, float alpha)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
+	p->gstate->CA = alpha;
+
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
@@ -1228,6 +1234,8 @@ static void
 pdf_filter_gs_ca(fz_context *ctx, pdf_processor *proc, float alpha)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+
+	p->gstate->ca = alpha;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
@@ -3024,6 +3032,8 @@ pdf_new_sanitize_filter(
 		proc->gstate->sent.stroke.miterlimit = 10;
 		proc->gstate->clip_rect = fz_infinite_rect;
 		proc->gstate->clip_op = NO_CLIP_OP;
+		proc->gstate->ca = 1;
+		proc->gstate->CA = 1;
 	}
 	fz_catch(ctx)
 	{

@@ -46,6 +46,7 @@ public class PDFPage extends Page
 
 	public static final int REDACT_TEXT_REMOVE = 0;
 	public static final int REDACT_TEXT_NONE = 1;
+	public static final int REDACT_TEXT_REMOVE_INVISIBILE = 2;
 
 	public native boolean applyRedactions(boolean blackBoxes, int imageMethod, int lineArt, int text);
 

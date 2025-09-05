@@ -5527,6 +5527,8 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE 0L
 #undef com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_NONE
 #define com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_NONE 1L
+#undef com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE_INVISIBLE
+#define com_artifex_mupdf_fitz_PDFPage_REDACT_TEXT_REMOVE_INVISIBLE 2L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFPage
  * Method:    getObject

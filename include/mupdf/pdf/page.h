@@ -273,7 +273,14 @@ enum {
 	/* Do not remove any text at all as part of this redaction
 	 * operation. Using this option is INSECURE! Use at your own
 	 * risk. */
-	PDF_REDACT_TEXT_NONE
+	PDF_REDACT_TEXT_NONE,
+	/* Remove any invisible text that overlaps with the redaction
+	 * region however slightly. This is intended to allow the
+	 * removal of invisible text layers added by OCR passes.
+	 * This will remove text that is made invisible by rendering
+	 * mode, but will NOT remove other cases (like white-on-white
+	 * text, etc). */
+	PDF_REDACT_TEXT_REMOVE_INVISIBLE,
 };
 
 typedef struct
