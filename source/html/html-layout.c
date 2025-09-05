@@ -2248,7 +2248,7 @@ static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_col
 	{
 		table_cell *cell0 = cell_at(ctx, grid, w-1, y);
 
-		if (cell0->spanned == 1)
+		if (cell0->spanned == 1 || cell0->box == NULL)
 			continue;
 
 		x1 = x + cell0->colspan;
@@ -2264,7 +2264,7 @@ static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_col
 	{
 		table_cell *cell0 = cell_at(ctx, grid, 0, y);
 
-		if (cell0->spanned)
+		if (cell0->spanned == 1 || cell0->box == NULL)
 			continue;
 		if (bci->max_left_border < cell0->box->u.block.border[L])
 			bci->max_left_border = cell0->box->u.block.border[L];
@@ -2279,7 +2279,7 @@ static void collapse_table_borders(fz_context *ctx, table_grid *grid, border_col
 			table_cell *cell1;
 			float b0, b1;
 
-			if (cell0->spanned == 1)
+			if (cell0->spanned == 1 || cell0->box == NULL)
 				continue;
 
 			y1 = y + cell0->rowspan;
