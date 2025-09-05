@@ -1363,11 +1363,7 @@ def build_0(
 
 
 def link_l_flags(sos):
-    ld_origin = None
-    if state.state_.pyodide:
-        # Don't add '-Wl,-rpath*' etc if building for Pyodide.
-        ld_origin = False
-    ret = jlib.link_l_flags( sos, ld_origin)
+    ret = jlib.link_l_flags( sos)
     r = os.environ.get('LDFLAGS')
     if r:
         ret += f' {r}'
