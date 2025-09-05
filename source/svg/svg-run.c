@@ -138,9 +138,9 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
@@ -213,9 +213,9 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (cx_att) cx = svg_parse_length(cx_att, local_state.viewbox_w, local_state.fontsize);
@@ -258,9 +258,9 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (cx_att) cx = svg_parse_length(cx_att, local_state.viewbox_w, local_state.fontsize);
@@ -302,9 +302,9 @@ svg_run_line(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (x1_att) x1 = svg_parse_length(x1_att, local_state.viewbox_w, local_state.fontsize);
@@ -398,9 +398,9 @@ svg_run_polyline(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *nod
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (local_state.stroke_is_set)
@@ -426,9 +426,9 @@ svg_run_polygon(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		path = svg_parse_polygon_imp(ctx, doc, node, 1);
@@ -915,9 +915,9 @@ svg_run_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 
 	fz_var(path);
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, node, &local_state);
 
 		if (d_att)
@@ -1246,10 +1246,9 @@ svg_run_svg(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 	char *h_att = fz_xml_att(root, "height");
 	char *viewbox_att = fz_xml_att(root, "viewBox");
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
-
 		/* get default viewport from viewBox if width and/or height is missing */
 		if (viewbox_att && (!w_att || !h_att))
 		{
@@ -1278,9 +1277,9 @@ svg_run_g(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, cons
 	svg_state local_state;
 	fz_xml *node;
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
 		svg_parse_common(ctx, doc, root, &local_state);
 
 		for (node = fz_xml_down(root); node; node = fz_xml_next(node))
@@ -1298,10 +1297,9 @@ svg_run_use_symbol(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *u
 	svg_state local_state;
 	fz_xml *node;
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
-
 		svg_parse_viewport(ctx, doc, use, &local_state);
 		svg_parse_viewbox(ctx, doc, use, &local_state);
 
@@ -1340,10 +1338,9 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 	float x = 0;
 	float y = 0;
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
-
 		if (++local_state.use_depth > MAX_USE_DEPTH)
 		{
 			fz_warn(ctx, "svg: too much recursion");
@@ -1402,10 +1399,9 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 	char *w_att = fz_xml_att(root, "width");
 	char *h_att = fz_xml_att(root, "height");
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
-
 		svg_parse_common(ctx, doc, root, &local_state);
 		if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
 		if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
@@ -1637,10 +1633,9 @@ svg_run_text(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, c
 	char *dx_att = fz_xml_att(root, "dx");
 	char *dy_att = fz_xml_att(root, "dy");
 
+	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
 	{
-		svg_begin_state(ctx, &local_state, inherit_state);
-
 		svg_parse_common(ctx, doc, root, &local_state);
 		svg_parse_font_attributes(ctx, doc, root, &local_state, font_family, sizeof font_family);
 
