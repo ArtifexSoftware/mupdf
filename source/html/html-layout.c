@@ -33,6 +33,8 @@
 
 #undef DEBUG_HARFBUZZ
 
+#undef DEBUG_DESPERATE_SPLITTING
+
 /*
 	Some notes on the layout code below and the concepts used.
 
@@ -130,6 +132,7 @@ typedef struct string_walker
 	hb_glyph_info_t *glyph_info;
 	unsigned int glyph_count;
 	int scale;
+	int graphemes;
 } string_walker;
 
 static int quick_ligature_mov(fz_context *ctx, string_walker *walker, unsigned int i, unsigned int n, int unicode)
@@ -177,7 +180,7 @@ static int quick_ligature(fz_context *ctx, string_walker *walker, unsigned int i
 	return walker->glyph_info[i].codepoint;
 }
 
-static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, int language, int small_caps, const char *text)
+static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, int language, int small_caps, const char *text, int cluster_as_graphemes)
 {
 	walker->ctx = ctx;
 	walker->hb_buf = hb_buf;
@@ -191,6 +194,7 @@ static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer
 	walker->font = NULL;
 	walker->next_font = NULL;
 	walker->small_caps = small_caps;
+	walker->graphemes = cluster_as_graphemes;
 }
 
 static void
@@ -261,7 +265,10 @@ static int walk_string(string_walker *walker)
 			hb_buffer_set_language(walker->hb_buf, hb_language_from_string(lang, (int)strlen(lang)));
 			Memento_stopLeaking(); /* HarfBuzz leaks harmlessly */
 		}
-		hb_buffer_set_cluster_level(walker->hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS);
+		if (walker->graphemes)
+			hb_buffer_set_cluster_level(walker->hb_buf, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES);
+		else
+			hb_buffer_set_cluster_level(walker->hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS);
 
 		hb_buffer_add_utf8(walker->hb_buf, walker->start, walker->end - walker->start, 0, -1);
 
@@ -338,7 +345,7 @@ static void measure_string_w(fz_context *ctx, fz_html_flow *node, hb_buffer_t *h
 	const char *s;
 	node->w = 0;
 	s = get_node_text(ctx, node);
-	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, s);
+	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, s, 0);
 	while (walk_string(&walker))
 	{
 		int x = 0;
@@ -597,25 +604,70 @@ static int flush_line(fz_context *ctx, fz_html_box *box, layout_data *ld, float 
 	return 0;
 }
 
-static void break_word_for_overflow_wrap(fz_context *ctx, fz_html_flow *node, layout_data *ld)
+static void split_flow_at_byte_offset(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
+{
+	fz_html_flow *new_flow;
+	char *text;
+	size_t len;
+
+	assert(flow->type == FLOW_WORD);
+
+	assert(offset != 0);
+	text = flow->content.text + offset;
+	len = strlen(text);
+	new_flow = fz_pool_alloc(ctx, pool, offsetof(fz_html_flow, content) + len+1);
+	memcpy(new_flow, flow, offsetof(fz_html_flow, content));
+	new_flow->next = flow->next;
+	flow->next = new_flow;
+	strcpy(new_flow->content.text, text);
+	*text = 0;
+}
+
+/* node becomes last cluster, node->next becomes the rest */
+static void split_flow_at_byte_offset_reverse(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
+{
+	fz_html_flow *new_flow;
+	char *text;
+	size_t len;
+
+	assert(flow->type == FLOW_WORD);
+
+	assert(offset != 0);
+	text = flow->content.text + offset;
+	len = strlen(text);
+	new_flow = fz_pool_alloc(ctx, pool, offsetof(fz_html_flow, content) + offset+1);
+	memcpy(new_flow, flow, offsetof(fz_html_flow, content));
+	new_flow->next = flow->next;
+	flow->next = new_flow;
+	memcpy(new_flow->content.text, flow->content.text, offset);
+	new_flow->content.text[offset] = 0;
+	memmove(flow->content.text, text, len);
+	flow->content.text[len] = 0;
+}
+
+static void break_word_for_overflow_wrap(fz_context *ctx, fz_html_flow *node, layout_data *ld, float max_w)
 {
 	hb_buffer_t *hb_buf = ld->hb_buf;
 	const char *text = node->content.text;
 	string_walker walker;
+	float w = 0;
+	unsigned int at = (unsigned int)-1;
+	float em = node->box->s.layout.em;
 
 	assert(node->type == FLOW_WORD);
 	assert(node->atomic == 0);
 
-	/* Split a word node after the first cluster (usually a character), and
-	 * flag the second half as a valid node to break before if in desperate
-	 * need. This may break earlier than necessary, but in that case we'll
-	 * break the second half again when we come to it, until we find a
-	 * suitable breaking point.
+	/* The entire flow doesn't fit on a line, so we need to break it in the middle.
+	 * We need to be careful not to break it in the middle of a cluster, as this
+	 * would really mess shaping up.
 	 *
-	 * We split after each clusters here so we can flag each fragment as
-	 * "atomic" so we don't try breaking it again, and also to flag the
-	 * following word fragment as a possible break point. Breaking at the
-	 * exact desired point would make this more complicated than necessary.
+	 * For left 2 right text, this means split the first cluster into its own 'atomic'
+	 * node, and shorten the remainder.
+	 *
+	 * For right 2 left text, we split the last cluster into its own 'atomic' node
+	 * and shorten the remainder. This is fine, cos although it appears to change the
+	 * logical ordering for the text, we never extract from HTML, and the correct
+	 * appearance is preserved.
 	 *
 	 * Desperately breaking in the middle of a word like this should should
 	 * rarely (if ever) come up.
@@ -624,28 +676,116 @@ static void break_word_for_overflow_wrap(fz_context *ctx, fz_html_flow *node, la
 	 */
 
 	/* Walk string and split at the first cluster. */
-	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, text);
-	while (walk_string(&walker))
+	if ((node->bidi_level & 1) == 0)
 	{
-		unsigned int i, a, b;
-		a = walker.glyph_info[0].cluster;
-		for (i = 0; i < walker.glyph_count; ++i)
+		/* Left 2 Right */
+		init_string_walker(ctx, &walker, hb_buf, 0 /* L2R */, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, text, 1);
+		while (walk_string(&walker))
 		{
-			b = walker.glyph_info[i].cluster;
-			if (b != a)
+			unsigned int i;
+#ifdef DEBUG_DESPERATE_SPLITTING
+			for (i = 0; i < walker.glyph_count; ++i)
 			{
-				fz_html_split_flow(ctx, ld->pool, node, fz_runeidx(text, text + b));
-				node->atomic = 1;
-				node->next->overflow_wrap = 1;
-				measure_string_w(ctx, node, ld->hb_buf);
-				measure_string_w(ctx, node->next, ld->hb_buf);
-				return;
+				uint32_t can_break_here = (hb_glyph_info_get_glyph_flags(&walker.glyph_info[i]) & HB_GLYPH_FLAG_UNSAFE_TO_BREAK) == 0;
+				printf("%s(%x, %d)",
+					can_break_here ? "|" : " ",
+					walker.glyph_info[i].codepoint, walker.glyph_info[i].cluster);
 			}
+			printf("\n");
+#endif
+			for (i = 0; i < walker.glyph_count; ++i)
+			{
+				uint32_t can_break_here = (hb_glyph_info_get_glyph_flags(&walker.glyph_info[i]) & HB_GLYPH_FLAG_UNSAFE_TO_BREAK) == 0;
+
+				if (can_break_here)
+				{
+					/* If this fragment would take us beyond the end, then give up. */
+					if (w > max_w)
+						break;
+
+					at = walker.start + walker.glyph_info[i].cluster - text;
+				}
+
+				w += walker.glyph_pos[i].x_advance * em / walker.scale;
+
+				/* Make sure we have the whole cluster */
+				while (i+1 < walker.glyph_count && walker.glyph_info[i].cluster == walker.glyph_info[i+1].cluster)
+				{
+					i++;
+					w += walker.glyph_pos[i].x_advance * em / walker.scale;
+				}
+			}
+		}
+		if (at != (unsigned int)-1 && at != 0 && at != strlen(text))
+		{
+			/* node becomes first cluster, node->next becomes the rest */
+			split_flow_at_byte_offset(ctx, ld->pool, node, at);
+			node->next->overflow_wrap = 1;
+			measure_string_w(ctx, node, ld->hb_buf);
+			measure_string_w(ctx, node->next, ld->hb_buf);
+			return;
+		}
+	}
+	else
+	{
+		/* Right 2 Left */
+		init_string_walker(ctx, &walker, hb_buf, 1 /* R2L */, node->box->style->font, node->script, node->markup_lang, node->box->style->small_caps, text, 1);
+		while (walk_string(&walker))
+		{
+			unsigned int i;
+#ifdef DEBUG_DESPERATE_SPLITTING
+			for (i = 0; i < walker.glyph_count; ++i)
+			{
+				uint32_t can_break_here = (hb_glyph_info_get_glyph_flags(&walker.glyph_info[i]) & HB_GLYPH_FLAG_UNSAFE_TO_BREAK) == 0;
+				printf("%s(%x, %d)",
+					can_break_here ? "|" : " ",
+					walker.glyph_info[i].codepoint, walker.glyph_info[i].cluster);
+			}
+			printf("\n");
+#endif
+			/* Find the first cluster we can break before. */
+
+			/* We can always break at the start of a fragment returned by walk_string
+			 * (unless it's the very first one!) */
+			if (w > max_w)
+				break;
+			if (walker.start != text)
+				at = walker.start - text;
+
+			for(i = 0; i < walker.glyph_count; i++)
+			{
+				uint32_t can_break_here = (hb_glyph_info_get_glyph_flags(&walker.glyph_info[i]) & HB_GLYPH_FLAG_UNSAFE_TO_BREAK) == 0;
+
+				w += walker.glyph_pos[i].x_advance * em / walker.scale;
+
+				if (can_break_here)
+				{
+					/* If this fragment would take us beyond the end, then give up. */
+					if (w > max_w)
+						break;
+
+					if (i == walker.glyph_count)
+						at = walker.start - text;
+					else
+						at = walker.start + walker.glyph_info[i].cluster - text;
+				}
+			}
+		}
+		if (at != (unsigned int)-1 && at != 0 && at != strlen(text))
+		{
+			/* Split at the last point found */
+			/* node becomes last cluster, node->next becomes the rest */
+			split_flow_at_byte_offset_reverse(ctx, ld->pool, node, at);
+			node->next->overflow_wrap = 1;
+			measure_string_w(ctx, node, ld->hb_buf);
+			measure_string_w(ctx, node->next, ld->hb_buf);
+			return;
 		}
 	}
 
-	/* Word is already only one cluster. Don't try breaking here again! */
-	node->atomic = 1;
+	/* Unless we've overflowed word is already only one cluster. Don't try breaking here again! */
+	if (w <= max_w)
+		node->atomic = 1;
 }
 
 /*
@@ -822,7 +962,7 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 			{
 				if (!node->atomic && node->box->style->overflow_wrap == OVERFLOW_WRAP_BREAK_WORD)
 				{
-					break_word_for_overflow_wrap(ctx, node, ld);
+					break_word_for_overflow_wrap(ctx, node, ld, bounds_w - line_w);
 				}
 			}
 			/* Remember overflow-wrap word fragments, unless at the beginning of a line. */
@@ -3291,7 +3431,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 				trm.f = y - page_top;
 
 				s = get_node_text(ctx, node);
-				init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, node->markup_lang, style->small_caps, s);
+				init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, node->markup_lang, style->small_caps, s, 0);
 				while (walk_string(&walker))
 				{
 					float node_scale = node->box->s.layout.em / walker.scale;
