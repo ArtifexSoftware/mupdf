@@ -510,7 +510,7 @@ def get_args( tu, cursor, include_fz_context=False, skip_first_alt=False, verbos
     #
     if verbose:
         jlib.log( '## Looking at args of {cursor.spelling=}')
-    key = tu, cursor.location.file, cursor.location.line, include_fz_context, skip_first_alt
+    key = tu, cursor, include_fz_context, skip_first_alt
     ret = get_args_cache.get( key)
     if not verbose and state.state_.show_details(cursor.spelling):
         verbose = True
