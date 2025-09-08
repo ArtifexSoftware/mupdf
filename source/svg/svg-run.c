@@ -359,7 +359,7 @@ svg_parse_polygon_imp(fz_context *ctx, svg_document *doc, fz_xml *node, int docl
 				str = svg_lex_number(&number, str);
 				args[nargs++] = number;
 			}
-			else
+			else if (*str)
 			{
 				/* Don't know what this is. Just skip it. */
 				fz_warn(ctx, "syntax error in polygon points");
