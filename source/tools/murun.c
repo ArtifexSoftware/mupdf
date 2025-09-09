@@ -8146,6 +8146,16 @@ static void ffi_PDFDocument_wasRepaired(js_State *J)
 	js_pushboolean(J, val);
 }
 
+static void ffi_PDFDocument_repair(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_try(ctx)
+		pdf_repair_xref(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_canBeSavedIncrementally(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12404,6 +12414,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.hasUnsavedChanges", ffi_PDFDocument_hasUnsavedChanges, 0);
 		jsB_propfun(J, "PDFDocument.wasRepaired", ffi_PDFDocument_wasRepaired, 0);
 		jsB_propfun(J, "PDFDocument.canBeSavedIncrementally", ffi_PDFDocument_canBeSavedIncrementally, 0);
+		jsB_propfun(J, "PDFDocument.repair", ffi_PDFDocument_repair, 0);
 
 		jsB_propfun(J, "PDFDocument.enableJournal", ffi_PDFDocument_enableJournal, 0);
 		jsB_propfun(J, "PDFDocument.getJournal", ffi_PDFDocument_getJournal, 0);
