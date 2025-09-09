@@ -133,6 +133,10 @@ fz_lookup_hyphenator(fz_context *ctx, fz_text_language lang)
 		if (!ctx->hyph->arch)
 			ctx->hyph->arch = fz_open_zip_archive_with_memory(ctx, HYPH_ZIP);
 
+		// language code aliases (nn and nb to no, etc.)
+		if (lang == FZ_LANG_TAG2('n', 'n') || lang == FZ_LANG_TAG2('n', 'b'))
+			lang = FZ_LANG_TAG2('n', 'o');
+
 		fz_string_from_text_language(lang_name, lang);
 
 		if (fz_has_archive_entry(ctx, ctx->hyph->arch, lang_name))
