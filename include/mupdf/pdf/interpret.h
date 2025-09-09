@@ -412,6 +412,15 @@ pdf_sanitize_filter_options;
 */
 pdf_processor *pdf_new_sanitize_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *sopts);
 
+typedef struct
+{
+	void *opaque;
+	/* To be expanded */
+}
+pdf_vectorize_filter_options;
+
+pdf_processor *pdf_new_vectorize_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int structparents, fz_matrix transform, pdf_filter_options *options, void *vopts);
+
 pdf_obj *pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_res, fz_matrix ctm, pdf_filter_options *options, pdf_cycle_list *cycle_up);
 
 void pdf_processor_push_resources(fz_context *ctx, pdf_processor *proc, pdf_obj *res);

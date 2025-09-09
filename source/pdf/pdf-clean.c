@@ -1314,3 +1314,61 @@ pdf_clip_page(fz_context *ctx, pdf_page *page, fz_rect *clip)
 		fz_rethrow(ctx);
 	}
 }
+
+/* Vectorisation of pages */
+
+struct vectorize_filter_state {
+	pdf_filter_options filter_opts;
+	pdf_vectorize_filter_options vectorize_opts;
+	pdf_filter_factory filter_list[2];
+	pdf_page *page;
+};
+
+static
+void init_vectorize_filter(fz_context *ctx, struct vectorize_filter_state *hc, pdf_page *page)
+{
+	memset(&hc->filter_opts, 0, sizeof hc->filter_opts);
+	memset(&hc->vectorize_opts, 0, sizeof hc->vectorize_opts);
+
+	hc->filter_opts.recurse = 0;
+	hc->filter_opts.instance_forms = 0;
+	hc->filter_opts.ascii = 0;
+	hc->filter_opts.opaque = hc;
+	hc->filter_opts.filters = hc->filter_list;
+	hc->filter_opts.recurse = 1;
+
+	hc->vectorize_opts.opaque = hc;
+
+	hc->filter_list[0].filter = pdf_new_vectorize_filter;
+	hc->filter_list[0].options = &hc->vectorize_opts;
+	hc->filter_list[1].filter = NULL;
+	hc->filter_list[1].options = NULL;
+
+	hc->page = page;
+}
+
+void
+pdf_vectorize_page(fz_context *ctx, pdf_page *page)
+{
+	pdf_document *doc;
+	struct vectorize_filter_state hv;
+
+	if (page == NULL)
+		return;
+
+	doc = page->doc;
+
+	init_vectorize_filter(ctx, &hv, page);
+
+	pdf_begin_operation(ctx, doc, "Vectorize text to page");
+	fz_try(ctx)
+	{
+		pdf_filter_page_contents(ctx, doc, page, &hv.filter_opts);
+		pdf_end_operation(ctx, doc);
+	}
+	fz_catch(ctx)
+	{
+		pdf_abandon_operation(ctx, doc);
+		fz_rethrow(ctx);
+	}
+}

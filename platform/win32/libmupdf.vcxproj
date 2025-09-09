@@ -916,6 +916,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-op-color.c" />
     <ClCompile Include="..\..\source\pdf\pdf-op-filter.c" />
     <ClCompile Include="..\..\source\pdf\pdf-op-run.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-op-vectorize.c" />
     <ClCompile Include="..\..\source\pdf\pdf-outline.c" />
     <ClCompile Include="..\..\source\pdf\pdf-page.c" />
     <ClCompile Include="..\..\source\pdf\pdf-parse.c" />

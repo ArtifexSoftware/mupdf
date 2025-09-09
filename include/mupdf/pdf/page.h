@@ -305,6 +305,8 @@ fz_default_colorspaces *pdf_load_default_colorspaces(fz_context *ctx, pdf_docume
 
 void pdf_clip_page(fz_context *ctx, pdf_page *page, fz_rect *clip);
 
+void pdf_vectorize_page(fz_context *ctx, pdf_page *page);
+
 /*
 	Update default colorspaces for an xobject.
 */
