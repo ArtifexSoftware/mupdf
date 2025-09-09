@@ -594,13 +594,13 @@ pdf_redact_invisible_text_filter(fz_context *ctx, void *opaque, int *ucsbuf, int
 	switch (tr)
 	{
 		case 0: /* Fill */
-			invisible == (ca == 0);
+			invisible = (ca == 0);
 			break;
 		case 1: /* Stroke */
-			invisible == (CA == 0);
+			invisible = (CA == 0);
 			break;
 		case 2: /* Fill + Stroke */
-			invisible == (ca == 0 && CA == 0);
+			invisible = (ca == 0 && CA == 0);
 			break;
 		case 3: /* Neither Fill nor stroke */
 			invisible = 1;
