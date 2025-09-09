@@ -1988,9 +1988,9 @@ prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in
 {
 	/* Make sure we have no pending annotation changes that need to be updated. */
 	if (doc->recalculate)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "form needs recalculation before saving");
+		pdf_calculate_form(ctx, doc);
 	if (doc->resynth_required)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "annotations need resynthesis before saving");
+		pdf_update_open_pages(ctx, doc);
 
 	/* Rewrite (and possibly sanitize) the operator streams */
 	if (in_opts->do_clean || in_opts->do_sanitize)

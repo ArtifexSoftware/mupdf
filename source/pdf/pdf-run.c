@@ -260,6 +260,8 @@ void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, fz_matrix 
 	if (!page)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "annotation not bound to any page");
 
+	pdf_update_page(ctx, page);
+
 	doc = page->doc;
 
 	nocache = !!(dev->hints & FZ_NO_CACHE);
@@ -339,6 +341,8 @@ void pdf_run_page_annots_with_usage(fz_context *ctx, pdf_page *page, fz_device *
 	pdf_document *doc = page->doc;
 	int nocache;
 
+	pdf_update_page(ctx, page);
+
 	nocache = !!(dev->hints & FZ_NO_CACHE);
 	if (nocache)
 		pdf_mark_xref(ctx, doc);
@@ -367,6 +371,8 @@ void pdf_run_page_widgets_with_usage(fz_context *ctx, pdf_page *page, fz_device 
 {
 	pdf_document *doc = page->doc;
 	int nocache;
+
+	pdf_update_page(ctx, page);
 
 	nocache = !!(dev->hints & FZ_NO_CACHE);
 	if (nocache)
@@ -397,6 +403,8 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_page *page, fz_device *dev, fz_matr
 {
 	pdf_document *doc = page->doc;
 	int nocache = !!(dev->hints & FZ_NO_CACHE);
+
+	pdf_update_page(ctx, page);
 
 	if (nocache)
 		pdf_mark_xref(ctx, doc);
