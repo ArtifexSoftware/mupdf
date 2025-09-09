@@ -1628,7 +1628,7 @@ walk_for_background(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block
 	obounds = fz_infinite_rect;
 
 	/* What is the biggest margin around this table?
-	/* Start with an infinite box, and whittle it down by any content that
+	 * Start with an infinite box, and whittle it down by any content that
 	 * isn't covered by the bounds. */
 	obounds = whittle_background(ctx, block0, obounds, bounds);
 
