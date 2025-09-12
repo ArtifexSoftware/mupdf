@@ -1173,6 +1173,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 			dev->last.font = fz_keep_font(ctx, font);
 		}
 		dev->last.valid = 1;
+		dev->last.flags = flags;
 
 		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
 		{
