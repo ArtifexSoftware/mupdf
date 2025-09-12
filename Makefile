@@ -156,8 +156,10 @@ $(OUT)/source/fitz/leptonica-wrap.o : source/fitz/leptonica-wrap.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(LEPTONICA_CFLAGS)
 endif
 
-$(OUT)/source/fitz/barcode.o : source/fitz/barcode.cpp
+ifeq ($(HAVE_ZXINGCPP),yes)
+$(OUT)/source/fitz/zxingbarcode.o : source/fitz/zxingbarcode.cpp
 	$(CXX_CMD) $(WARNING_CFLAGS) $(LIB_CFLAGS) $(THIRD_CFLAGS) $(ZXINGCPP_CFLAGS) $(ZXINGCPP_LANGFLAGS)
+endif
 
 $(OUT)/platform/%.o : platform/%.c
 	$(CC_CMD) $(WARNING_CFLAGS)
