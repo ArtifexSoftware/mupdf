@@ -1119,7 +1119,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 	{
 		int rune;
 		int len = fz_chartorune(&rune, actualtext);
-		if (span->items[start].gid != rune || rune == 0)
+		if (span->items[start].ucs != rune || rune == 0)
 			break;
 		actualtext += len; z--;
 	}
@@ -1144,7 +1144,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 	{
 		/* Nasty n^2 algo here, cos backtracking through utf8 is not trivial. It'll do. */
 		int rune = rune_index(actualtext, z-1);
-		if (span->items[end-1].gid != rune)
+		if (span->items[end-1].ucs != rune)
 			break;
 		z--;
 	}
