@@ -982,6 +982,17 @@ do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix 
 
 	for (i = start; i < end; i++)
 	{
+		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
+		{
+			fz_rect r = current_clip(ctx, dev);
+			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
+			{
+				dev->last.clipped = 1;
+				continue;
+			}
+		}
+		dev->last.clipped = 0;
+
 		/* Calculate new pen location and delta */
 		tm.e = span->items[i].x;
 		tm.f = span->items[i].y;
@@ -995,17 +1006,6 @@ do_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, fz_matrix 
 		}
 		dev->last.valid = 1;
 		dev->last.flags = flags;
-
-		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
-		{
-			fz_rect r = current_clip(ctx, dev);
-			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
-			{
-				dev->last.clipped = 1;
-				continue;
-			}
-		}
-		dev->last.clipped = 0;
 
 		/* Calculate bounding box and new pen position based on font metrics */
 		if (span->items[i].gid >= 0)
@@ -1160,6 +1160,17 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		fz_text_item *item = &span->items[i];
 		int rune = -1;
 
+		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
+		{
+			fz_rect r = current_clip(ctx, dev);
+			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
+			{
+				dev->last.clipped = 1;
+				continue;
+			}
+		}
+		dev->last.clipped = 0;
+
 		if ((size_t)i < z)
 			actualtext += fz_chartorune(&rune, actualtext);
 
@@ -1176,17 +1187,6 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		}
 		dev->last.valid = 1;
 		dev->last.flags = flags;
-
-		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
-		{
-			fz_rect r = current_clip(ctx, dev);
-			if (fz_glyph_entirely_outside_box(ctx, &ctm, span, &span->items[i], &r))
-			{
-				dev->last.clipped = 1;
-				continue;
-			}
-		}
-		dev->last.clipped = 0;
 
 		/* Calculate bounding box and new pen position based on font metrics */
 		if (item->gid >= 0)
