@@ -1336,7 +1336,12 @@ static void
 fz_stext_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *text)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
-	metatext_t *mt = fz_malloc_struct(ctx, metatext_t);
+	metatext_t *mt;
+
+	if (meta == FZ_METATEXT_ACTUALTEXT)
+		tdev->last.valid = 0;
+
+	mt = fz_malloc_struct(ctx, metatext_t);
 
 	mt->prev = tdev->metatext;
 	tdev->metatext = mt;
@@ -1385,6 +1390,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 	{
 		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1);
 		pop_metatext(ctx, tdev);
+		tdev->last.valid = 0;
 		return;
 	}
 
