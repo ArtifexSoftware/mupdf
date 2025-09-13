@@ -1059,12 +1059,12 @@ rune_index(const char *utf8, size_t idx)
 }
 
 static void
-flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, int i)
+flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, int i, int end)
 {
 	if (*actualtext == 0)
 		return;
 
-	while (1)
+	while (end < 0 || (end >= 0 && i < end))
 	{
 		int rune;
 		actualtext += fz_chartorune(&rune, actualtext);
@@ -1217,7 +1217,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 
 	/* We found a matching postfix. It seems likely that this is going to be the only
 	 * text object we get, so send any remaining actualtext now. */
-	flush_actualtext(ctx, dev, actualtext, i);
+	flush_actualtext(ctx, dev, actualtext, i, i + strlen(actualtext) - (span->len - end));
 
 	/* Send the postfix */
 	if (end != span->len)
@@ -1384,7 +1384,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 	/* If we have a 'last' text position, send the content after that. */
 	if (tdev->last.valid)
 	{
-		flush_actualtext(ctx, tdev, tdev->metatext->text, 0);
+		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1);
 		pop_metatext(ctx, tdev);
 		return;
 	}
@@ -1412,7 +1412,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 			myfont = fz_new_base14_font(ctx, "Helvetica");
 			tdev->last.font = myfont;
 		}
-		flush_actualtext(ctx, tdev, tdev->metatext->text, 0);
+		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1);
 		pop_metatext(ctx, tdev);
 	}
 	fz_always(ctx)
