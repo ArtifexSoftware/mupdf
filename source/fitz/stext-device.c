@@ -1336,7 +1336,10 @@ static void
 fz_stext_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const char *text)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
-	metatext_t *mt;
+	metatext_t *mt = find_actualtext(tdev);
+
+	if (mt != NULL && meta == FZ_METATEXT_ACTUALTEXT)
+		flush_actualtext(ctx, tdev, mt->text, 0, -1);
 
 	if (meta == FZ_METATEXT_ACTUALTEXT)
 		tdev->last.valid = 0;
