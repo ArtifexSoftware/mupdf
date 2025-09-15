@@ -1273,15 +1273,14 @@ is_inheritable_property(int name)
 static fz_css_value *
 value_from_inheritable_property(fz_css_match *match, int name)
 {
-	fz_css_value *value = match->value[name];
-	if (match->up)
+	while (match)
 	{
-		if (value && !strcmp(value->data, "inherit"))
-			return value_from_inheritable_property(match->up, name);
-		if (!value)
-			return value_from_inheritable_property(match->up, name);
+		fz_css_value *value = match->value[name];
+		if (value && strcmp(value->data, "inherit") != 0)
+			return value;
+		match = match->up;
 	}
-	return value;
+	return NULL;
 }
 
 static fz_css_value *
