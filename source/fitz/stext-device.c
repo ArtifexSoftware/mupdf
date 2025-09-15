@@ -1062,6 +1062,10 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 	if (*actualtext == 0)
 		return;
 
+	if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
+		if (dev->last.clipped)
+			return;
+
 	while (end < 0 || (end >= 0 && i < end))
 	{
 		int rune;
@@ -1069,10 +1073,6 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 
 		if (rune == 0)
 			break;
-
-		if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
-			if (dev->last.clipped)
-				continue;
 
 		fz_add_stext_char(ctx, dev, dev->last.font,
 			rune,
