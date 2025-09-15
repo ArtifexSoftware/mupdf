@@ -1873,7 +1873,7 @@ const char *fz_pdf_write_options_usage =
 	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
 	"\tincremental: write changes as incremental update\n"
 	"\tobjstms: use object streams and cross reference streams\n"
-	"\tappearance=yes|all: synthesize just missing, or all, annotation/widget apperance streams\n"
+	"\tappearance=yes|all: synthesize just missing, or all, annotation/widget appearance streams\n"
 	"\tcontinue-on-error: continue saving the document even if there is an error\n"
 	"\tdecrypt: write unencrypted document\n"
 	"\tencrypt=rc4-40|rc4-128|aes-128|aes-256: write encrypted document\n"
