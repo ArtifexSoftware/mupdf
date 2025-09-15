@@ -39,7 +39,7 @@ make_submodule_archive openjpeg
 make_submodule_archive tesseract	unittest
 make_submodule_archive zint
 make_submodule_archive zlib		test contrib
-make_submodule_archive zxing-cpp
+make_submodule_archive zxing-cpp	core/src/libzint
 
 # Generate commercial tarball
 cp $STEM.tar $CSTEM.tar
