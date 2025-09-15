@@ -854,6 +854,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 			{
 				tmp_comp = deflatebuf(ctx, data, len, opts->compression_effort);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(FlateDecode));
+				pdf_dict_del(ctx, obj, PDF_NAME(DecodeParms));
 			}
 			else
 			{
@@ -863,6 +864,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 				unsigned char *comp_data = fz_new_brotli_data(ctx, &comp_len, data, len, mode);
 				tmp_comp = fz_new_buffer_from_data(ctx, comp_data, comp_len);
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(BrotliDecode));
+				pdf_dict_del(ctx, obj, PDF_NAME(DecodeParms));
 			}
 			len = fz_buffer_storage(ctx, tmp_comp, &data);
 		}
