@@ -34,6 +34,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
+#include <fcntl.h>
 #else
 #include <unistd.h>
 #endif
@@ -250,9 +251,19 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	if (!strcmp(filename, "/dev/null"))
 		return fz_new_output(ctx, 0, NULL, null_write, NULL, NULL);
 	if (!strcmp(filename, "/dev/stdout"))
+	{
+#ifdef _WIN32
+		(void)setmode(fileno(stdout), O_BINARY);
+#endif
 		return fz_stdout(ctx);
+	}
 	if (!strcmp(filename, "/dev/stderr"))
+	{
+#ifdef _WIN32
+		(void)setmode(fileno(stderr), O_BINARY);
+#endif
 		return fz_stderr(ctx);
+	}
 
 	/* If <append> is false, we use fopen()'s 'x' flag to force an error if
 	 * some other process creates the file immediately after we have removed

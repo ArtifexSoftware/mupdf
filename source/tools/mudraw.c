@@ -57,12 +57,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #include <unistd.h> /* for getcwd */
 #endif
 
-/* Allow for windows stdout being made binary */
-#ifdef _WIN32
-#include <io.h>
-#include <fcntl.h>
-#endif
-
 /* Enable for helpful threading debug */
 /* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
 #define DEBUG_THREADS(A) do { } while (0)
@@ -2500,37 +2494,15 @@ int mudraw_main(int argc, char **argv)
 			{
 				/* SVG files are always opened for each page. Do not open "output". */
 			}
-			else if (output && (output[0] != '-' || output[1] != 0) && *output != 0)
+			else
 			{
+				if (output == NULL || *output == 0)
+					output = "-";
+
 				if (has_percent_d(output))
 					output_file_per_page = 1;
 				else
 					out = fz_new_output_with_path(ctx, output, 0);
-			}
-			else
-			{
-				quiet = 1; /* automatically be quiet if printing to stdout */
-#ifdef _WIN32
-				/* Windows specific code to make stdout binary. */
-				if (output_format != OUT_TEXT &&
-					output_format != OUT_STEXT_XML &&
-					output_format != OUT_STEXT_JSON &&
-					output_format != OUT_HTML &&
-					output_format != OUT_XHTML &&
-					output_format != OUT_TRACE &&
-					output_format != OUT_OCR_TRACE &&
-					output_format != OUT_BBOX &&
-					output_format != OUT_OCR_TEXT &&
-					output_format != OUT_OCR_STEXT_XML &&
-					output_format != OUT_OCR_STEXT_JSON &&
-					output_format != OUT_OCR_HTML &&
-					output_format != OUT_OCR_XHTML &&
-					output_format != OUT_XMLTEXT)
-				{
-					(void)setmode(fileno(stdout), O_BINARY);
-				}
-#endif
-				out = fz_stdout(ctx);
 			}
 
 		filename = argv[fz_optind];
