@@ -1400,7 +1400,12 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 		tdev->last.trm.f = tdev->metatext->bounds.y0;
 	}
 	else
-		fz_warn(ctx, "Actualtext with no position. Text may be lost or mispositioned.");
+	{
+		if ((dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT)) == 0)
+			fz_warn(ctx, "Actualtext with no position. Text may be lost or mispositioned.");
+		pop_metatext(ctx, tdev);
+		return;
+	}
 
 	fz_var(myfont);
 
