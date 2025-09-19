@@ -639,7 +639,11 @@ filter_show_char(fz_context *ctx, pdf_sanitize_processor *p, int cid, int *unico
 	}
 	*unicode = ucsbuf[0];
 
-	if (p->options->text_filter || p->options->culler)
+	if (p->options->strip_invisible_text && gstate->pending.text.render == 3)
+	{
+		remove = 1;
+	}
+	else if (p->options->text_filter || p->options->culler)
 	{
 		fz_matrix ctm;
 		fz_rect bbox;
