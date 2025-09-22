@@ -64,6 +64,7 @@ typedef struct {
 	float xstep, ystep;
 	fz_irect area;
 	int flags;
+	int in_smask;
 } fz_draw_state;
 
 typedef struct fz_draw_device
@@ -687,6 +688,10 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
@@ -748,6 +753,10 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	float mlw = fz_rasterizer_graphics_min_line_width(rast);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
+
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
@@ -1037,6 +1046,10 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
@@ -1139,6 +1152,10 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	int aa = fz_rasterizer_text_aa_level(dev->rast);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
+
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
@@ -1489,6 +1506,10 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 	fz_overprint *eop;
 	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, shade->colorspace);
 
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
@@ -1816,6 +1837,10 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, fz_matrix 
 	if (alpha == 0)
 		return;
 
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 	model = state->dest->colorspace;
@@ -1934,6 +1959,10 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 	if (alpha == 0)
 		return;
 
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state->in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
@@ -1953,7 +1982,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 	if (fz_is_empty_irect(src_area))
 		return;
 
-	pixmap = fz_get_pixmap_mask_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
+	pixmap = fz_get_pixmap_mask_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy, state->in_smask);
 
 	fz_var(pixmap);
 
@@ -2063,7 +2092,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, fz_ma
 
 	fz_try(ctx)
 	{
-		pixmap = fz_get_pixmap_mask_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
+		pixmap = fz_get_pixmap_mask_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy, state->in_smask);
 
 		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
@@ -2247,6 +2276,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, fz_rect area, int luminosit
 		float bc;
 		if (!colorspace)
 			colorspace = fz_device_gray(ctx);
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
 		fz_convert_color(ctx, colorspace, colorfv, fz_device_gray(ctx), &bc, NULL, color_params);
 		fz_clear_pixmap_with_value(ctx, dest, bc * 255);
 		if (shape)
@@ -2267,6 +2297,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, fz_rect area, int luminosit
 	dump_spaces(dev->top-1, "Mask begin\n");
 #endif
 	state[1].scissor = bbox;
+	state[1].in_smask = 1;
 }
 
 static void
@@ -2331,6 +2362,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp, fz_function *tr)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "unexpected end mask");
 
 	state = convert_stack(ctx, dev, "mask");
+	state[1].in_smask = 0;
 
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top-1, "Mask -> Clip: ");
@@ -2473,11 +2505,16 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	int isolated;
 	float alpha;
 	fz_draw_state *state;
+	fz_color_params color_params = fz_default_color_params;
 
 	if (dev->top == 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "unexpected end group");
 
 	state = pop_stack(ctx, dev, "group");
+
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	if (state[1].in_smask)
+		color_params.ri |= FZ_RI_IN_SOFTMASK;
 
 	fz_try(ctx)
 	{
@@ -2509,7 +2546,7 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 
 		if (state[0].dest->colorspace != state[1].dest->colorspace)
 		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, fz_default_color_params, 1);
+			fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, color_params, 1);
 			fz_drop_pixmap(ctx, state[1].dest);
 			state[1].dest = converted;
 		}

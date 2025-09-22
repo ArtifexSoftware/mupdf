@@ -295,6 +295,9 @@ generate: source/fitz/icc/gray.icc.h
 generate: source/fitz/icc/rgb.icc.h
 generate: source/fitz/icc/cmyk.icc.h
 generate: source/fitz/icc/lab.icc.h
+generate: source/fitz/icc/ps_gray.icc.h
+generate: source/fitz/icc/ps_rgb.icc.h
+generate: source/fitz/icc/ps_cmyk.icc.h
 
 # --- Generated CMap files ---
 

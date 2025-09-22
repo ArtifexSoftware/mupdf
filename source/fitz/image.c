@@ -1090,7 +1090,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 }
 
 fz_pixmap *
-fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh)
+fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh, int in_smask)
 {
 	fz_pixmap *pix1, *pix2;
 
@@ -1122,9 +1122,14 @@ fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *
 	}
 	else
 	{
+		fz_color_params cp = fz_default_color_params;
+
+		if (in_smask)
+			cp.ri |= FZ_RI_IN_SOFTMASK;
+
 		fz_warn(ctx, "strange colorspace for image mask (%s)", pix1->colorspace->name);
 		fz_try(ctx)
-			pix2 = fz_convert_pixmap(ctx, pix1, fz_device_gray(ctx), NULL, NULL, fz_default_color_params, 0);
+			pix2 = fz_convert_pixmap(ctx, pix1, fz_device_gray(ctx), NULL, NULL, cp, 0);
 		fz_always(ctx)
 			fz_drop_pixmap(ctx, pix1);
 		fz_catch(ctx)

@@ -70,7 +70,7 @@ fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_i
 	Like fz_get_pixmap_from_image but convert to an alpha only mask using
 	luminance if the image is grayscale or RGB.
 */
-fz_pixmap *fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh);
+fz_pixmap *fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh, int in_smask);
 
 /**
 	Calls fz_get_pixmap_from_image() with ctm, subarea, w and h all set to NULL.
