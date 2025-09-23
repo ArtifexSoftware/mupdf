@@ -258,7 +258,7 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 				pdf_reset_processor(ctx, top);
 				fz_clear_buffer(ctx, buffer);
 			}
-			pdf_process_raw_contents(ctx, top, doc, in_res, val, NULL);
+			pdf_process_raw_contents(ctx, top, doc, val, NULL);
 
 			pdf_close_processor(ctx, top);
 
