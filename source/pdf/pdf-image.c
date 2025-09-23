@@ -29,7 +29,7 @@ static fz_image *pdf_load_jpx_as_compressed_image(fz_context *ctx, pdf_document 
 static fz_image *pdf_load_jpx_as_compressed_image_mask(fz_context *ctx, pdf_document *doc, pdf_obj *dict);
 
 static fz_image *
-pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cstm, int forcemask)
+pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_obj *dict, fz_stream *cstm, int forcemask)
 {
 	fz_image *image = NULL;
 	pdf_obj *obj, *res;
@@ -99,7 +99,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			/* colorspace resource lookup is only done for inline images */
 			if (pdf_is_name(ctx, obj))
 			{
-				res = pdf_dict_get(ctx, pdf_dict_get(ctx, rdb, PDF_NAME(ColorSpace)), obj);
+				res = pdf_lookup_resource(ctx, rdb, PDF_NAME(ColorSpace), pdf_to_name(ctx, obj));
 				if (res)
 					obj = res;
 			}
@@ -216,7 +216,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 }
 
 fz_image *
-pdf_load_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *file)
+pdf_load_inline_image(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_obj *dict, fz_stream *file)
 {
 	return pdf_load_image_imp(ctx, doc, rdb, dict, file, 0);
 }

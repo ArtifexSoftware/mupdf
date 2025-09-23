@@ -259,7 +259,7 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 				// reset all chained processors (and clear the buffer)
 				pdf_reset_processor(ctx, top);
 			}
-			pdf_process_raw_contents(ctx, top, doc, in_res, val, NULL);
+			pdf_process_raw_contents(ctx, top, doc, val, NULL);
 
 			pdf_close_processor(ctx, top);
 
