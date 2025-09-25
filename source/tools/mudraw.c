@@ -2496,8 +2496,8 @@ int mudraw_main(int argc, char **argv)
 			}
 			else
 			{
-				if (output == NULL || *output == 0)
-					output = "-";
+				if (output == NULL || *output == 0 || (output[0] == '-' && output[1] == 0))
+					output = "/dev/stdout";
 
 				if (has_percent_d(output))
 					output_file_per_page = 1;
