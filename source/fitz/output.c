@@ -61,17 +61,26 @@ file_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
 		fz_throw(ctx, FZ_ERROR_SYSTEM, "cannot fwrite: %s", strerror(errno));
 }
 
+static int64_t stdout_offset = 0;
+
 static void
 stdout_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
 {
+	stdout_offset += count;
 	file_write(ctx, stdout, buffer, count);
+}
+
+static int64_t
+stdout_tell(fz_context *ctx, void *opaque)
+{
+	return stdout_offset;
 }
 
 static fz_output fz_stdout_global = {
 	NULL,
 	stdout_write,
 	NULL,
-	NULL,
+	stdout_tell,
 	NULL,
 };
 
