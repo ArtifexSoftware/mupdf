@@ -2413,7 +2413,7 @@ fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 	if (search->current_stext.block == NULL)
 	{
 		/* Search from the last char on the page. */
-		from = search->combined_length - 1;
+		from = search->combined_length;
 	}
 	else
 	{
