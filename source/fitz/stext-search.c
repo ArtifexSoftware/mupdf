@@ -2484,7 +2484,10 @@ fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 		 * the beginning and to step forwards. */
 		offset = begin - search->combined_haystack;
 		if (offset < search->combined_split)
+		{
+			assert(search->previous_page.page != NULL);
 			reset_positions(ctx, search, &search->previous_page);
+		}
 		else
 		{
 			reset_positions(ctx, search, &search->current_page);
