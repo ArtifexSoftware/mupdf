@@ -474,8 +474,7 @@ split_at_script(const uint32_t *fragment,
 		else
 		{
 			/* Change of script. Break the fragment. */
-			if (script == UCDN_SCRIPT_COMMON)
-				script = script_guess;
+			assert(script != UCDN_SCRIPT_COMMON);
 			(*callback)(&fragment[script_start], i - script_start, level, script, arg);
 			script_start = i;
 			script_guess = UCDN_SCRIPT_COMMON;
