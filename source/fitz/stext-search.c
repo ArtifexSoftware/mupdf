@@ -1515,6 +1515,8 @@ first_block(fz_stext_block *block, fz_stext_struct **str)
 			}
 			(*str) = block->u.s.down;
 			block = (*str)->first_block;
+			if (block == NULL)
+				break;
 		}
 		if (block)
 			return block;
