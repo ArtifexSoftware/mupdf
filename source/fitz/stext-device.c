@@ -504,10 +504,10 @@ static int may_add_space(int lastchar)
 	return (lastchar != ' ' && (lastchar < 0x700 || (lastchar >= 0x2000 && lastchar <= 0x20CF)));
 }
 
-#define FAKEBOLD_THRESHOLD_RECIP 10
+#define FAKEBOLD_THRESHOLD_RECIP (1.0f / FAKE_BOLD_MAX_DIST)
 
 static int
-close(float a, float b, float size)
+is_within_fake_bold_distance(float a, float b, float size)
 {
 	a -= b;
 	if (a < 0)
@@ -558,7 +558,7 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 				for (ch = line->first_char; ch != NULL; ch = ch->next)
 				{
 					/* Not perfect, but it'll do! */
-					if (ch->c == c && close(ch->origin.x, p.x, size) && close(ch->origin.y, p.y, size) && font_equiv(ctx, ch->font, font))
+					if (ch->c == c && is_within_fake_bold_distance(ch->origin.x, p.x, size) && is_within_fake_bold_distance(ch->origin.y, p.y, size) && font_equiv(ctx, ch->font, font))
 					{
 						/* If we were filled before, and we are stroking now... */
 						if ((ch->flags & (FZ_STEXT_FILLED | FZ_STEXT_STROKED)) == FZ_STEXT_FILLED &&
