@@ -188,6 +188,8 @@ typedef struct
 
 static const format_cs_table_t format_cs_table[] =
 {
+	{ OUT_NONE, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA, CS_ICC } },
+
 	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_ICC } },
 	{ OUT_J2K, CS_RGB, { CS_GRAY, CS_RGB } },
 	{ OUT_PPM, CS_RGB, { CS_GRAY, CS_RGB } },
@@ -945,10 +947,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		float zoom;
 		fz_matrix ctm;
 		fz_rect tbounds;
-		char buf[512];
-		fz_output *outs = NULL;
-
-		fz_var(outs);
 
 		zoom = resolution / 72;
 		ctm = fz_pre_rotate(fz_scale(zoom, zoom), rotation);
@@ -956,15 +954,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		fz_try(ctx)
 		{
-			if (!output)
-				outs = fz_stdout(ctx);
-			else
-			{
-				fz_format_output_path(ctx, buf, sizeof buf, output, pagenum);
-				outs = fz_new_output_with_path(ctx, buf, 0);
-			}
-
-			dev = fz_new_svg_device(ctx, outs, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, FZ_SVG_TEXT_AS_PATH, 1);
+			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, FZ_SVG_TEXT_AS_PATH, 1);
 			apply_kill_switch(dev);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -973,12 +963,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 				fz_run_page(ctx, page, dev, ctm, cookie);
 			fz_close_device(ctx, dev);
-			fz_close_output(ctx, outs);
 		}
 		fz_always(ctx)
 		{
 			fz_drop_device(ctx, dev);
-			fz_drop_output(ctx, outs);
 		}
 		fz_catch(ctx)
 		{
@@ -1128,7 +1116,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 
 			/* Output any page level headers (for banded formats) */
-			if (output)
+			if (output_format != OUT_NONE)
 			{
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
 					bander = fz_new_pnm_band_writer(ctx, out);
@@ -1189,7 +1177,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				else
 					drawband(ctx, page, list, ctm, tbounds, cookie, band * band_height, pix, &bit);
 
-				if (output)
+				if (output_format != OUT_NONE)
 				{
 					if (bander && (pix || bit))
 						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, drawheight, bit ? bit->samples : pix->samples);
@@ -1371,6 +1359,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_cookie cookie = { 0 };
 	fz_separations *seps = NULL;
 	const char *features = "";
+	char output_path[512];
 
 	fz_var(list);
 	fz_var(dev);
@@ -1380,16 +1369,16 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (output_file_per_page)
 	{
-		char text_buffer[512];
-
 		bgprint_flush();
-		if (out)
-		{
-			fz_close_output(ctx, out);
-			fz_drop_output(ctx, out);
-		}
-		fz_format_output_path(ctx, text_buffer, sizeof text_buffer, output, pagenum);
-		out = fz_new_output_with_path(ctx, text_buffer, 0);
+
+		fz_format_output_path(ctx, output_path, sizeof output_path, output, pagenum);
+
+#if FZ_ENABLE_PDF
+		if (output_format == OUT_PDF)
+			pdfout = pdf_create_document(ctx);
+		else
+#endif
+			out = fz_new_output_with_path(ctx, output_path, 0);
 	}
 
 	page = fz_load_page(ctx, doc, pagenum - 1);
@@ -1541,6 +1530,24 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_catch(ctx)
 		{
 			fz_rethrow(ctx);
+		}
+	}
+
+	if (output_file_per_page)
+	{
+#if FZ_ENABLE_PDF
+		if (output_format == OUT_PDF)
+		{
+			pdf_save_document(ctx, pdfout, output_path, NULL);
+			pdf_drop_document(ctx, pdfout);
+			pdfout = NULL;
+		}
+		else
+#endif
+		{
+			fz_close_output(ctx, out);
+			fz_drop_output(ctx, out);
+			out = NULL;
 		}
 	}
 }
@@ -2300,7 +2307,6 @@ int mudraw_main(int argc, char **argv)
 
 		/* Determine output type */
 
-		output_format = OUT_PNG;
 		if (format)
 		{
 			int i;
@@ -2345,7 +2351,16 @@ int mudraw_main(int argc, char **argv)
 					i = -1;
 				}
 			}
+
+			if (output_format == OUT_NONE)
+			{
+				fprintf(stderr, "Output format could not be determined.\n");
+				exit(1);
+			}
 		}
+
+		if (!output)
+			output = "/dev/stdout";
 
 		if (band_height)
 		{
@@ -2483,27 +2498,19 @@ int mudraw_main(int argc, char **argv)
 			}
 		}
 
-#if FZ_ENABLE_PDF
-		if (output_format == OUT_PDF)
+		if (has_percent_d(output))
 		{
-			pdfout = pdf_create_document(ctx);
+			output_file_per_page = 1;
 		}
 		else
-#endif
-			if (output_format == OUT_SVG)
-			{
-				/* SVG files are always opened for each page. Do not open "output". */
-			}
+		{
+#if FZ_ENABLE_PDF
+			if (output_format == OUT_PDF)
+				pdfout = pdf_create_document(ctx);
 			else
-			{
-				if (output == NULL || *output == 0 || (output[0] == '-' && output[1] == 0))
-					output = "/dev/stdout";
-
-				if (has_percent_d(output))
-					output_file_per_page = 1;
-				else
-					out = fz_new_output_with_path(ctx, output, 0);
-			}
+#endif
+				out = fz_new_output_with_path(ctx, output, 0);
+		}
 
 		filename = argv[fz_optind];
 
@@ -2688,22 +2695,23 @@ int mudraw_main(int argc, char **argv)
 		}
 
 		if (!output_file_per_page)
+		{
 			file_level_trailers(ctx);
 
 #if FZ_ENABLE_PDF
-		if (output_format == OUT_PDF)
-		{
-			if (!output)
-				output = "out.pdf";
-			pdf_save_document(ctx, pdfout, output, NULL);
-			pdf_drop_document(ctx, pdfout);
-		}
-		else
+			if (output_format == OUT_PDF)
+			{
+				pdf_save_document(ctx, pdfout, output, NULL);
+				pdf_drop_document(ctx, pdfout);
+				pdfout = NULL;
+			}
+			else
 #endif
-		{
-			fz_close_output(ctx, out);
-			fz_drop_output(ctx, out);
-			out = NULL;
+			{
+				fz_close_output(ctx, out);
+				fz_drop_output(ctx, out);
+				out = NULL;
+			}
 		}
 
 		if (showtime && timing.count > 0)
