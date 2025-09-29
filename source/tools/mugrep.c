@@ -59,6 +59,8 @@ next:
 				/* Step down */
 				(*str) = block->u.s.down;
 				block = (*str)->first_block;
+				if (block == NULL)
+					break;
 			}
 			if (block)
 				return block;
