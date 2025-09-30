@@ -70,22 +70,7 @@ def _csharp_unicode_prefix():
                          outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
                          directorinattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
                          directoroutattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]"
-                         ) string "string"
-
-
-                %typemap(imtype,
-                         inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
-                         outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
-                         directorinattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
-                         directoroutattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]"
-                         ) const string & "string"
-
-                %typemap(imtype,
-                         inattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
-                         outattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
-                         directorinattributes="[global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]",
-                         directoroutattributes="[return: global::System.Runtime.InteropServices.MarshalAs(global::System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)]"
-                         ) const char* "string"
+                         ) std::string, const std::string &, const char* string
             }
             ''')
     return text
@@ -1175,28 +1160,46 @@ def build_swig(
 
                     Iterators must have the following methods:
 
-                        __increment__(): move to next item in the container.
+                        __increment__():
+                            Move to next item in the container. Needs Swig
+                            `%rename(__increment__) *::operator++;`.
                         __ref__(): return reference to item in the container.
+                            Automatically generated from C++ operator*().
 
                     Must also be able to compare two iterators for equality.
 
+                    If a class supports C++ iteration with begin() and end()
+                    methods, then one can allow Python iteration by adding
+                    a .__iter__() method that returns a instance of this
+                    class. For example:
+
+                    # A container class that supports C++ iteration with
+                    # .begin() and .end() methods.
+                    class Foo:
+                        def begin(): ...
+                        def end(): ...
+                        ...
+
+                    # Make Foo support Python iteration.
+                    Foo.__iter__ = lambda self: IteratorWrap(self)
+
+                    # Usage.
+                    foo = Foo()
+                    for i in foo:
+                        ...
                     """
                     def __init__( self, container):
-                        self.container = container
-                        self.pos = None
+                        self.begin = container.begin()
                         self.end = container.end()
-                    def __iter__( self):
-                        return self
-                    def __next__( self):    # for python2.
+                        self.pos = None
+                    def __next__( self):
                         if self.pos is None:
-                            self.pos = self.container.begin()
+                            self.pos = self.begin
                         else:
                             self.pos.__increment__()
                         if self.pos == self.end:
                             raise StopIteration()
                         return self.pos.__ref__()
-                    def next( self):    # for python3.
-                        return self.__next__()
 
                 # The auto-generated Python class method
                 # {rename.class_('fz_buffer')}.{rename.method('fz_buffer', 'fz_buffer_extract')}() returns (size, data).
