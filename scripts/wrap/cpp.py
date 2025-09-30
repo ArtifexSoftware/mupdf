@@ -1137,7 +1137,7 @@ g_extra_definitions = textwrap.dedent(f'''
             assert(e != 0);
             char* buf = (char*) fz_malloc(ctx, e);
             int e2 = fz_lookup_metadata(ctx, doc, key, buf, e);
-            assert(e2 = e);
+            assert(e2 == e);
             std::string ret = buf;
             free(buf);
             return ret;
@@ -1154,7 +1154,7 @@ g_extra_definitions = textwrap.dedent(f'''
             assert(e != 0);
             char* buf = (char*) fz_malloc(ctx, e);
             int e2 = pdf_lookup_metadata(ctx, doc, key, buf, e);
-            assert(e2 = e);
+            assert(e2 == e);
             std::string ret = buf;
             free(buf);
             return ret;
