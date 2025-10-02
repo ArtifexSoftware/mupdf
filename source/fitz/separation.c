@@ -485,14 +485,15 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 						if (dname && !strcmp(name, dname))
 							goto map_device_n_spot;
 					}
-					for (j = 0; j < dseps_n; j++)
+					for (k = 0; k < dseps_n; k++)
 					{
-						const char *dname = dseps->name[j];
+						const char *dname = dseps->name[k];
+						int state = sep_state(dseps, k);
+						if (state != FZ_SEPARATION_SPOT)
+							continue;
 						if (dname && !strcmp(name, dname))
-						{
-							j += dc;
 							goto map_device_n_spot;
-						}
+						j++;
 					}
 				}
 				if (0)
