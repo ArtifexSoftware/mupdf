@@ -2478,23 +2478,37 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 			gt->prev->next = newblock;
 		gt->prev = newblock;
 		newblock->next = gt;
+		newblock->id = gt->id;
 	}
 	else if (block)
 	{
 		/* Link it in at the end of the list (i.e. after 'block') */
 		newblock->prev = block;
 		block->next = newblock;
+		if (page->last_struct)
+		{
+			assert(page->last_struct->last_block == block);
+			page->last_struct->last_block = newblock;
+		}
+		else
+		{
+			assert(page->last_block == block);
+			page->last_block = newblock;
+		}
+		newblock->id = block->id;
 	}
 	else if (page->last_struct)
 	{
 		/* We have no blocks at all at this level. */
 		page->last_struct->first_block = newblock;
 		page->last_struct->last_block = newblock;
+		newblock->id = page->last_struct->up->id;
 	}
 	else
 	{
 		/* We have no blocks at ANY level. */
 		page->first_block = newblock;
+		/* newblock will have an id of 0. Best we can do. */
 	}
 	/* Wherever we linked it in, that's where we want to continue adding content. */
 	page->last_struct = newblock->u.s.down;

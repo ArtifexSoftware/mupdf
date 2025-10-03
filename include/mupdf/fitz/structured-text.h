@@ -801,4 +801,79 @@ fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, c
 */
 fz_stext_block *fz_new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_structure standard, const char *raw, int index);
 
+/* Iterators for walking over stext pages */
+
+/*
+	Iterator definition. The parts of this are subject to change.
+*/
+typedef struct
+{
+	fz_stext_page *page;
+	fz_stext_block *pos;
+	fz_stext_struct *parent;
+} fz_stext_block_iterator;
+
+/*
+	Create a new iterator, initialised to point at the first block on the page.
+*/
+fz_stext_block_iterator fz_stext_block_iterator_begin(fz_stext_page *page);
+
+/*
+	Move to the next block (never moving upwards).
+
+	If there is no next block, iterator.pos is returned as NULL.
+*/
+fz_stext_block_iterator fz_stext_block_iterator_next(fz_stext_block_iterator pos);
+
+/*
+	On a structure block, this moves the iterator down to the first child of
+	that block.
+
+	On any other block, this does nothing.
+*/
+fz_stext_block_iterator fz_stext_block_iterator_down(fz_stext_block_iterator pos);
+
+/*
+	Move up to the parent of the current block.
+
+	If there is no parent, iterator.pos is return as NULL.
+*/
+fz_stext_block_iterator fz_stext_block_iterator_up(fz_stext_block_iterator pos);
+
+/*
+	Move to the next block (in a depth first traversal style).
+
+	The iterator never stops on struct blocks, and instead steps into them.
+	At the end of a set of child blocks, it will move back to the parent and
+	continue from there.
+*/
+fz_stext_block_iterator fz_stext_block_iterator_next_dfs(fz_stext_block_iterator pos);
+
+/*
+	Return true if the iterator is at the end of a list of blocks.
+	(No attempt is made to account for whether there is more data after a
+	parent block).
+*/
+int fz_stext_block_iterator_eod(fz_stext_block_iterator pos);
+
+/*
+	Return true if the iterator is at the end of a depth first traversal
+	of the stext page.
+*/
+int fz_stext_block_iterator_eod_dfs(fz_stext_block_iterator pos);
+
+/*
+	Update a given stext page so that the contents within it that fall
+	within the given rectangle are contained within a structure tag of the
+	given classification.
+
+	The code tries not to change the ordering of content as seen from
+	a depth first traversal as it does this.
+
+	This is an experimental interface. It may be updated or removed in
+	future with no warning!
+*/
+void
+fz_classify_stext_rect(fz_context *ctx, fz_stext_page *page, fz_structure classification, fz_rect rect);
+
 #endif
