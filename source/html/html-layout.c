@@ -375,7 +375,7 @@ static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline
 			if (node->h > max_a)
 				max_a = node->h;
 		}
-		else if (node->type != FLOW_SBREAK && node->type != FLOW_BREAK)
+		else if (node->type != FLOW_SBREAK && node->type != FLOW_BREAK && node->type != FLOW_ANCHOR)
 		{
 			// Clamp ascender/descender to line-height size.
 			// TODO: This is not entirely to spec, but close enough.
@@ -919,6 +919,10 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 			node->w = node->w * s;
 			node->h = node->h * s;
 
+		}
+		else if (node->type == FLOW_ANCHOR)
+		{
+			node->h = 0;
 		}
 		else
 		{
