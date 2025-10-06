@@ -20,8 +20,8 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef TESSOCR_H
-#define TESSOCR_H
+#ifndef ZXINGBARCODE_H
+#define ZXINGBARCODE_H
 
 #include "mupdf/fitz.h"
 
