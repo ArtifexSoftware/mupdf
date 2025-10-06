@@ -39,9 +39,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\source\fitz\barcode.cpp" />
+    <ClCompile Include="..\..\source\fitz\zxingbarcode.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\fitz\zxingbarcode.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

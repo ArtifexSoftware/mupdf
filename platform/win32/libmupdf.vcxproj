@@ -727,6 +727,7 @@
     <ClCompile Include="..\..\source\cbz\mucbz.c" />
     <ClCompile Include="..\..\source\cbz\muimg.c" />
     <ClCompile Include="..\..\source\fitz\archive.c" />
+    <ClCompile Include="..\..\source\fitz\barcode.c" />
     <ClCompile Include="..\..\source\fitz\bbox-device.c" />
     <ClCompile Include="..\..\source\fitz\bidi-std.c" />
     <ClCompile Include="..\..\source\fitz\bidi.c" />
