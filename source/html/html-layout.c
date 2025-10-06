@@ -801,15 +801,18 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 	fz_html_flow *node, *line, *candidate, *desperate;
 	fz_html_flow *start_flow = NULL;
 	float line_w, candidate_w, desperate_w, indent, bounds_w;
+	int justify_align;
 	int align;
 	fz_html_restarter *restart = ld->restart;
 
 	float em = box->s.layout.em;
 	indent = box->is_first_flow ? fz_from_css_number(top->style->text_indent, em, ld->bounds[R] - ld->bounds[L], 0) : 0;
 	align = top->style->text_align;
+	justify_align = TA_LEFT;
 
 	if (box->markup_dir == FZ_BIDI_RTL)
 	{
+		justify_align = TA_RIGHT;
 		if (align == TA_LEFT)
 			align = TA_RIGHT;
 		else if (align == TA_RIGHT)
@@ -1011,7 +1014,7 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 			if (candidate)
 			{
 				if (candidate->type == FLOW_BREAK)
-					line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
+					line_align = (align == TA_JUSTIFY) ? justify_align : align;
 				candidate->breaks_line = 1;
 				break_at = candidate->next;
 				break_w = candidate_w;
@@ -1053,7 +1056,7 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 
 	if (line)
 	{
-		int line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
+		int line_align = (align == TA_JUSTIFY) ? justify_align : align;
 		flush_line(ctx, box, ld, line_w, line_align, indent, line, NULL, restart);
 	}
 

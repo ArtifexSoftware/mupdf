@@ -1814,6 +1814,7 @@ void
 fz_default_css_style(fz_context *ctx, fz_css_style *style)
 {
 	memset(style, 0, sizeof *style);
+	style->direction = FZ_BIDI_LTR;
 	style->visibility = V_VISIBLE;
 	style->text_align = TA_LEFT;
 	style->vertical_align = VA_BASELINE;
@@ -1941,6 +1942,12 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 
 	style->width = number_from_property(match, PRO_WIDTH, 0, N_AUTO);
 	style->height = number_from_property(match, PRO_HEIGHT, 0, N_AUTO);
+
+	value = value_from_property(match, PRO_DIRECTION);
+	if (value)
+	{
+		if (!strcmp(value->data, "rtl")) style->direction = FZ_BIDI_RTL;
+	}
 
 	value = value_from_property(match, PRO_HYPHENS);
 	if (value)

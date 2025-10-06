@@ -30,8 +30,6 @@
 
 enum { T, R, B, L };
 
-#define DEFAULT_DIR FZ_BIDI_LTR
-
 static const char *html_default_css =
 "@page{margin:3em 2em}"
 "a:link{color:blue;text-decoration:underline}"
@@ -1353,6 +1351,7 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 	tag = fz_xml_tag(node);
 
 	dir_att = fz_xml_att(node, "dir");
+	g->markup_dir = style->direction;
 	if (dir_att)
 	{
 		if (!strcmp(dir_att, "auto"))
@@ -1361,8 +1360,6 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 			g->markup_dir = FZ_BIDI_RTL;
 		else if (!strcmp(dir_att, "ltr"))
 			g->markup_dir = FZ_BIDI_LTR;
-		else
-			g->markup_dir = DEFAULT_DIR;
 	}
 
 	lang_att = fz_xml_att(node, "lang");
@@ -2028,7 +2025,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		fz_apply_css_style(ctx, g.set, &style, &root_match);
 
 		g.pool = tree->pool;
-		g.markup_dir = DEFAULT_DIR;
+		g.markup_dir = style.direction;
 		g.markup_lang = FZ_LANG_UNSET;
 
 		// Create root node
@@ -2482,6 +2479,8 @@ fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 		// printf(" em=%g", box->em);
 		// printf(" x=%g y=%g w=%g b=%g", box->x, box->y, box->w, box->b);
 
+		if (box->markup_dir == FZ_BIDI_RTL)
+			printf(" rtl");
 		if (box->is_first_flow)
 			printf(" is-first-flow");
 		if (box->list_item)
