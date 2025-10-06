@@ -612,6 +612,9 @@ match_an_plus_b_microsyntax(fz_xml *node, const char *val, int (*callback)(fz_xm
 static int
 match_pseudo_condition(fz_xml *node, const char *key, const char *val)
 {
+	if (!strcmp(key, "link"))
+		return fz_xml_att(node, "href") != NULL;
+
 	if (!strcmp(key, "empty"))
 		return fz_xml_down(node) == NULL;
 	if (!strcmp(key, "root"))

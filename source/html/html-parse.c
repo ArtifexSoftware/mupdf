@@ -34,7 +34,7 @@ enum { T, R, B, L };
 
 static const char *html_default_css =
 "@page{margin:3em 2em}"
-"a{color:#06C;text-decoration:underline}"
+"a:link{color:blue;text-decoration:underline}"
 "address{display:block;font-style:italic}"
 "b{font-weight:bold}"
 "bdo{direction:rtl;unicode-bidi:bidi-override}"
@@ -113,7 +113,7 @@ static const char *fb2_default_css =
 "table{display:table}"
 "tr{display:table-row}"
 "th,td{display:table-cell}"
-"a{color:#06C;text-decoration:underline}"
+"a{color:blue;text-decoration:underline}"
 "a[type=note]{font-size:small;vertical-align:super}"
 "code{white-space:pre;font-family:monospace}"
 "emphasis{font-style:italic}"
