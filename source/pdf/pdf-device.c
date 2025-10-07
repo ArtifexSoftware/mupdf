@@ -1185,6 +1185,8 @@ pdf_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, 
 {
 	pdf_device *pdev = (pdf_device*)dev;
 
+	fz_warn(ctx, "tiled patterns are not supported in the pdf-write device");
+
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
 	return 0;
