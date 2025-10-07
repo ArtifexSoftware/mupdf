@@ -1003,4 +1003,11 @@ int fz_match_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle
 */
 int fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options);
 
+/*
+	Allocator function to make a new STRUCT stext block to be used in
+	a given page (and it's 'down' structure, initially empty). Not
+	linked in to the overall page structure yet.
+*/
+fz_stext_block *fz_new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_structure standard, const char *raw, int index);
+
 #endif
