@@ -38,20 +38,6 @@ struct boxer_s {
 	rectlist_t *list;
 };
 
-static int fz_rect_contains_rect(fz_rect a, fz_rect b)
-{
-	if (a.x0 > b.x0)
-		return 0;
-	if (a.y0 > b.y0)
-		return 0;
-	if (a.x1 < b.x1)
-		return 0;
-	if (a.y1 < b.y1)
-		return 0;
-
-	return 1;
-}
-
 static rectlist_t *
 rectlist_create(fz_context *ctx, int max)
 {
@@ -87,9 +73,9 @@ rectlist_append(rectlist_t *list, fz_rect *box)
 		smaller.y1 = r->y1 - r_fudge;
 		larger. y1 = r->y1 + r_fudge;
 
-		if (fz_rect_contains_rect(larger, *box))
+		if (fz_contains_rect(larger, *box))
 			return; /* box is enclosed! Nothing to do. */
-		if (fz_rect_contains_rect(*box, smaller))
+		if (fz_contains_rect(*box, smaller))
 		{
 			/* box encloses r. Ditch r. */
 			/* Shorten the list */
