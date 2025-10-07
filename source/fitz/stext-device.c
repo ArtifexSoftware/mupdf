@@ -2351,7 +2351,7 @@ new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, fz
 		raw = "";
 	z = strlen(raw);
 
-	str = fz_pool_alloc(ctx, page->pool, sizeof(*str) + z);
+	str = fz_pool_alloc(ctx, page->pool, offsetof(fz_stext_struct, raw) + z + 1);
 	str->first_block = NULL;
 	str->last_block = NULL;
 	str->standard = standard;
@@ -2361,6 +2361,25 @@ new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, fz
 
 	block->u.s.down = str;
 }
+
+fz_stext_block *
+fz_new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_structure standard, const char *raw, int idx)
+{
+	fz_stext_block *block;
+
+	block = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
+	block->bbox = fz_empty_rect;
+	block->prev = NULL;
+	block->next = NULL;
+	block->type = FZ_STEXT_BLOCK_STRUCT;
+	block->u.s.index = idx;
+	block->u.s.down = NULL;
+	/* If this throws, we leak newblock but it's within the pool, so it doesn't matter. */
+	new_stext_struct(ctx, page, block, standard, raw);
+
+	return block;
+}
+
 
 static void
 fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard, const char *raw, int idx)
@@ -2448,15 +2467,7 @@ fz_stext_begin_structure(fz_context *ctx, fz_device *dev, fz_structure standard,
 	}
 
 	/* We are going to need to create a new block. Create a complete unlinked one here. */
-	newblock = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
-	newblock->bbox = fz_empty_rect;
-	newblock->prev = NULL;
-	newblock->next = NULL;
-	newblock->type = FZ_STEXT_BLOCK_STRUCT;
-	newblock->u.s.index = idx;
-	newblock->u.s.down = NULL;
-	/* If this throws, we leak newblock but it's within the pool, so it doesn't matter. */
-	new_stext_struct(ctx, page, newblock, standard, raw);
+	newblock = fz_new_stext_struct(ctx, page, standard, raw, idx);
 
 	/* So now we just need to link it in somewhere. */
 	if (gt)

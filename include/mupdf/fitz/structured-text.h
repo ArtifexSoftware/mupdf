@@ -794,5 +794,11 @@ fz_device *fz_new_ocr_device(fz_context *ctx, fz_device *target, fz_matrix ctm, 
 
 fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, const fz_stext_options *opts);
 
+/*
+	Allocator function to make a new STRUCT stext block to be used in
+	a given page (and it's 'down' structure, initially empty). Not
+	linked in to the overall page structure yet.
+*/
+fz_stext_block *fz_new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_structure standard, const char *raw, int index);
 
 #endif

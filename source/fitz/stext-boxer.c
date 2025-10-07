@@ -464,27 +464,6 @@ boxer_subdivide(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_blo
 	return 0;
 }
 
-static void
-new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, fz_structure standard, const char *raw)
-{
-	fz_stext_struct *str;
-	size_t z;
-
-	if (raw == NULL)
-		raw = "";
-	z = strlen(raw);
-
-	str = fz_pool_alloc(ctx, page->pool, offsetof(fz_stext_struct, raw) + z + 1);
-	str->first_block = NULL;
-	str->last_block = NULL;
-	str->standard = standard;
-	str->parent = page->last_struct;
-	str->up = block;
-	memcpy(str->raw, raw, z+1);
-
-	block->u.s.down = str;
-}
-
 #ifdef DEBUG_STRUCT
 static void
 do_dump_stext(fz_stext_block *block, int depth)
@@ -665,17 +644,10 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 	/* So we want to insert just before block. */
 
 	/* We are going to need to create a new block. Create a complete unlinked one here. */
-	newblock = fz_pool_alloc(ctx, page->pool, sizeof *newblock);
-	newblock->bbox = fz_empty_rect;
+	newblock = fz_new_stext_struct(ctx, page, FZ_STRUCTURE_DIV, "Split", idx);
 	newblock->prev = block ? block->prev : *last_block;
 	newblock->next = block;
-	newblock->type = FZ_STEXT_BLOCK_STRUCT;
 	newblock->id = target->id;
-	newblock->u.s.index = idx;
-	newblock->u.s.down = NULL;
-	/* If this throws, we leak newblock but it's within the pool, so it doesn't matter. */
-	/* And create a new struct and have newblock point to it. */
-	new_stext_struct(ctx, page, newblock, FZ_STRUCTURE_DIV, "Split");
 
 	/* Now insert newblock just before block */
 	/* If block was first, now we are. */
