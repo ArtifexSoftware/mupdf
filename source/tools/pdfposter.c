@@ -129,19 +129,33 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 		w = mediabox.x1 - mediabox.x0;
 		h = mediabox.y1 - mediabox.y0;
 
-		if (rotate == 90 || rotate == 270)
+		switch (rotate)
 		{
-			xf = y_factor;
-			yf = x_factor;
-			yd = -x_dir;
-			xd = 1;
-		}
-		else
-		{
+		default:
+		case 0:
 			xf = x_factor;
 			yf = y_factor;
 			xd = x_dir;
-			yd = -1;
+			yd = -x_dir;
+			break;
+		case 90:
+			xf = y_factor;
+			yf = x_factor;
+			yd = x_dir;
+			xd = x_dir;
+			break;
+		case 180:
+			xf = x_factor;
+			yf = y_factor;
+			xd = -x_dir;
+			yd = x_dir;
+			break;
+		case 270:
+			xf = y_factor;
+			yf = x_factor;
+			yd = -x_dir;
+			xd = -x_dir;
+			break;
 		}
 
 		if (xf == 0 && yf == 0)
