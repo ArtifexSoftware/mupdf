@@ -74,42 +74,16 @@ enum
 	SCREEN_FURNITURE_H = 40,
 };
 
-static void open_browser(const char *uri)
+static void open_browser_exec(const char *uri)
 {
-#ifndef _WIN32
-	char *argv[3];
-#endif
-	char buf[PATH_MAX];
-
-#ifndef _WIN32
-	pid_t pid;
-	int err;
-#endif
-
-	/* Relative file: URI, make it absolute! */
-	if (!strncmp(uri, "file:", 5) && uri[5] != '/')
-	{
-		char buf_base[PATH_MAX];
-		char buf_cwd[PATH_MAX];
-		fz_dirname(buf_base, filename, sizeof buf_base);
-		if (getcwd(buf_cwd, sizeof buf_cwd))
-		{
-			fz_snprintf(buf, sizeof buf, "file://%s/%s/%s", buf_cwd, buf_base, uri+5);
-			fz_cleanname(buf+7);
-			uri = buf;
-		}
-	}
-
-	if (strncmp(uri, "file://", 7) && strncmp(uri, "http://", 7) && strncmp(uri, "https://", 8) && strncmp(uri, "mailto:", 7))
-	{
-		fz_warn(ctx, "refusing to open unknown link (%s)", uri);
-		return;
-	}
-
 #ifdef _WIN32
 	ShellExecuteA(NULL, "open", uri, 0, 0, SW_SHOWNORMAL);
 #else
+	char *argv[3];
+	pid_t pid;
+	int err;
 	const char *browser = getenv("BROWSER");
+
 	if (!browser)
 	{
 #ifdef __APPLE__
@@ -127,6 +101,61 @@ static void open_browser(const char *uri)
 		fz_warn(ctx, "cannot spawn browser '%s': %s", browser, strerror(err));
 
 #endif
+}
+
+static char link_uri[PATH_MAX];
+
+static void open_browser_dialog(void)
+{
+	ui_dialog_begin(ui.gridsize*20, ui.gridsize*4);
+	ui_layout(T, NONE, NW, ui.padsize, ui.padsize);
+	ui_label("Do you want to open this external link?");
+	ui_spacer();
+	ui_label("%s", link_uri);
+	ui_spacer();
+	ui_layout(B, X, S, ui.padsize, ui.padsize);
+	ui_panel_begin(0, ui.gridsize, 0, 0, 0);
+	{
+		ui_layout(R, NONE, S, 0, 0);
+		if (ui_button("Open") || ui.key == KEY_ENTER)
+		{
+			ui.dialog = NULL;
+			open_browser_exec(link_uri);
+		}
+		ui_spacer();
+		if (ui_button("Cancel") || ui.key == KEY_ESCAPE)
+		{
+			ui.dialog = NULL;
+		}
+	}
+	ui_panel_end();
+	ui_dialog_end();
+}
+
+static void open_browser(const char *uri)
+{
+	fz_strlcpy(link_uri, uri, sizeof link_uri);
+
+	/* Relative file: URI, make it absolute! */
+	if (!strncmp(uri, "file:", 5) && uri[5] != '/')
+	{
+		char buf_base[PATH_MAX];
+		char buf_cwd[PATH_MAX];
+		fz_dirname(buf_base, filename, sizeof buf_base);
+		if (getcwd(buf_cwd, sizeof buf_cwd))
+		{
+			fz_snprintf(link_uri, sizeof link_uri, "file://%s/%s/%s", buf_cwd, buf_base, uri+5);
+			fz_cleanname(link_uri+7);
+		}
+	}
+
+	if (strncmp(uri, "file://", 7) && strncmp(uri, "http://", 7) && strncmp(uri, "https://", 8) && strncmp(uri, "mailto:", 7))
+	{
+		fz_warn(ctx, "refusing to open unknown link (%s)", uri);
+		return;
+	}
+
+	ui.dialog = open_browser_dialog;
 }
 
 static const int zoom_list[] = {
