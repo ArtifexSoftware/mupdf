@@ -212,7 +212,7 @@ static float layout_w = FZ_DEFAULT_LAYOUT_W;
 static float layout_h = FZ_DEFAULT_LAYOUT_H;
 static float layout_em = FZ_DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
-static int layout_use_doc_css = 1;
+static int layout_use_css = 1;
 static int enable_js = 1;
 static int tint_white = 0xFFFFF0;
 static int tint_black = 0x303030;
@@ -642,6 +642,7 @@ static char *help_dialog_text =
 	"C - toggle tinted color mode\n"
 	"E - toggle ICC color management\n"
 	"e - toggle spot color emulation\n"
+	"c - toggle document/user css\n"
 	"\n"
 	"f - fullscreen window\n"
 	"w - shrink wrap window\n"
@@ -1264,6 +1265,11 @@ static void relayout(void)
 	if (fz_is_document_reflowable(ctx, doc))
 	{
 		fz_bookmark mark = fz_make_bookmark(ctx, doc, currentpage);
+		fz_set_use_document_css(ctx, layout_use_css & 1);
+		if (layout_use_css & 2)
+			fz_load_user_css(ctx, layout_css);
+		else
+			fz_set_user_css(ctx, NULL);
 		fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 		currentpage = fz_lookup_bookmark(ctx, doc, mark);
 		history_count = 0;
@@ -2004,6 +2010,11 @@ void reload_document(void)
 {
 	save_history();
 	save_accelerator();
+	fz_set_use_document_css(ctx, layout_use_css & 1);
+	if (layout_use_css & 2)
+		fz_load_user_css(ctx, layout_css);
+	else
+		fz_set_user_css(ctx, NULL);
 	load_document();
 	if (doc)
 	{
@@ -2390,6 +2401,7 @@ static void do_app(void)
 
 		case '>': layout_em = number > 0 ? number : layout_em + 1; relayout(); break;
 		case '<': layout_em = number > 0 ? number : layout_em - 1; relayout(); break;
+		case 'c': layout_use_css = (layout_use_css + 1) % 4; reload_document(); break;
 
 		case 'C': currenttint = !currenttint; break;
 		case 'I': currentinvert = !currentinvert; break;
@@ -2769,7 +2781,19 @@ static fz_buffer *format_info_text()
 	fz_append_printf(ctx, out, "Spot rendering: %s.\n", currentseparations ? "on" : "off");
 
 	if (fz_is_document_reflowable(ctx, doc))
+	{
 		fz_append_printf(ctx, out, "Em size: %g\n", layout_em);
+		buf[0] = 0;
+		if (fz_use_document_css(ctx))
+			fz_strlcat(buf, "doc, ", sizeof buf);
+		if (fz_user_css(ctx))
+			fz_strlcat(buf, "user, ", sizeof buf);
+		if (strlen(buf) > 2)
+			buf[strlen(buf)-2] = 0;
+		else
+			fz_strlcat(buf, "none", sizeof buf);
+		fz_append_printf(ctx, out, "CSS: %s\n", buf);
+	}
 
 	return out;
 }
@@ -3205,8 +3229,8 @@ int main(int argc, char **argv)
 		case 'W': layout_w = fz_atof(fz_optarg); break;
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
-		case 'U': layout_css = fz_optarg; break;
-		case 'X': layout_use_doc_css = 0; break;
+		case 'U': layout_css = fz_optarg; layout_use_css |= 2; break;
+		case 'X': layout_use_css ^= 1; break;
 		case 'J': enable_js = !enable_js; break;
 		case 'A': currentaa = fz_atoi(fz_optarg); break;
 		case 'C': currenttint = 1; tint_white = strtol(fz_optarg, NULL, 16); break;
@@ -3262,7 +3286,7 @@ int main(int argc, char **argv)
 
 	if (layout_css)
 		fz_load_user_css(ctx, layout_css);
-	fz_set_use_document_css(ctx, layout_use_doc_css);
+	fz_set_use_document_css(ctx, layout_use_css & 1);
 
 	if (fz_optind < argc)
 	{
