@@ -436,10 +436,28 @@ colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
 	return 0;
 }
 
+static int
+cs_has_matching_colorant(fz_context *ctx, fz_colorspace *src, const char *name)
+{
+	int sn = fz_colorspace_n(ctx, src);
+	int i;
+	for (i = 0; i < sn; i++)
+	{
+		const char *sname = fz_colorspace_colorant(ctx, src, i);
+		if (!sname)
+			continue;
+		if (name && !strcmp(name, sname))
+			return 1;
+		if (!strcmp(sname, "All"))
+			return 1;
+	}
+	return 0;
+}
+
 static fz_overprint *
 set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_colorspace *src, int opm)
 {
-	int dn, sn, i, j, dc;
+	int dn, sn, i, j, dc, nseps, k;
 
 	if (!op)
 		return NULL;
@@ -447,6 +465,7 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_
 	if (fz_colorspace_is_indexed(ctx, src))
 		src = fz_base_colorspace(ctx, src);
 
+	/* We can only do overprint with subtractive colorspaces. */
 	if (!fz_colorspace_is_subtractive(ctx, dest->colorspace))
 		return NULL;
 	if (fz_colorspace_is_gray(ctx, src))
@@ -465,11 +484,19 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_
 	sn = fz_colorspace_n(ctx, src);
 	dn = dest->n - dest->alpha;
 	dc = dn - dest->s;
+	nseps = fz_count_separations(ctx, dest->seps);
 
-	/* If a source colorant is not mentioned in the destination
-	 * colorants (either process or spots), then it will be mapped
-	 * to process colorants. In this case, the process colorants
-	 * can never be protected.
+	/* The purpose of this routine is to figure out which colorants in the
+	 * destination space should be "protected", by overprint.
+	 *
+	 * Loop 1 figures out whether process colors can be protected or not.
+	 * If they can, then Loop 2 figures out protection for those colors.
+	 * Then Loop 3 figures out protection for the spot colors. */
+
+	/* Loop 1: Are there any source colorants that are not mentioned in
+	 * the destination colorants (either process or spots)? If so, then
+	 * it will be mapped to process colorants, and overprint can't apply
+	 * to the process colorants.
 	 */
 	for (j = 0; j < sn; j++)
 	{
@@ -480,6 +507,8 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_
 			break;
 		if (!strcmp(sname, "All") || !strcmp(sname, "None"))
 			continue;
+
+		/* Does name appear in the process colors? */
 		for (i = 0; i < dc; i++)
 		{
 			const char *name = fz_colorspace_colorant(ctx, dest->colorspace, i);
@@ -489,59 +518,56 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, fz_
 				break;
 		}
 		if (i != dc)
-			continue;
-		for (; i < dn; i++)
+			continue; /* Yes! Keep looking for one that doesn't. */
+
+		/* Does name appear in the (active) spots? */
+		for (k = 0; k < nseps; k++)
 		{
-			const char *name = fz_separation_name(ctx, dest->seps, i - dc);
-			if (!name)
+			const char *name = fz_separation_name(ctx, dest->seps, k);
+			if (!name || fz_separation_current_behavior(ctx, dest->seps, k) != FZ_SEPARATION_SPOT)
 				continue;
 			if (!strcmp(name, sname))
 				break;
 		}
-		if (i == dn)
+		if (k == nseps)
 		{
-			/* This source colorant wasn't mentioned */
+			/* No! This source colorant wasn't mentioned. Stop searching. */
 			break;
 		}
 	}
+	/* If j == sn, then we did not find any source colorants that would be mapped
+	 * to process colors. So we can figure out protection for those colors. */
 	if (j == sn)
 	{
-		/* We did not find any source colorants that weren't mentioned, so
-		 * process colorants might not be touched... */
+		/* Loop 2: Figure out protection for process colors. */
 		for (i = 0; i < dc; i++)
 		{
 			const char *name = fz_colorspace_colorant(ctx, dest->colorspace, i);
 
-			for (j = 0; j < sn; j++)
+			if (!cs_has_matching_colorant(ctx, src, name))
 			{
-				const char *sname = fz_colorspace_colorant(ctx, src, j);
-				if (!name || !sname)
-					continue;
-				if (!strcmp(name, sname))
-					break;
-				if (!strcmp(sname, "All"))
-					break;
-			}
-			if (j == sn)
+				/* Destination colorant i (a process color) does not correspond to
+				 * any source colorant. Therefore set overprint for it. */
 				fz_set_overprint(op, i);
+			}
 		}
 	}
-	for (i = dc; i < dn; i++)
+	/* Loop 3: Now figure out protection for spot colors in the destination. */
+	i = dc;
+	for (k = 0; k < nseps; k++)
 	{
-		const char *name = fz_separation_name(ctx, dest->seps, i - dc);
+		const char *name = fz_separation_name(ctx, dest->seps, k);
 
-		for (j = 0; j < sn; j++)
+		/* Ignore any spots that are not being handled as spots! */
+		if (fz_separation_current_behavior(ctx, dest->seps, k) != FZ_SEPARATION_SPOT)
+			continue;
+		if (!cs_has_matching_colorant(ctx, src, name))
 		{
-			const char *sname = fz_colorspace_colorant(ctx, src, j);
-			if (!name || !sname)
-				continue;
-			if (!strcmp(name, sname))
-				break;
-			if (!strcmp(sname, "All"))
-				break;
-		}
-		if (j == sn)
+			/* Destination spot i does not correspond to any source colorant.
+			 * Therefore set overprint for it. */
 			fz_set_overprint(op, i);
+		}
+		i++;
 	}
 
 	return op;
