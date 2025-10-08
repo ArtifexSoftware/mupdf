@@ -124,6 +124,20 @@ FUN(PDFDocument_finalize)(JNIEnv *env, jobject self)
 	FUN(Document_finalize)(env, self); /* Call super.finalize() */
 }
 
+JNIEXPORT void JNICALL
+FUN(PDFDocument_check)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+
+	if (!ctx || !pdf) return;
+
+	fz_try(ctx)
+		pdf_check_document(ctx, pdf);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
 JNIEXPORT jint JNICALL
 FUN(PDFDocument_countObjects)(JNIEnv *env, jobject self)
 {

@@ -190,6 +190,19 @@ void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 pdf_document *pdf_keep_document(fz_context *ctx, pdf_document *doc);
 
 /*
+	Do a pass through the document to check if it needs
+	any repairs; and trigger a repair if necessary.
+
+	This is a very expensive operation both in terms of memory use
+	and computation, because it needs to parse the entire file to
+	detect any errors.
+
+	The result of the check is saved, so calling this function again
+	after the initial check is a no-op.
+*/
+void pdf_check_document(fz_context *ctx, pdf_document *doc);
+
+/*
 	down-cast a fz_document to a pdf_document.
 	Returns NULL if underlying document is not PDF
 */
@@ -447,6 +460,7 @@ struct pdf_document
 	fz_stream *file;
 
 	int version;
+	int checked; /* we've checked that we don't need to repair */
 	int is_fdf;
 	int bias;
 	int64_t startxref;

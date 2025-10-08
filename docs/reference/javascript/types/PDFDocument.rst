@@ -1071,6 +1071,18 @@ Page Labels
 Saving
 ------------
 
+.. method:: PDFDocument.prototype.check()
+
+	Check the file for syntax errors, and run a repair pass if any are
+	found. This is a costly operation, but may be necessary to prevent any
+	changes to a document from being potentially lost.
+
+	If a syntax error is discovered after a file has been edited, those
+	edits may be lost during the file repair pass.
+	In practice this rarely happens because syntax errors that trigger a
+	repair usually happen either when first opening the document or when
+	loading a page; but you can never be certain!
+
 .. method:: PDFDocument.prototype.canBeSavedIncrementally()
 
 	Returns whether the document can be saved incrementally, e.g.

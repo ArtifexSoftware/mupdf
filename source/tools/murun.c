@@ -7254,6 +7254,17 @@ static void ffi_new_PDFDocument(js_State *J)
 	js_newuserdata(J, "pdf_document", pdf, ffi_gc_pdf_document);
 }
 
+static void ffi_PDFDocument_check(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+
+	fz_try(ctx)
+		pdf_check_document(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_getVersion(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12330,6 +12341,7 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "fz_document");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "PDFDocument.check", ffi_PDFDocument_check, 0);
 		jsB_propfun(J, "PDFDocument.getVersion", ffi_PDFDocument_getVersion, 0);
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
 		jsB_propfun(J, "PDFDocument.countObjects", ffi_PDFDocument_countObjects, 0);

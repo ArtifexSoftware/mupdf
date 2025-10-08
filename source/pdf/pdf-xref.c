@@ -3687,6 +3687,8 @@ pdf_document *pdf_create_document(fz_context *ctx)
 
 		/* Set the trailer of the final xref section. */
 		doc->xref_sections[0].trailer = trailer;
+
+		doc->checked = 1;
 	}
 	fz_catch(ctx)
 	{

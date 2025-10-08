@@ -2384,10 +2384,14 @@ unpack_objstm_objs(fz_context *ctx, pdf_document *doc, int xref_len)
 	}
 }
 
-static void
-prepass(fz_context *ctx, pdf_document *doc)
+void
+pdf_check_document(fz_context *ctx, pdf_document *doc)
 {
 	int num;
+
+	if (doc->checked)
+		return;
+	doc->checked = 1;
 
 	for (num = 1; num < pdf_xref_len(ctx, doc); ++num)
 	{
@@ -2448,7 +2452,8 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		 * into memory. We'll end up doing this later on anyway, but by doing
 		 * it here, we force any repairs to happen before writing proper
 		 * starts. */
-		prepass(ctx, doc);
+		pdf_check_document(ctx, doc);
+
 		xref_len = pdf_xref_len(ctx, doc);
 
 		initialise_write_state(ctx, doc, in_opts, opts);

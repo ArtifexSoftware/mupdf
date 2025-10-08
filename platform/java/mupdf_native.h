@@ -4172,6 +4172,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    check
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_check
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    findPage
  * Signature: (I)Lcom/artifex/mupdf/fitz/PDFObject;
  */

@@ -494,6 +494,11 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 			if (!pdf_authenticate_password(ctx, pdf, password))
 				fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot authenticate password: %s", infile);
 
+		/* First, we do a prepass across the document to load all the objects
+		 * into memory. We do this to force any repairs to happen before we
+		 * start to apply any edits (which would be lost if a repair is triggered). */
+		pdf_check_document(ctx, pdf);
+
 		len = cap = 0;
 
 		/* Only retain the specified subset of the pages */
