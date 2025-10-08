@@ -714,6 +714,9 @@
     <ClCompile Include="..\..\source\fitz\stext-iterator.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\stext-classify.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
