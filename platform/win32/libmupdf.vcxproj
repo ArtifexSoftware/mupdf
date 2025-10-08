@@ -833,6 +833,7 @@
     <ClCompile Include="..\..\source\fitz\regexp.c" />
     <ClCompile Include="..\..\source\fitz\skew.c" />
     <ClCompile Include="..\..\source\fitz\stext-boxer.c" />
+    <ClCompile Include="..\..\source\fitz\stext-classify.c" />
     <ClCompile Include="..\..\source\fitz\stext-iterator.c" />
     <ClCompile Include="..\..\source\fitz\stext-para.c" />
     <ClCompile Include="..\..\source\fitz\stext-table.c" />
