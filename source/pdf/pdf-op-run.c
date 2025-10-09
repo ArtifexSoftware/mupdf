@@ -271,6 +271,8 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save, fz_r
 	fz_colorspace *mask_colorspace;
 	int saved_blendmode;
 	fz_function *tr = NULL;
+	float save_alpha_fill;
+	float save_alpha_stroke;
 
 	fz_var(tr);
 
@@ -303,6 +305,10 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save, fz_r
 	gstate->softmask_cs = NULL;
 	gstate->softmask_resources = NULL;
 	gstate->ctm = gstate->softmask_ctm;
+	save_alpha_fill = gstate->fill.alpha;
+	save_alpha_stroke = gstate->stroke.alpha;
+	gstate->fill.alpha = 1;
+	gstate->stroke.alpha = 1;
 
 	saved_blendmode = gstate->blendmode;
 
@@ -333,6 +339,8 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save, fz_r
 
 	gstate = pr->gstate + pr->gtop;
 	gstate->ctm = save_ctm;
+	gstate->fill.alpha = save_alpha_fill;
+	gstate->stroke.alpha = save_alpha_stroke;
 
 	return gstate;
 }
