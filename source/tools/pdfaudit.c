@@ -289,7 +289,6 @@ typedef struct
 	pdf_document *doc;
 	int structparents;
 	pdf_processor *mine;
-	pdf_processor *chain;
 	pdf_filter_options *global_options;
 	op_usage_t *op_usage;
 	fz_buffer *buffer;
@@ -1417,7 +1416,7 @@ pdf_close_opcount_processor(fz_context *ctx, pdf_processor *proc)
 	pdf_opcount_processor *p = (pdf_opcount_processor*)proc;
 
 	pdf_close_processor(ctx, p->mine);
-	pdf_close_processor(ctx, p->chain);
+	pdf_close_processor(ctx, p->super.chain);
 }
 
 static void
@@ -1592,7 +1591,7 @@ pdf_new_opcount_filter(
 	proc->super.op_END = pdf_opcount_END;
 
 	proc->global_options = global_options;
-	proc->chain = chain;
+	proc->super.chain = chain;
 
 	return (pdf_processor*)proc;
 }

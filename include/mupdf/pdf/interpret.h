@@ -209,6 +209,9 @@ struct pdf_processor
 
 	/* resource dictionary stack */
 	pdf_resource_stack *rstack;
+
+	/* Unused, except when inited as chain processor */
+	pdf_processor *chain;
 };
 
 typedef struct
