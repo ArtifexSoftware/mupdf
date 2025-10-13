@@ -1521,31 +1521,6 @@ static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root
 	}
 }
 
-static char *concat_text(fz_context *ctx, fz_xml *root)
-{
-	fz_xml *node;
-	size_t i = 0, n = 1;
-	char *s;
-	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
-	{
-		const char *text = fz_xml_text(node);
-		n += text ? strlen(text) : 0;
-	}
-	s = Memento_label(fz_malloc(ctx, n), "concat_html");
-	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
-	{
-		const char *text = fz_xml_text(node);
-		if (text)
-		{
-			n = strlen(text);
-			memcpy(s+i, text, n);
-			i += n;
-		}
-	}
-	s[i] = 0;
-	return s;
-}
-
 static void
 html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css, fz_xml *root, const char *href)
 {
@@ -1607,7 +1582,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		}
 		else if (fz_xml_is_tag(node, "style"))
 		{
-			char *s = concat_text(ctx, node);
+			char *s = fz_new_text_from_xml(ctx, node);
 			fz_try(ctx)
 			{
 				fz_parse_css(ctx, css, s, "<style>");
@@ -1634,7 +1609,7 @@ fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	stylesheet = fz_xml_find_down(fictionbook, "stylesheet");
 	if (stylesheet)
 	{
-		char *s = concat_text(ctx, stylesheet);
+		char *s = fz_new_text_from_xml(ctx, stylesheet);
 		fz_try(ctx)
 		{
 			fz_parse_css(ctx, css, s, "<stylesheet>");
@@ -1675,7 +1650,7 @@ load_fb2_images(fz_context *ctx, fz_xml *root)
 
 		fz_try(ctx)
 		{
-			b64 = concat_text(ctx, binary);
+			b64 = fz_new_text_from_xml(ctx, binary);
 			buf = fz_new_buffer_from_base64(ctx, b64, strlen(b64));
 			img = fz_new_image_from_buffer(ctx, buf);
 		}
