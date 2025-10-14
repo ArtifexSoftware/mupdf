@@ -612,6 +612,9 @@ pdf_update_page(fz_context *ctx, pdf_page *page)
 	pdf_annot *widget;
 	int changed = 0;
 
+	if (page->doc == NULL)
+		return 0;
+
 	if (!page->doc->resynth_required && !page->doc->recalculate)
 		return 0;
 
