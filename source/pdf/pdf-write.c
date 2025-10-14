@@ -1729,7 +1729,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 	}
 }
 
-static void clean_content_streams(fz_context *ctx, pdf_document *doc, int sanitize, int ascii, int newlines)
+static void clean_content_streams(fz_context *ctx, pdf_document *doc, int sanitize, int ascii, int newlines, int strip_invisible_text)
 {
 	int n = pdf_count_pages(ctx, doc);
 	int i;
@@ -1741,7 +1741,9 @@ static void clean_content_streams(fz_context *ctx, pdf_document *doc, int saniti
 	options.recurse = 1;
 	options.ascii = ascii;
 	options.newlines = newlines;
-	options.filters = sanitize ? list : NULL;
+	options.filters = sanitize || strip_invisible_text ? list : NULL;
+	if (strip_invisible_text)
+		sopts.strip_invisible_text = 1;
 	list[0].filter = pdf_new_sanitize_filter;
 	list[0].options = &sopts;
 
@@ -1924,6 +1926,8 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_clean = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "sanitize", &val))
 		opts->do_sanitize = fz_option_eq(val, "yes");
+	if (fz_has_option(ctx, args, "strip-invisible-text", &val))
+		opts->do_strip_invisible_text = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "incremental", &val))
 		opts->do_incremental = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "objstms", &val))
@@ -1998,12 +2002,12 @@ prepare_for_save(fz_context *ctx, pdf_document *doc, const pdf_write_options *in
 		pdf_update_open_pages(ctx, doc);
 
 	/* Rewrite (and possibly sanitize) the operator streams */
-	if (in_opts->do_clean || in_opts->do_sanitize)
+	if (in_opts->do_clean || in_opts->do_sanitize || in_opts->do_strip_invisible_text)
 	{
 		pdf_begin_operation(ctx, doc, "Clean content streams");
 		fz_try(ctx)
 		{
-			clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii, in_opts->do_pretty);
+			clean_content_streams(ctx, doc, in_opts->do_sanitize, in_opts->do_ascii, in_opts->do_pretty, in_opts->do_strip_invisible_text);
 			pdf_end_operation(ctx, doc);
 		}
 		fz_catch(ctx)
@@ -2735,6 +2739,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, cons
 			in_opts->do_linear ||
 			in_opts->do_clean ||
 			in_opts->do_sanitize ||
+			in_opts->do_strip_invisible_text ||
 			in_opts->do_appearance ||
 			in_opts->do_encrypt != PDF_ENCRYPT_KEEP)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't use these options when snapshotting!");
@@ -2877,6 +2882,8 @@ pdf_format_write_options(fz_context *ctx, char *buffer, size_t buffer_len, const
 		ADD_OPT("linearize=yes");
 	if (opts->do_clean)
 		ADD_OPT("clean=yes");
+	if (opts->do_strip_invisible_text)
+		ADD_OPT("strip-invisible-text=yes");
 	if (opts->do_sanitize)
 		ADD_OPT("sanitize=yes");
 	if (opts->do_incremental)
