@@ -382,7 +382,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 		pdf_obj *o = pdf_array_get(ctx, obj, i);
 		for (j=0; j < len; j++)
 		{
-			if (!pdf_objcmp_resolve(ctx, desc->ocgs[j].obj, o))
+			if (!pdf_objcmp(ctx, desc->ocgs[j].obj, o))
 			{
 				desc->ocgs[j].state = 1;
 				break;
@@ -397,7 +397,7 @@ pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config)
 		pdf_obj *o = pdf_array_get(ctx, obj, i);
 		for (j=0; j < len; j++)
 		{
-			if (!pdf_objcmp_resolve(ctx, desc->ocgs[j].obj, o))
+			if (!pdf_objcmp(ctx, desc->ocgs[j].obj, o))
 			{
 				desc->ocgs[j].state = 0;
 				break;
@@ -518,7 +518,7 @@ clear_radio_group(fz_context *ctx, pdf_document *doc, int config_num, pdf_obj *o
 				{
 					pdf_ocg_entry *s = &doc->ocg->ocgs[k];
 
-					if (!pdf_objcmp_resolve(ctx, s->obj, g))
+					if (!pdf_objcmp(ctx, s->obj, g))
 						s->state = 0;
 				}
 			}
