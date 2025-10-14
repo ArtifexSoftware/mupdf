@@ -4180,6 +4180,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_check
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    setPageTreeCache
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_setPageTreeCache
+  (JNIEnv *, jobject, jboolean);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    findPage
  * Signature: (I)Lcom/artifex/mupdf/fitz/PDFObject;
  */

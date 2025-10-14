@@ -35,6 +35,12 @@ pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
 pdf_obj *pdf_lookup_page_loc(fz_context *ctx, pdf_document *doc, int needle, pdf_obj **parentp, int *indexp);
 
 /*
+	Enable or disable the page tree cache that is used to speed up page object lookups.
+	The page tree cache is used unless explicitly disabled with this function.
+*/
+void pdf_set_page_tree_cache(fz_context *ctx, pdf_document *doc, int enabled);
+
+/*
 	Cache the page tree for fast forward/reverse page lookups.
 
 	No longer required. This is a No Op, now as page tree

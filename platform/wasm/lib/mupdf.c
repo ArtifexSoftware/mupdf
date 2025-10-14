@@ -1498,6 +1498,12 @@ fz_image * wasm_pdf_load_image(pdf_document *doc, pdf_obj *ref)
 }
 
 EXPORT
+void wasm_pdf_set_page_tree_cache(pdf_document *doc, boolean enabled)
+{
+	VOID(pdf_set_page_tree_cache, doc, enabled);
+}
+
+EXPORT
 pdf_obj * wasm_pdf_add_page(pdf_document *doc, fz_rect *mediabox, int rotate, pdf_obj *resources, fz_buffer *contents)
 {
 	POINTER(pdf_add_page, doc, *mediabox, rotate, resources, contents)

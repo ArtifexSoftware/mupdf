@@ -490,7 +490,7 @@ struct pdf_document
 	int map_page_count;
 	pdf_rev_page_map *rev_page_map;
 	pdf_obj **fwd_page_map;
-	int page_tree_broken;
+	int use_page_tree_map;
 
 	int repair_attempted;
 	int repair_in_progress;

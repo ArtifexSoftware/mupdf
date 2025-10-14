@@ -405,6 +405,16 @@ Indirect objects
 Page Tree
 -----------------
 
+.. method:: PDFDocument.prototype.setPageTreeCache(enabled)
+
+	Enable or disable the page tree cache that is used to speed up page object lookups.
+	The page tree cache is used unless explicitly disabled with this function.
+
+	Disabling the page tree cache reduces the number objects that we need to read from the file when loading a single page.
+	However it will make page lookups slower overall!
+
+	:param boolean enabled:
+
 .. method:: PDFDocument.protoype.findPage(number)
 
 	Return the `PDFObject` for a page number.

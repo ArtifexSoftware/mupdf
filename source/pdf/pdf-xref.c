@@ -3160,6 +3160,8 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	/* Default to PDF-1.7 if the version header is missing and for new documents */
 	doc->version = 17;
 
+	doc->use_page_tree_map = 1;
+
 	return doc;
 }
 

@@ -2575,6 +2575,11 @@ export class PDFDocument extends Document {
 		return this._fromPDFObjectKeep(libmupdf._wasm_pdf_lookup_page_obj(this.pointer, index))
 	}
 
+	setPageTreeCache(enabled: boolean) {
+		checkType(enabled, "boolean")
+		libmupdf._wasm_pdf_set_page_tree_cache(this.pointer, enabled)
+	}
+
 	addPage(mediabox: Rect, rotate: Rotate, resources: any, contents: AnyBuffer) {
 		checkRect(mediabox)
 		checkType(rotate, "number")

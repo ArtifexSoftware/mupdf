@@ -66,6 +66,8 @@ public class PDFDocument extends Document
 		return true;
 	}
 
+	public native void setPageTreeCache(boolean enabled);
+
 	public native PDFObject findPage(int at);
 
 	public native PDFObject getTrailer();

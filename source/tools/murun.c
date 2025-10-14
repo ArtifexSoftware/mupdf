@@ -7628,6 +7628,17 @@ static void ffi_PDFDocument_addFont(js_State *J)
 	ffi_pushobj(J, ind);
 }
 
+static void ffi_PDFDocument_setPageTreeCache(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int enabled = js_toboolean(J, 1);
+	fz_try(ctx)
+		pdf_set_page_tree_cache(ctx, pdf, enabled);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_addPage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12363,6 +12374,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.isFilespec", ffi_PDFDocument_isFilespec, 1);
 		jsB_propfun(J, "PDFDocument.isEmbeddedFile", ffi_PDFDocument_isEmbeddedFile, 1);
 
+		jsB_propfun(J, "PDFDocument.setPageTreeCache", ffi_PDFDocument_setPageTreeCache, 1);
 		jsB_propfun(J, "PDFDocument.addPage", ffi_PDFDocument_addPage, 4);
 		jsB_propfun(J, "PDFDocument.insertPage", ffi_PDFDocument_insertPage, 2);
 		jsB_propfun(J, "PDFDocument.deletePage", ffi_PDFDocument_deletePage, 1);
