@@ -9476,6 +9476,17 @@ static void ffi_PDFPage_associatedFile(js_State *J)
 	ffi_pushobj(J, obj);
 }
 
+static void ffi_PDFPage_clip(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_page *pdf = js_touserdata(J, 0, "pdf_page");
+	fz_rect rect = ffi_torect(J, 1);
+	fz_try(ctx)
+		pdf_clip_page(ctx, pdf, &rect);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getBounds(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12474,6 +12485,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFPage.setPageBox", ffi_PDFPage_setPageBox, 2);
 		jsB_propfun(J, "PDFPage.countAssociatedFiles", ffi_PDFPage_countAssociatedFiles, 0);
 		jsB_propfun(J, "PDFPage.associatedFile", ffi_PDFPage_associatedFile, 1);
+		jsB_propfun(J, "PDFPage.clip", ffi_PDFPage_clip, 1);
 	}
 	js_setregistry(J, "pdf_page");
 

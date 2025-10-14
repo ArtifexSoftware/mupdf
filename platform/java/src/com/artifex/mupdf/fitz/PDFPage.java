@@ -129,4 +129,6 @@ public class PDFPage extends Page
 	public boolean isPDF() {
 		return true;
 	}
+
+	public native void clip(Rect rect);
 }
