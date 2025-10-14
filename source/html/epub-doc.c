@@ -481,7 +481,9 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 
 	fz_dirname(base_uri, ch->path, sizeof base_uri);
 
-	buf = fz_read_archive_entry(ctx, zip, ch->path);
+	buf = fz_try_read_archive_entry(ctx, zip, ch->path);
+	if (!buf)
+		buf = fz_new_buffer_from_printf(ctx, "<html><body><p><i>ERROR: cannot find chapter %<</i></p></body></html>", ch->path);
 	fz_try(ctx)
 		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx), 1, 1, 0);
 	fz_always(ctx)
