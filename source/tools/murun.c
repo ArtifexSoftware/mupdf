@@ -13057,12 +13057,22 @@ int murun_main(int argc, char **argv)
 		js_pop(J, 2);
 
 		js_endtry(J);
+
+		if (js_try(J))
+		{
+			js_report(J, js_trystring(J, -1, "Error"));
+			js_freestate(J);
+			fz_drop_context(ctx);
+			return 1;
+		}
+
 		if (murun_dofile(J, argv[1]))
 		{
 			js_freestate(J);
 			fz_drop_context(ctx);
 			return 1;
 		}
+		js_endtry(J);
 	} else {
 		char line[256];
 		fputs(PS1, stdout);
