@@ -1138,8 +1138,6 @@ fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *
 		pix2->alpha = 1;
 		return pix2;
 	}
-
-	return pix1;
 }
 
 fz_pixmap *
