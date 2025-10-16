@@ -6293,7 +6293,8 @@ stext_walk(js_State *J, fz_stext_block *block)
 						js_pushnumber(J, ch->size);
 						ffi_pushquad(J, ch->quad);
 						ffi_pushrgb(J, ch->argb);
-						js_call(J, 6);
+						js_pushnumber(J, ch->flags);
+						js_call(J, 7);
 						js_pop(J, 1);
 					}
 				}
@@ -12901,6 +12902,16 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "StructuredText", "SEARCH_IGNORE_CASE", FZ_SEARCH_IGNORE_CASE);
 		jsB_enum(J, "StructuredText", "SEARCH_IGNORE_DIACRITICS", FZ_SEARCH_IGNORE_DIACRITICS);
 		jsB_enum(J, "StructuredText", "SEARCH_REGEXP", FZ_SEARCH_REGEXP);
+
+		jsB_enum(J, "StructuredText", "FLAGS_STRIKEOUT", FZ_STEXT_STRIKEOUT);
+		jsB_enum(J, "StructuredText", "FLAGS_UNDERLINE", FZ_STEXT_UNDERLINE);
+		jsB_enum(J, "StructuredText", "FLAGS_SYNTHETIC", FZ_STEXT_SYNTHETIC);
+		jsB_enum(J, "StructuredText", "FLAGS_BOLD", FZ_STEXT_BOLD);
+		jsB_enum(J, "StructuredText", "FLAGS_FILLED", FZ_STEXT_FILLED);
+		jsB_enum(J, "StructuredText", "FLAGS_STROKED", FZ_STEXT_STROKED);
+		jsB_enum(J, "StructuredText", "FLAGS_CLIPPED", FZ_STEXT_CLIPPED);
+		jsB_enum(J, "StructuredText", "FLAGS_UNICODE_IS_CID", FZ_STEXT_UNICODE_IS_CID);
+		jsB_enum(J, "StructuredText", "FLAGS_UNICODE_IS_GID", FZ_STEXT_UNICODE_IS_GID);
 
 		jsB_enum(J, "StructuredText", "VECTOR_IS_STROKED", FZ_STEXT_VECTOR_IS_STROKED);
 		jsB_enum(J, "StructuredText", "VECTOR_IS_RECTANGLE", FZ_STEXT_VECTOR_IS_RECTANGLE);

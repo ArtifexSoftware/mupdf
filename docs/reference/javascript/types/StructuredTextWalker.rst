@@ -53,7 +53,7 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 
 	Called after every structure element.
 
-.. function:: onChar(c, origin, font, size, quad, color)
+.. function:: onChar(c, origin, font, size, quad, color, flags)
 
 	Called for every character in a line of text.
 
@@ -63,6 +63,7 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 	:param number size:
 	:param Quad quad:
 	:param Color color:
+	:param number flags:
 
 .. function:: onImageBlock(bbox, transform, image)
 

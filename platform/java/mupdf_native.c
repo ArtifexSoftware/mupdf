@@ -763,6 +763,16 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_PARAGRAPHS == FZ_SEARCH_KEEP_PARAGRAPHS;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_HYPHENS == FZ_SEARCH_KEEP_HYPHENS;
 
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_STRIKEOUT == FZ_STEXT_STRIKEOUT;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_UNDERLINE == FZ_STEXT_UNDERLINE;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_SYNTHETIC == FZ_STEXT_SYNTHETIC;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_BOLD == FZ_STEXT_BOLD;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_FILLED == FZ_STEXT_FILLED;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_STROKED == FZ_STEXT_STROKED;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_CLIPPED == FZ_STEXT_CLIPPED;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_UNICODE_IS_CID == FZ_STEXT_UNICODE_IS_CID;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_UNICODE_IS_GID == FZ_STEXT_UNICODE_IS_GID;
+
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN == PDF_WIDGET_TYPE_UNKNOWN;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BUTTON == PDF_WIDGET_TYPE_BUTTON;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CHECKBOX == PDF_WIDGET_TYPE_CHECKBOX;
@@ -1496,7 +1506,7 @@ static int find_fids(JNIEnv *env)
 	mid_StructuredTextWalker_endTextBlock = get_method(&err, env, "endTextBlock", "()V");
 	mid_StructuredTextWalker_beginLine = get_method(&err, env, "beginLine", "(L"PKG"Rect;IL"PKG"Point;)V");
 	mid_StructuredTextWalker_endLine = get_method(&err, env, "endLine", "()V");
-	mid_StructuredTextWalker_onChar = get_method(&err, env, "onChar", "(IL"PKG"Point;L"PKG"Font;FL"PKG"Quad;)V");
+	mid_StructuredTextWalker_onChar = get_method(&err, env, "onChar", "(IL"PKG"Point;L"PKG"Font;FL"PKG"Quad;II)V");
 	mid_StructuredTextWalker_onVector = get_method(&err, env, "onVector", "(L"PKG"Rect;L"PKG"StructuredTextWalker$VectorInfo;I)V");
 
 	cls_StructuredTextWalker_VectorInfo = get_class(&err, env, PKG"StructuredTextWalker$VectorInfo");

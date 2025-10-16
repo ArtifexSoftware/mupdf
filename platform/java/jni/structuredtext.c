@@ -206,7 +206,7 @@ java_stext_walk(JNIEnv *env, fz_context *ctx, jobject walker, fz_stext_block *bl
 					if (!jquad) return;
 
 					(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_onChar,
-						ch->c, jorigin, jfont, ch->size, jquad);
+						ch->c, jorigin, jfont, ch->size, jquad, ch->argb, ch->flags);
 					if ((*env)->ExceptionCheck(env)) return;
 
 					(*env)->DeleteLocalRef(env, jquad);

@@ -124,8 +124,8 @@ Instance methods
 			endStruct: function () {
 				console.log("endStruct")
 			},
-			onChar: function (utf, origin, font, size, quad, argb) {
-				console.log("onChar", utf, origin, font, size, quad, argb)
+			onChar: function (utf, origin, font, size, quad, argb, flags) {
+				console.log("onChar", utf, origin, font, size, quad, argb, flags)
 			},
 			onImageBlock: function (bbox, transform, image) {
 				console.log("onImageBlock", bbox, transform, image)
