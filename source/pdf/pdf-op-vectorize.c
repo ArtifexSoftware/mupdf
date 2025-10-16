@@ -339,12 +339,6 @@ pdf_vectorize_BT(fz_context *ctx, pdf_processor *proc)
 	p->bidi = 0;
 }
 
-static void
-pdf_vectorize_ET(fz_context *ctx, pdf_processor *proc)
-{
-	/* Do nothing */
-}
-
 static void pdf_vectorize_q(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_vectorize_processor *pr = (pdf_vectorize_processor *)proc;
