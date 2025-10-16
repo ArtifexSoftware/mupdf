@@ -191,6 +191,11 @@ size_t fz_pack_path(fz_context *ctx, uint8_t *pack, const fz_path *path);
 fz_path *fz_clone_path(fz_context *ctx, fz_path *path);
 
 /**
+	Find out if a path is completely empty.
+*/
+int fz_path_is_empty(fz_context *ctx, const fz_path *path);
+
+/**
 	Return the current point that a path has
 	reached or (0,0) if empty.
 

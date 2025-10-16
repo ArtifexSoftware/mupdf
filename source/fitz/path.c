@@ -650,6 +650,30 @@ static inline void bound_expand(fz_rect *r, fz_point p)
 	if (p.y > r->y1) r->y1 = p.y;
 }
 
+int fz_path_is_empty(fz_context *ctx, const fz_path *path)
+{
+	int cmd_len;
+
+	if (path == NULL)
+		return 1;
+
+	switch (path->packed)
+	{
+	case FZ_PATH_UNPACKED:
+	case FZ_PATH_PACKED_OPEN:
+		cmd_len = path->cmd_len;
+		break;
+	case FZ_PATH_PACKED_FLAT:
+		cmd_len = ((fz_packed_path *)path)->cmd_len;
+		break;
+	default:
+		assert("This never happens" == NULL);
+		return 1;
+	}
+
+	return (cmd_len == 0);
+}
+
 void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *proc, void *arg)
 {
 	int i, k, cmd_len;
