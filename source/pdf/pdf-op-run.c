@@ -1482,7 +1482,7 @@ pdf_show_text(fz_context *ctx, pdf_run_processor *pr, pdf_obj *text)
 	}
 	else if (pdf_is_string(ctx, text))
 	{
-		pdf_show_string(ctx, pr, (unsigned char *)pdf_to_str_buf(ctx, text), pdf_to_str_len(ctx, text));
+		show_string(ctx, pr, (unsigned char *)pdf_to_str_buf(ctx, text), pdf_to_str_len(ctx, text));
 	}
 }
 
