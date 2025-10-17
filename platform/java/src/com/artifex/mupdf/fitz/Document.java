@@ -85,6 +85,17 @@ public class Document
 	}
 
 	public static native boolean recognize(String magic);
+	protected native static boolean recognizeContentWithPath(String filename);
+	protected native static boolean recognizeContentWithStream(SeekableInputStream stream, String magic, Archive dir);
+	public static boolean recognizeContent(String filename) {
+		return recognizeContentWithPath(filename);
+	}
+	public static boolean recognizeContent(SeekableInputStream stream, String magic) {
+		return recognizeContentWithStream(stream, magic, null);
+	}
+	public static boolean recognizeContent(SeekableInputStream stream, String magic, Archive dir) {
+		return recognizeContentWithStream(stream, magic, dir);
+	}
 
 	public native boolean supportsAccelerator();
 	public native void saveAccelerator(String filename);

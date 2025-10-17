@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -386,6 +386,103 @@ FUN(Document_recognize)(JNIEnv *env, jclass cls, jstring jmagic)
 		recognized = fz_recognize_document(ctx, magic) != NULL;
 	fz_always(ctx)
 		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return recognized;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(Document_recognizeContentWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
+{
+	fz_context *ctx = get_context(env);
+	const char *filename = NULL;
+	jboolean recognized = JNI_FALSE;
+
+	if (!ctx) return JNI_FALSE;
+	if (jfilename)
+	{
+		filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+		if (!filename) return JNI_FALSE;
+	}
+
+	fz_try(ctx)
+		recognized = fz_recognize_document_content(ctx, filename) != NULL;
+	fz_always(ctx)
+		if (filename) (*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return recognized;
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(Document_recognizeContentWithStream)(JNIEnv *env, jclass cls, jobject jstream, jstring jmagic, jobject jdir)
+{
+	fz_context *ctx = get_context(env);
+	const char *magic = NULL;
+	fz_stream *docstream = NULL;
+	jobject jstm = NULL;
+	jbyteArray jdocarray = NULL;
+	SeekableStreamState *docstate = NULL;
+	jboolean recognized = JNI_FALSE;
+	fz_archive *dir = from_Archive(env, jdir);
+	fz_var(jstm);
+	fz_var(jdocarray);
+	fz_var(docstream);
+
+	if (!ctx) return JNI_FALSE;
+	if (jmagic)
+	{
+		magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
+		if (!magic) return JNI_FALSE;
+	}
+	if (jstream)
+	{
+		jstm = (*env)->NewGlobalRef(env, jstream);
+		if (!jstm)
+		{
+			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
+			jni_throw_run(env, "cannot get reference to document stream");
+		}
+	}
+
+	jdocarray = (*env)->NewByteArray(env, sizeof docstate->buffer);
+	if (jdocarray)
+		jdocarray = (*env)->NewGlobalRef(env, jdocarray);
+	if (!jdocarray)
+	{
+		(*env)->DeleteGlobalRef(env, jstm);
+		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		jni_throw_run(env, "cannot create internal buffer for document stream");
+	}
+
+	fz_try(ctx)
+	{
+		if (jstm)
+		{
+			/* No exceptions can occur from here to stream owning docstate, so we must not free docstate. */
+			docstate = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreamState_docstate");
+			docstate->stream = jstm;
+			docstate->array = jdocarray;
+
+			/* Ownership transferred to docstate. */
+			jstm = NULL;
+			jdocarray = NULL;
+
+			/* Stream takes ownership of docstate. */
+			docstream = fz_new_stream(ctx, docstate, SeekableInputStream_next, SeekableInputStream_drop);
+			docstream->seek = SeekableInputStream_seek;
+		}
+
+		recognized = fz_recognize_document_stream_and_dir_content(ctx, docstream, dir, magic) != NULL;
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, docstream);
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

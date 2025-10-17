@@ -69,6 +69,27 @@ Static methods
 	.. code-block::
 
 		var document = mupdf.Document.openDocument("my_pdf.pdf", "application/pdf")
+.. function::
+	Document.recognize(magic)
+	Document.recognizeContent(filename)
+	Document.recognizeContent(buffer, magic)
+	Document.recognizeContent(buffer, dir, magic)
+
+	Check if MuPDF can open a document with the provided magic, or with the contents in the given file/buffer.
+
+	:param string magic: An optional :term:`MIME-type` or file extension. Defaults to "application/pdf".
+	:param string filename: File name to check contents of.
+	:param Buffer | ArrayBuffer | Uint8Array | string buffer: Buffer containing a PDF file.
+	:param Archive dir: An archive from which to load resources for rendering.
+
+	:returns: boolean
+
+	.. code-block::
+
+		var recognized1 = mupdf.Document.recognize("application/pdf")
+		var recognized2 = mupdf.Document.recognizeContent("my_pdf.pdf")
+		var recognized3 = mupdf.Document.recognizeContent(buffer, "application/pdf")
+		var recognized4 = mupdf.Document.recognizeContent(buffer, dir, "application/pdf")
 
 Instance methods
 ----------------

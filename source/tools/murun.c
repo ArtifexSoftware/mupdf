@@ -3972,6 +3972,82 @@ static void ffi_Document_openDocument(js_State *J)
 	ffi_pushdocument(J, doc);
 }
 
+static void ffi_Document_recognize(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *magic = js_tostring(J, 1);
+	int recognized;
+
+	fz_try(ctx)
+		recognized = fz_recognize_document(ctx, magic) != NULL;
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, recognized);
+}
+
+static void ffi_Document_recognizeContent(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	int recognized;
+
+	if (js_isuserdata(J, 1, "fz_buffer") && js_isuserdata(J, 2, "fz_archive"))
+	{
+		fz_archive *arch = ffi_toarchive(J, 3);
+		const char *magic = js_tostring(J, 2);
+		fz_buffer *buf = ffi_tonewbuffer(J, 1);
+		fz_stream *stm = NULL;
+		unsigned char *data;
+		size_t len;
+		fz_var(stm);
+		fz_try(ctx)
+		{
+			len = fz_buffer_storage(ctx, buf, &data);
+			stm = fz_open_memory(ctx, data, len);
+			recognized = fz_recognize_document_stream_and_dir_content(ctx, stm, arch, magic) != NULL;
+		}
+		fz_always(ctx)
+		{
+			fz_drop_stream(ctx, stm);
+			fz_drop_buffer(ctx, buf);
+		}
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else if (js_isuserdata(J, 1, "fz_buffer"))
+	{
+		const char *magic = js_tostring(J, 2);
+		fz_buffer *buf = ffi_tonewbuffer(J, 1);
+		fz_stream *stm = NULL;
+		unsigned char *data;
+		size_t len;
+		fz_var(stm);
+		fz_try(ctx)
+		{
+			len = fz_buffer_storage(ctx, buf, &data);
+			stm = fz_open_memory(ctx, data, len);
+			recognized = fz_recognize_document_stream_content(ctx, stm, magic) != NULL;
+		}
+		fz_always(ctx)
+		{
+			fz_drop_stream(ctx, stm);
+			fz_drop_buffer(ctx, buf);
+		}
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else
+	{
+		const char *filename = js_tostring(J, 1);
+		fz_try(ctx)
+			recognized = fz_recognize_document_content(ctx, filename) != NULL;
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
+	js_pushboolean(J, recognized);
+}
+
 static void ffi_Document_isPDF(js_State *J)
 {
 	js_pushboolean(J, js_isuserdata(J, 0, "pdf_document"));
@@ -12094,6 +12170,8 @@ int murun_main(int argc, char **argv)
 	js_newobject(J);
 	{
 		jsB_propfun(J, "Document.openDocument", ffi_Document_openDocument, 2);
+		jsB_propfun(J, "Document.recognize", ffi_Document_recognize, 1);
+		jsB_propfun(J, "Document.recognizeContent", ffi_Document_recognizeContent, 3);
 	}
 	js_setglobal(J, "Document");
 

@@ -1430,6 +1430,22 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_recognize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    recognizeContentWithPath
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_recognizeContentWithPath
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    recognizeContentWithStream
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableInputStream;Ljava/lang/String;Lcom/artifex/mupdf/fitz/Archive;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_recognizeContentWithStream
+  (JNIEnv *, jclass, jobject, jstring, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    supportsAccelerator
  * Signature: ()Z
  */
