@@ -68,7 +68,7 @@ Static methods
 
 	.. code-block::
 
-		var document = new mupdf.Document.openDocument("my_pdf.pdf", "application/pdf")
+		var document = mupdf.Document.openDocument("my_pdf.pdf", "application/pdf")
 
 Instance methods
 ----------------

@@ -83,4 +83,4 @@ can you can calculate the rotation as an angle with some trigonometry on the vec
 	:param Object flags:
 	:param Array of number rgb:
 
-	The flags object is of the form `{ isStroked: boolean, isRectangle: boolean }`.
+	The flags object is of the form ``{ isStroked: boolean, isRectangle: boolean }``.

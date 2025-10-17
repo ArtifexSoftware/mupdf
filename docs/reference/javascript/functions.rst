@@ -49,7 +49,7 @@ here.
 	shrunk to below the threshold.
 
 	:param number percent:
-	:returns boolean
+	:returns: boolean
 
 .. function:: mupdf.setUserCSS(stylesheet, useDocumentStyles)
 
