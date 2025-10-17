@@ -1391,34 +1391,34 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Document_finalize
 /*
  * Class:     com_artifex_mupdf_fitz_Document
  * Method:    openNativeWithPath
- * Signature: (Ljava/lang/String;Ljava/lang/String;)Lcom/artifex/mupdf/fitz/Document;
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Lcom/artifex/mupdf/fitz/Archive;)Lcom/artifex/mupdf/fitz/Document;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithPath
-  (JNIEnv *, jclass, jstring, jstring);
+  (JNIEnv *, jclass, jstring, jstring, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
  * Method:    openNativeWithBuffer
- * Signature: (Ljava/lang/String;[B[B)Lcom/artifex/mupdf/fitz/Document;
+ * Signature: ([BLjava/lang/String;[BLcom/artifex/mupdf/fitz/Archive;)Lcom/artifex/mupdf/fitz/Document;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithBuffer
-  (JNIEnv *, jclass, jstring, jbyteArray, jbyteArray);
+  (JNIEnv *, jclass, jbyteArray, jstring, jbyteArray, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
  * Method:    openNativeWithStream
- * Signature: (Ljava/lang/String;Lcom/artifex/mupdf/fitz/SeekableInputStream;Lcom/artifex/mupdf/fitz/SeekableInputStream;)Lcom/artifex/mupdf/fitz/Document;
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableInputStream;Ljava/lang/String;Lcom/artifex/mupdf/fitz/SeekableInputStream;Lcom/artifex/mupdf/fitz/Archive;)Lcom/artifex/mupdf/fitz/Document;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithStream
-  (JNIEnv *, jclass, jstring, jobject, jobject);
+  (JNIEnv *, jclass, jobject, jstring, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
  * Method:    openNativeWithPathAndStream
- * Signature: (Ljava/lang/String;Lcom/artifex/mupdf/fitz/SeekableInputStream;)Lcom/artifex/mupdf/fitz/Document;
+ * Signature: (Ljava/lang/String;Lcom/artifex/mupdf/fitz/SeekableInputStream;Lcom/artifex/mupdf/fitz/Archive;)Lcom/artifex/mupdf/fitz/Document;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithPathAndStream
-  (JNIEnv *, jclass, jstring, jobject);
+  (JNIEnv *, jclass, jstring, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document

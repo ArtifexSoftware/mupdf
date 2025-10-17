@@ -3943,19 +3943,28 @@ static void ffi_Document_openDocument(js_State *J)
 
 	if (js_isuserdata(J, 1, "fz_buffer"))
 	{
-		const char *magic = js_tostring(J, 2);
-		fz_buffer *buf = ffi_tonewbuffer(J, 1);
-		fz_stream *stm = NULL;
-		fz_var(stm);
+		const char *magic = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+		fz_archive *dir = js_iscoercible(J, 4) ? ffi_toarchive(J, 4) : NULL;
+		fz_buffer *accbuf = js_iscoercible(J, 3) ? ffi_tonewbuffer(J, 3) : NULL;
+		fz_buffer *docbuf = ffi_tonewbuffer(J, 1);
+		fz_stream *docstm = NULL;
+		fz_stream *accstm = NULL;
+
+		fz_var(docstm);
+		fz_var(accstm);
+
 		fz_try(ctx)
 		{
-			stm = fz_open_buffer(ctx, buf);
-			doc = fz_open_document_with_stream(ctx, magic, stm);
+			docstm = fz_open_buffer(ctx, docbuf);
+			accstm = fz_open_buffer(ctx, accbuf);
+			doc = fz_open_accelerated_document_with_stream_and_dir(ctx, magic, docstm, accstm, dir);
 		}
 		fz_always(ctx)
 		{
-			fz_drop_stream(ctx, stm);
-			fz_drop_buffer(ctx, buf);
+			fz_drop_stream(ctx, accstm);
+			fz_drop_stream(ctx, docstm);
+			fz_drop_buffer(ctx, accbuf);
+			fz_drop_buffer(ctx, docbuf);
 		}
 		fz_catch(ctx)
 			rethrow(J);
@@ -3963,8 +3972,29 @@ static void ffi_Document_openDocument(js_State *J)
 	else
 	{
 		const char *filename = js_tostring(J, 1);
+		const char *accelerator = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+		fz_archive *dir = js_iscoercible(J, 3) ? ffi_toarchive(J, 3) : NULL;
+		fz_stream *docstm = NULL;
+		fz_stream *accstm = NULL;
+
+		fz_var(docstm);
+		fz_var(accstm);
+
 		fz_try(ctx)
-			doc = fz_open_document(ctx, filename);
+		{
+			docstm = fz_open_file(ctx, filename);
+			if (accelerator)
+				accstm = fz_open_file(ctx, accelerator);
+			if (dir)
+				doc = fz_open_accelerated_document_with_stream_and_dir(ctx, filename, docstm, accstm, dir);
+			else
+				doc = fz_open_accelerated_document(ctx, filename, accelerator);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_stream(ctx, accstm);
+			fz_drop_stream(ctx, docstm);
+		}
 		fz_catch(ctx)
 			rethrow(J);
 	}
@@ -12169,7 +12199,7 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
-		jsB_propfun(J, "Document.openDocument", ffi_Document_openDocument, 2);
+		jsB_propfun(J, "Document.openDocument", ffi_Document_openDocument, 4);
 		jsB_propfun(J, "Document.recognize", ffi_Document_recognize, 1);
 		jsB_propfun(J, "Document.recognizeContent", ffi_Document_recognizeContent, 3);
 	}

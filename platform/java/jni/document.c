@@ -36,24 +36,25 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobject jdocument, jobject jaccelerator)
+FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobject jstream, jobject jarch, jobject jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	fz_stream *docstream = NULL;
 	fz_stream *accstream = NULL;
-	jobject jdoc = NULL;
-	jobject jacc = NULL;
-	jbyteArray docarray = NULL;
-	jbyteArray accarray = NULL;
+	jobject jdocstm = NULL;
+	jobject jaccstm = NULL;
+	jbyteArray jdocarray = NULL;
+	jbyteArray jaccarray = NULL;
 	SeekableStreamState *docstate = NULL;
 	SeekableStreamState *accstate = NULL;
+	fz_archive *arch = from_Archive(env, jarch);
 	const char *magic = NULL;
 
-	fz_var(jdoc);
-	fz_var(jacc);
-	fz_var(docarray);
-	fz_var(accarray);
+	fz_var(jdocstm);
+	fz_var(jaccstm);
+	fz_var(jdocarray);
+	fz_var(jaccarray);
 	fz_var(docstream);
 	fz_var(accstream);
 
@@ -63,10 +64,10 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 		magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
 		if (!magic) jni_throw_run(env, "cannot get characters in magic string");
 	}
-	if (jdocument)
+	if (jstream)
 	{
-		jdoc = (*env)->NewGlobalRef(env, jdocument);
-		if (!jdoc)
+		jdocstm = (*env)->NewGlobalRef(env, jstream);
+		if (!jdocstm)
 		{
 			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			jni_throw_run(env, "cannot get reference to document stream");
@@ -74,36 +75,36 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 	}
 	if (jaccelerator)
 	{
-		jacc = (*env)->NewGlobalRef(env, jaccelerator);
-		if (!jacc)
+		jaccstm = (*env)->NewGlobalRef(env, jaccelerator);
+		if (!jaccstm)
 		{
-			(*env)->DeleteGlobalRef(env, jdoc);
+			(*env)->DeleteGlobalRef(env, jdocstm);
 			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			jni_throw_run(env, "cannot get reference to accelerator stream");
 		}
 	}
 
-	docarray = (*env)->NewByteArray(env, sizeof docstate->buffer);
-	if (docarray)
-		docarray = (*env)->NewGlobalRef(env, docarray);
-	if (!docarray)
+	jdocarray = (*env)->NewByteArray(env, sizeof docstate->buffer);
+	if (jdocarray)
+		jdocarray = (*env)->NewGlobalRef(env, jdocarray);
+	if (!jdocarray)
 	{
-		(*env)->DeleteGlobalRef(env, jacc);
-		(*env)->DeleteGlobalRef(env, jdoc);
+		(*env)->DeleteGlobalRef(env, jaccstm);
+		(*env)->DeleteGlobalRef(env, jdocstm);
 		if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 		jni_throw_run(env, "cannot create internal buffer for document stream");
 	}
 
-	if (jacc)
+	if (jaccstm)
 	{
-		accarray = (*env)->NewByteArray(env, sizeof accstate->buffer);
-		if (accarray)
-			accarray = (*env)->NewGlobalRef(env, accarray);
-		if (!accarray)
+		jaccarray = (*env)->NewByteArray(env, sizeof accstate->buffer);
+		if (jaccarray)
+			jaccarray = (*env)->NewGlobalRef(env, jaccarray);
+		if (!jaccarray)
 		{
-			(*env)->DeleteGlobalRef(env, docarray);
-			(*env)->DeleteGlobalRef(env, jacc);
-			(*env)->DeleteGlobalRef(env, jdoc);
+			(*env)->DeleteGlobalRef(env, jdocarray);
+			(*env)->DeleteGlobalRef(env, jaccstm);
+			(*env)->DeleteGlobalRef(env, jdocstm);
 			if (magic) (*env)->ReleaseStringUTFChars(env, jmagic, magic);
 			jni_throw_run(env, "cannot create internal buffer for accelerator stream");
 		}
@@ -111,39 +112,39 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 
 	fz_try(ctx)
 	{
-		if (jdoc)
+		if (jdocstm)
 		{
 			/* No exceptions can occur from here to stream owning docstate, so we must not free docstate. */
 			docstate = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreamState_docstate");
-			docstate->stream = jdoc;
-			docstate->array = docarray;
+			docstate->stream = jdocstm;
+			docstate->array = jdocarray;
 
 			/* Ownership transferred to docstate. */
-			jdoc = NULL;
-			docarray = NULL;
+			jdocstm = NULL;
+			jdocarray = NULL;
 
 			/* Stream takes ownership of docstate. */
 			docstream = fz_new_stream(ctx, docstate, SeekableInputStream_next, SeekableInputStream_drop);
 			docstream->seek = SeekableInputStream_seek;
 		}
 
-		if (jacc)
+		if (jaccstm)
 		{
 			/* No exceptions can occur from here to stream owning accstate, so we must not free accstate. */
 			accstate = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreamState_accstate");
-			accstate->stream = jacc;
-			accstate->array = accarray;
+			accstate->stream = jaccstm;
+			accstate->array = jaccarray;
 
 			/* Ownership transferred to accstate. */
-			jacc = NULL;
-			accarray = NULL;
+			jaccstm = NULL;
+			jaccarray = NULL;
 
 			/* Stream takes ownership of accstate. */
 			accstream = fz_new_stream(ctx, accstate, SeekableInputStream_next, SeekableInputStream_drop);
 			accstream->seek = SeekableInputStream_seek;
 		}
 
-		doc = fz_open_accelerated_document_with_stream(ctx, magic, docstream, accstream);
+		doc = fz_open_accelerated_document_with_stream_and_dir(ctx, magic, docstream, accstream, arch);
 	}
 	fz_always(ctx)
 	{
@@ -154,10 +155,10 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 	}
 	fz_catch(ctx)
 	{
-		(*env)->DeleteGlobalRef(env, accarray);
-		(*env)->DeleteGlobalRef(env, docarray);
-		(*env)->DeleteGlobalRef(env, jacc);
-		(*env)->DeleteGlobalRef(env, jdoc);
+		(*env)->DeleteGlobalRef(env, jaccarray);
+		(*env)->DeleteGlobalRef(env, jdocarray);
+		(*env)->DeleteGlobalRef(env, jaccstm);
+		(*env)->DeleteGlobalRef(env, jdocstm);
 		jni_rethrow(env, ctx);
 	}
 
@@ -165,12 +166,18 @@ FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jstring jaccelerator)
+FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jobject jarch, jstring jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	const char *filename = NULL;
+	fz_archive *arch = from_Archive(env, jarch);
 	const char *accelerator = NULL;
+	fz_stream *docstream = NULL;
+	fz_stream *accstream = NULL;
+
+	fz_var(docstream);
+	fz_var(accstream);
 
 	if (!ctx) return NULL;
 	if (jfilename)
@@ -185,9 +192,20 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jst
 	}
 
 	fz_try(ctx)
-		doc = fz_open_accelerated_document(ctx, filename, accelerator);
+	{
+		if (arch)
+		{
+			docstream = fz_open_file(ctx, filename);
+			accstream = fz_open_file(ctx, accelerator);
+			doc = fz_open_accelerated_document_with_stream_and_dir(ctx, filename, docstream, accstream, arch);
+		}
+		else
+			doc = fz_open_accelerated_document(ctx, filename, accelerator);
+	}
 	fz_always(ctx)
 	{
+		fz_drop_stream(ctx, accstream);
+		fz_drop_stream(ctx, docstream);
 		if (accelerator)
 			(*env)->ReleaseStringUTFChars(env, jaccelerator, accelerator);
 		if (filename)
@@ -201,19 +219,20 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename, jst
 
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfilename, jobject jaccelerator)
+FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfilename, jobject jarch, jobject jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
 	const char *filename = NULL;
 	fz_stream *docstream = NULL;
 	fz_stream *accstream = NULL;
-	jobject jacc = NULL;
-	jbyteArray accarray = NULL;
+	fz_archive *arch = from_Archive(env, jarch);
+	jobject jaccstm = NULL;
+	jbyteArray jaccarray = NULL;
 	SeekableStreamState *accstate = NULL;
 
-	fz_var(jacc);
-	fz_var(accarray);
+	fz_var(jaccstm);
+	fz_var(jaccarray);
 	fz_var(accstream);
 	fz_var(docstream);
 
@@ -225,20 +244,20 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 	}
 	if (jaccelerator)
 	{
-		jacc = (*env)->NewGlobalRef(env, jaccelerator);
-		if (!jacc)
+		jaccstm = (*env)->NewGlobalRef(env, jaccelerator);
+		if (!jaccstm)
 		{
 			if (jfilename) (*env)->ReleaseStringUTFChars(env, jfilename, filename);
 			jni_throw_run(env, "cannot get reference to accelerator stream");
 		}
 	}
 
-	accarray = (*env)->NewByteArray(env, sizeof accstate->buffer);
-	if (accarray)
-		accarray = (*env)->NewGlobalRef(env, accarray);
-	if (!accarray)
+	jaccarray = (*env)->NewByteArray(env, sizeof accstate->buffer);
+	if (jaccarray)
+		jaccarray = (*env)->NewGlobalRef(env, jaccarray);
+	if (!jaccarray)
 	{
-		(*env)->DeleteGlobalRef(env, jacc);
+		(*env)->DeleteGlobalRef(env, jaccstm);
 		if (jfilename) (*env)->ReleaseStringUTFChars(env, jfilename, filename);
 		jni_throw_run(env, "cannot get create internal buffer for accelerator stream");
 	}
@@ -248,23 +267,23 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 		if (filename)
 			docstream = fz_open_file(ctx, filename);
 
-		if (jacc)
+		if (jaccstm)
 		{
 			/* No exceptions can occur from here to stream owning accstate, so we must not free accstate. */
 			accstate = Memento_label(fz_malloc(ctx, sizeof(SeekableStreamState)), "SeekableStreamState_accstate2");
-			accstate->stream = jacc;
-			accstate->array = accarray;
+			accstate->stream = jaccstm;
+			accstate->array = jaccarray;
 
 			/* Ownership transferred to accstate. */
-			jacc = NULL;
-			accarray = NULL;
+			jaccstm = NULL;
+			jaccarray = NULL;
 
 			/* Stream takes ownership of accstate. */
 			accstream = fz_new_stream(ctx, accstate, SeekableInputStream_next, SeekableInputStream_drop);
 			accstream->seek = SeekableInputStream_seek;
 		}
 
-		doc = fz_open_accelerated_document_with_stream(ctx, filename, docstream, accstream);
+		doc = fz_open_accelerated_document_with_stream_and_dir(ctx, filename, docstream, accstream, arch);
 	}
 	fz_always(ctx)
 	{
@@ -274,8 +293,8 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 	}
 	fz_catch(ctx)
 	{
-		(*env)->DeleteGlobalRef(env, accarray);
-		(*env)->DeleteGlobalRef(env, jacc);
+		(*env)->DeleteGlobalRef(env, jaccarray);
+		(*env)->DeleteGlobalRef(env, jaccstm);
 		jni_rethrow(env, ctx);
 	}
 
@@ -283,7 +302,7 @@ FUN(Document_openNativeWithPathAndStream)(JNIEnv *env, jclass cls, jstring jfile
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobject jbuffer, jobject jaccelerator)
+FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jobject jbuffer, jstring jmagic, jobject jarch, jobject jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
@@ -293,6 +312,7 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 	fz_buffer *docbuf = NULL;
 	fz_buffer *accbuf = NULL;
 	jbyte *buffer = NULL;
+	fz_archive *arch = from_Archive(env, jarch);
 	jbyte *accelerator = NULL;
 	int n, m;
 
@@ -348,7 +368,7 @@ FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jstring jmagic, jobj
 			accstream = fz_open_buffer(ctx, accbuf);
 		}
 
-		doc = fz_open_accelerated_document_with_stream(ctx, magic, docstream, accstream);
+		doc = fz_open_accelerated_document_with_stream_and_dir(ctx, magic, docstream, accstream, arch);
 	}
 	fz_always(ctx)
 	{

@@ -56,19 +56,32 @@ Static methods
 
 .. function::
 	Document.openDocument(filename)
+	Document.openDocument(filename, dir)
+	Document.openDocument(filename, accelerator, dir)
 	Document.openDocument(buffer, magic)
+	Document.openDocument(buffer, magic, acceleratorbuffer)
+	Document.openDocument(buffer, magic, acceleratorbuffer, dir)
 
 	Open the named or given document.
 
 	:param string filename: File name to open.
-	:param Buffer | ArrayBuffer | Uint8Array | string buffer: Buffer containing a PDF file.
+	:param Buffer | ArrayBuffer | Uint8Array | string buffer: Buffer containing a document file.
 	:param string magic: An optional :term:`MIME-type` or file extension. Defaults to "application/pdf".
+	:param string accelerator: File name of accelerator file.
+	:param Buffer | ArrayBuffer | Uint8Array | string acceleratorbuffer: Buffer containing an accelerator file.
+	:param Archive dir: An archive from which to load resources for rendering.
 
 	:returns: Document
 
 	.. code-block::
 
-		var document = mupdf.Document.openDocument("my_pdf.pdf", "application/pdf")
+		var document1 = mupdf.Document.openDocument("my_pdf.pdf", "application/pdf")
+		var document2 = mupdf.Document.openDocument("my_pdf.pdf", dir)
+		var document3 = mupdf.Document.openDocument("my_pdf.pdf", acceleratorfile, dir)
+		var document4 = mupdf.Document.openDocument(fs.readFileSync("my_pdf.pdf"), "application/pdf")
+		var document5 = mupdf.Document.openDocument(fs.readFileSync("my_pdf.pdf"), acceleratorbuffer, "application/pdf")
+		var document6 = mupdf.Document.openDocument(fs.readFileSync("my_pdf.pdf"), acceleratorbuffer, dir, "application/pdf")
+
 .. function::
 	Document.recognize(magic)
 	Document.recognizeContent(filename)
