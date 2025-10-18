@@ -7240,16 +7240,40 @@ static void ffi_pushobj(js_State *J, pdf_obj *obj)
 static void ffi_new_PDFDocument(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	const char *filename = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	pdf_document *pdf = NULL;
 
-	fz_try(ctx)
-		if (filename)
-			pdf = pdf_open_document(ctx, filename);
-		else
-			pdf = pdf_create_document(ctx);
-	fz_catch(ctx)
-		rethrow(J);
+	if (js_isuserdata(J, 1, "fz_buffer"))
+	{
+		fz_buffer *docbuf = ffi_tonewbuffer(J, 1);
+		fz_stream *docstm = NULL;
+
+		fz_var(docstm);
+
+		fz_try(ctx)
+		{
+			docstm = fz_open_buffer(ctx, docbuf);
+			pdf = pdf_open_document_with_stream(ctx, docstm);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_stream(ctx, docstm);
+			fz_drop_buffer(ctx, docbuf);
+		}
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else
+	{
+		const char *filename = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+
+		fz_try(ctx)
+			if (filename)
+				pdf = pdf_open_document(ctx, filename);
+			else
+				pdf = pdf_create_document(ctx);
+		fz_catch(ctx)
+			rethrow(J);
+	}
 
 	js_getregistry(J, "pdf_document");
 	js_newuserdata(J, "pdf_document", pdf, ffi_gc_pdf_document);
