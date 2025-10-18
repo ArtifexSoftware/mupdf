@@ -3651,15 +3651,41 @@ static void ffi_setUserCSS(js_State *J)
 static void ffi_new_Archive(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	const char *path = js_tostring(J, 1);
 	fz_archive *arch = NULL;
-	fz_try(ctx)
-		if (fz_is_directory(ctx, path))
-			arch = fz_open_directory(ctx, path);
-		else
-			arch = fz_open_archive(ctx, path);
-	fz_catch(ctx)
-		rethrow(J);
+
+	if (js_isuserdata(J, 1, "fz_buffer"))
+	{
+		fz_buffer *archbuf = ffi_tonewbuffer(J, 1);
+		fz_stream *archstm = NULL;
+
+		fz_var(archstm);
+
+		fz_try(ctx)
+		{
+			archstm = fz_open_buffer(ctx, archbuf);
+			arch = fz_open_archive_with_stream(ctx, archstm);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_stream(ctx, archstm);
+			fz_drop_buffer(ctx, archbuf);
+		}
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else
+	{
+		const char *path = js_tostring(J, 1);
+		fz_try(ctx)
+			if (fz_is_directory(ctx, path))
+				arch = fz_open_directory(ctx, path);
+			else
+				arch = fz_open_archive(ctx, path);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
+
 	ffi_pusharchive(J, arch);
 }
 

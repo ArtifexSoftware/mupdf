@@ -17,11 +17,19 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Archive_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Archive
- * Method:    newNativeArchive
+ * Method:    newNativeArchiveWithPath
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Archive_newNativeArchive
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Archive_newNativeArchiveWithPath
   (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Archive
+ * Method:    newNativeArchiveWithStream
+ * Signature: (Lcom/artifex/mupdf/fitz/SeekableInputStream;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Archive_newNativeArchiveWithStream
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Archive
