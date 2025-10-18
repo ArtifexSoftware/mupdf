@@ -11905,12 +11905,27 @@ static void ffi_new_PDFPKCS7Signer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_pkcs7_signer *signer = NULL;
-	const char *filename = js_tostring(J, 1);
 	const char *password = js_tostring(J, 2);
-	fz_try(ctx)
-		signer = pkcs7_openssl_read_pfx(ctx, filename, password);
-	fz_catch(ctx)
-		rethrow(J);
+
+	if (js_isuserdata(J, 1, "fz_buffer"))
+	{
+		fz_buffer *buf = ffi_tonewbuffer(J, 1);
+		fz_try(ctx)
+			signer = pkcs7_openssl_read_pfx_from_buffer(ctx, buf, password);
+		fz_always(ctx)
+			fz_drop_buffer(ctx, buf);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+	else
+	{
+		const char *filename = js_tostring(J, 1);
+		fz_try(ctx)
+			signer = pkcs7_openssl_read_pfx(ctx, filename, password);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
 	ffi_pushsigner(J, signer);
 }
 
