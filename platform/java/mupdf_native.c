@@ -112,6 +112,7 @@ static jclass cls_FitzInputStream;
 static jclass cls_Float;
 static jclass cls_FloatArray;
 static jclass cls_Font;
+static jclass cls_FontLoader;
 static jclass cls_Story;
 static jclass cls_IOException;
 static jclass cls_IllegalArgumentException;
@@ -202,6 +203,7 @@ static jfieldID fid_FitzInputStream_closed;
 static jfieldID fid_FitzInputStream_markpos;
 static jfieldID fid_FitzInputStream_pointer;
 static jfieldID fid_Font_pointer;
+static jfieldID fid_Font_fontLoader;
 static jfieldID fid_Story_pointer;
 static jfieldID fid_Image_pointer;
 static jfieldID fid_Link_pointer;
@@ -349,6 +351,7 @@ static jmethodID mid_DOMAttribute_init;
 static jmethodID mid_FitzInputStream_init;
 static jmethodID mid_Float_init;
 static jmethodID mid_Font_init;
+static jmethodID mid_FontLoader_loadFont;
 static jmethodID mid_Image_init;
 static jmethodID mid_Link_init;
 static jmethodID mid_Location_init;
@@ -1229,7 +1232,11 @@ static int find_fids(JNIEnv *env)
 
 	cls_Font = get_class(&err, env, PKG"Font");
 	fid_Font_pointer = get_field(&err, env, "pointer", "J");
+	fid_Font_fontLoader = get_static_field(&err, env, "fontLoader", "L"PKG"Font$FontLoader;");
 	mid_Font_init = get_method(&err, env, "<init>", "(J)V");
+
+	cls_FontLoader = get_class(&err, env, PKG"Font$FontLoader");
+	mid_FontLoader_loadFont = get_method(&err, env, "loadFont", "(Ljava/lang/String;Ljava/lang/String;ZZ)L"PKG"Font;");
 
 	cls_Story = get_class(&err, env, PKG"Story");
 	fid_Story_pointer = get_field(&err, env, "pointer", "J");
@@ -1652,6 +1659,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Float);
 	(*env)->DeleteGlobalRef(env, cls_FloatArray);
 	(*env)->DeleteGlobalRef(env, cls_Font);
+	(*env)->DeleteGlobalRef(env, cls_FontLoader);
 	(*env)->DeleteGlobalRef(env, cls_Story);
 	(*env)->DeleteGlobalRef(env, cls_IOException);
 	(*env)->DeleteGlobalRef(env, cls_IllegalArgumentException);

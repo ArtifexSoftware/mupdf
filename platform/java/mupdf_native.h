@@ -2082,6 +2082,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Font_encodeCharacter
 JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Font_advanceGlyph
   (JNIEnv *, jobject, jint, jboolean);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    installFontLoader
+ * Signature: (Lcom/artifex/mupdf/fitz/Font/FontLoader;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Font_installFontLoader
+  (JNIEnv *, jclass, jobject);
+
 #ifdef __cplusplus
 }
 #endif
