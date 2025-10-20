@@ -691,8 +691,6 @@ analyse_sub(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 {
 	fz_rect margins;
 	boxer_t *boxer;
-	boxer_t *boxer1 = NULL;
-	boxer_t *boxer2 = NULL;
 	fz_stext_struct *div;
 	int ret = 0;
 
@@ -705,9 +703,6 @@ analyse_sub(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 
 	/* Now subset the rectangles just to include those that are in our bbox. */
 	boxer = boxer_subset(ctx, big_boxer, margins);
-
-	fz_var(boxer1);
-	fz_var(boxer2);
 
 	fz_try(ctx)
 	{
@@ -759,8 +754,6 @@ analyse_sub(fz_context *ctx, fz_stext_page *page, fz_stext_block **first_block, 
 	}
 	fz_always(ctx)
 	{
-		boxer_destroy(ctx, boxer1);
-		boxer_destroy(ctx, boxer2);
 		boxer_destroy(ctx, boxer);
 	}
 	fz_catch(ctx)
