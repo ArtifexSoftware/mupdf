@@ -1688,7 +1688,7 @@ static fz_font *load_js_font_file(fz_context *ctx, const char *name, const char 
 
 static fz_font *load_js_font(fz_context *ctx, const char *name, int bold, int italic, int needs_exact_metrics)
 {
-	return load_js_font_file(ctx, name, "undefined", bold, italic);
+	return load_js_font_file(ctx, name, NULL, bold, italic);
 }
 
 static fz_font *load_js_cjk_font(fz_context *ctx, const char *name, int ordering, int serif)
@@ -1705,7 +1705,7 @@ static fz_font *load_js_cjk_font(fz_context *ctx, const char *name, int ordering
 
 static fz_font *load_js_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
 {
-	return load_js_font_file(ctx, "undefined", fz_lookup_script_name(ctx, script, language), bold, italic);
+	return load_js_font_file(ctx, NULL, fz_lookup_script_name(ctx, script, language), bold, italic);
 }
 
 static void ffi_installLoadFontFunction(js_State *J)
