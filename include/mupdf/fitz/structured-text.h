@@ -696,6 +696,12 @@ void fz_paragraph_break(fz_context *ctx, fz_stext_page *page);
 void fz_table_hunt(fz_context *ctx, fz_stext_page *page);
 
 /**
+	Hunt for possible tables within a specific rect on a page, and
+	update the stext with information.
+*/
+void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
+
+/**
 	Interpret the bounded contents of a given stext page as
 	a table.
 

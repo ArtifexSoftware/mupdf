@@ -3150,7 +3150,7 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 }
 
 static int
-do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background)
+do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background, fz_rect top_bounds)
 {
 	fz_stext_block *block;
 	int count;
@@ -3167,7 +3167,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 	if (all_blocks_are_justified_or_headers(ctx, *first_block))
 		return num_subtables;
 
-	gd.bounds = fz_infinite_rect;
+	gd.bounds = top_bounds;
 
 	/* First off, descend into any children to see if those look like tables. */
 	count = 0;
@@ -3178,7 +3178,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 			if (block->u.s.down)
 			{
 				int background = 0;
-				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background);
+				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds);
 				if (background)
 					*has_background = 1;
 				count++;
@@ -3295,7 +3295,24 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 
 	assert(verify_stext(ctx, page, NULL));
 
-	do_table_hunt(ctx, page, NULL, &has_background);
+	do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect);
+
+	assert(verify_stext(ctx, page, NULL));
+}
+
+void
+fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect rect)
+{
+	int has_background = 0;
+
+	if (page == NULL)
+		return;
+
+	assert(verify_stext(ctx, page, NULL));
+
+	fz_segment_stext_rect(ctx, page, rect);
+
+	do_table_hunt(ctx, page, NULL, &has_background, rect);
 
 	assert(verify_stext(ctx, page, NULL));
 }
