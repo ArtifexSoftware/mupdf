@@ -684,6 +684,25 @@ fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts
 int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page);
 
 /**
+	Perform segmentation analysis on a rectangle of a given
+	stext page.
+
+	Like fz_segment_stext_page, this attempts to split the page
+	horizontally and/or vertically repeatedly into smaller and smaller
+	"segments".
+
+	This works for pages with structure too, but splitting with
+	rectangles that cut across structure blocks may not behave as
+	expected.
+
+	Returns 0 if no changes were made to the document.
+
+	This is experimental code, and may change (or be removed) in future
+	versions!
+*/
+int fz_segment_stext_rect(fz_context *ctx, fz_stext_page *page, fz_rect rect);
+
+/**
 	Attempt to break paragraphs at plausible places.
 */
 void fz_paragraph_break(fz_context *ctx, fz_stext_page *page);
