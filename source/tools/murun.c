@@ -3639,13 +3639,29 @@ static void ffi_readFile(js_State *J)
 static void ffi_setUserCSS(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	const char *user_css = js_tostring(J, 1);
 	int use_doc_css = js_iscoercible(J, 2) ? js_toboolean(J, 2) : 1;
-	fz_try(ctx) {
-		fz_set_user_css(ctx, user_css);
-		fz_set_use_document_css(ctx, use_doc_css);
-	} fz_catch(ctx)
-		rethrow(J);
+
+	if (js_isuserdata(J, 1, "fz_buffer"))
+	{
+		fz_buffer *cssbuf = ffi_tonewbuffer(J, 1);
+		const char *user_css = NULL;
+		fz_try(ctx) {
+			user_css = fz_string_from_buffer(ctx, cssbuf);
+			fz_set_user_css(ctx, user_css);
+			fz_set_use_document_css(ctx, use_doc_css);
+		} fz_catch(ctx)
+			rethrow(J);
+	}
+	else
+	{
+		const char *user_css = js_tostring(J, 1);
+		fz_try(ctx) {
+			fz_set_user_css(ctx, user_css);
+			fz_set_use_document_css(ctx, use_doc_css);
+		} fz_catch(ctx)
+			rethrow(J);
+	}
+
 }
 
 static void ffi_new_Archive(js_State *J)
