@@ -301,7 +301,7 @@ do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **stream
 				{
 					/* in case of zip errors when recognizing EPUB/XPS/DOCX files */
 					fz_rethrow_unless(ctx, FZ_ERROR_FORMAT);
-					(void)fz_convert_error(ctx, NULL); /* ugly hack to silence the error message */
+					fz_ignore_error(ctx);
 					score = 0;
 				}
 			}
