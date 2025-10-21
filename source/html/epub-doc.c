@@ -1203,9 +1203,8 @@ epub_open_document(fz_context *ctx, const fz_document_handler *handler, fz_strea
 		zip = fz_open_archive_with_stream(ctx, file);
 	}
 
-
 	fz_try(ctx)
-		doc = epub_init(ctx, zip, file);
+		doc = epub_init(ctx, zip, accel);
 	fz_always(ctx)
 		fz_drop_stream(ctx, file2);
 	fz_catch(ctx)
