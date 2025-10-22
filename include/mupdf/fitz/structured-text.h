@@ -658,6 +658,9 @@ fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts
 	Essentially this code attempts to split the page horizontally and/or
 	vertically repeatedly into smaller and smaller "segments" (divisions).
 
+	This minimises the reordering of the content, but some reordering
+	may be unavoidable.
+
 	Returns 0 if no changes were made to the document.
 
 	This is experimental code, and may change (or be removed) in future
@@ -669,13 +672,20 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page);
 	Perform segmentation analysis on a rectangle of a given
 	stext page.
 
-	Like fz_segment_stext_page, this attempts to split the page
-	horizontally and/or vertically repeatedly into smaller and smaller
-	"segments".
+	Like fz_segment_stext_page, this attempts to split the given page
+	region horizontally and/or vertically repeatedly into smaller and
+	smaller "segments".
 
 	This works for pages with structure too, but splitting with
 	rectangles that cut across structure blocks may not behave as
 	expected.
+
+	This minimises the reordering of the content (as viewed from the
+	perspective of a depth first traversal), but some reordering may
+	be unavoidable.
+
+	This function accepts smaller gaps for segmentation than the full
+	page segmentation does.
 
 	Returns 0 if no changes were made to the document.
 

@@ -30,21 +30,24 @@ typedef struct boxer_s boxer_t;
 typedef struct {
 	int len;
 	int max;
+	double fudge;
 	fz_rect list[FZ_FLEXIBLE_ARRAY];
 } rectlist_t;
 
 struct boxer_s {
 	fz_rect mediabox;
 	rectlist_t *list;
+	int tight;
 };
 
 static rectlist_t *
-rectlist_create(fz_context *ctx, int max)
+rectlist_create(fz_context *ctx, int max, double fudge)
 {
 	rectlist_t *list = fz_malloc_flexible(ctx, rectlist_t, list, max);
 
 	list->len = 0;
 	list->max = max;
+	list->fudge = fudge;
 
 	return list;
 }
@@ -56,13 +59,15 @@ static void
 rectlist_append(rectlist_t *list, fz_rect *box)
 {
 	int i;
+	/* We allow ourselves a fudge factor when checking for inclusion.
+	 * This is either 4 points, or 0 points, depending on whether
+	 * we are running in 'tight' mode or not. */
+	double r_fudge = list->fudge;
 
 	for (i = 0; i < list->len; i++)
 	{
 		fz_rect *r = &list->list[i];
 		fz_rect smaller, larger;
-		/* We allow ourselves a fudge factor of 4 points when checking for inclusion. */
-		double r_fudge = 4;
 
 		smaller.x0 = r->x0 + r_fudge;
 		larger. x0 = r->x0 - r_fudge;
@@ -95,7 +100,7 @@ rectlist_append(rectlist_t *list, fz_rect *box)
 }
 
 static boxer_t *
-boxer_create_length(fz_context *ctx, fz_rect *mediabox, int len)
+boxer_create_length(fz_context *ctx, fz_rect *mediabox, int len, int tight)
 {
 	boxer_t *boxer = fz_malloc_struct(ctx, boxer_t);
 
@@ -103,16 +108,17 @@ boxer_create_length(fz_context *ctx, fz_rect *mediabox, int len)
 		return NULL;
 
 	memcpy(&boxer->mediabox, mediabox, sizeof(*mediabox));
-	boxer->list = rectlist_create(ctx, len);
+	boxer->list = rectlist_create(ctx, len, tight ? 0 : 4);
+	boxer->tight = tight;
 
 	return boxer;
 }
 
 /* Create a boxer structure for a page of size mediabox. */
 static boxer_t *
-boxer_create(fz_context *ctx, fz_rect *mediabox)
+boxer_create(fz_context *ctx, fz_rect *mediabox, int tight)
 {
-	boxer_t *boxer = boxer_create_length(ctx, mediabox, 1);
+	boxer_t *boxer = boxer_create_length(ctx, mediabox, 1, tight);
 
 	if (boxer == NULL)
 		return NULL;
@@ -150,7 +156,7 @@ static void boxer_feed(fz_context *ctx, boxer_t *boxer, fz_rect *bbox)
 	fz_rect box;
 	/* When we feed a box into a the boxer, we can never make
 	* the list more than 4 times as long. */
-	rectlist_t *newlist = rectlist_create(ctx, boxer->list->len * 4);
+	rectlist_t *newlist = rectlist_create(ctx, boxer->list->len * 4, boxer->list->fudge);
 
 #ifdef DEBUG_WRITE_AS_PS
 	printf("0 0 1 setrgbcolor\n");
@@ -278,7 +284,7 @@ static fz_rect boxer_margins(boxer_t *boxer)
 /* Create a new boxer from a subset of an old one. */
 static boxer_t *boxer_subset(fz_context *ctx, boxer_t *boxer, fz_rect rect)
 {
-	boxer_t *new_boxer = boxer_create_length(ctx, &rect, boxer->list->len);
+	boxer_t *new_boxer = boxer_create_length(ctx, &rect, boxer->list->len, boxer->tight);
 	int i;
 
 	if (new_boxer == NULL)
@@ -866,7 +872,7 @@ feed_line(fz_context *ctx, boxer_t *boxer, fz_stext_line *line)
 		do
 		{
 			fz_rect bbox = fz_rect_from_quad(ch->quad);
-			float margin = ch->size/2;
+			float margin = boxer->tight ? 0 : ch->size/2;
 			bbox.x0 -= margin;
 			bbox.y0 -= margin;
 			bbox.x1 += margin;
@@ -965,12 +971,12 @@ recurse_and_feed(fz_context *ctx, boxer_t *boxer, fz_stext_block *block)
 }
 
 static int
-segment_rect(fz_context *ctx, fz_rect box, fz_stext_page *page, fz_stext_struct *parent)
+segment_rect(fz_context *ctx, fz_rect box, fz_stext_page *page, fz_stext_struct *parent, int tight)
 {
 	boxer_t *boxer;
 	int ret = 0;
 
-	boxer = boxer_create(ctx, &box);
+	boxer = boxer_create(ctx, &box, tight);
 
 	fz_try(ctx)
 	{
@@ -996,7 +1002,7 @@ int fz_segment_stext_rect(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 	printf("1 -1 scale 0 -%g translate\n", rect.y1-rect.y0);
 #endif
 
-	return segment_rect(ctx, rect, page, NULL);
+	return segment_rect(ctx, rect, page, NULL, 1);
 }
 
 int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
@@ -1013,5 +1019,5 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 	printf("1 -1 scale 0 -%g translate\n", page->mediabox.y1-page->mediabox.y0);
 #endif
 
-	return segment_rect(ctx, page->mediabox, page, NULL);
+	return segment_rect(ctx, page->mediabox, page, NULL, 0);
 }
