@@ -469,6 +469,7 @@ static void
 do_dump_stext(fz_stext_block *block, int depth)
 {
 	int d;
+	int idx = -1;
 
 	while (block)
 	{
@@ -486,7 +487,9 @@ do_dump_stext(fz_stext_block *block, int depth)
 				printf("VECTOR %p\n", block);
 				break;
 			case FZ_STEXT_BLOCK_STRUCT:
-				printf("STRUCT %p\n", block);
+				printf("STRUCT %p (idx=%d)\n", block, block->u.s.index);
+				assert(block->u.s.index > idx);
+				idx = block->u.s.index;
 				do_dump_stext(block->u.s.down->first_block, depth+1);
 				break;
 		}
