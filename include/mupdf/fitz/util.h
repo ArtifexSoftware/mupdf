@@ -82,6 +82,7 @@ fz_pixmap *fz_fill_pixmap_from_display_list(fz_context *ctx, fz_display_list *li
 
 	Ownership of the fz_stext_page is returned to the caller.
 */
+fz_stext_page *fz_new_stext_page_from_page_with_cookie(fz_context *ctx, fz_page *page, const fz_stext_options *options, fz_cookie *cookie);
 fz_stext_page *fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options);
 fz_stext_page *fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_stext_options *options);
 fz_stext_page *fz_new_stext_page_from_chapter_page_number(fz_context *ctx, fz_document *doc, int chapter, int number, const fz_stext_options *options);

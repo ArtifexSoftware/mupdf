@@ -293,7 +293,7 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, cons
 }
 
 fz_stext_page *
-fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options)
+fz_new_stext_page_from_page_with_cookie(fz_context *ctx, fz_page *page, const fz_stext_options *options, fz_cookie *cookie)
 {
 	fz_stext_page *text;
 	fz_device *dev = NULL;
@@ -307,7 +307,7 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_optio
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, text, options);
-		fz_run_page_contents(ctx, page, dev, fz_identity, NULL);
+		fz_run_page_contents(ctx, page, dev, fz_identity, cookie);
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -321,6 +321,12 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_optio
 	}
 
 	return text;
+}
+
+fz_stext_page *
+fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options)
+{
+	return fz_new_stext_page_from_page_with_cookie(ctx, page, options, NULL);
 }
 
 fz_stext_page *
