@@ -2608,6 +2608,11 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 	/* Convert to 'before' */
 	if (insert.block)
 		insert.block = insert.block->next;
+	else
+	{
+		insert.block = parent ? parent->first_block : page->first_block;
+		insert.parent = parent;
+	}
 
 	/* Make table */
 	table = add_struct_block_before(ctx, insert.block, page, insert.parent, FZ_STRUCTURE_TABLE, "Table");
