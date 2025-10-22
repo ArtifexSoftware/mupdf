@@ -35,10 +35,14 @@ pdf_filter_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *page
 static void
 pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_obj *res, pdf_filter_options *options, pdf_cycle_list *cycle_up)
 {
+	pdf_cycle_list cycle;
 	pdf_obj *obj;
 	int i, n;
 
 	if (!options->recurse)
+		return;
+
+	if (pdf_cycle(ctx, &cycle, cycle_up, in_res))
 		return;
 
 	/* ExtGState */
@@ -55,7 +59,7 @@ pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_ob
 				if (g)
 				{
 					/* Transparency group XObject */
-					pdf_filter_xobject(ctx, doc, g, in_res, options, cycle_up);
+					pdf_filter_xobject(ctx, doc, g, in_res, options, &cycle);
 				}
 			}
 		}
@@ -71,7 +75,7 @@ pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_ob
 			pdf_obj *pat = pdf_dict_get_val(ctx, obj, i);
 			if (pat && pdf_dict_get_int(ctx, pat, PDF_NAME(PatternType)) == 1)
 			{
-				pdf_filter_xobject(ctx, doc, pat, in_res, options, cycle_up);
+				pdf_filter_xobject(ctx, doc, pat, in_res, options, &cycle);
 			}
 		}
 	}
@@ -88,7 +92,7 @@ pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_ob
 				pdf_obj *xobj = pdf_dict_get_val(ctx, obj, i);
 				if (xobj && pdf_dict_get(ctx, xobj, PDF_NAME(Subtype)) == PDF_NAME(Form))
 				{
-					pdf_filter_xobject(ctx, doc, xobj, in_res, options, cycle_up);
+					pdf_filter_xobject(ctx, doc, xobj, in_res, options, &cycle);
 				}
 			}
 		}
@@ -104,7 +108,7 @@ pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_ob
 			pdf_obj *font = pdf_dict_get_val(ctx, obj, i);
 			if (font && pdf_dict_get(ctx, font, PDF_NAME(Subtype)) == PDF_NAME(Type3))
 			{
-				pdf_filter_type3(ctx, doc, font, in_res, options, cycle_up);
+				pdf_filter_type3(ctx, doc, font, in_res, options, &cycle);
 			}
 		}
 	}
