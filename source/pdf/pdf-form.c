@@ -2386,6 +2386,10 @@ static void pdf_bake_annot(fz_context *ctx, fz_buffer *buf, pdf_document *doc, p
 	pdf_obj *ap;
 	char name[20];
 
+	int flags = pdf_dict_get_int(ctx, annot, PDF_NAME(F));
+	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN))
+		return;
+
 	ap = get_annot_ap(ctx, annot);
 	if (ap)
 	{
