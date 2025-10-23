@@ -1120,4 +1120,14 @@ int fz_stext_page_block_iterator_eod_dfs(fz_stext_page_block_iterator pos);
 void
 fz_classify_stext_rect(fz_context *ctx, fz_stext_page *page, fz_structure classification, fz_rect rect);
 
+/*
+	Remove any prefix of large white rectangular vectors that (almost)
+	fills the page from the stext.
+
+	This is an experimental interface. It may be updated or removed in
+	future with no warning!
+*/
+int
+fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page);
+
 #endif

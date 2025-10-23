@@ -1021,3 +1021,84 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 
 	return segment_rect(ctx, page->mediabox, page, NULL, 0);
 }
+
+int
+fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
+{
+	fz_stext_page_block_iterator iter;
+	int dropped = 0;
+	fz_rect coverage = fz_empty_rect;
+
+	/* First, find the area actually covered on the page. */
+	for (iter = fz_stext_page_block_iterator_begin(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
+	{
+		/* Try to ignore stuff that's completely off screen */
+		fz_rect bbox = fz_intersect_rect(page->mediabox, iter.pos->bbox);
+
+		coverage = fz_union_rect(coverage, bbox);
+	}
+
+	/* Iterate across all the blocks in the page in a depth first order. We'll break out
+	 * when we find the first one that is not a white (or transparent) rectangle fill
+	 * that covers a significant amount of the page. This therefore copes with several
+	 * page fills on the same page. */
+	for (iter = fz_stext_page_block_iterator_begin(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
+	{
+		fz_rect bbox;
+
+		/* Stop searching when we find something that's not a vector */
+		if (iter.pos->type != FZ_STEXT_BLOCK_VECTOR)
+			break;
+
+		/* Stop searching when we find a vector that's not a rectangle */
+		if ((iter.pos->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
+			break;
+
+		/* Stop searching when we find a vector that's stroked */
+		if ((iter.pos->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED) != 0)
+			break;
+
+		/* Stop searching when we find a vector that's not white (or invisible) */
+		if ((iter.pos->u.v.argb & 0xff000000) != 0 && (iter.pos->u.v.argb & 0xffffff) != 0xffffff)
+			break;
+
+		/* If we don't cover the coverage area, then we can't be a background. */
+		bbox = fz_expand_rect(iter.pos->bbox, 0.1f); /* Allow for rounding */
+		if (!fz_contains_rect(bbox, coverage))
+			break;
+
+		/* If we don't cover at least 90% of the height/width, then give up. */
+		if (fz_is_infinite_rect(page->mediabox))
+		{
+			/* Can't judge. Skip this check. */
+		}
+		else if ((iter.pos->bbox.y1 - iter.pos->bbox.y0) < 0.9f * (page->mediabox.y1 - page->mediabox.y0) ||
+			(iter.pos->bbox.x1 - iter.pos->bbox.x0) < 0.9f * (page->mediabox.x1 - page->mediabox.x0))
+		{
+			break;
+		}
+
+		/* This is a background block. Remove it. This will be the first block
+		 * in the list, so it's simpler. */
+		if (iter.parent)
+		{
+			iter.parent->first_block = iter.pos->next;
+			if (iter.pos->next)
+				iter.pos->next->prev = NULL;
+			else
+				iter.parent->last_block = NULL;
+		}
+		else
+		{
+			iter.page->first_block = iter.pos->next;
+			if (iter.pos->next)
+				iter.pos->next->prev = NULL;
+			else
+				iter.page->last_block = NULL;
+		}
+
+		dropped = 1;
+	}
+
+	return dropped;
+}
