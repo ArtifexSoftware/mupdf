@@ -1648,17 +1648,14 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
 	if (fz_display_list_is_empty(ctx, font->t3lists[gid]))
 	{
-		fz_rect *r = get_gid_bbox(ctx, font, gid);
-		/* If empty, no need for a huge bbox, especially as the logic
-		 * in the 'else if' can make it huge. */
-		r->x0 = font->flags.invalid_bbox ? 0 : font->bbox.x0;
-		r->y0 = font->flags.invalid_bbox ? 0 : font->bbox.y0;
-		r->x1 = r->x0 + .00001f;
-		r->y1 = r->y0 + .00001f;
+		fz_drop_display_list(ctx, font->t3lists[gid]);
+		font->t3lists[gid] = NULL;
 	}
-	else if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
+
+	if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
 	{
 		fz_rect *r = get_gid_bbox(ctx, font, gid);
 		*r = fz_transform_rect(d1_rect, font->t3matrix);
@@ -1669,6 +1666,11 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 			 * incompatible with it. Either way, don't trust the d1 rect
 			 * and calculate it from the contents. */
 			fz_bound_t3_glyph(ctx, font, gid);
+			/* If we've still got an empty region, then just live with the
+			 * d1_rect. This is important for selection rectangles for empty
+			 * glyphs. */
+			if (fz_is_empty_rect(*r))
+				*r = fz_transform_rect(d1_rect, font->t3matrix);
 		}
 	}
 	else
@@ -1676,6 +1678,12 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 		/* No bbox has been defined for this glyph, so compute it. */
 		fz_bound_t3_glyph(ctx, font, gid);
 	}
+}
+
+int
+fz_t3_glyph_empty(fz_context *ctx, fz_font *font, int gid)
+{
+	return font->t3lists[gid] == NULL;
 }
 
 void
@@ -1724,6 +1732,13 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix trm
 	{
 		fz_warn(ctx, "type3 glyph doesn't specify masked or colored");
 		model = NULL; /* Treat as masked */
+	}
+
+	if (fz_t3_glyph_empty(ctx, font, gid))
+	{
+		glyph = fz_new_pixmap(ctx, model, 1, 1, NULL/* FIXME */, 1);
+		fz_clear_pixmap(ctx, glyph);
+		return glyph;
 	}
 
 	bounds = fz_expand_rect(fz_bound_glyph(ctx, font, gid, trm), 1);
