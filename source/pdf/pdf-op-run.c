@@ -1222,7 +1222,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	 *  + if text rendering mode is set to a value other than 3 or 7, the text shall be rendered using the glyph descriptions in the Type 3 font.
 	 *  + If text rendering mode is set to a value of 4, 5, 6 or 7, nothing shall be added to the clipping path.
 	 */
-	type3_hitr = (fontdesc->font->t3procs && pr->tos.text_mode >= 4);
+	type3_hitr = (fontdesc->font->t3procs && gstate->text.render >= 4);
 
 	/* flush buffered text if rendermode has changed */
 	if (!pr->tos.text || gstate->text.render != pr->tos.text_mode || render_direct || type3_hitr)
@@ -1234,6 +1234,10 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	/* If Type3 and tr >= 4, then ignore the clipping path part. */
 	if (type3_hitr)
 		pr->tos.text_mode -= 4;
+
+	/* If Type3 and tr != 3, then use textrender mode 0. */
+	if (fontdesc->font->t3procs && pr->tos.text_mode != 3)
+		pr->tos.text_mode = 0;
 
 	if (render_direct && pr->tos.text_mode != 3 /* or 7, by type3_hitr */)
 	{
