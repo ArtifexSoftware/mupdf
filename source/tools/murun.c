@@ -10800,7 +10800,7 @@ static void ffi_PDFAnnotation_process(js_State *J)
 	}
 	fz_always(ctx)
 	{
-		pdf_processor_pop_resources(ctx, proc);
+		pdf_drop_obj(ctx, pdf_processor_pop_resources(ctx, proc));
 		pdf_drop_processor(ctx, proc);
 	}
 	fz_catch(ctx)
