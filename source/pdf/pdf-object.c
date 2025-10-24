@@ -1467,15 +1467,15 @@ void pdf_redo(fz_context *ctx, pdf_document *doc)
 	if (entry == NULL)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Already at end of history");
 
+	doc->journal->current = entry;
+
+	swap_fragments(ctx, doc, entry);
+
 	// nuke all caches
 	pdf_drop_page_tree_internal(ctx, doc);
 	pdf_sync_open_pages(ctx, doc);
 	for (frag = entry->head; frag; frag = frag->next)
 		pdf_purge_object_from_store(ctx, doc, frag->obj_num);
-
-	doc->journal->current = entry;
-
-	swap_fragments(ctx, doc, entry);
 }
 
 void pdf_discard_journal(fz_context *ctx, pdf_journal *journal)
