@@ -3159,6 +3159,12 @@ static void usage(const char *argv0)
 	exit(1);
 }
 
+static void version(void)
+{
+	fprintf(stderr, "mupdf-gl version %s\n", FZ_VERSION);
+	exit(1);
+}
+
 static int document_filter(const char *fname)
 {
 	return !!fz_recognize_document(ctx, fname);
@@ -3256,11 +3262,12 @@ int main(int argc, char **argv)
 
 	glutInit(&argc, argv);
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJb:A:B:C:T:Y:R:c:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJb:A:B:C:T:Y:R:c:v")) != -1)
 	{
 		switch (c)
 		{
 		default: usage(argv[0]); break;
+		case 'v': version(); break;
 		case 'p': password = fz_optarg; break;
 		case 'r': currentzoom = fz_atof(fz_optarg); break;
 		case 'c': profile_name = fz_optarg; break;
