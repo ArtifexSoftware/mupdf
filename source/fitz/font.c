@@ -1680,12 +1680,6 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 	}
 }
 
-int
-fz_t3_glyph_empty(fz_context *ctx, fz_font *font, int gid)
-{
-	return font->t3lists[gid] == NULL;
-}
-
 void
 fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_device *dev)
 {
@@ -1715,7 +1709,11 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix trm
 
 	list = font->t3lists[gid];
 	if (!list)
-		return NULL;
+	{
+		glyph = fz_new_pixmap(ctx, model, 1, 1, NULL/* FIXME */, 1);
+		fz_clear_pixmap(ctx, glyph);
+		return glyph;
+	}
 
 	if (font->t3flags[gid] & FZ_DEVFLAG_MASK)
 	{
@@ -1732,13 +1730,6 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix trm
 	{
 		fz_warn(ctx, "type3 glyph doesn't specify masked or colored");
 		model = NULL; /* Treat as masked */
-	}
-
-	if (fz_t3_glyph_empty(ctx, font, gid))
-	{
-		glyph = fz_new_pixmap(ctx, model, 1, 1, NULL/* FIXME */, 1);
-		fz_clear_pixmap(ctx, glyph);
-		return glyph;
 	}
 
 	bounds = fz_expand_rect(fz_bound_glyph(ctx, font, gid, trm), 1);

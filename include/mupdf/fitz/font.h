@@ -598,11 +598,6 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid);
 void fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, struct fz_device *dev);
 
 /**
-	Tell us if a given t3 glyph is empty or not.
-*/
-int fz_t3_glyph_empty(fz_context *ctx, fz_font *font, int gid);
-
-/**
 	Return the advance for a given glyph.
 
 	font: The font to look for the glyph in.
