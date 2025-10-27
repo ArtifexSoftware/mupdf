@@ -1332,6 +1332,11 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 				}
 			}
 		}
+		else
+		{
+			/* don't stretch to match widths if no widths table was given */
+			fontdesc->font->flags.ft_stretch = 0;
+		}
 
 		pdf_end_hmtx(ctx, fontdesc);
 
