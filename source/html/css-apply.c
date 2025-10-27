@@ -996,6 +996,13 @@ add_shorthand_font(fz_css_match *match, fz_css_value *value, int spec)
 }
 
 static void
+add_shorthand_background(fz_css_match *match, fz_css_value *value, int spec)
+{
+	/* TODO: background-image, -origin, -size, -repeat */
+	add_property(match, PRO_BACKGROUND_COLOR, value, spec);
+}
+
+static void
 add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 {
 	/* shorthand expansions: */
@@ -1040,7 +1047,9 @@ add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 	case PRO_FONT:
 		add_shorthand_font(match, value, spec);
 		return;
-	/* TODO: background */
+	case PRO_BACKGROUND:
+		add_shorthand_background(match, value, spec);
+		return;
 	}
 
 	if (name < NUM_PROPERTIES && match->spec[name] <= spec)

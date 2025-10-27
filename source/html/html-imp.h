@@ -201,6 +201,7 @@ enum
 	NUM_PROPERTIES,
 
 	/* Short-hand properties (always expanded when applied, never used as is): */
+	PRO_BACKGROUND,
 	PRO_BORDER,
 	PRO_BORDER_BOTTOM,
 	PRO_BORDER_COLOR,
