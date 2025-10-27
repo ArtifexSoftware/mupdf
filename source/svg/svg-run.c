@@ -63,6 +63,27 @@ typedef struct svg_state
 static void svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state);
 static void svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *state);
 
+static int svg_push_use(fz_context *ctx, svg_document *doc, svg_cycle_list *here, fz_xml *symbol)
+{
+	svg_cycle_list *x = doc->cycle;
+	while (x)
+	{
+		if (x->symbol == symbol)
+			return 0;
+		x = x->up;
+	}
+	here->up = doc->cycle;
+	here->symbol = symbol;
+	doc->cycle = here;
+	return 1;
+}
+
+static void svg_pop_use(fz_context *ctx, svg_document *doc)
+{
+	if (doc->cycle)
+		doc->cycle = doc->cycle->up;
+}
+
 void svg_begin_state(fz_context *ctx, svg_state *child, const svg_state *parent)
 {
 	memcpy(child, parent, sizeof(svg_state));
@@ -1312,23 +1333,11 @@ svg_run_use_symbol(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *u
 		fz_rethrow(ctx);
 }
 
-static int
-is_use_cycle(fz_xml *use, fz_xml *symbol)
-{
-	/* If "use" is a direct child of "symbol", we have a recursive symbol/use definition! */
-	while (use)
-	{
-		if (use == symbol)
-			return 1;
-		use = fz_xml_up(use);
-	}
-	return 0;
-}
-
 static void
 svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, const svg_state *inherit_state)
 {
 	svg_state local_state;
+	svg_cycle_list cycle;
 
 	char *href_att = fz_xml_att_alt(root, "xlink:href", "href");
 	char *x_att = fz_xml_att(root, "x");
@@ -1358,13 +1367,24 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 			linked = fz_tree_lookup(ctx, doc->idmap, href_att + 1);
 			if (linked)
 			{
-				if (is_use_cycle(root, linked))
-					fz_warn(ctx, "svg: cyclic <use> reference");
-
-				if (fz_xml_is_tag(linked, "symbol"))
-					svg_run_use_symbol(ctx, dev, doc, root, linked, &local_state);
+				if (svg_push_use(ctx, doc, &cycle, linked))
+				{
+					fz_try(ctx)
+					{
+						if (fz_xml_is_tag(linked, "symbol"))
+							svg_run_use_symbol(ctx, dev, doc, root, linked, &local_state);
+						else
+							svg_run_element(ctx, dev, doc, linked, &local_state);
+					}
+					fz_always(ctx)
+						svg_pop_use(ctx, doc);
+					fz_catch(ctx)
+						fz_rethrow(ctx);
+				}
 				else
-					svg_run_element(ctx, dev, doc, linked, &local_state);
+				{
+					fz_warn(ctx, "svg: mutual recursion in <use> symbol");
+				}
 			}
 			else
 			{
