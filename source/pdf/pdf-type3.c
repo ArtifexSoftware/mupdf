@@ -230,7 +230,7 @@ void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fo
 		}
 
 		/* Derive missing font bbox from char bboxes if there are any. */
-		if (fontdesc->font->flags.invalid_bbox && fontdesc->font->bbox_table != NULL)
+		if ((fontdesc->font->flags.invalid_bbox || fz_is_empty_rect(fontdesc->font->bbox)) && fontdesc->font->bbox_table != NULL)
 		{
 			/* Union all the char bboxes together. */
 			fz_rect bbox = fz_empty_rect;
@@ -240,6 +240,8 @@ void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fo
 					bbox = fz_union_rect(bbox, fontdesc->font->bbox_table[0][i]);
 			}
 			fontdesc->font->bbox = bbox;
+			fontdesc->font->ascender = bbox.y1;
+			fontdesc->font->descender = bbox.y0;
 		}
 	}
 	fz_catch(ctx)
