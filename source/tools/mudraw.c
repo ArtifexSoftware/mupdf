@@ -944,17 +944,21 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 	else if (output_format == OUT_SVG)
 	{
-		float zoom;
 		fz_matrix ctm;
 		fz_rect tbounds;
 
-		zoom = resolution / 72;
-		ctm = fz_pre_rotate(fz_scale(zoom, zoom), rotation);
+		ctm = fz_pre_rotate(fz_identity, rotation);
 		tbounds = fz_transform_rect(mediabox, ctm);
 
 		fz_try(ctx)
 		{
-			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, FZ_SVG_TEXT_AS_PATH, 1);
+			fz_svg_device_options opts;
+			memset(&opts, 0, sizeof opts);
+			opts.text_format = FZ_SVG_TEXT_AS_PATH;
+			opts.reuse_images = 1;
+			opts.resolution = resolution;
+			opts.id = 0;
+			dev = fz_new_svg_device_with_options(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, &opts);
 			apply_kill_switch(dev);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);

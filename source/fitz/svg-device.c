@@ -83,6 +83,8 @@ typedef struct
 
 	float page_width;
 	float page_height;
+
+	float raster_scale; /* resolution of rasterized content (shadings, etc) */
 } svg_device;
 
 static fz_buffer *
@@ -974,6 +976,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_buffer *out = sdev->out;
+	fz_rect rect;
 	fz_irect bbox;
 	fz_pixmap *pix;
 	fz_rect scissor = fz_device_current_scissor(ctx, dev);
@@ -989,7 +992,8 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 		scissor.y1 = sdev->page_height;
 	}
 
-	bbox = fz_round_rect(fz_intersect_rect(fz_bound_shade(ctx, shade, ctm), scissor));
+	rect = fz_intersect_rect(fz_bound_shade(ctx, shade, ctm), scissor);
+	bbox = fz_round_rect(fz_transform_rect(rect, fz_scale(sdev->raster_scale, sdev->raster_scale)));
 	if (fz_is_empty_irect(bbox))
 		return;
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), bbox, NULL, 1);
@@ -997,10 +1001,10 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, fz_matrix c
 
 	fz_try(ctx)
 	{
-		fz_paint_shade(ctx, shade, NULL, ctm, pix, color_params, bbox, NULL, NULL);
+		fz_paint_shade(ctx, shade, NULL, fz_post_scale(ctm, sdev->raster_scale, sdev->raster_scale), pix, color_params, bbox, NULL, NULL);
 		if (alpha != 1.0f)
 			fz_append_printf(ctx, out, "<g opacity=\"%g\">\n", alpha);
-		fz_append_printf(ctx, out, "<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" xlink:href=\"", pix->x, pix->y, pix->w, pix->h);
+		fz_append_printf(ctx, out, "<image x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" xlink:href=\"", pix->x/sdev->raster_scale, pix->y/sdev->raster_scale, pix->w/sdev->raster_scale, pix->h/sdev->raster_scale);
 		fz_append_pixmap_as_data_uri(ctx, out, pix);
 		fz_append_printf(ctx, out, "\"/>\n");
 		if (alpha != 1.0f)
@@ -1361,7 +1365,33 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, sdev->images);
 }
 
-fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images, int *id)
+void
+fz_parse_svg_device_options(fz_context *ctx, fz_svg_device_options *opts, const char *args)
+{
+	const char *val;
+
+	memset(opts, 0, sizeof *opts);
+
+	opts->text_format = FZ_SVG_TEXT_AS_PATH;
+	opts->reuse_images = 1;
+	opts->resolution = 72;
+	opts->id = NULL;
+
+	if (fz_has_option(ctx, args, "text", &val))
+	{
+		if (fz_option_eq(val, "text"))
+			opts->text_format = FZ_SVG_TEXT_AS_TEXT;
+		else if (fz_option_eq(val, "path"))
+			opts->text_format = FZ_SVG_TEXT_AS_PATH;
+	}
+	if (fz_has_option(ctx, args, "no-reuse-images", &val))
+		if (fz_option_eq(val, "yes"))
+			opts->reuse_images = 0;
+	if (fz_has_option(ctx, args, "resolution", &val))
+		opts->resolution = fz_atoi(val);
+}
+
+fz_device *fz_new_svg_device_with_options(fz_context *ctx, fz_output *out, float page_width, float page_height, fz_svg_device_options *opts)
 {
 	svg_device *dev = fz_new_derived_device(ctx, svg_device);
 
@@ -1403,18 +1433,35 @@ fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page
 	dev->main = fz_new_buffer(ctx, 4096);
 	dev->out = dev->main;
 
-	dev->save_id = id;
-	dev->id = id ? *id : 1;
+	dev->save_id = opts->id;
+	dev->id = opts->id ? *opts->id : 1;
 	dev->layers = 0;
-	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
-	dev->reuse_images = reuse_images;
+	dev->text_as_text = (opts->text_format == FZ_SVG_TEXT_AS_TEXT);
+	dev->reuse_images = opts->reuse_images;
 	dev->page_width = page_width;
 	dev->page_height = page_height;
+
+	dev->raster_scale = opts->resolution / 72.0f;
 
 	return (fz_device*)dev;
 }
 
+fz_device *fz_new_svg_device_with_id(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images, int *id)
+{
+	fz_svg_device_options opts;
+	opts.text_format = text_format;
+	opts.reuse_images = reuse_images;
+	opts.resolution = 72;
+	opts.id = id;
+	return fz_new_svg_device_with_options(ctx, out, page_width, page_height, &opts);
+}
+
 fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images)
 {
-	return fz_new_svg_device_with_id(ctx, out, page_width, page_height, text_format, reuse_images, NULL);
+	fz_svg_device_options opts;
+	opts.text_format = text_format;
+	opts.reuse_images = reuse_images;
+	opts.resolution = 72;
+	opts.id = NULL;
+	return fz_new_svg_device_with_options(ctx, out, page_width, page_height, &opts);
 }
