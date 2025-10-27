@@ -34,7 +34,7 @@ pkcs7_openssl_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 }
 
 pdf_pkcs7_signer *
-pkcs7_openssl_read_pfx_from_buffer(fz_context *ctx, const unsigned char *buf, size_t len, const char *pw)
+pkcs7_openssl_read_pfx_from_buffer(fz_context *ctx, fz_buffer *buf, const char *pw)
 {
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "No OpenSSL support.");
 }
