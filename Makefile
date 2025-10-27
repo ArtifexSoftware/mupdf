@@ -343,7 +343,10 @@ ifeq ($(shared),yes)
   endif
 else
   MUPDF_LIB = $(OUT)/libmupdf.a
-  THIRD_LIB = $(OUT)/libmupdf-third.a
+  ifneq ($(THIRD_OBJ),)
+    # omit libmupdf-third if there is nothing in it
+    THIRD_LIB = $(OUT)/libmupdf-third.a
+  endif
   $(MUPDF_LIB) : $(MUPDF_OBJ)
   $(THIRD_LIB) : $(THIRD_OBJ)
 endif
