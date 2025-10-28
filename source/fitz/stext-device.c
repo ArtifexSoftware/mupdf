@@ -1236,7 +1236,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 
 	/* We found a matching postfix. It seems likely that this is going to be the only
 	 * text object we get, so send any remaining actualtext now. */
-	flush_actualtext(ctx, dev, actualtext, i, i + strlen(actualtext) - (span->len - end));
+	flush_actualtext(ctx, dev, actualtext, i, i + (int)strlen(actualtext) - (span->len - end));
 
 	/* Send the postfix */
 	if (end != span->len)
