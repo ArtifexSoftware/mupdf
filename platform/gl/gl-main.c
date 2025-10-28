@@ -257,6 +257,7 @@ static int showundo = 0;
 static int showlayers = 0;
 static int showlinks = 0;
 static int showsearch = 0;
+static int showcoord = 0;
 int showannotate = 0;
 int showform = 0;
 
@@ -268,6 +269,8 @@ static int console_start_y = 0;
 #endif
 
 static const char *tooltip = NULL;
+
+static char coord_tooltip[100];
 
 struct mark
 {
@@ -628,6 +631,7 @@ static char *help_dialog_text =
 	"Y - show layer list\n"
 	"a - show annotation editor\n"
 	"R - show redaction editor\n"
+	"x - show mouse coordinates\n"
 	"L - highlight links\n"
 	"F - highlight form fields\n"
 	"r - reload file\n"
@@ -2390,6 +2394,7 @@ static void do_app(void)
 		case 'u': toggle_undo(); break;
 		case 'Y': toggle_layers(); break;
 		case 'L': showlinks = !showlinks; break;
+		case 'x': showcoord = !showcoord; break;
 		case 'F': showform = !showform; break;
 		case 'i': ui.dialog = info_dialog; break;
 #if FZ_ENABLE_JS
@@ -2798,6 +2803,36 @@ static fz_buffer *format_info_text()
 	return out;
 }
 
+static void do_coord_tooltip(void)
+{
+	fz_point client_p, fitz_p, pdf_p;
+	fz_matrix m, im;
+	client_p = fz_make_point(ui.x, ui.y);
+	fitz_p = fz_transform_point(client_p, view_page_inv_ctm);
+	if (pdf)
+	{
+		pdf_page_transform(ctx, page, NULL, &m);
+		im = fz_invert_matrix(m);
+		pdf_p = fz_transform_point(fitz_p, im);
+		fz_snprintf(coord_tooltip, sizeof coord_tooltip,
+			"mouse at %g %g (%g %g in PDF space)",
+			roundf(fitz_p.x),
+			roundf(fitz_p.y),
+			roundf(pdf_p.x),
+			roundf(pdf_p.y)
+		);
+	}
+	else
+	{
+		fz_snprintf(coord_tooltip, sizeof coord_tooltip,
+			"mouse at %g %g",
+			roundf(fitz_p.x),
+			roundf(fitz_p.y)
+		);
+	}
+	tooltip = coord_tooltip;
+}
+
 static void do_canvas(void)
 {
 	static int saved_scroll_x = 0;
@@ -2960,6 +2995,11 @@ static void do_canvas(void)
 			search_options |= FZ_SEARCH_REGEXP;
 
 		ui_panel_end();
+	}
+
+	if (!tooltip && showcoord)
+	{
+		do_coord_tooltip();
 	}
 
 	if (tooltip)
