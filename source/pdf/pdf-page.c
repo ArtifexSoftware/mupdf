@@ -57,6 +57,10 @@ pdf_count_pages(fz_context *ctx, pdf_document *doc)
 		pages = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
 	if (pages < 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid number of pages");
+	/* set an upper bound to cope with malicious /Count entries; as there
+	 * can't possibly be more pages than objects in the file! */
+	if (pages >= pdf_xref_len(ctx, doc))
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid number of pages");
 	return pages;
 }
 
