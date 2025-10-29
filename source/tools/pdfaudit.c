@@ -1844,7 +1844,7 @@ visited:
 			else if (pdf_is_array(ctx, obj))
 				goto step_next_array_child;
 			else
-				assert("Never happens" == NULL);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "this should never happen!");
 		}
 	}
 	while (ws->len > 0);
@@ -1886,6 +1886,9 @@ filter_file(fz_context *ctx, fz_output *out, const char *filename)
 	fz_try(ctx)
 	{
 		pdf = pdf_open_document(ctx, filename);
+
+		/* ensure we don't get tripped up by repair */
+		pdf_check_document(ctx, pdf);
 
 		n = pdf_xref_len(ctx, pdf);
 		oi = fz_malloc_array(ctx, n, obj_info_t);
@@ -2056,7 +2059,7 @@ filter_file(fz_context *ctx, fz_output *out, const char *filename)
 static int usage(void)
 {
 	fprintf(stderr,
-		"usage: mutool audit [options] input.pdf+\n"
+		"usage: mutool audit [options] input.pdf [input2.pdf ...]\n"
 		"\t-o -\toutput file\n"
 		);
 	return 1;
