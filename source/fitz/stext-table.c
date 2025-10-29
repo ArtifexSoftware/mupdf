@@ -3147,14 +3147,59 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 	return failed;
 }
 
+/* The score for a table can be thought of as a judgement of
+ * how 'awkward' a table is.
+ *
+ *  + Score 1 for every empty cell that doesn't have "supporting"
+ *    borders.
+ *  + Score 1 for every 'crossing' between cells.
+ */
+static float
+score_table(fz_context *ctx, grid_walker_data *gd)
+{
+	int x, y;
+	int w = gd->cells->w;
+	int h = gd->cells->h;
+	int score = 0;
+	int num_cells = (w-1)*(h-1);
+
+	assert(num_cells > 0);
+
+	for (y = 0; y < h-1; y++)
+	{
+		for (x = 0; x < w-1; x++)
+		{
+			cell_t *cell = get_cell(gd->cells, x, y);
+			cell_t *right = get_cell(gd->cells, x+1, y);
+			cell_t *below = get_cell(gd->cells, x, y+1);
+			score += cell->h_crossed + cell->v_crossed;
+			if (cell->full)
+			{
+				/* We have content. */
+			}
+			else if (cell->h_line && cell->v_line && right->v_line && below->h_line)
+			{
+				/* The cell is properly bordered. */
+			}
+			else
+				score++;
+		}
+	}
+
+	return score / (float)num_cells;
+}
+
 static int
-do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background, fz_rect top_bounds)
+do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background, fz_rect top_bounds, float *subtable_score)
 {
 	fz_stext_block *block;
 	int count;
 	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
 	int num_subtables = 0;
 	grid_walker_data gd = { 0 };
+	float score;
+
+	*subtable_score = 0;
 
 	/* No content? Just bale. */
 	if (*first_block == NULL)
@@ -3176,7 +3221,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 			if (block->u.s.down)
 			{
 				int background = 0;
-				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds);
+				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds, subtable_score);
 				if (background)
 					*has_background = 1;
 				count++;
@@ -3214,10 +3259,16 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 		if (find_table_within_bounds(ctx, &gd, *first_block, bounds))
 			break;
 
+		score = score_table(ctx, &gd);
+
 		*has_background = gd.has_background;
 
 		if (num_subtables > 0)
 		{
+			/* Our table's score needs to be lower than the sum of the scores
+			 * for the subtables for us to accept it. */
+			if (score > *subtable_score)
+				break;
 			/* We are risking throwing away a table we've already found for this
 			 * one. Only do it if this one is really convincing. */
 			int x, y;
@@ -3233,6 +3284,12 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 				break;
 		}
 
+		/* Nasty heuristic threshold here. */
+		if (score > 0.3f)
+			break;
+
+		*subtable_score = score;
+
 #ifdef DEBUG_TABLE_STRUCTURE
 		printf("Transcribing table: (%g,%g)->(%g,%g)\n",
 			gd.xpos->list[0].pos,
@@ -3241,7 +3298,6 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 			gd.ypos->list[gd.ypos->len-1].pos);
 #endif
 
-		/* Now we should have the entire table calculated. */
 		(void)transcribe_table(ctx, &gd, page, parent);
 		num_subtables = 1;
 #ifdef DEBUG_WRITE_AS_PS
@@ -3287,13 +3343,14 @@ void
 fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 {
 	int has_background = 0;
+	float score;
 
 	if (page == NULL)
 		return;
 
 	assert(verify_stext(ctx, page, NULL));
 
-	do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect);
+	do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score);
 
 	assert(verify_stext(ctx, page, NULL));
 }
@@ -3302,6 +3359,7 @@ void
 fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 {
 	int has_background = 0;
+	float score;
 
 	if (page == NULL)
 		return;
@@ -3310,7 +3368,7 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 
 	fz_segment_stext_rect(ctx, page, rect);
 
-	do_table_hunt(ctx, page, NULL, &has_background, rect);
+	do_table_hunt(ctx, page, NULL, &has_background, rect, &score);
 
 	assert(verify_stext(ctx, page, NULL));
 }
