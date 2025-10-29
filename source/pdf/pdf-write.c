@@ -243,18 +243,24 @@ static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_sta
 	expand_lists(ctx, opts, xref_len);
 	for (num = 1; num < xref_len; num++)
 	{
+		pdf_obj *a;
+
+		if (num >= opts->list_len || !opts->use_list[num])
+			continue;
+
+		a = pdf_get_xref_entry_no_null(ctx, doc, num)->obj;
+
 		/* Only compare an object to objects preceding it */
 		for (other = 1; other < num; other++)
 		{
-			pdf_obj *a, *b;
+			pdf_obj *b;
 			int newnum;
 
-			if (num == other || num >= opts->list_len || !opts->use_list[num] || !opts->use_list[other])
+			if (!opts->use_list[other])
 				continue;
 
 			/* TODO: resolve indirect references to see if we can omit them */
 
-			a = pdf_get_xref_entry_no_null(ctx, doc, num)->obj;
 			b = pdf_get_xref_entry_no_null(ctx, doc, other)->obj;
 			if (opts->do_garbage >= 4)
 			{
