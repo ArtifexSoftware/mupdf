@@ -25,6 +25,10 @@
 
 #if FZ_ENABLE_JS
 
+// set limits to how much memory and cpu malicious/broken scripts can use up
+#define PDF_JS_LIMIT_RUNTIME (10 << 20) // ten million instructions
+#define PDF_JS_LIMIT_MEMORY (100 << 20) // one hundred megabytes
+
 #include "mujs.h"
 
 #include <stdarg.h>
@@ -1260,9 +1264,12 @@ void pdf_js_execute(pdf_js *js, const char *name, const char *source, char **res
 			js_pop(J, 1);
 		} else {
 			js_pushundefined(J);
+			js_setlimit(J, PDF_JS_LIMIT_RUNTIME, PDF_JS_LIMIT_MEMORY);
 			if (js_pcall(J, 0)) {
 				if (result)
 					*result = fz_strdup(ctx, js_trystring(J, -1, "Error"));
+				else
+					fz_write_printf(ctx, fz_stddbg(ctx), "js: %s\n", js_trystring(J, -1, "Error"));
 				js_pop(J, 1);
 			} else {
 				if (result)
