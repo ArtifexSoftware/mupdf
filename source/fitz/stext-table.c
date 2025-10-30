@@ -1696,7 +1696,10 @@ mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect s)
 	fz_rect r = fz_intersect_rect(gd->bounds, s);
 	int x0, x1, y0, y1, x, y;
 
-	if (fz_is_empty_rect(r))
+	/* Check for non-validity rather than empty here, as e.g.
+	 * spaces are empty, and we'd still like to account for
+	 * their horizontal extent. */
+	if (!fz_is_valid_rect(r))
 		return 0;
 
 	x0 = find_cell_l(gd->xpos, r.x0);
@@ -1932,6 +1935,11 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 						{
 							/* Single spaces around numbers are ignored. */
 							was_numeric = 0;
+							continue;
+						}
+						if (ch->flags & FZ_STEXT_SYNTHETIC_LARGE)
+						{
+							/* Break on large synthetic spaces */
 							continue;
 						}
 						/* A single space. Accept it. */
