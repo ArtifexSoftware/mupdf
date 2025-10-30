@@ -516,6 +516,48 @@ find_table_pos(fz_stext_grid_positions *xs, float x0, float x1, int *ix0, int *i
 static void
 run_to_xhtml(fz_context *ctx, fz_stext_block *block, fz_output *out);
 
+static unsigned int
+grid_flags(fz_stext_grid_info *info, int x, int y)
+{
+	if (info == NULL || x < 0 || y < 0 || x >= info->w || y >= info->h)
+		return 0;
+	return info->info[y * info->w + x].flags;
+}
+
+static void
+start_cell(fz_context *ctx, fz_output *out, fz_stext_grid_info *info, int x, int y)
+{
+	unsigned int flags = grid_flags(info, x, y);
+	unsigned int flagsr = grid_flags(info, x+1, y);
+	unsigned int flagsb = grid_flags(info, x, y+1);
+	fz_write_string(ctx, out, "<td");
+	if (info == NULL)
+		return;
+	if ((flags & FZ_STEXT_GRID_L_BORDER) == 0 &&
+		(flags & FZ_STEXT_GRID_T_BORDER) == 0 &&
+		(flagsr & FZ_STEXT_GRID_L_BORDER) == 0 &&
+		(flagsb & FZ_STEXT_GRID_T_BORDER) == 0)
+		return;
+	fz_write_string(ctx, out, " style=\"border-style:");
+	if (flags & FZ_STEXT_GRID_T_BORDER)
+		fz_write_string(ctx, out, "solid ");
+	else
+		fz_write_string(ctx, out, "none ");
+	if (flagsr & FZ_STEXT_GRID_L_BORDER)
+		fz_write_string(ctx, out, "solid ");
+	else
+		fz_write_string(ctx, out, "none ");
+	if (flagsb & FZ_STEXT_GRID_T_BORDER)
+		fz_write_string(ctx, out, "solid ");
+	else
+		fz_write_string(ctx, out, "none ");
+	if (flags & FZ_STEXT_GRID_L_BORDER)
+		fz_write_string(ctx, out, "solid;\"");
+	else
+		fz_write_string(ctx, out, "none;\"");
+
+}
+
 static void
 fz_print_stext_table_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
 {
@@ -539,7 +581,7 @@ fz_print_stext_table_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *b
 
 	fz_try(ctx)
 	{
-		fz_write_printf(ctx, out, "<table>\n");
+		fz_write_printf(ctx, out, "<table style=\"border-collapse: collapse;\">\n");
 
 		y = 0;
 		for (tr = grid->next; tr != NULL; tr = tr->next)
@@ -587,12 +629,13 @@ fz_print_stext_table_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *b
 					uint8_t *c = &cells[x + w*y];
 					if (*c == 0)
 					{
-						fz_write_printf(ctx, out, "<td></td>");
+						start_cell(ctx, out, grid->u.b.info, x, y);
+						fz_write_printf(ctx, out, "></td>");
 						*c = 1;
 					}
 					x++;
 				}
-				fz_write_string(ctx, out, "<td");
+				start_cell(ctx, out, grid->u.b.info, x, y);
 				if (x1 > x0+1)
 					fz_write_printf(ctx, out, " colspan=\"%d\"", x1-x0);
 				if (y1 > y0+1)

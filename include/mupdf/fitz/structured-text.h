@@ -389,6 +389,36 @@ enum
 	FZ_STEXT_VECTOR_CONTINUES = 4
 };
 
+enum
+{
+	/* Indicates that cell contents cross the right hand edge. */
+	FZ_STEXT_GRID_H_CROSSED = 1,
+	/* Indicates that cell contents cross the bottom edge. */
+	FZ_STEXT_GRID_V_CROSSED = 2,
+	/* Indicates that the cell has a border on the left hand edge. */
+	FZ_STEXT_GRID_L_BORDER = 4,
+	/* Indicates that the cell has a border on the top edge. */
+	FZ_STEXT_GRID_T_BORDER = 8,
+	/* Indicates that the cell has content (which may be a space!) */
+	FZ_STEXT_GRID_FULL = 16,
+};
+
+/* This structure is experimental, and subject to change. */
+typedef struct
+{
+	/* A 2x2 table, will be represented as a 3x3 set of
+	 * cells. The rightmost column and bottommost row
+	 * exist just to give information about borders on
+	 * the edges. For such a table w=h=3.
+	 */
+	int w;
+	int h;
+	/* Followed by w*h entries. */
+	struct {
+		unsigned int flags;
+	} info[FZ_FLEXIBLE_ARRAY];
+} fz_stext_grid_info;
+
 /**
 	A text block is a list of lines of text (typically a paragraph),
 	or an image.
@@ -403,7 +433,7 @@ struct fz_stext_block
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
 		struct { uint32_t flags; uint32_t argb; } v;
-		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; } b;
+		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; fz_stext_grid_info *info; } b;
 	} u;
 	fz_stext_block *prev, *next;
 };

@@ -1166,6 +1166,37 @@ typedef struct
 	int has_background;
 } grid_walker_data;
 
+static fz_stext_grid_info *
+copy_grid_info_to_pool(fz_context *ctx, fz_stext_page *page, cells_t *cells)
+{
+	int i, n = cells->w * cells->h;
+	fz_stext_grid_info *info;
+	size_t z = offsetof(fz_stext_grid_info, info) + sizeof(info->info[0]) * n;
+	cell_t *cell = &cells->cell[0];
+	info = fz_pool_alloc(ctx, page->pool, z);
+
+	info->w = cells->w;
+	info->h = cells->h;
+
+	for (i = 0; i < n; i++, cell++)
+	{
+		unsigned int flags = 0;
+		if (cell->full)
+			flags |= FZ_STEXT_GRID_FULL;
+		if (cell->h_crossed)
+			flags |= FZ_STEXT_GRID_H_CROSSED;
+		if (cell->v_crossed)
+			flags |= FZ_STEXT_GRID_V_CROSSED;
+		if (cell->h_line)
+			flags |= FZ_STEXT_GRID_T_BORDER;
+		if (cell->v_line)
+			flags |= FZ_STEXT_GRID_L_BORDER;
+		info->info[i].flags = flags;
+	}
+
+	return info;
+}
+
 static cell_t *
 get_cell(cells_t *cells, int x, int y)
 {
@@ -2722,9 +2753,11 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 		fz_stext_block *block;
 		fz_stext_grid_positions *xps2 = copy_grid_positions_to_pool(ctx, page, gd->xpos);
 		fz_stext_grid_positions *yps2 = copy_grid_positions_to_pool(ctx, page, gd->ypos);
+		fz_stext_grid_info *info = copy_grid_info_to_pool(ctx, page, gd->cells);
 		block = add_grid_block(ctx, page, &table->first_block, &table->last_block, table->up->id);
 		block->u.b.xs = xps2;
 		block->u.b.ys = yps2;
+		block->u.b.info = info;
 		block->bbox.x0 = block->u.b.xs->list[0].pos;
 		block->bbox.y0 = block->u.b.ys->list[0].pos;
 		block->bbox.x1 = block->u.b.xs->list[block->u.b.xs->len-1].pos;
