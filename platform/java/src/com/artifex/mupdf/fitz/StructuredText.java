@@ -64,6 +64,7 @@ public class StructuredText
 	public static final int CHAR_FLAGS_CLIPPED = 64;
 	public static final int CHAR_FLAGS_UNICODE_IS_CID = 128;
 	public static final int CHAR_FLAGS_UNICODE_IS_GID = 256;
+	public static final int CHAR_FLAGS_SYNTHETIC_LARGE = 512;
 
 	public native Quad[][] search(String needle, int style);
 	public Quad[][] search(String needle)

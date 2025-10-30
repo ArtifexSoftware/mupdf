@@ -775,6 +775,7 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_CLIPPED == FZ_STEXT_CLIPPED;
 	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_UNICODE_IS_CID == FZ_STEXT_UNICODE_IS_CID;
 	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_UNICODE_IS_GID == FZ_STEXT_UNICODE_IS_GID;
+	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_SYNTHETIC_LARGE == FZ_STEXT_SYNTHETIC_LARGE;
 
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN == PDF_WIDGET_TYPE_UNKNOWN;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BUTTON == PDF_WIDGET_TYPE_BUTTON;

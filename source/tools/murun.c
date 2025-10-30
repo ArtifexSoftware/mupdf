@@ -13101,6 +13101,7 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "StructuredText", "FLAGS_CLIPPED", FZ_STEXT_CLIPPED);
 		jsB_enum(J, "StructuredText", "FLAGS_UNICODE_IS_CID", FZ_STEXT_UNICODE_IS_CID);
 		jsB_enum(J, "StructuredText", "FLAGS_UNICODE_IS_GID", FZ_STEXT_UNICODE_IS_GID);
+		jsB_enum(J, "StructuredText", "FLAGS_SYNTHETIC_LARGE", FZ_STEXT_SYNTHETIC_LARGE);
 
 		jsB_enum(J, "StructuredText", "VECTOR_IS_STROKED", FZ_STEXT_VECTOR_IS_STROKED);
 		jsB_enum(J, "StructuredText", "VECTOR_IS_RECTANGLE", FZ_STEXT_VECTOR_IS_RECTANGLE);

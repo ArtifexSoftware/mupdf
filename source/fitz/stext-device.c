@@ -392,7 +392,7 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 	ch->origin = *p;
 	ch->size = size;
 	ch->font = fz_keep_font(ctx, font);
-	ch->flags = flags | (synthetic ? FZ_STEXT_SYNTHETIC : 0);
+	ch->flags = flags | (synthetic ? FZ_STEXT_SYNTHETIC : 0) | (synthetic > 1 ? FZ_STEXT_SYNTHETIC_LARGE : 0);
 	if (font->flags.is_bold)
 		ch->flags |= FZ_STEXT_BOLD;
 
@@ -777,7 +777,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				{
 					bidi = 3; /* mark line as visual */
 					if (wmode == 0 && may_add_space(dev->lastchar))
-						add_space = 1;
+						add_space = 1 + (spacing > SPACE_DIST*2);
 					new_line = 0;
 				}
 
@@ -806,7 +806,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 				{
 					/* Motion is forward in line and large enough to warrant us adding a space. */
 					if (wmode == 0 && may_add_space(dev->lastchar))
-						add_space = 1;
+						add_space = 1 + (spacing > SPACE_DIST*2);
 					new_line = 0;
 				}
 				else
@@ -854,7 +854,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	/* Add synthetic space */
 	if (add_space && !(dev->flags & FZ_STEXT_INHIBIT_SPACES))
-		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? NON_ACCURATE_GLYPH_ADDED_SPACE : NON_ACCURATE_GLYPH, &dev->pen, &p, bidi, dev->color, 1, flags, dev->flags);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? NON_ACCURATE_GLYPH_ADDED_SPACE : NON_ACCURATE_GLYPH, &dev->pen, &p, bidi, dev->color, add_space, flags, dev->flags);
 
 	add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &p, &q, bidi, dev->color, 0, flags, dev->flags);
 
