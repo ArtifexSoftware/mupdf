@@ -779,6 +779,12 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 			}
 
 			sp = (ch->c == ' ');
+			/* Skip hyphens on line joins */
+			if (ch->next == NULL && (line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && fz_is_unicode_hyphen(ch->c))
+			{
+				sp = 1;
+				continue;
+			}
 			switch (ch->c)
 			{
 			default:
