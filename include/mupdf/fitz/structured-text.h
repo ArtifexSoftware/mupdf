@@ -876,6 +876,9 @@ fz_new_stext_device_for_page(fz_context *ctx, fz_stext_page *stext_page, const f
 fz_device *fz_new_ocr_device(fz_context *ctx, fz_device *target, fz_matrix ctm, fz_rect mediabox, int with_list, const char *language,
 			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg);
 
+fz_device *fz_new_ocr_device_with_options(fz_context *ctx, fz_device *target, fz_matrix ctm, fz_rect mediabox, int with_list, const char *language,
+			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg, const char *options);
+
 fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, const fz_stext_options *opts);
 
 /**

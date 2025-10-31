@@ -184,6 +184,8 @@ typedef struct
 
 	/* Updated as we move through the job */
 	int page_count;
+
+	char *options;
 } fz_pdfocr_options;
 
 /**
