@@ -377,6 +377,8 @@ static const char ocr_language_default[] = "eng";
 static const char *ocr_language = ocr_language_default;
 static const char *ocr_datadir = NULL;
 
+static char *options_string = NULL;
+
 static struct {
 	int active;
 	int started;
@@ -467,13 +469,14 @@ static int usage(void)
 		"\t-i\tignore errors\n"
 		"\t-m -\tlimit memory usage in bytes\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
+		"\t-O -\toptions\n"
 #ifndef DISABLE_MUTHREADS
 		"\t-P\tparallel interpretation/rendering\n"
 #else
 		"\t-P\tparallel interpretation/rendering (disabled in this non-threading build)\n"
 #endif
 		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
-		"\t-O -\tControl spot/overprint rendering\n"
+		"\t-M -\tSpot/overprint rendering mode\n"
 #if FZ_ENABLE_SPOT_RENDERING
 		"\t\t 0 = No spot rendering\n"
 		"\t\t 1 = Overprint simulation (default)\n"
@@ -580,6 +583,7 @@ file_level_headers(fz_context *ctx)
 		opts.skew_correct = skew_correct;
 		opts.skew_border = skew_border;
 		opts.skew_angle = skew_angle;
+		opts.options = options_string;
 		bander = fz_new_pdfocr_band_writer(ctx, out, &opts);
 	}
 }
@@ -714,7 +718,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
-				dev = fz_new_ocr_device(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL);
+				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, options_string);
 			}
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -851,7 +855,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
-				dev = fz_new_ocr_device(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL);
+				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, options_string);
 			}
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
@@ -2079,7 +2083,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:t:d:U:XLvPl:y:Yz:Z:NO:am:Kb:k:")) != -1)
+	while ((c = fz_getopt(argc, argv, "qp:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:t:d:U:XLvPl:y:Yz:Z:M:NO:am:Kb:k:")) != -1)
 	{
 		switch (c)
 		{
@@ -2120,7 +2124,7 @@ int mudraw_main(int argc, char **argv)
 
 		case 'K': ++s_kill; break;
 
-		case 'O': spots = fz_atof(fz_optarg);
+		case 'M': spots = fz_atof(fz_optarg);
 #ifndef FZ_ENABLE_SPOT_RENDERING
 			fprintf(stderr, "Spot rendering/Overprint/Overprint simulation not enabled in this build\n");
 			spots = SPOTS_NONE;
@@ -2149,6 +2153,7 @@ int mudraw_main(int argc, char **argv)
 		case 'l': min_line_width = fz_atof(fz_optarg); break;
 		case 'i': ignore_errors = 1; break;
 		case 'N': no_icc = 1; break;
+		case 'O': options_string = fz_optarg; break;
 
 		case 'T':
 #ifndef DISABLE_MUTHREADS
