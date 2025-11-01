@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -657,6 +657,11 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 							break_line = 0;
 							continue;
 						}
+					}
+					/* Soft hyphens at the beginning or in the middle of a line are always removed. */
+					if (ch != line->last_char && ch->c == 0xad)
+					{
+						continue;
 					}
 					if ((flatten & FZ_TEXT_FLATTEN_KEEP_WHITESPACE) == 0 && fz_is_unicode_whitespace(ch->c))
 					{
