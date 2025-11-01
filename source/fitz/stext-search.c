@@ -596,12 +596,14 @@ static const char *match_exact(const char *h, const char *n)
 static const char *find_exact(fz_context *ctx, void *dummy, const char *s, const char *needle, const char **endp, int bol)
 {
 	const char *end;
+	int c;
+
 	while (*s)
 	{
 		end = match_exact(s, needle);
 		if (end)
 			return *endp = end, s;
-		++s;
+		s += fz_chartorune(&c, s);
 	}
 	return *endp = NULL, NULL;
 }
@@ -609,14 +611,17 @@ static const char *find_exact(fz_context *ctx, void *dummy, const char *s, const
 static const char *find_rev_exact(fz_context *ctx, void *dummy, const char *start, size_t offset, const char *needle, const char **endp, int bol)
 {
 	const char *end;
+	int idx = fz_runeidx(start, &start[offset]);
+
 	while (1)
 	{
 		end = match_exact(&start[offset], needle);
 		if (end)
 			return *endp = end, &start[offset];
-		if (offset == 0)
+		if (idx == 0)
 			break;
-		offset--;;
+		idx--;
+		offset = fz_runeptr(start, idx) - start;
 	}
 	return *endp = NULL, NULL;
 }
