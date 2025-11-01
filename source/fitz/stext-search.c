@@ -1979,7 +1979,7 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 	 * We may have ditched both the combined haystack and the spun version, but the
 	 * offsets within those buffers, when they are reformed, should be valid.
 	 */
-	assert(search->combined_spun_haystack == NULL || search->current_spun_pos <= search->combined_length);
+	assert(search->combined_spun_haystack == NULL || search->current_spun_pos <= search->combined_spun_length);
 	assert(search->combined_haystack == NULL || search->current_pos <= search->combined_length);
 
 	/* Was the last search a backwards search? If so, we need to adjust our
@@ -2310,7 +2310,7 @@ fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 	 * We may have ditched both the combined haystack and the spun version, but the
 	 * offsets within those buffers, when they are reformed, should be valid.
 	 */
-	assert(search->combined_spun_haystack == NULL || search->current_spun_pos <= search->combined_length);
+	assert(search->combined_spun_haystack == NULL || search->current_spun_pos <= search->combined_spun_length);
 	assert(search->combined_haystack == NULL || search->current_pos <= search->combined_length);
 
 	/* Was the last search a forwards search? If so, we need to adjust our
