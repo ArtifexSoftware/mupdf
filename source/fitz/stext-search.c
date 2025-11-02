@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -693,6 +693,8 @@ fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle,
 	hits.vfuzz = 0.1f;
 	hits.cb = cb;
 	hits.opaque = opaque;
+	hits.block4id = NULL;
+	hits.page = page;
 
 	buffer = fz_new_buffer_from_stext_page(ctx, page);
 	fz_try(ctx)
