@@ -908,8 +908,10 @@ fz_stroke_closepath(fz_context *ctx, sctx *s)
 		 * penultimate segment and the end segment. This is what we want. */
 		fz_add_line_join(ctx, s, s->seg[0].x, s->seg[0].y, s->beg[0].x, s->beg[0].y, s->beg[1].x, s->beg[1].y, 0);
 	}
-	else if (s->not_just_moves && s->cap == FZ_LINECAP_ROUND)
+	else if (s->cap == FZ_LINECAP_ROUND)
+	{
 		fz_add_line_dot(ctx, s, s->beg[0].x, s->beg[0].y);
+	}
 
 	s->seg[0] = s->beg[0];
 	s->sn = 0;
