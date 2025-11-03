@@ -1113,6 +1113,13 @@ static int image_file_filter(const char *fn)
 	return !!fz_strstrcase(fn, ".jpg") || !!fz_strstrcase(fn, ".jpeg") || !!fz_strstrcase(fn, ".png");
 }
 
+static void resize_icon_annot(void)
+{
+	fz_rect rect = pdf_annot_rect(ctx, ui.selected_annot);
+	rect = fz_make_rect(rect.x0, rect.y0, rect.x0 + 16, rect.y0 + 16);
+	pdf_set_annot_rect(ctx, ui.selected_annot, rect);
+}
+
 void do_annotate_panel(void)
 {
 	static struct list annot_list;
@@ -1342,6 +1349,7 @@ void do_annotate_panel(void)
 				{
 					trace_action("annot.setIcon(%q);\n", text_icons[choice]);
 					pdf_set_annot_icon_name(ctx, ui.selected_annot, text_icons[choice]);
+					resize_icon_annot();
 				}
 				break;
 			case PDF_ANNOT_FILE_ATTACHMENT:
@@ -1351,6 +1359,7 @@ void do_annotate_panel(void)
 				{
 					trace_action("annot.setIcon(%q);\n", file_attachment_icons[choice]);
 					pdf_set_annot_icon_name(ctx, ui.selected_annot, file_attachment_icons[choice]);
+					resize_icon_annot();
 				}
 				break;
 			case PDF_ANNOT_SOUND:
@@ -1360,6 +1369,7 @@ void do_annotate_panel(void)
 				{
 					trace_action("annot.setIcon(%q);\n", sound_icons[choice]);
 					pdf_set_annot_icon_name(ctx, ui.selected_annot, sound_icons[choice]);
+					resize_icon_annot();
 				}
 				break;
 			case PDF_ANNOT_STAMP:
@@ -1369,6 +1379,7 @@ void do_annotate_panel(void)
 				{
 					trace_action("annot.setIcon(%q);\n", stamp_icons[choice]);
 					pdf_set_annot_icon_name(ctx, ui.selected_annot, stamp_icons[choice]);
+					resize_icon_annot();
 				}
 				break;
 			}
