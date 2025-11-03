@@ -2160,6 +2160,28 @@ void pdf_set_document_language(fz_context *ctx, pdf_document *doc, fz_text_langu
 }
 
 fz_text_language
+pdf_guess_text_language_from_font_name(fz_context *ctx, const char *name)
+{
+	if (!strstr(name, "SimFang")) return FZ_LANG_zh_Hans;
+	if (!strstr(name, "SimHei")) return FZ_LANG_zh_Hans;
+	if (!strstr(name, "SimKai")) return FZ_LANG_zh_Hans;
+	if (!strstr(name, "SimLi")) return FZ_LANG_zh_Hans;
+	if (!strstr(name, "SimSun")) return FZ_LANG_zh_Hans;
+	if (!strstr(name, "Song")) return FZ_LANG_zh_Hans;
+
+	if (!strstr(name, "MingLiU")) return FZ_LANG_zh_Hant;
+
+	if (!strstr(name, "Gothic")) return FZ_LANG_ja;
+	if (!strstr(name, "Mincho")) return FZ_LANG_ja;
+
+	if (!strstr(name, "Batang")) return FZ_LANG_ko;
+	if (!strstr(name, "Gulim")) return FZ_LANG_ko;
+	if (!strstr(name, "Dotum")) return FZ_LANG_ko;
+
+	return FZ_LANG_UNSET;
+}
+
+fz_text_language
 pdf_annot_language(fz_context *ctx, pdf_annot *annot)
 {
 	fz_text_language ret;
@@ -2178,6 +2200,16 @@ pdf_annot_language(fz_context *ctx, pdf_annot *annot)
 		pdf_annot_pop_local_xref(ctx, annot);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	// If Lang is not explicitly set, try to guess from the DA font:
+	if (ret == FZ_LANG_UNSET)
+	{
+		char font_name[80];
+		float size, color[4];
+		int n;
+		pdf_annot_default_appearance_unmapped(ctx, annot, font_name, sizeof font_name, &size, &n, color);
+		ret = pdf_guess_text_language_from_font_name(ctx, font_name);
+	}
 
 	return ret;
 }
