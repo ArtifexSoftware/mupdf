@@ -343,7 +343,7 @@ static void showaction(fz_context *ctx, pdf_obj *action, const char *name)
 static void showfield(fz_context *ctx, pdf_obj *field)
 {
 	pdf_obj *kids, *ft, *parent;
-	const char *tu;
+	const char *tu, *value;
 	char *t;
 	int ff;
 	int i, n;
@@ -410,6 +410,10 @@ static void showfield(fz_context *ctx, pdf_obj *field)
 	showaction(ctx, pdf_dict_getp_inheritable(ctx, field, "AA/U"), "Up");
 	showaction(ctx, pdf_dict_getp_inheritable(ctx, field, "AA/Fo"), "Focus");
 	showaction(ctx, pdf_dict_getp_inheritable(ctx, field, "AA/Bl"), "Blur");
+
+	value = pdf_field_value(ctx, field);
+	if (value && value[0])
+		fz_write_printf(ctx, out, "    Value: %q\n", value);
 
 	fz_write_string(ctx, out, "\n");
 
