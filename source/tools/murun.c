@@ -6519,7 +6519,7 @@ static void ffi_StructuredText_search(js_State *J)
 	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
 	search_state state = { J, 0, 0 };
 
-	state.max_hits = js_iscoercible(J, 2) ? js_tointeger(J, 2) : 500;
+	state.max_hits = js_iscoercible(J, 3) ? js_tointeger(J, 3) : 500;
 	js_newarray(J);
 
 	fz_try(ctx)
@@ -12480,7 +12480,7 @@ int murun_main(int argc, char **argv)
 	js_newobjectx(J);
 	{
 		jsB_propfun(J, "StructuredText.walk", ffi_StructuredText_walk, 1);
-		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 2);
+		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 3);
 		jsB_propfun(J, "StructuredText.highlight", ffi_StructuredText_highlight, 2);
 		jsB_propfun(J, "StructuredText.copy", ffi_StructuredText_copy, 2);
 		jsB_propfun(J, "StructuredText.asJSON", ffi_StructuredText_asJSON, 1);
