@@ -281,6 +281,19 @@ pdf_sync_annots(fz_context *ctx, pdf_page *page)
 	}
 }
 
+static int pdf_need_appearances(fz_context *ctx, pdf_document *doc)
+{
+	return pdf_to_bool(ctx,
+		pdf_dict_getl(ctx,
+			pdf_trailer(ctx, doc),
+			PDF_NAME(Root),
+			PDF_NAME(AcroForm),
+			PDF_NAME(NeedAppearances),
+			NULL
+		)
+	);
+}
+
 void
 pdf_load_annots(fz_context *ctx, pdf_page *page)
 {
@@ -291,6 +304,13 @@ pdf_load_annots(fz_context *ctx, pdf_page *page)
 	if (page->annots || page->widgets)
 	{
 		page->doc->resynth_required = 1;
+
+		if (pdf_need_appearances(ctx, page->doc))
+		{
+			pdf_annot *widget;
+			for (widget = page->widgets; widget; widget = widget->next)
+				widget->needs_new_ap = -1; // request local only resynthesis
+		}
 	}
 
 	/* And actually update the page so that any annotations required

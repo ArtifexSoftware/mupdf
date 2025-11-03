@@ -3714,8 +3714,10 @@ retry_after_repair:
 
 		/* We need to put this appearance stream back into the document. */
 		needs_resynth = pdf_annot_needs_resynthesis(ctx, annot);
-		if (needs_resynth)
+		if (needs_resynth > 0)
 			local_synthesis = 0;
+		if (needs_resynth < 0)
+			local_synthesis = 1;
 
 		/* Some appearances can NEVER be resynthesised. Spot those here. */
 		if (needs_resynth)
