@@ -891,6 +891,11 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
 	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
 	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
+	fprintf(stderr, "\t-c -\tICC output profile\n");
+#ifdef HAVE_CURL
+	fprintf(stderr, "\t-b -\temulate progressive loading (kbps)\n");
+#endif
+	fprintf(stderr, "\t-v\tshow version\n");
 	exit(1);
 }
 
