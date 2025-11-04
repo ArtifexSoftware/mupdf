@@ -774,6 +774,38 @@ static void do_annotate_date(void)
 		ui_label("Date: %s", s);
 }
 
+static void do_annotate_flags(void)
+{
+	char str[100];
+	int n = 0;
+	str[0] = 0;
+	int f = pdf_annot_flags(ctx, ui.selected_annot);
+	if (f & PDF_ANNOT_IS_INVISIBLE) ++n, fz_strlcat(str, "Invisible ", sizeof str);
+	if (f & PDF_ANNOT_IS_HIDDEN) ++n, fz_strlcat(str, "Hidden ", sizeof str);
+	if (f & PDF_ANNOT_IS_PRINT) ++n, fz_strlcat(str, "Print ", sizeof str);
+	if (f & PDF_ANNOT_IS_NO_ZOOM) ++n, fz_strlcat(str, "NoZoom ", sizeof str);
+	if (f & PDF_ANNOT_IS_NO_ROTATE) ++n, fz_strlcat(str, "NoRotate ", sizeof str);
+	if (f & PDF_ANNOT_IS_NO_VIEW) ++n, fz_strlcat(str, "NoView ", sizeof str);
+	if (f & PDF_ANNOT_IS_READ_ONLY) ++n, fz_strlcat(str, "ReadOnly ", sizeof str);
+	if (f & PDF_ANNOT_IS_LOCKED) ++n, fz_strlcat(str, "Locked ", sizeof str);
+	if (f & PDF_ANNOT_IS_TOGGLE_NO_VIEW) ++n, fz_strlcat(str, "ToggleNoView ", sizeof str);
+	if (f & PDF_ANNOT_IS_LOCKED_CONTENTS) ++n, fz_strlcat(str, "LockedContents ", sizeof str);
+	if (str[0])
+	{
+		if (n < 3)
+		{
+			ui_label("Flags: %s", str);
+		}
+		else
+		{
+			ui_label("Flags:");
+			ui.layout->padx = 10;
+			ui_label(str);
+			ui.layout->padx = 0;
+		}
+	}
+}
+
 static const char *intent_names[] = {
 	"Default", // all
 	"FreeTextCallout", // freetext
@@ -1182,6 +1214,7 @@ void do_annotate_panel(void)
 
 		do_annotate_author();
 		do_annotate_date();
+		do_annotate_flags();
 
 		obj = pdf_dict_get(ctx, pdf_annot_obj(ctx, ui.selected_annot), PDF_NAME(Popup));
 		if (obj)
