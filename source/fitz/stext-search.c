@@ -1492,6 +1492,9 @@ get_haystack(fz_context *ctx, fz_stext_page *page, fz_text_transform transform)
 static int
 ensure_haystack_for_page(fz_context *ctx, fz_search *search, search_page *page)
 {
+	char *s;
+	int c;
+
 	if (page->end_of_doc)
 	{
 		assert(&search->current_page != page);
@@ -1502,7 +1505,17 @@ ensure_haystack_for_page(fz_context *ctx, fz_search *search, search_page *page)
 		page->haystack = get_haystack(ctx, page->page, search->transform);
 	page->length = strlen(page->haystack);
 
-	return (page->haystack[0] == 0);
+	/* skip initial whitespace looking for the first non-whitespace character */
+	s = page->haystack;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		if (!fz_is_unicode_whitespace(c))
+			return 0;
+	}
+
+	/* no non-whitespace character found! */
+	return 1;
 }
 
 /* Depth first traversal to first block that's not a struct */
@@ -1958,6 +1971,7 @@ reset_positions(fz_context *ctx, fz_search *search, search_page *page)
 	if (page->page->first_block == NULL)
 		return 1;
 	find_first_char(ctx, search, page);
+
 	/* Skip leading whitespace if appropriate */
 	search->squashing_whitespace = 0;
 	if ((search->transform & FZ_TEXT_TRANSFORM_KEEP_WHITESPACE) != 0)
@@ -2048,6 +2062,7 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 		result.u.more_input.seq_needed = 0; /* Any number will do! */
 		return result;
 	}
+
 	/* And we need a haystack from that page. */
 	if (ensure_haystack_for_page(ctx, search, &search->current_page))
 	{
@@ -2067,6 +2082,7 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 
 		return result;
 	}
+
 	/* We need to either have the next page, or to know there is no next page. */
 	if (search->next_page.page == NULL && !search->next_page.end_of_doc)
 	{
@@ -2075,6 +2091,7 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 
 		return result;
 	}
+
 	/* And we need a haystack from that page (unless it's the end). */
 	if (ensure_haystack_for_page(ctx, search, &search->next_page))
 	{
@@ -2091,6 +2108,7 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 
 	/* Then we need to combine the haystacks from those 2 pages. */
 	ensure_combined_haystack(ctx, search, &search->current_page, &search->next_page);
+
 	/* Then spin that hay into gold. */
 	ensure_combined_spun_haystack(ctx, search);
 
