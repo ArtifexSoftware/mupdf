@@ -18,7 +18,7 @@ static void
 search_test(fz_context *ctx, fz_search_options options, const char *needle, int first_page, int backwards)
 {
 	fz_stext_options stext_options = { FZ_STEXT_DEHYPHENATE };
-	fz_document *doc = fz_open_document(ctx, "../MyTests/pdf_reference17.pdf");
+	fz_document *doc = fz_open_document(ctx, "pdfref17.pdf");
 	int n = fz_count_pages(ctx, doc);
 	fz_search *search = NULL;
 	fz_search_result res;
