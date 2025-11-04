@@ -3308,11 +3308,11 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 		{
 			/* Our table's score needs to be lower than the sum of the scores
 			 * for the subtables for us to accept it. */
+			int x, y;
 			if (score > *subtable_score)
 				break;
 			/* We are risking throwing away a table we've already found for this
 			 * one. Only do it if this one is really convincing. */
-			int x, y;
 			for (x = 0; x < gd.xpos->len; x++)
 				if (gd.xpos->list[x].uncertainty != 0)
 					break;
