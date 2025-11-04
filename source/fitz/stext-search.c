@@ -1618,12 +1618,29 @@ dehyphenate:
 	spos->ch = spos->ch->next;
 	if (spos->ch)
 	{
-		/* Soft hyphens were always removed. */
-		if (spos->ch->c == 0xad)
-			goto dehyphenate;
-		/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
-		if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && spos->ch->next == NULL && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
-			goto dehyphenate;
+		fz_chartorune(&c, pos);
+		if (spos->ch->c != c)
+		{
+			/* We're out of sync because of a (soft) hyphen that was removed from the flattened text,
+			 * but is present in the stext. */
+
+			/* Last character of a line where we aren't keeping hyphens; check for dehyphenation. */
+			if (spos->ch == spos->line->last_char && (search->options & FZ_SEARCH_KEEP_HYPHENS) == 0)
+			{
+				/* Soft hyphens were always removed. */
+				if (spos->ch->c == 0xad)
+					goto dehyphenate;
+				/* If we are at the end of a joined line, and we are dehyphenating, skip the hyphen. */
+				if ((spos->line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && fz_is_unicode_hyphen(spos->ch->c))
+					goto dehyphenate;
+			}
+
+			/* Soft hyphens at the beginning or in the middle of a line are always removed. */
+			if (spos->ch != spos->line->last_char && spos->ch->c == 0xad)
+				goto dehyphenate;
+
+			assert("UNSYNCED SEARCH!!!");
+		}
 		search->current_pos = pos - search->combined_haystack;
 		return 0; /* Simple! */
 	}
