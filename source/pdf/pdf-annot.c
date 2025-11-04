@@ -56,7 +56,7 @@ pdf_drop_annots(fz_context *ctx, pdf_annot *annot)
 pdf_obj *
 pdf_annot_ap(fz_context *ctx, pdf_annot *annot)
 {
-	int flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
+	int flags = pdf_annot_flags(ctx, annot);
 	int readonly = flags & PDF_ANNOT_IS_READ_ONLY;
 
 	pdf_obj *ap = pdf_dict_get(ctx, annot->obj, PDF_NAME(AP));
@@ -354,7 +354,7 @@ pdf_bound_annot(fz_context *ctx, pdf_annot *annot)
 		rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
 		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 
-		flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
+		flags = pdf_annot_flags(ctx, annot);
 		if (flags & PDF_ANNOT_IS_NO_ROTATE)
 		{
 			int rotate = pdf_dict_get_inheritable_int(ctx, annot->page->obj, PDF_NAME(Rotate));
@@ -1141,17 +1141,22 @@ pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 int
 pdf_annot_flags(fz_context *ctx, pdf_annot *annot)
 {
-	int ret;
+	int flags;
 	pdf_annot_push_local_xref(ctx, annot);
 
 	fz_try(ctx)
-		ret = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
+	{
+		flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
+		// Text annotations always behave as if NoRotate and NoZoom is set!
+		if (pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)) == PDF_NAME(Text))
+			flags |= PDF_ANNOT_IS_NO_ROTATE | PDF_ANNOT_IS_NO_ZOOM;
+	}
 	fz_always(ctx)
 		pdf_annot_pop_local_xref(ctx, annot);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return ret;
+	return flags;
 }
 
 void

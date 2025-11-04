@@ -66,7 +66,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 
 		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 
-		flags = pdf_dict_get_int(ctx, annot->obj, PDF_NAME(F));
+		flags = pdf_annot_flags(ctx, annot);
 		if (flags & PDF_ANNOT_IS_NO_ROTATE)
 		{
 			int rotate = pdf_dict_get_inheritable_int(ctx, page->obj, PDF_NAME(Rotate));
