@@ -506,6 +506,14 @@ int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
 fz_rect pdf_annot_rect(fz_context *ctx, pdf_annot *annot);
 
 /*
+	Retrieve the annotation rectangle in PDF space,
+	adjusted for the NoZoom and NoRotate flags so that
+	it indicates the Rect used to display the appearance
+	stream.
+*/
+fz_rect pdf_annot_display_rect(fz_context *ctx, pdf_annot *annot);
+
+/*
 	Retrieve the annotation border line width in points.
 	DEPRECATED: Use pdf_annot_border_width instead.
 */

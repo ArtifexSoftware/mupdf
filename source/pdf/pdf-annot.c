@@ -119,31 +119,129 @@ void pdf_set_annot_hot(fz_context *ctx, pdf_annot *annot, int hot)
 		pdf_set_annot_has_changed(ctx, annot);
 }
 
+int
+pdf_annot_display_rotate(fz_context *ctx, pdf_annot *annot)
+{
+	int flags;
+	int rotate;
+
+	pdf_annot_push_local_xref(ctx, annot);
+	fz_try(ctx)
+	{
+		flags = pdf_annot_flags(ctx, annot);
+		if (flags & PDF_ANNOT_IS_NO_ROTATE)
+			rotate = pdf_dict_get_inheritable_int(ctx, annot->page->obj, PDF_NAME(Rotate));
+		else
+			rotate = 0;
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return rotate;
+}
+
+fz_rect
+pdf_annot_display_rect(fz_context *ctx, pdf_annot *annot)
+{
+	fz_rect rect;
+	int flags;
+
+	pdf_annot_push_local_xref(ctx, annot);
+	fz_try(ctx)
+	{
+		rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
+		flags = pdf_annot_flags(ctx, annot);
+
+		if (flags & PDF_ANNOT_IS_NO_ZOOM)
+		{
+			pdf_obj *ap = pdf_annot_ap(ctx, annot);
+			if (ap)
+			{
+				fz_rect bbox = pdf_xobject_bbox(ctx, ap);
+				rect = fz_make_rect(
+					rect.x0,
+					rect.y1 - (bbox.y1 - bbox.y0),
+					rect.x0 + (bbox.x1 - bbox.x0),
+					rect.y1
+				);
+			}
+		}
+
+		if (flags & PDF_ANNOT_IS_NO_ROTATE)
+		{
+			int rotate = pdf_dict_get_inheritable_int(ctx, annot->page->obj, PDF_NAME(Rotate));
+			if (rotate != 0)
+			{
+				fz_point tp = fz_make_point(rect.x0, rect.y1);
+				fz_matrix rotmat = fz_translate(-tp.x, -tp.y);
+				rotmat = fz_concat(rotmat, fz_rotate(rotate));
+				rotmat = fz_concat(rotmat, fz_translate(tp.x, tp.y));
+				rect = fz_transform_rect(rect, rotmat);
+			}
+		}
+	}
+	fz_always(ctx)
+		pdf_annot_pop_local_xref(ctx, annot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return rect;
+}
+
 fz_matrix
 pdf_annot_transform(fz_context *ctx, pdf_annot *annot)
 {
 	fz_rect bbox, rect;
-	fz_matrix matrix;
-	float w, h, x, y;
+	fz_matrix matrix, rotmat;
+	float w, h, sx, sy, x, y;
+	int rotate;
+
 	pdf_obj *ap = pdf_annot_ap(ctx, annot);
+	rect = pdf_annot_display_rect(ctx, annot);
+	rotate = pdf_annot_display_rotate(ctx, annot);
 
-	rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
-	bbox = pdf_xobject_bbox(ctx, ap);
 	matrix = pdf_xobject_matrix(ctx, ap);
-
+	bbox = pdf_xobject_bbox(ctx, ap);
 	bbox = fz_transform_rect(bbox, matrix);
-	if (bbox.x1 == bbox.x0)
-		w = 0;
-	else
-		w = (rect.x1 - rect.x0) / (bbox.x1 - bbox.x0);
-	if (bbox.y1 == bbox.y0)
-		h = 0;
-	else
-		h = (rect.y1 - rect.y0) / (bbox.y1 - bbox.y0);
-	x = rect.x0 - (bbox.x0 * w);
-	y = rect.y0 - (bbox.y0 * h);
 
-	return fz_pre_scale(fz_translate(x, y), w, h);
+	w = (bbox.x1 - bbox.x0);
+	h = (bbox.y1 - bbox.y0);
+
+	if (rotate == 90)
+	{
+		rotmat = fz_pre_rotate(fz_scale(w/h, h/w), 90);
+		rotmat.e = w;
+	}
+	else if (rotate == 180)
+	{
+		rotmat = fz_rotate(180);
+		rotmat.e = w;
+		rotmat.f = h;
+	}
+	else if (rotate == 270)
+	{
+		rotmat = fz_pre_rotate(fz_scale(w/h, h/w), 270);
+		rotmat.f = h;
+	}
+	else
+	{
+		rotmat = fz_identity;
+	}
+
+	if (bbox.x1 == bbox.x0)
+		sx = 0;
+	else
+		sx = (rect.x1 - rect.x0) / w;
+	if (bbox.y1 == bbox.y0)
+		sy = 0;
+	else
+		sy = (rect.y1 - rect.y0) / h;
+	x = rect.x0 - (bbox.x0 * sx);
+	y = rect.y0 - (bbox.y0 * sy);
+
+	return fz_concat(rotmat, fz_pre_scale(fz_translate(x, y), sx, sy));
 }
 
 /*
@@ -345,30 +443,8 @@ pdf_bound_annot(fz_context *ctx, pdf_annot *annot)
 {
 	fz_matrix page_ctm;
 	fz_rect rect;
-	int flags;
-
-	pdf_annot_push_local_xref(ctx, annot);
-
-	fz_try(ctx)
-	{
-		rect = pdf_dict_get_rect(ctx, annot->obj, PDF_NAME(Rect));
-		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
-
-		flags = pdf_annot_flags(ctx, annot);
-		if (flags & PDF_ANNOT_IS_NO_ROTATE)
-		{
-			int rotate = pdf_dict_get_inheritable_int(ctx, annot->page->obj, PDF_NAME(Rotate));
-			fz_point tp = fz_transform_point_xy(rect.x0, rect.y1, page_ctm);
-			page_ctm = fz_concat(page_ctm, fz_translate(-tp.x, -tp.y));
-			page_ctm = fz_concat(page_ctm, fz_rotate(-rotate));
-			page_ctm = fz_concat(page_ctm, fz_translate(tp.x, tp.y));
-		}
-	}
-	fz_always(ctx)
-		pdf_annot_pop_local_xref(ctx, annot);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	rect = pdf_annot_display_rect(ctx, annot);
 	return fz_transform_rect(rect, page_ctm);
 }
 
@@ -892,7 +968,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, enum pdf_annot_type type)
 		case PDF_ANNOT_FILE_ATTACHMENT:
 		case PDF_ANNOT_SOUND:
 			{
-				fz_rect icon_rect = { 12, 12, 12+20, 12+20 };
+				fz_rect icon_rect = { 12, 12, 12+16, 12+16 };
 				flags = PDF_ANNOT_IS_PRINT | PDF_ANNOT_IS_NO_ZOOM | PDF_ANNOT_IS_NO_ROTATE;
 				pdf_set_annot_rect(ctx, annot, icon_rect);
 				pdf_set_annot_color(ctx, annot, 3, yellow);

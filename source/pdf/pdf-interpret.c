@@ -1903,8 +1903,6 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_annot *annot, fz_coo
 			return;
 	}
 
-	/* TODO: NoZoom and NoRotate */
-
 	/* XXX what resources, if any, to use for this check? */
 	if (pdf_is_ocg_hidden(ctx, annot->page->doc, NULL, proc->usage, pdf_dict_get(ctx, annot->obj, PDF_NAME(OC))))
 		return;
