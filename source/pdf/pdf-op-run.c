@@ -420,11 +420,11 @@ static pdf_material *
 pdf_keep_material(fz_context *ctx, pdf_material *mat)
 {
 	if (mat->colorspace)
-		fz_keep_colorspace(ctx, mat->colorspace);
+		mat->colorspace = fz_keep_colorspace(ctx, mat->colorspace);
 	if (mat->pattern)
-		pdf_keep_pattern(ctx, mat->pattern);
+		mat->pattern = pdf_keep_pattern(ctx, mat->pattern);
 	if (mat->shade)
-		fz_keep_shade(ctx, mat->shade);
+		mat->shade = fz_keep_shade(ctx, mat->shade);
 	return mat;
 }
 
@@ -432,8 +432,11 @@ static pdf_material *
 pdf_drop_material(fz_context *ctx, pdf_material *mat)
 {
 	fz_drop_colorspace(ctx, mat->colorspace);
+	mat->colorspace = NULL;
 	pdf_drop_pattern(ctx, mat->pattern);
+	mat->pattern = NULL;
 	fz_drop_shade(ctx, mat->shade);
+	mat->shade = NULL;
 	return mat;
 }
 
@@ -497,15 +500,15 @@ pdf_keep_gstate(fz_context *ctx, pdf_gstate *gs)
 	pdf_keep_material(ctx, &gs->stroke);
 	pdf_keep_material(ctx, &gs->fill);
 	if (gs->text.font)
-		pdf_keep_font(ctx, gs->text.font);
+		gs->text.font = pdf_keep_font(ctx, gs->text.font);
 	if (gs->softmask)
-		pdf_keep_obj(ctx, gs->softmask);
+		gs->softmask = pdf_keep_obj(ctx, gs->softmask);
 	if (gs->softmask_cs)
-		fz_keep_colorspace(ctx, gs->softmask_cs);
+		gs->softmask_cs = fz_keep_colorspace(ctx, gs->softmask_cs);
 	if (gs->softmask_resources)
-		pdf_keep_obj(ctx, gs->softmask_resources);
-	fz_keep_stroke_state(ctx, gs->stroke_state);
-	pdf_keep_obj(ctx, gs->softmask_tr);
+		gs->softmask_resources = pdf_keep_obj(ctx, gs->softmask_resources);
+	gs->stroke_state = fz_keep_stroke_state(ctx, gs->stroke_state);
+	gs->softmask_tr = pdf_keep_obj(ctx, gs->softmask_tr);
 }
 
 static void
@@ -514,11 +517,17 @@ pdf_drop_gstate(fz_context *ctx, pdf_gstate *gs)
 	pdf_drop_material(ctx, &gs->stroke);
 	pdf_drop_material(ctx, &gs->fill);
 	pdf_drop_font(ctx, gs->text.font);
+	gs->text.font = NULL;
 	pdf_drop_obj(ctx, gs->softmask);
+	gs->softmask = NULL;
 	fz_drop_colorspace(ctx, gs->softmask_cs);
+	gs->softmask_cs = NULL;
 	pdf_drop_obj(ctx, gs->softmask_resources);
+	gs->softmask_resources = NULL;
 	fz_drop_stroke_state(ctx, gs->stroke_state);
+	gs->stroke_state = NULL;
 	pdf_drop_obj(ctx, gs->softmask_tr);
+	gs->softmask_tr = NULL;
 }
 
 static void
