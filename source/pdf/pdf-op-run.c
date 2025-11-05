@@ -646,6 +646,10 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, int p
 	{
 		pdf_drop_obj(ctx, gstate->softmask);
 		gstate->softmask = NULL;
+		pdf_drop_obj(ctx, gstate->softmask_resources);
+		gstate->softmask_resources = NULL;
+		fz_drop_colorspace(ctx, gstate->softmask_cs);
+		gstate->softmask_cs = NULL;
 	}
 
 	ptm = fz_concat(pat->matrix, pat_gstate->ctm);
