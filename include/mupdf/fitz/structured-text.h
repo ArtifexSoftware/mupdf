@@ -436,6 +436,7 @@ struct fz_stext_block
 		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; fz_stext_grid_info *info; } b;
 	} u;
 	fz_stext_block *prev, *next;
+	fz_stext_page *page;
 };
 
 typedef enum
@@ -454,6 +455,7 @@ struct fz_stext_line
 	fz_rect bbox;
 	fz_stext_char *first_char, *last_char;
 	fz_stext_line *prev, *next;
+	fz_stext_block *block; // the containing block
 };
 
 /**
@@ -471,6 +473,7 @@ struct fz_stext_char
 	float size;
 	fz_font *font;
 	fz_stext_char *next;
+	fz_stext_line *line; // the containing line
 };
 
 enum
