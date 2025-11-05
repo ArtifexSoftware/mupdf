@@ -146,6 +146,7 @@ static void open_browser(const char *uri)
 		{
 			fz_snprintf(link_uri, sizeof link_uri, "file://%s/%s/%s", buf_cwd, buf_base, uri+5);
 			fz_cleanname(link_uri+7);
+			uri = link_uri;
 		}
 	}
 
