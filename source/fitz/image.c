@@ -1134,6 +1134,7 @@ fz_get_pixmap_mask_from_image(fz_context *ctx, fz_image *image, const fz_irect *
 			fz_drop_pixmap(ctx, pix1);
 		fz_catch(ctx)
 			fz_rethrow(ctx);
+		fz_drop_colorspace(ctx, pix2->colorspace);
 		pix2->colorspace = NULL;
 		pix2->alpha = 1;
 		return pix2;
