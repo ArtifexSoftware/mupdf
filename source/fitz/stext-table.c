@@ -3443,8 +3443,10 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		/* Now we should have the entire table calculated. */
 		table = transcribe_table(ctx, &gd, page, NULL);
 #ifdef DEBUG_WRITE_AS_PS
+		if (table && table->first_block && table->first_block->type == FZ_STEXT_BLOCK_GRID)
 		{
 			int i;
+			fz_stext_block *block = table->first_block;
 			printf("%% TABLE\n");
 			for (i = 0; i < block->u.b.xs->len; i++)
 			{
