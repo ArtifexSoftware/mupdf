@@ -3301,6 +3301,10 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 			break;
 
 		score = score_table(ctx, &gd);
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("Bounds: %g %g %g %g Score: %g\n",
+			bounds.x0, bounds.y0, bounds.x1, bounds.y1, score);
+#endif
 
 		*has_background = gd.has_background;
 
