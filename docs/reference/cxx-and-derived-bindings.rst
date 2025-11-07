@@ -303,6 +303,8 @@ environmental variables:
 Limitations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* We do not wrap variadic functions such as `fz_write_printf()`.
+
 * Global instances of C++ wrapper classes are not supported.
 
   This is because:
