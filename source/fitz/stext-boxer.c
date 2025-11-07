@@ -924,6 +924,8 @@ int fz_segment_stext_page(fz_context *ctx, fz_stext_page *page)
 {
 	fz_stext_block *block;
 
+	fz_stext_remove_page_fill(ctx, page);
+
 	/* If we have structure already, give up. We can't hope to beat
 	 * proper structure! */
 	for (block = page->first_block; block != NULL; block = block->next)
