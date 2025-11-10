@@ -152,6 +152,7 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	if (old_text && !strcmp(old_text, text))
 		return;
 
+	// TODO: if field is a checkbox, V should be a name and not a string!
 	pdf_dict_put_text_string(ctx, obj, PDF_NAME(V), text);
 
 	pdf_field_mark_dirty(ctx, obj);
@@ -304,28 +305,31 @@ void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 static void add_field_hierarchy_to_array(fz_context *ctx, pdf_obj *array, pdf_obj *field, pdf_obj *fields, int exclude)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
-	char *needle = pdf_load_field_name(ctx, field);
 	int i, n;
 
-	fz_try(ctx)
+	if (fields)
 	{
-		n = pdf_array_len(ctx, fields);
-		for (i = 0; i < n; i++)
+		char *needle = pdf_load_field_name(ctx, field);
+		fz_try(ctx)
 		{
-			char *name = pdf_load_field_name(ctx, pdf_array_get(ctx, fields, i));
-			int found = !strcmp(needle, name);
-			fz_free(ctx, name);
-			if (found)
-				break;
+			n = pdf_array_len(ctx, fields);
+			for (i = 0; i < n; i++)
+			{
+				char *name = pdf_load_field_name(ctx, pdf_array_get(ctx, fields, i));
+				int found = !strcmp(needle, name);
+				fz_free(ctx, name);
+				if (found)
+					break;
+			}
 		}
-	}
-	fz_always(ctx)
-		fz_free(ctx, needle);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+		fz_always(ctx)
+			fz_free(ctx, needle);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 
-	if ((exclude && i < n) || (!exclude && i == n))
-		return;
+		if ((exclude && i < n) || (!exclude && i == n))
+			return;
+	}
 
 	pdf_array_push(ctx, array, field);
 
@@ -349,21 +353,31 @@ static pdf_obj *specified_fields(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 {
 	pdf_obj *form = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
 	int i, n;
-	pdf_obj *result = pdf_new_array(ctx, doc, 0);
+	pdf_obj *result;
 
+	result = pdf_new_array(ctx, doc, 0);
 	fz_try(ctx)
 	{
-		n = pdf_array_len(ctx, fields);
-
-		for (i = 0; i < n; i++)
+		if (fields)
 		{
-			pdf_obj *field = pdf_array_get(ctx, fields, i);
-
-			if (pdf_is_string(ctx, field))
-				field = pdf_lookup_field(ctx, form, pdf_to_str_buf(ctx, field));
-
-			if (field)
+			n = pdf_array_len(ctx, fields);
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *field = pdf_array_get(ctx, fields, i);
+				if (pdf_is_string(ctx, field))
+					field = pdf_lookup_field(ctx, form, pdf_to_str_buf(ctx, field));
+				if (field)
+					add_field_hierarchy_to_array(ctx, result, field, fields, exclude);
+			}
+		}
+		else
+		{
+			n = pdf_array_len(ctx, form);
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *field = pdf_array_get(ctx, form, i);
 				add_field_hierarchy_to_array(ctx, result, field, fields, exclude);
+			}
 		}
 	}
 	fz_catch(ctx)
