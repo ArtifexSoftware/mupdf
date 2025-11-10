@@ -98,9 +98,15 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->refs = 1;
 
 	if (name)
+	{
 		fz_strlcpy(font->name, name, sizeof font->name);
+		fz_strlcpy(font->family, name, sizeof font->family);
+	}
 	else
+	{
 		fz_strlcpy(font->name, "(null)", sizeof font->name);
+		fz_strlcpy(font->family, "(null)", sizeof font->family);
+	}
 
 	font->ft_face = NULL;
 	font->flags.ft_substitute = 0;
@@ -764,6 +770,9 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		fz_drop_freetype(ctx);
 		fz_rethrow(ctx);
 	}
+
+	if (face->family_name)
+		fz_strlcpy(font->family, face->family_name, sizeof font->family);
 
 	font->ft_face = face;
 	fz_set_font_bbox(ctx, font,

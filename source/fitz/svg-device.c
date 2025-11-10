@@ -409,7 +409,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, fz_matrix ctm, const fz_tex
 	tm.e = span->items[0].x;
 	tm.f = span->items[0].y;
 
-	svg_font_family(ctx, font_family, sizeof font_family, fz_font_name(ctx, span->font));
+	svg_font_family(ctx, font_family, sizeof font_family, span->font->family);
 	is_bold = fz_font_is_bold(ctx, span->font);
 	is_italic = fz_font_is_italic(ctx, span->font);
 
