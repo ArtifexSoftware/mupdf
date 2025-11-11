@@ -3231,7 +3231,7 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 }
 
 static int
-do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background, fz_rect top_bounds, float *subtable_score)
+do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background, fz_rect top_bounds, float *subtable_score, float score_threshold)
 {
 	fz_stext_block *block;
 	int count;
@@ -3262,7 +3262,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 			if (block->u.s.down)
 			{
 				int background = 0;
-				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds, subtable_score);
+				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds, subtable_score, score_threshold);
 				if (background)
 					*has_background = 1;
 				count++;
@@ -3329,8 +3329,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 				break;
 		}
 
-		/* Nasty heuristic threshold here. */
-		if (score > 0.3f)
+		if (score > score_threshold)
 			break;
 
 		*subtable_score = score;
@@ -3395,7 +3394,8 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 
 	assert(verify_stext(ctx, page, NULL));
 
-	do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score);
+	/* FIXME: Nasty heuristic threshold. */
+	do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score, 0.3f);
 
 	assert(verify_stext(ctx, page, NULL));
 }
@@ -3413,7 +3413,7 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 
 	fz_segment_stext_rect(ctx, page, rect);
 
-	do_table_hunt(ctx, page, NULL, &has_background, rect, &score);
+	do_table_hunt(ctx, page, NULL, &has_background, rect, &score, 1);
 
 	assert(verify_stext(ctx, page, NULL));
 }
