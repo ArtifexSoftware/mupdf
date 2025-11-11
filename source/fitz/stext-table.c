@@ -1012,7 +1012,7 @@ walk_to_find_content(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block
 				if (region.y1 > bounds.y1)
 					region.y1 = bounds.y1;
 				if (region.y0 >= region.y1)
-					break;
+					continue;
 
 				/* Skip leading spaces. */
 				for (ch = line->first_char; ch != NULL; ch = ch->next)
