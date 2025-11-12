@@ -624,22 +624,37 @@ fz_match_chapter_page_number_cb(fz_context *ctx, fz_document *doc, int chapter, 
 fz_buffer *
 fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page)
 {
-	return fz_new_buffer_from_flattened_stext_page(ctx, page, FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS);
+	return fz_new_buffer_from_flattened_stext_page(ctx, page, FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS, NULL);
 }
 
-static void
-do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatten flatten, int *ws)
+static int
+inhibit_space_after_line_break(int c)
+{
+	return fz_is_unicode_whitespace(c) || fz_is_unicode_hyphen(c);
+}
+
+static int
+do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_char ***map, fz_stext_block *block, fz_text_flatten flatten, int *ws)
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
+	int n = 0;
+
+	#define EMIT(X,Y) \
+	{ \
+		if (map && *map) *(*map)++ = X; \
+		if (buf) fz_append_rune(ctx, buf, Y); \
+		++n; \
+	}
 
 	for (; block != NULL; block = block->next)
 	{
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
 		{
+			int join_line = 0;
 			for (line = block->u.t.first_line; line; line = line->next)
 			{
-				int break_line = 1;
+				join_line = 0;
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
 					/* Last character of a line where we aren't keeping hyphens; check for dehyphenation. */
@@ -648,75 +663,92 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 						/* Soft hyphens are always removed. */
 						if (ch->c == 0xad)
 						{
-							break_line = 0;
+							join_line = 1;
 							continue;
 						}
 						/* Non-soft hyphens are only broken if we extracted with dehyphenation. */
 						if ((line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && fz_is_unicode_hyphen(ch->c))
 						{
-							break_line = 0;
+							join_line = 1;
 							continue;
 						}
 					}
+
 					/* Soft hyphens at the beginning or in the middle of a line are always removed. */
 					if (ch != line->last_char && ch->c == 0xad)
 					{
 						continue;
 					}
-					if ((flatten & FZ_TEXT_FLATTEN_KEEP_WHITESPACE) == 0 && fz_is_unicode_whitespace(ch->c))
-					{
-						*ws = 1;
-						continue;
-					}
-					if (*ws)
-					{
-						fz_append_rune(ctx, buf, ' ');
-						*ws = 0;
-					}
-					fz_append_rune(ctx, buf, ch->c);
+
+					EMIT(ch, ch->c);
+
+					*ws = inhibit_space_after_line_break(ch->c);
 				}
-				if (break_line == 0)
+
+				if (join_line)
 				{
 					/* No whitespace, no linebreak. */
 				}
 				else if (flatten & FZ_TEXT_FLATTEN_KEEP_LINES)
 				{
-					*ws = 0;
-					fz_append_byte(ctx, buf, '\n');
-				}
-				else if (flatten & FZ_TEXT_FLATTEN_KEEP_WHITESPACE)
-					fz_append_byte(ctx, buf, ' ');
-				else
+					EMIT(NULL, '\n');
 					*ws = 1;
+				}
+				else
+				{
+					if (!*ws)
+						EMIT(NULL, ' ');
+					*ws = 1;
+				}
 			}
+
 			if (flatten & FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS)
 			{
-				*ws = 0;
-				fz_append_byte(ctx, buf, '\n');
-				if (flatten & FZ_TEXT_FLATTEN_KEEP_LINES)
-					fz_append_byte(ctx, buf, '\n');
-			}
-			else
+				EMIT(NULL, '\n');
 				*ws = 1;
+			}
+			else if (!join_line)
+			{
+				EMIT(NULL, '\n');
+				*ws = 1;
+			}
 		}
 		else if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down)
-			do_flatten(ctx, buf, block->u.s.down->first_block, flatten, ws);
+		{
+			n += do_flatten(ctx, buf, map, block->u.s.down->first_block, flatten, ws);
+		}
 	}
+
+	return n;
 }
 
 fz_buffer *
-fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *page, fz_text_flatten flatten)
+fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *page, fz_text_flatten flatten, fz_stext_char ***mapp)
 {
-	fz_buffer *buf;
-	int ws = 0;
+	fz_stext_char **map = NULL;
+	fz_buffer *buf = NULL;
+	int ws, len;
 
-	buf = fz_new_buffer(ctx, 256);
+	fz_var(map);
+	fz_var(buf);
+
+	if (mapp)
+	{
+		ws = 0;
+		len = do_flatten(ctx, NULL, NULL, page->first_block, flatten, &ws);
+	}
+
 	fz_try(ctx)
 	{
-		do_flatten(ctx, buf, page->first_block, flatten, &ws);
+		buf = fz_new_buffer(ctx, 256);
+		if (mapp)
+			map = *mapp = fz_malloc_array(ctx, len, fz_stext_char*);
+		ws = 0;
+		do_flatten(ctx, buf, &map, page->first_block, flatten, &ws);
 	}
 	fz_catch(ctx)
 	{
+		fz_free(ctx, *mapp);
 		fz_drop_buffer(ctx, buf);
 		fz_rethrow(ctx);
 	}
@@ -738,7 +770,7 @@ fz_new_buffer_from_flattened_display_list(fz_context *ctx, fz_display_list *list
 
 	text = fz_new_stext_page_from_display_list(ctx, list, options);
 	fz_try(ctx)
-		buf = fz_new_buffer_from_flattened_stext_page(ctx, text, flatten);
+		buf = fz_new_buffer_from_flattened_stext_page(ctx, text, flatten, NULL);
 	fz_always(ctx)
 		fz_drop_stext_page(ctx, text);
 	fz_catch(ctx)
@@ -760,7 +792,7 @@ fz_new_buffer_from_flattened_page(fz_context *ctx, fz_page *page, const fz_stext
 
 	text = fz_new_stext_page_from_page(ctx, page, options);
 	fz_try(ctx)
-		buf = fz_new_buffer_from_flattened_stext_page(ctx, text, flatten);
+		buf = fz_new_buffer_from_flattened_stext_page(ctx, text, flatten, NULL);
 	fz_always(ctx)
 		fz_drop_stext_page(ctx, text);
 	fz_catch(ctx)

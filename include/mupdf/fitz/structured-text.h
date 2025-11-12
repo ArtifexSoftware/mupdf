@@ -954,21 +954,12 @@ typedef struct
 	int page_num;
 } fz_match_quad;
 
-
-typedef struct
-{
-	fz_stext_struct *struc;
-	fz_stext_block *block;
-	fz_stext_line *line;
-	fz_stext_char *ch;
-} fz_stext_position;
-
 typedef struct
 {
 	int num_quads;
 	fz_match_quad *quads;
-	fz_stext_position begin;
-	fz_stext_position end;
+	fz_stext_char *begin;
+	fz_stext_char *end;
 }
 fz_search_result_details;
 
