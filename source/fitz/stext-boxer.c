@@ -88,7 +88,7 @@ rectlist_append(rectlist_t *list, fz_rect *box)
 			/* If the one that just got chopped off wasn't r, move it down. */
 			if (i < list->len)
 			{
-				memcpy(r, &list->list[list->len], sizeof(*r));
+				memmove(r, &list->list[list->len], sizeof(*r));
 				i--; /* Reconsider this entry next time. */
 			}
 		}

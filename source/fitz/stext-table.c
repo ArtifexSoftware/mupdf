@@ -2778,19 +2778,19 @@ merge_column(grid_walker_data *gd, int x)
 		cell_t *s = &gd->cells->cell[x + y * gd->cells->w];
 
 		if (x > 0)
-			memcpy(d-x, s-x, sizeof(*d) * x);
+			memmove(d-x, s-x, sizeof(*d) * x);
 		d->full = s[0].full || s[1].full;
 		d->h_crossed = s[0].h_crossed || s[1].h_crossed;
 		d->h_line = s[0].h_line; /* == s[1].h_line */
 		d->v_crossed = s[0].v_crossed;
 		d->v_line = s[0].v_line;
 		if (x < gd->cells->w - 2)
-			memcpy(d+1, s+2, sizeof(*d) * (gd->cells->w - 2 - x));
+			memmove(d+1, s+2, sizeof(*d) * (gd->cells->w - 2 - x));
 	}
 	gd->cells->w--;
 
 	if (x < gd->xpos->len - 2)
-		memcpy(&gd->xpos->list[x+1], &gd->xpos->list[x+2], sizeof(gd->xpos->list[0]) * (gd->xpos->len - 2 - x));
+		memmove(&gd->xpos->list[x+1], &gd->xpos->list[x+2], sizeof(gd->xpos->list[0]) * (gd->xpos->len - 2 - x));
 	gd->xpos->len--;
 }
 
@@ -2881,11 +2881,11 @@ merge_row(grid_walker_data *gd, int y)
 		d++;
 	}
 	if (y < gd->cells->h - 2)
-		memcpy(d, d+w, sizeof(*d) * (gd->cells->h - 2 - y) * w);
+		memmove(d, d+w, sizeof(*d) * (gd->cells->h - 2 - y) * w);
 	gd->cells->h--;
 
 	if (y < gd->ypos->len - 2)
-		memcpy(&gd->ypos->list[y+1], &gd->ypos->list[y+2], sizeof(gd->ypos->list[0]) * (gd->ypos->len - 2 - y));
+		memmove(&gd->ypos->list[y+1], &gd->ypos->list[y+2], sizeof(gd->ypos->list[0]) * (gd->ypos->len - 2 - y));
 	gd->ypos->len--;
 }
 
