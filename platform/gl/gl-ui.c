@@ -367,7 +367,10 @@ static void on_reshape(int w, int h)
 
 static void on_display(void)
 {
+	void (*old_dialog)(void) = ui.dialog;
 	run_main_loop();
+	if (ui.dialog != old_dialog)
+		ui_invalidate();
 }
 
 static void on_error(const char *fmt, va_list ap)

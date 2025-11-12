@@ -3031,36 +3031,46 @@ void do_main(void)
 
 		while (search_active && glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
 		{
-			search_hit_count = fz_match_chapter_page_number(ctx, doc,
-				search_page.chapter, search_page.page,
-				search_needle,
-				NULL, search_hit_quads, nelem(search_hit_quads), search_options);
-			trace_action("hits = doc.loadPage(%d).search(%q);\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
-			trace_action("print('Search page %d:', repr(%q), hits.length, repr(hits));\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
-			if (search_hit_count)
+			fz_try(ctx)
 			{
-				float search_hit_x = search_hit_quads[0].ul.x;
-				float search_hit_y = search_hit_quads[0].ul.y;
-				search_active = 0;
-				search_hit_page = search_page;
-				jump_to_location_xy(search_hit_page, search_hit_x, search_hit_y);
-			}
-			else
-			{
-				if (search_dir > 0)
+				search_hit_count = fz_match_chapter_page_number(ctx, doc,
+					search_page.chapter, search_page.page,
+					search_needle,
+					NULL, search_hit_quads, nelem(search_hit_quads), search_options);
+				trace_action("hits = doc.loadPage(%d).search(%q);\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
+				trace_action("print('Search page %d:', repr(%q), hits.length, repr(hits));\n", fz_page_number_from_location(ctx, doc, search_page), search_needle);
+				if (search_hit_count)
 				{
-					if (is_last_page(search_page))
-						search_active = 0;
-					else
-						search_page = fz_next_page(ctx, doc, search_page);
+					float search_hit_x = search_hit_quads[0].ul.x;
+					float search_hit_y = search_hit_quads[0].ul.y;
+					search_active = 0;
+					search_hit_page = search_page;
+					jump_to_location_xy(search_hit_page, search_hit_x, search_hit_y);
 				}
 				else
 				{
-					if (is_first_page(search_page))
-						search_active = 0;
+					if (search_dir > 0)
+					{
+						if (is_last_page(search_page))
+							search_active = 0;
+						else
+							search_page = fz_next_page(ctx, doc, search_page);
+					}
 					else
-						search_page = fz_previous_page(ctx, doc, search_page);
+					{
+						if (is_first_page(search_page))
+							search_active = 0;
+						else
+							search_page = fz_previous_page(ctx, doc, search_page);
+					}
 				}
+			}
+			fz_catch(ctx)
+			{
+				// ignore invalid regexp input
+				fz_rethrow_unless(ctx, FZ_ERROR_ARGUMENT);
+				ui_show_warning_dialog("%s", fz_convert_error(ctx, NULL));
+				search_active = 0;
 			}
 		}
 
