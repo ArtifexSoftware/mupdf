@@ -904,10 +904,9 @@ typedef enum
 	FZ_SEARCH_IGNORE_CASE = 1,
 	FZ_SEARCH_IGNORE_DIACRITICS = 2,
 	FZ_SEARCH_REGEXP = 4,
-	FZ_SEARCH_KEEP_WHITESPACE = 8,
-	FZ_SEARCH_KEEP_LINES = 16,
-	FZ_SEARCH_KEEP_PARAGRAPHS = 32,
-	FZ_SEARCH_KEEP_HYPHENS = 64
+	FZ_SEARCH_KEEP_LINES = 8,
+	FZ_SEARCH_KEEP_PARAGRAPHS = 16,
+	FZ_SEARCH_KEEP_HYPHENS = 32
 } fz_search_options;
 
 FZ_DATA extern const char *fz_search_options_usage;
@@ -953,10 +952,9 @@ typedef struct
 	int page_num;
 } fz_match_quad;
 
-
 typedef struct
 {
-	fz_stext_struct *struc;
+	fz_stext_page *page;
 	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;

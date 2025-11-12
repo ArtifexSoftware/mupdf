@@ -9,7 +9,7 @@ feed_page(fz_context *ctx, fz_document *doc, fz_search *search, int page_num, fz
 {
 	fz_stext_page *page;
 
-	printf("FEEDING page %d\n", page_num);
+	printf("FEEDING page %d\n", page_num+1);
 	page = fz_new_stext_page_from_page_number(ctx, doc, page_num, options);
 	fz_feed_search(ctx, search, page, page_num);
 }

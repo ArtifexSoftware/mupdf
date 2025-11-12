@@ -50,10 +50,9 @@ public class StructuredText
 	public static final int SEARCH_IGNORE_CASE = 1;
 	public static final int SEARCH_IGNORE_DIACRITICS = 2;
 	public static final int SEARCH_REGEXP = 4;
-	public static final int SEARCH_KEEP_WHITESPACE = 8;
-	public static final int SEARCH_KEEP_LINES = 16;
-	public static final int SEARCH_KEEP_PARAGRAPHS = 32;
-	public static final int SEARCH_KEEP_HYPHENS = 64;
+	public static final int SEARCH_KEEP_LINES = 8;
+	public static final int SEARCH_KEEP_PARAGRAPHS = 16;
+	public static final int SEARCH_KEEP_HYPHENS = 32;
 
 	public static final int CHAR_FLAGS_STRIKEOUT = 1;
 	public static final int CHAR_FLAGS_UNDERLINE = 2;
