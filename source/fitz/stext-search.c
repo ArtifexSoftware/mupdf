@@ -658,7 +658,7 @@ static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const 
 	int result = js_regexec(*prog, s, &m, bol ? 0 : REG_NOTBOL);
 	if (result < 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Regexp failure");
-	if (result != 0)
+	if (result == 0)
 		return *endp = m.sub[0].ep, m.sub[0].sp;
 	return *endp = NULL, NULL;
 }
