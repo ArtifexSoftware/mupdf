@@ -809,22 +809,17 @@ typedef enum
 	 * (i.e. NFKD according to Unicode tr15) */
 	FZ_TEXT_TRANSFORM_COMPATIBILITY_DECOMPOSE = 32,
 
-	/* Preserve whitespace (mainly for use with regexps) -
-	 * otherwise, all runs of whitespace become single space
-	 * characters. */
-	FZ_TEXT_TRANSFORM_KEEP_WHITESPACE = 256,
-
 	/* Preserve line breaks (mainly for use with regexps) -
 	 * line breaks are preserved as single \n. */
-	FZ_TEXT_TRANSFORM_KEEP_LINES = 512,
+	FZ_TEXT_TRANSFORM_KEEP_LINES = 256,
 
 	/* Preserve paragraph breaks (mainly for use with regexps) -
 	 * paragraph breaks are preserved as double \n. */
-	FZ_TEXT_TRANSFORM_KEEP_PARAGRAPHS = 1024,
+	FZ_TEXT_TRANSFORM_KEEP_PARAGRAPHS = 512,
 
 	/* Preserve hyphens. Without this, they are removed and
 	 * lines joined. */
-	FZ_TEXT_TRANSFORM_KEEP_HYPHENS = 2048,
+	FZ_TEXT_TRANSFORM_KEEP_HYPHENS = 1024,
 
 
 	/* And some useful combinations of these flags */
@@ -996,7 +991,7 @@ transform_char(fz_context *ctx, char *output, int c, fz_text_transform transform
 	if (transform & FZ_TEXT_TRANSFORM_UPPERCASE)
 		c = fz_toupper(c);
 
-	if (c == '\n' && transform & (FZ_TEXT_TRANSFORM_KEEP_LINES | FZ_TEXT_TRANSFORM_KEEP_PARAGRAPHS | FZ_TEXT_TRANSFORM_KEEP_WHITESPACE))
+	if (c == '\n' && (transform & (FZ_TEXT_TRANSFORM_KEEP_LINES | FZ_TEXT_TRANSFORM_KEEP_PARAGRAPHS)))
 	{
 		/* Don't strip \n if we might need it. */
 	}
@@ -1382,8 +1377,6 @@ split_options(fz_search_options options, const fz_match_finder **finder)
 {
 	fz_text_transform trans = FZ_TEXT_TRANSFORM_NONE;
 
-	if (options & FZ_SEARCH_KEEP_WHITESPACE)
-		trans |= FZ_TEXT_TRANSFORM_KEEP_WHITESPACE;
 	if (options & FZ_SEARCH_KEEP_LINES)
 		trans |= FZ_TEXT_TRANSFORM_KEEP_LINES;
 	if (options & FZ_SEARCH_KEEP_PARAGRAPHS)
@@ -1484,8 +1477,6 @@ get_haystack(fz_context *ctx, search_page *ss, fz_stext_page *page, fz_text_tran
 	fz_buffer *buffer;
 	fz_text_flatten flatten = FZ_TEXT_FLATTEN_ALL;
 
-	if (transform & FZ_TEXT_TRANSFORM_KEEP_WHITESPACE)
-		flatten |= FZ_TEXT_FLATTEN_KEEP_WHITESPACE;
 	if (transform & FZ_TEXT_TRANSFORM_KEEP_LINES)
 		flatten |= FZ_TEXT_FLATTEN_KEEP_LINES;
 	if (transform & FZ_TEXT_TRANSFORM_KEEP_PARAGRAPHS)

@@ -97,19 +97,16 @@ typedef enum
 	 * paragraphs/lines are expressed as a single space. */
 	FZ_TEXT_FLATTEN_ALL = 0,
 
-	/* KEEP_WHITESPACE: Do not collate runs of whitespace together. */
-	FZ_TEXT_FLATTEN_KEEP_WHITESPACE = 1,
-
 	/* KEEP_LINES: Keep line splits as \n. */
-	FZ_TEXT_FLATTEN_KEEP_LINES = 2,
+	FZ_TEXT_FLATTEN_KEEP_LINES = 1,
 
 	/* KEEP_PARAGRAPHS: Keep paragraph splits. If used without
 	 * KEEP_LINES, paragraphs will appear as \n. If used with
 	 * KEEP_LINES, paragraphs will appear as \n\n. */
-	FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS = 4,
+	FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS = 2,
 
 	/* KEEP_HYPHENS: Do not join hyphenated lines. */
-	FZ_TEXT_FLATTEN_KEEP_HYPHENS = 8
+	FZ_TEXT_FLATTEN_KEEP_HYPHENS = 4
 } fz_text_flatten;
 
 /**

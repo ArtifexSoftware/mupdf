@@ -761,7 +761,6 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_IGNORE_CASE == FZ_SEARCH_IGNORE_CASE;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_IGNORE_DIACRITICS == FZ_SEARCH_IGNORE_DIACRITICS;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_REGEXP == FZ_SEARCH_REGEXP;
-	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_WHITESPACE == FZ_SEARCH_KEEP_WHITESPACE;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_LINES == FZ_SEARCH_KEEP_LINES;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_PARAGRAPHS == FZ_SEARCH_KEEP_PARAGRAPHS;
 	valid &= com_artifex_mupdf_fitz_StructuredText_SEARCH_KEEP_HYPHENS == FZ_SEARCH_KEEP_HYPHENS;
