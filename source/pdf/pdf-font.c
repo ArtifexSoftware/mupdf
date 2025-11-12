@@ -352,6 +352,23 @@ static int ft_find_glyph_by_unicode_name(FT_Face face, const char *name)
 	return 0;
 }
 
+static void
+pdf_make_font_family(fz_context *ctx, fz_font *font)
+{
+	if (font->flags.ft_substitute || font->t3procs)
+	{
+		/* Remove "ABCDEF+" prefix and "-Bold" suffix. */
+		char *p = strchr(font->name, '+');
+		if (p)
+			fz_strlcpy(font->family, p+1, sizeof font->family);
+		else
+			fz_strlcpy(font->family, font->name, sizeof font->family);
+		p = strrchr(font->family, '-');
+		if (p)
+			*p = 0;
+	}
+}
+
 /*
  * Load font files.
  */
@@ -1617,6 +1634,9 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_o
 
 	fz_try(ctx)
 	{
+		/* Set family name from font name for substitute and Type 3 fonts */
+		pdf_make_font_family(ctx, fontdesc->font);
+
 		/* Create glyph width table for stretching substitute fonts and text extraction. */
 		pdf_make_width_table(ctx, fontdesc);
 

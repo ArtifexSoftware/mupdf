@@ -312,17 +312,6 @@ svg_dev_stroke_color(fz_context *ctx, svg_device *sdev, fz_colorspace *colorspac
 		fz_append_printf(ctx, out, " stroke-opacity=\"%g\"", alpha);
 }
 
-static void
-svg_font_family(fz_context *ctx, char buf[], int size, const char *name)
-{
-	/* Remove "ABCDEF+" prefix and "-Bold" suffix. */
-	char *p = strchr(name, '+');
-	if (p) fz_strlcpy(buf, p+1, size);
-	else fz_strlcpy(buf, name, size);
-	p = strrchr(buf, '-');
-	if (p) *p = 0;
-}
-
 static int
 find_first_char(fz_context *ctx, const fz_text_span *span, int i)
 {
@@ -380,7 +369,7 @@ static void
 svg_dev_text_span(fz_context *ctx, svg_device *sdev, fz_matrix ctm, const fz_text_span *span)
 {
 	fz_buffer *out = sdev->out;
-	char font_family[100];
+	char *font_family;
 	int is_bold, is_italic;
 	fz_matrix tm, inv_tm, final_tm;
 	fz_point p;
@@ -409,7 +398,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, fz_matrix ctm, const fz_tex
 	tm.e = span->items[0].x;
 	tm.f = span->items[0].y;
 
-	svg_font_family(ctx, font_family, sizeof font_family, span->font->family);
+	font_family = span->font->family;
 	is_bold = fz_font_is_bold(ctx, span->font);
 	is_italic = fz_font_is_italic(ctx, span->font);
 
