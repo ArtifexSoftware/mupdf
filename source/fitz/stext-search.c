@@ -30,6 +30,31 @@
 #include <limits.h>
 #include <assert.h>
 
+const char *fz_search_options_usage =
+	"Search options:\n"
+	"\texact: match exact, case sensitive pattern\n"
+	"\tignore-case: case insensitive search\n"
+	"\tignore-diacritics: ignore character diacritics\n"
+	"\tregexp: interpret search pattern as regular expression\n"
+	"\tkeep-lines: preserve line breaks so pattern can match them\n"
+	"\tkeep-paragraphs: preserve paragraph breaks so pattern can match them\n"
+	"\tkeep-hyphens: preserve hyphens, avoiding joining lines\n"
+	"\n";
+
+fz_search_options fz_parse_search_options(const char *args)
+{
+	fz_search_options mask = 0;
+	// TODO: stricter parsing of options bitmask string
+	if (strstr(args, "exact")) mask |= FZ_SEARCH_EXACT;
+	if (strstr(args, "ignore-case")) mask |= FZ_SEARCH_IGNORE_CASE;
+	if (strstr(args, "ignore-diacritics")) mask |= FZ_SEARCH_IGNORE_DIACRITICS;
+	if (strstr(args, "regexp")) mask |= FZ_SEARCH_REGEXP;
+	if (strstr(args, "keep-lines")) mask |= FZ_SEARCH_KEEP_LINES;
+	if (strstr(args, "keep-paragraphs")) mask |= FZ_SEARCH_KEEP_PARAGRAPHS;
+	if (strstr(args, "keep-hyphens")) mask |= FZ_SEARCH_KEEP_HYPHENS;
+	return mask;
+}
+
 /* Enumerate marked selection */
 
 static float hdist(fz_point *dir, fz_point *a, fz_point *b)

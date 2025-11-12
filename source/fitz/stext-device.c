@@ -155,7 +155,7 @@ typedef struct
 } fz_stext_device;
 
 const char *fz_stext_options_usage =
-	"Text output options:\n"
+	"Structured text options:\n"
 	"\tpreserve-images: keep images in output\n"
 	"\tpreserve-ligatures: do not expand ligatures into constituent characters\n"
 	"\tpreserve-spans: do not merge spans on the same line\n"
@@ -176,6 +176,7 @@ const char *fz_stext_options_usage =
 	"\tvectors: include vector bboxes in output\n"
 	"\tsegment: attempt to segment the page\n"
 	"\ttable-hunt: hunt for tables within a (segmented) page\n"
+	"\tresolution: resolution to render at\n"
 	"\n";
 
 /* Find the current actualtext, if any. Will abort if dev == NULL. */
@@ -1869,6 +1870,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 	const char *val;
 
 	memset(opts, 0, sizeof *opts);
+
+	/* when adding options, remember to update fz_stext_options_usage above */
 
 	if (fz_has_option(ctx, string, "preserve-ligatures", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_PRESERVE_LIGATURES;
