@@ -30,6 +30,20 @@
 #include <limits.h>
 #include <assert.h>
 
+fz_search_options fz_parse_search_options(const char *args)
+{
+	fz_search_options mask = 0;
+	// TODO: stricter parsing of options bitmask string
+	if (strstr(args, "exact")) mask |= FZ_SEARCH_EXACT;
+	if (strstr(args, "ignore-case")) mask |= FZ_SEARCH_IGNORE_CASE;
+	if (strstr(args, "ignore-diacritics")) mask |= FZ_SEARCH_IGNORE_DIACRITICS;
+	if (strstr(args, "regexps")) mask |= FZ_SEARCH_REGEXP;
+	if (strstr(args, "keep-lines")) mask |= FZ_SEARCH_KEEP_LINES;
+	if (strstr(args, "keep-paragraphs")) mask |= FZ_SEARCH_KEEP_PARAGRAPHS;
+	if (strstr(args, "keep-hyphens")) mask |= FZ_SEARCH_KEEP_HYPHENS;
+	return mask;
+}
+
 /* Enumerate marked selection */
 
 static float hdist(fz_point *dir, fz_point *a, fz_point *b)

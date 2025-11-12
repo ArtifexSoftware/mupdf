@@ -4705,27 +4705,12 @@ static int hit_callback(fz_context *ctx, void *opaque, int quads, fz_quad *quad,
 	return 0;
 }
 
-static fz_search_options search_options_from_string(const char *args)
-{
-	fz_search_options mask = 0;
-	// TODO: stricter parsing of options bitmask string
-	if (strstr(args, "exact")) mask |= FZ_SEARCH_EXACT;
-	if (strstr(args, "ignore-case")) mask |= FZ_SEARCH_IGNORE_CASE;
-	if (strstr(args, "ignore-diacritics")) mask |= FZ_SEARCH_IGNORE_DIACRITICS;
-	if (strstr(args, "regexps")) mask |= FZ_SEARCH_REGEXP;
-	if (strstr(args, "keep-whitespace")) mask |= FZ_SEARCH_KEEP_WHITESPACE;
-	if (strstr(args, "keep-lines")) mask |= FZ_SEARCH_KEEP_LINES;
-	if (strstr(args, "keep-paragraphs")) mask |= FZ_SEARCH_KEEP_PARAGRAPHS;
-	if (strstr(args, "keep-hyphens")) mask |= FZ_SEARCH_KEEP_HYPHENS;
-	return mask;
-}
-
 static void ffi_Page_search(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
 	const char *needle = js_tostring(J, 1);
-	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
+	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, fz_parse_search_options);
 	search_state state = { J, 0, 0 };
 
 	js_newarray(J);
@@ -6343,7 +6328,7 @@ static void ffi_DisplayList_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	const char *needle = js_tostring(J, 1);
-	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
+	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, fz_parse_search_options);
 	search_state state = { J, 0, 0 };
 
 	js_newarray(J);
@@ -6516,7 +6501,7 @@ static void ffi_StructuredText_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	const char *needle = js_tostring(J, 1);
-	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, search_options_from_string);
+	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, fz_parse_search_options);
 	search_state state = { J, 0, 0 };
 
 	state.max_hits = js_iscoercible(J, 3) ? js_tointeger(J, 3) : 500;
