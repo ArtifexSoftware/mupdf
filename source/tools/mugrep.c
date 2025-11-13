@@ -158,7 +158,12 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 				if (details->begin->line != last_line)
 				{
 					show_match_snippet(filename, details->quads[0].seq + 1, details->begin, details->end);
-					last_line = details->begin->line;
+					last_line = details->end->line;
+				}
+				else if (details->end->line != last_line)
+				{
+					show_match_snippet(filename, details->quads[0].seq + 1, details->end->line->first_char, details->end);
+					last_line = details->end->line;
 				}
 			}
 			else if (res.reason == FZ_SEARCH_MORE_INPUT)
