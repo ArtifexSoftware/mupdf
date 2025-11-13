@@ -632,18 +632,28 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
+	fz_stext_char* prev_ch;	// 2025.10.10
+	int block_num = 0;		// 2025.10.10
 
-	for (; block != NULL; block = block->next)
+	for (; block != NULL; block = block->next, block_num++)	// 2025.10.10
 	{
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
 		{
-			for (line = block->u.t.first_line; line; line = line->next)
+			int line_num = 0;	// 2025.10.10
+			for (line = block->u.t.first_line; line; line = line->next, line_num++)	// 2025.10.10
 			{
 				int break_line = 1;
-				for (ch = line->first_char; ch; ch = ch->next)
+				int ch_num = 0;		// 2025.10.10
+				int space_num = 0;	// 2025.10.10, number of spaces in the line
+				prev_ch = NULL;		// 2025.10.10
+				for (ch = line->first_char; ch; prev_ch = ch, ch = ch->next, ch_num++)	// 2025.10.10
 				{
+					if (fz_is_unicode_whitespace(ch->c))	// 2025.10.10
+					{
+						space_num++;
+					}
 					/* Last character of a line where we aren't keeping hyphens; check for dehyphenation. */
-					if (ch == line->last_char && (flatten & FZ_TEXT_FLATTEN_KEEP_HYPHENS) == 0)
+ 					if (ch == line->last_char && (flatten & FZ_TEXT_FLATTEN_KEEP_HYPHENS) == 0)
 					{
 						/* Soft hyphens are always removed. */
 						if (ch->c == 0xad)
@@ -673,6 +683,15 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 						fz_append_rune(ctx, buf, ' ');
 						*ws = 0;
 					}
+					// 2025.10.10, check a gap between prev_ch and ch
+					if (prev_ch && prev_ch->c != 0x20 && ch->c != 0x20)
+					{
+						float gap = ch->quad.ul.x - prev_ch->quad.ur.x;
+						if (gap > 0.5f)	// 2025.10.10: if gap > 0.5 char width, insert space
+						{
+							fz_append_rune(ctx, buf, ' ');
+						}
+					}
 					fz_append_rune(ctx, buf, ch->c);
 				}
 				if (break_line == 0)
@@ -686,7 +705,7 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_block *block, fz_text_flatt
 				}
 				else if (flatten & FZ_TEXT_FLATTEN_KEEP_WHITESPACE)
 					fz_append_byte(ctx, buf, ' ');
-				else
+				else if ((ch_num - space_num) > 1)		// 2025.10.10: avoid adding space for 1-char line.
 					*ws = 1;
 			}
 			if (flatten & FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS)
