@@ -44,6 +44,10 @@ Static properties
 
 	used to search text preserving paragraph breaks.
 
+.. data:: StructuredText.SEARCH_KEEP_HYPHENS
+
+	used to search text preserving hyphens and not joining lines.
+
 Instance methods
 ----------------
 
