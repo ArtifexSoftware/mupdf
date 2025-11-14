@@ -30,6 +30,17 @@
 #include <limits.h>
 #include <assert.h>
 
+const char *fz_search_options_usage =
+	"Search options:\n"
+	"\texact: match exact, case sensitive pattern\n"
+	"\tignore-case: case insensitive search\n"
+	"\tignore-diacritics: ignore character diacritics\n"
+	"\tregexp: interpret search pattern as regular expression\n"
+	"\tkeep-lines: preserve line breaks so pattern can match them\n"
+	"\tkeep-paragraphs: preserve paragraph breaks so pattern can match them\n"
+	"\tkeep-hyphens: preserve hyphens, avoiding joining lines\n"
+	"\n";
+
 fz_search_options fz_parse_search_options(const char *args)
 {
 	fz_search_options mask = 0;

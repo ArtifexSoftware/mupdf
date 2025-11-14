@@ -912,6 +912,8 @@ typedef enum
 	FZ_SEARCH_KEEP_HYPHENS = 32
 } fz_search_options;
 
+FZ_DATA extern const char *fz_search_options_usage;
+
 fz_search_options fz_parse_search_options(const char *options);
 
 /**
