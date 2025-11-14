@@ -90,16 +90,16 @@ int main(int argc, const char *argv[])
 	{
 		fz_register_document_handlers(ctx);
 
-		//search_test(ctx, FZ_SEARCH_EXACT, "Adobe", 0, 0);
-		//search_test(ctx, FZ_SEARCH_IGNORE_CASE, "aDoBe", 0, 0);
-		//search_test(ctx, FZ_SEARCH_IGNORE_DIACRITICS, "A Aacute", 997-1, 0);
-		//search_test(ctx, FZ_SEARCH_IGNORE_DIACRITICS | FZ_SEARCH_IGNORE_CASE, "a aacute", 997-1, 0);
-		//search_test(ctx, FZ_SEARCH_EXACT, "MAKES NO WARRANTY", 1, 0);
-		//search_test(ctx, FZ_SEARCH_REGEXP, "Ad.be", 0, 0);
+		search_test(ctx, FZ_SEARCH_EXACT, "Adobe", 0, 0);
+		search_test(ctx, FZ_SEARCH_IGNORE_CASE, "aDoBe", 0, 0);
+		search_test(ctx, FZ_SEARCH_IGNORE_DIACRITICS, "A Aacute", 997-1, 0);
+		search_test(ctx, FZ_SEARCH_IGNORE_DIACRITICS | FZ_SEARCH_IGNORE_CASE, "a aacute", 997-1, 0);
+		search_test(ctx, FZ_SEARCH_EXACT, "MAKES NO WARRANTY", 1, 0);
+		search_test(ctx, FZ_SEARCH_REGEXP, "Ad.be", 0, 0);
 		search_test(ctx, FZ_SEARCH_EXACT, "Adobe", -1, 1);
-		//search_test(ctx, FZ_SEARCH_REGEXP, "Ad.be", -1, 1);
+		search_test(ctx, FZ_SEARCH_REGEXP, "Ad.be", -1, 1);
 		/* This one seems broken */
-		//search_test(ctx, FZ_SEARCH_REGEXP | FZ_SEARCH_KEEP_PARAGRAPHS | FZ_SEARCH_KEEP_LINES, "Ad.*be", 0, 0);
+		search_test(ctx, FZ_SEARCH_REGEXP | FZ_SEARCH_KEEP_PARAGRAPHS | FZ_SEARCH_KEEP_LINES, "Ad.*be", 0, 0);
 
 		break;
 	}
