@@ -273,7 +273,12 @@ int mugrep_main(int argc, char **argv)
 			doc = fz_open_document(ctx, filename);
 			if (fz_needs_password(ctx, doc))
 				if (!fz_authenticate_password(ctx, doc, password))
+				{
 					fz_warn(ctx, "cannot authenticate password: %s", filename);
+					fz_drop_document(ctx, doc);
+					doc = NULL;
+					continue;
+				}
 
 			if (mugrep_run(ctx, filename, doc, pattern, options, &stext_options, verbose))
 				result = EXIT_SUCCESS;
