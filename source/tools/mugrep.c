@@ -115,7 +115,7 @@ show_match_snippet(char *file_name, int page_number, fz_stext_char *begin, fz_st
 	begin = begin->line->first_char;
 	end = end->line->last_char;
 
-	if (begin->line->block->page == end->line->block->page)
+	if (begin_page == end_page)
 	{
 		(void)show_match_rec(begin_page->first_block, begin->line, end->line, &last);
 	}
