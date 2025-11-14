@@ -2124,9 +2124,11 @@ fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 		if ((size_t)(spun_end - search->combined_spun_haystack) <= search->combined_spun_split)
 		{
 			/* Match ends on previous_page. */
+
 			/* For simplicity, we advance pages here. We'll refind the match next time. */
 			advance_page(ctx, search, &search->next_page, &search->current_page);
 			advance_page(ctx, search, &search->current_page, &search->previous_page);
+
 			/* We'll start searching from the end of the current page. */
 			drop_current_pos(search);
 
