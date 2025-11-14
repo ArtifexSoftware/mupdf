@@ -30,6 +30,7 @@ static fz_context *ctx = NULL;
 static fz_output *out = NULL;
 static int show_page_number = 0;
 static int show_file_name = 0;
+static int search_backwards = 0;
 
 static int mugrep_usage(void)
 {
@@ -44,6 +45,7 @@ static int mugrep_usage(void)
 		"advanced options:\n"
 		"\t-S\tcomma-separated list of search options\n"
 		"\t-O\tcomma-separated list of stext options\n"
+		"\t-b\tsearch pages in backwards order\n"
 		"\t-v\tverbose\n"
 		"\n"
 	);
@@ -144,9 +146,23 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 		search = fz_new_search(ctx);
 		fz_search_set_options(ctx, search, options, pattern);
 
+		if (search_backwards)
+		{
+			fz_stext_page *page = fz_new_stext_page_from_page_number(ctx, doc, page_count - 1, stext_options);
+			fz_feed_search(ctx, search, page, page_count - 1);
+		}
+		else
+		{
+			fz_stext_page *page = fz_new_stext_page_from_page_number(ctx, doc, 0, stext_options);
+			fz_feed_search(ctx, search, page, 0);
+		}
+
 		for (;;)
 		{
-			res = fz_search_forwards(ctx, search);
+			if (search_backwards)
+				res = fz_search_backwards(ctx, search);
+			else
+				res = fz_search_forwards(ctx, search);
 			if (res.reason == FZ_SEARCH_MATCH)
 			{
 				fz_search_result_details *details = res.u.match.result;
@@ -221,7 +237,7 @@ int mugrep_main(int argc, char **argv)
 
 	out = fz_stdout(ctx);
 
-	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nH")) != -1)
+	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nHb")) != -1)
 	{
 		switch (c)
 		{
@@ -248,6 +264,9 @@ int mugrep_main(int argc, char **argv)
 			break;
 		case 'H':
 			show_file_name = 1;
+			break;
+		case 'b':
+			search_backwards = 1;
 			break;
 		case 'v':
 			verbose = 1;
