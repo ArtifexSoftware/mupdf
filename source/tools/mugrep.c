@@ -44,8 +44,13 @@ static int mugrep_usage(void)
 		"\t-L\tkeep lines\n"
 		"\t-P\tkeep paragraphs\n"
 		"\t-H\tkeep hyphens\n"
+		"\t-S\tcomma-separated list of search options\n"
+		"\t-O\tcomma-separated list of stext options\n"
 		"\t-v\tverbose\n"
+		"\n"
 	);
+	fputs(fz_search_options_usage, stderr);
+	fputs(fz_stext_options_usage, stderr);
 	return EXIT_FAILURE;
 }
 
