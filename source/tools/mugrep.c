@@ -26,10 +26,21 @@
 
 #include "mupdf/fitz.h"
 
+#ifdef _WIN32
+#include <io.h>
+#define isatty _isatty
+#else
+#include <unistd.h>
+#endif
+
 static fz_context *ctx = NULL;
 static fz_output *out = NULL;
 static int show_page_number = 0;
 static int show_file_name = 0;
+static int search_backwards = 0;
+
+static const char *mark_open = "";
+static const char *mark_close = "";
 
 static int mugrep_usage(void)
 {
@@ -39,18 +50,25 @@ static int mugrep_usage(void)
 		"\t-G\tpattern is a regexp\n"
 		"\t-a\tignore accents (diacritics)\n"
 		"\t-i\tignore case\n"
+		"\t-H\tprint filename for each match\n"
+		"\t-n\tprint page number for each match\n"
 		"advanced options:\n"
-		"\t-W\tkeep whitespace\n"
-		"\t-L\tkeep lines\n"
-		"\t-P\tkeep paragraphs\n"
-		"\t-H\tkeep hyphens\n"
+		"\t-S\tcomma-separated list of search options\n"
+		"\t-O\tcomma-separated list of stext options\n"
+		"\t-b\tsearch pages in backwards order\n"
+		"\t-[ -\tstart marker\n"
+		"\t-] -\tend marker\n"
 		"\t-v\tverbose\n"
+		"\t-q\tquiet (don't print warnings and errors)\n"
+		"\n"
 	);
+	fputs(fz_search_options_usage, stderr);
+	fputs(fz_stext_options_usage, stderr);
 	return EXIT_FAILURE;
 }
 
 static int
-show_match_rec(fz_stext_block *block, fz_stext_line *begin, fz_stext_line *end, int *last)
+show_match_rec(fz_stext_block *block, fz_stext_line *begin_line, fz_stext_char *begin_ch, fz_stext_line *end_line, fz_stext_char *end_ch, int *last)
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
@@ -61,22 +79,26 @@ show_match_rec(fz_stext_block *block, fz_stext_line *begin, fz_stext_line *end, 
 		case FZ_STEXT_BLOCK_TEXT:
 			for (line = block->u.t.first_line; line; line = line->next)
 			{
-				if (line == begin)
-					begin = NULL;
-				if (!begin)
+				if (line == begin_line)
+					begin_line = NULL;
+				if (!begin_line)
 				{
 					for (ch = line->first_char; ch; ch = ch->next)
 					{
+						if (ch == begin_ch)
+							fz_write_string(ctx, out, mark_open);
 						if (ch->c < 32)
 							fz_write_byte(ctx, out, ' ');
 						else if (ch->c != 0xad)
 							fz_write_rune(ctx, out, ch->c);
+						if (ch == end_ch)
+							fz_write_string(ctx, out, mark_close);
 						*last = ch->c;
 					}
 					if (!fz_is_unicode_whitespace(*last) && *last != 0xad)
 						fz_write_string(ctx, out, " ");
 				}
-				if (line == end)
+				if (line == end_line)
 				{
 					return 1;
 				}
@@ -85,7 +107,7 @@ show_match_rec(fz_stext_block *block, fz_stext_line *begin, fz_stext_line *end, 
 		case FZ_STEXT_BLOCK_STRUCT:
 			if (block->u.s.down)
 			{
-				if (show_match_rec(block->u.s.down->first_block, begin, end, last))
+				if (show_match_rec(block->u.s.down->first_block, begin_line, begin_ch, end_line, end_ch, last))
 					return 1;
 			}
 			break;
@@ -107,12 +129,12 @@ show_match_snippet(char *file_name, int page_number, fz_stext_position begin, fz
 
 	if (begin.page == end.page)
 	{
-		(void)show_match_rec(begin.page->first_block, begin.line, end.line, &last);
+		(void)show_match_rec(begin.page->first_block, begin.line, begin.ch, end.line, end.ch, &last);
 	}
 	else
 	{
-		(void)show_match_rec(begin.page->first_block, begin.line, NULL, &last);
-		(void)show_match_rec(end.page->first_block, NULL, end.line, &last);
+		(void)show_match_rec(begin.page->first_block, begin.line, begin.ch, NULL, NULL, &last);
+		(void)show_match_rec(end.page->first_block, NULL, NULL, end.line, end.ch, &last);
 	}
 
 	fz_write_byte(ctx, out, '\n');
@@ -125,7 +147,6 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 	fz_search *search = NULL;
 	fz_search_result res;
 	int found = 0;
-	fz_stext_line *last_line = NULL;
 
 	fz_var(search);
 
@@ -134,9 +155,23 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 		search = fz_new_search(ctx);
 		fz_search_set_options(ctx, search, options, pattern);
 
+		if (search_backwards)
+		{
+			fz_stext_page *page = fz_new_stext_page_from_page_number(ctx, doc, page_count - 1, stext_options);
+			fz_feed_search(ctx, search, page, page_count - 1);
+		}
+		else
+		{
+			fz_stext_page *page = fz_new_stext_page_from_page_number(ctx, doc, 0, stext_options);
+			fz_feed_search(ctx, search, page, 0);
+		}
+
 		for (;;)
 		{
-			res = fz_search_forwards(ctx, search);
+			if (search_backwards)
+				res = fz_search_backwards(ctx, search);
+			else
+				res = fz_search_forwards(ctx, search);
 			if (res.reason == FZ_SEARCH_MATCH)
 			{
 				fz_search_result_details *details = res.u.match.result;
@@ -148,11 +183,7 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 					printf("MATCH: %d quads (starting on page %d)\n", details->num_quads, details->quads[0].seq+1);
 				}
 
-				if (details->begin.line != last_line)
-				{
-					show_match_snippet(filename, details->quads[0].seq + 1, details->begin, details->end);
-					last_line = details->end.line;
-				}
+				show_match_snippet(filename, details->quads[0].seq + 1, details->begin, details->end);
 			}
 			else if (res.reason == FZ_SEARCH_MORE_INPUT)
 			{
@@ -183,6 +214,8 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 	return found;
 }
 
+static void silence(void *user, const char *message) {}
+
 int mugrep_main(int argc, char **argv)
 {
 	fz_document *doc = NULL;
@@ -190,6 +223,7 @@ int mugrep_main(int argc, char **argv)
 	char *filename;
 	char *pattern;
 	int result = EXIT_FAILURE;
+	int quiet = 0;
 	int c;
 	fz_search_options options = FZ_SEARCH_EXACT;
 	fz_stext_options stext_options = { 0 };
@@ -206,7 +240,13 @@ int mugrep_main(int argc, char **argv)
 
 	out = fz_stdout(ctx);
 
-	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nH")) != -1)
+	if (isatty(1))
+	{
+		mark_open = "\e[1m";
+		mark_close = "\e[0m";
+	}
+
+	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nHb[:]:q")) != -1)
 	{
 		switch (c)
 		{
@@ -234,12 +274,30 @@ int mugrep_main(int argc, char **argv)
 		case 'H':
 			show_file_name = 1;
 			break;
+		case 'b':
+			search_backwards = 1;
+			break;
 		case 'v':
 			verbose = 1;
+			break;
+		case 'q':
+			quiet = 1;
+			break;
+		case '[':
+			mark_open = mark_close = fz_optarg;
+			break;
+		case ']':
+			mark_close = fz_optarg;
 			break;
 		default:
 			return mugrep_usage();
 		}
+	}
+
+	if (quiet > 0)
+	{
+		fz_set_warning_callback(ctx, silence, NULL);
+		fz_set_error_callback(ctx, silence, NULL);
 	}
 
 	if (fz_optind == argc)
@@ -258,7 +316,12 @@ int mugrep_main(int argc, char **argv)
 			doc = fz_open_document(ctx, filename);
 			if (fz_needs_password(ctx, doc))
 				if (!fz_authenticate_password(ctx, doc, password))
+				{
 					fz_warn(ctx, "cannot authenticate password: %s", filename);
+					fz_drop_document(ctx, doc);
+					doc = NULL;
+					continue;
+				}
 
 			if (mugrep_run(ctx, filename, doc, pattern, options, &stext_options, verbose))
 				result = EXIT_SUCCESS;
