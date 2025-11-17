@@ -306,7 +306,6 @@ static fz_stext_block *
 add_block_to_page(fz_context *ctx, fz_stext_page *page, int type, int id)
 {
 	fz_stext_block *block = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
-	block->page = page;
 	block->bbox = fz_empty_rect; /* Fixes bug 703267. */
 	block->prev = page->last_block;
 	block->type = type;
@@ -356,7 +355,6 @@ static fz_stext_line *
 add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, const fz_point *dir, int wmode, int bidi)
 {
 	fz_stext_line *line = fz_pool_alloc(ctx, page->pool, sizeof *block->u.t.first_line);
-	line->block = block;
 	line->prev = block->u.t.last_line;
 	if (!block->u.t.first_line)
 		block->u.t.first_line = block->u.t.last_line = line;
@@ -389,7 +387,6 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, fz_m
 		line->last_char = ch;
 	}
 
-	ch->line = line;
 	ch->c = c;
 	ch->argb = color;
 	ch->bidi = bidi;
@@ -2367,7 +2364,6 @@ fz_new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_structure standard,
 	fz_stext_block *block;
 
 	block = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
-	block->page = page;
 	block->bbox = fz_empty_rect;
 	block->prev = NULL;
 	block->next = NULL;
