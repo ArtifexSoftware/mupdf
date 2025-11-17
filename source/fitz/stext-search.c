@@ -1320,7 +1320,7 @@ fz_search *fz_new_search(fz_context *ctx)
 {
 	fz_search *search = fz_malloc_struct(ctx, fz_search);
 
-	search->backwards = -1; /* first! */
+	search->first = 1;
 	search->hfuzz = 0.5f; /* merge large gaps */
 	search->vfuzz = 0.1f;
 
