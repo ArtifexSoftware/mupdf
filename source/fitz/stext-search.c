@@ -1263,7 +1263,7 @@ fz_match_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, in
 typedef struct
 {
 	fz_stext_page *page;
-	fz_stext_char **map;
+	fz_stext_position *map;
 	char *haystack;
 	size_t length;
 	size_t utf_length;
@@ -1542,11 +1542,12 @@ ensure_haystack_for_page(fz_context *ctx, fz_search *search, search_page *page)
 	return 1;
 }
 
-static void add_quad(fz_context *ctx, fz_search *search, fz_stext_char *ch, int seq)
+static void add_quad(fz_context *ctx, fz_search *search, fz_stext_position *pos, int seq)
 {
-	fz_stext_line *line = ch->line;
-	fz_stext_block *block = line->block;
-	fz_stext_page *page = block->page;
+	fz_stext_page *page = pos->page;
+	fz_stext_block *block = pos->block;
+	fz_stext_line *line = pos->line;
+	fz_stext_char *ch = pos->ch;
 	float vfuzz = ch->size * search->vfuzz;
 	float hfuzz = ch->size * search->hfuzz;
 	int chapter_num = 0;
@@ -1679,23 +1680,23 @@ advance_page(fz_context *ctx, fz_search *search, search_page *to, search_page *f
 	drop_combined(ctx, search);
 }
 
-fz_stext_char *lookup_search_ix(fz_search *search, size_t ix)
+fz_stext_position *lookup_search_ix(fz_search *search, size_t ix)
 {
 	if (ix < search->combined_utf_split)
-		return search->current_page.map[ix];
+		return &search->current_page.map[ix];
 	ix -= search->combined_utf_split;
 	if (ix < search->next_page.utf_length)
-		return search->next_page.map[ix];
+		return &search->next_page.map[ix];
 	return NULL;
 }
 
-fz_stext_char *lookup_backward_search_ix(fz_search *search, size_t ix)
+fz_stext_position *lookup_backward_search_ix(fz_search *search, size_t ix)
 {
 	if (ix < search->combined_utf_split)
-		return search->previous_page.map[ix];
+		return &search->previous_page.map[ix];
 	ix -= search->combined_utf_split;
 	if (ix < search->current_page.utf_length)
-		return search->current_page.map[ix];
+		return &search->current_page.map[ix];
 	return NULL;
 }
 
@@ -1899,20 +1900,20 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 		assert(lookup_search_ix(search, end_ix) != NULL);
 
 		/* Remember the location of the match. */
-		search->details.begin = lookup_search_ix(search, begin_ix);
-		search->details.end = lookup_search_ix(search, end_ix);
+		search->details.begin = *lookup_search_ix(search, begin_ix);
+		search->details.end = *lookup_search_ix(search, end_ix);
 
 		/* Gather the quads for the result hit. */
 		search->details.num_quads = 0;
 		for (ix = begin_ix; ix <= end_ix; ++ix)
 		{
-			fz_stext_char *ch = lookup_search_ix(search, ix);
+			fz_stext_position *pos = lookup_search_ix(search, ix);
 			int seq = ix < search->combined_utf_split
 				? search->current_page.seq
 				: search->next_page.seq;
-			if (ch)
+			if (pos)
 			{
-				add_quad(ctx, search, ch, seq);
+				add_quad(ctx, search, pos, seq);
 			}
 		}
 
@@ -2183,20 +2184,20 @@ fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 		assert(lookup_backward_search_ix(search, end_ix) != NULL);
 
 		/* Remember the location of the match. */
-		search->details.begin = lookup_backward_search_ix(search, begin_ix);
-		search->details.end = lookup_backward_search_ix(search, end_ix);
+		search->details.begin = *lookup_backward_search_ix(search, begin_ix);
+		search->details.end = *lookup_backward_search_ix(search, end_ix);
 
 		/* Gather the quads for the result hit. */
 		search->details.num_quads = 0;
 		for (ix = begin_ix; ix <= end_ix; ++ix)
 		{
-			fz_stext_char *ch = lookup_backward_search_ix(search, ix);
+			fz_stext_position *pos = lookup_backward_search_ix(search, ix);
 			int seq = ix < search->combined_utf_split
 				? search->previous_page.seq
 				: search->current_page.seq;
-			if (ch)
+			if (pos)
 			{
-				add_quad(ctx, search, ch, seq);
+				add_quad(ctx, search, pos, seq);
 			}
 		}
 

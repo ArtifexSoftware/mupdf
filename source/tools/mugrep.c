@@ -101,9 +101,8 @@ show_match_rec(fz_stext_block *block, fz_stext_line *begin, fz_stext_line *end, 
 }
 
 static void
-show_match_snippet(char *file_name, int page_number, fz_stext_char *begin, fz_stext_char *end)
+show_match_snippet(char *file_name, int page_number, fz_stext_position begin, fz_stext_position end)
 {
-	fz_stext_page *begin_page, *end_page;
 	int last = 0;
 
 	if (show_file_name)
@@ -111,20 +110,14 @@ show_match_snippet(char *file_name, int page_number, fz_stext_char *begin, fz_st
 	if (show_page_number)
 		fz_write_printf(ctx, out, "%d\t", page_number);
 
-	begin_page = begin->line->block->page;
-	end_page = end->line->block->page;
-
-	begin = begin->line->first_char;
-	end = end->line->last_char;
-
-	if (begin_page == end_page)
+	if (begin.page == end.page)
 	{
-		(void)show_match_rec(begin_page->first_block, begin->line, end->line, &last);
+		(void)show_match_rec(begin.page->first_block, begin.line, end.line, &last);
 	}
 	else
 	{
-		(void)show_match_rec(begin_page->first_block, begin->line, NULL, &last);
-		(void)show_match_rec(end_page->first_block, NULL, end->line, &last);
+		(void)show_match_rec(begin.page->first_block, begin.line, NULL, &last);
+		(void)show_match_rec(end.page->first_block, NULL, end.line, &last);
 	}
 
 	fz_write_byte(ctx, out, '\n');
@@ -174,15 +167,10 @@ mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_
 					printf("MATCH: %d quads (starting on page %d)\n", details->num_quads, details->quads[0].seq+1);
 				}
 
-				if (details->begin->line != last_line)
+				if (details->begin.line != last_line)
 				{
 					show_match_snippet(filename, details->quads[0].seq + 1, details->begin, details->end);
-					last_line = details->end->line;
-				}
-				else if (details->end->line != last_line)
-				{
-					show_match_snippet(filename, details->quads[0].seq + 1, details->end->line->first_char, details->end);
-					last_line = details->end->line;
+					last_line = details->end.line;
 				}
 			}
 			else if (res.reason == FZ_SEARCH_MORE_INPUT)

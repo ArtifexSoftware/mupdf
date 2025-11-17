@@ -113,7 +113,7 @@ typedef enum
 	Create a new buffer by flattening the text from an stext
 	page.
 */
-fz_buffer *fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *text, fz_text_flatten flatten, fz_stext_char ***map);
+fz_buffer *fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *text, fz_text_flatten flatten, fz_stext_position **map);
 
 /**
 	Does the same as fz_new_buffer_from_flattened_stext_page(), with

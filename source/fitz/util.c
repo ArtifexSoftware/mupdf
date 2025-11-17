@@ -634,7 +634,7 @@ inhibit_space_after_line_break(int c)
 }
 
 static int
-do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_char ***map, fz_stext_block *block, fz_text_flatten flatten, int *ws)
+do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_position **map, fz_stext_page *page, fz_stext_block *block, fz_text_flatten flatten, int *ws)
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
@@ -642,7 +642,7 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_char ***map, fz_stext_block
 
 	#define EMIT(X,Y) \
 	{ \
-		if (map && *map) *(*map)++ = X; \
+		if (map && *map) *(*map)++ = (fz_stext_position){ page, block, line, ch }; \
 		if (buf) fz_append_rune(ctx, buf, Y); \
 		++n; \
 	}
@@ -715,7 +715,7 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_char ***map, fz_stext_block
 		}
 		else if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down)
 		{
-			n += do_flatten(ctx, buf, map, block->u.s.down->first_block, flatten, ws);
+			n += do_flatten(ctx, buf, map, page, block->u.s.down->first_block, flatten, ws);
 		}
 	}
 
@@ -723,9 +723,9 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_char ***map, fz_stext_block
 }
 
 fz_buffer *
-fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *page, fz_text_flatten flatten, fz_stext_char ***mapp)
+fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *page, fz_text_flatten flatten, fz_stext_position **mapp)
 {
-	fz_stext_char **map = NULL;
+	fz_stext_position *map = NULL;
 	fz_buffer *buf = NULL;
 	int ws, len;
 
@@ -735,16 +735,16 @@ fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *page, fz
 	if (mapp)
 	{
 		ws = 0;
-		len = do_flatten(ctx, NULL, NULL, page->first_block, flatten, &ws);
+		len = do_flatten(ctx, NULL, NULL, page, page->first_block, flatten, &ws);
 	}
 
 	fz_try(ctx)
 	{
 		buf = fz_new_buffer(ctx, 256);
 		if (mapp)
-			map = *mapp = fz_malloc_array(ctx, len, fz_stext_char*);
+			map = *mapp = fz_malloc_array(ctx, len, fz_stext_position);
 		ws = 0;
-		do_flatten(ctx, buf, &map, page->first_block, flatten, &ws);
+		do_flatten(ctx, buf, &map, page, page->first_block, flatten, &ws);
 	}
 	fz_catch(ctx)
 	{
