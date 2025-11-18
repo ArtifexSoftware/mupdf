@@ -1090,8 +1090,8 @@ fz_stext_block *fz_new_stext_struct(fz_context *ctx, fz_stext_page *page, fz_str
 typedef struct
 {
 	fz_stext_page *page;
-	fz_stext_block *pos;
 	fz_stext_struct *parent;
+	fz_stext_block *block;
 } fz_stext_page_block_iterator;
 
 /*
@@ -1102,7 +1102,7 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_begin(fz_stext_page *p
 /*
 	Move to the next block (never moving upwards).
 
-	If there is no next block, iterator.pos is returned as NULL.
+	If there is no next block, iterator.block is returned as NULL.
 */
 fz_stext_page_block_iterator fz_stext_page_block_iterator_next(fz_stext_page_block_iterator pos);
 
@@ -1117,7 +1117,7 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_down(fz_stext_page_blo
 /*
 	Move up to the parent of the current block.
 
-	If there is no parent, iterator.pos is return as NULL.
+	If there is no parent, iterator.block is return as NULL.
 */
 fz_stext_page_block_iterator fz_stext_page_block_iterator_up(fz_stext_page_block_iterator pos);
 

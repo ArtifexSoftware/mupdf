@@ -950,7 +950,7 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 	for (iter = fz_stext_page_block_iterator_begin(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
 	{
 		/* Try to ignore stuff that's completely off screen */
-		fz_rect bbox = fz_intersect_rect(page->mediabox, iter.pos->bbox);
+		fz_rect bbox = fz_intersect_rect(page->mediabox, iter.block->bbox);
 
 		coverage = fz_union_rect(coverage, bbox);
 	}
@@ -964,23 +964,23 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 		fz_rect bbox;
 
 		/* Stop searching when we find something that's not a vector */
-		if (iter.pos->type != FZ_STEXT_BLOCK_VECTOR)
+		if (iter.block->type != FZ_STEXT_BLOCK_VECTOR)
 			break;
 
 		/* Stop searching when we find a vector that's not a rectangle */
-		if ((iter.pos->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
+		if ((iter.block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
 			break;
 
 		/* Stop searching when we find a vector that's stroked */
-		if ((iter.pos->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED) != 0)
+		if ((iter.block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED) != 0)
 			break;
 
 		/* Stop searching when we find a vector that's not white (or invisible) */
-		if ((iter.pos->u.v.argb & 0xff000000) != 0 && (iter.pos->u.v.argb & 0xffffff) != 0xffffff)
+		if ((iter.block->u.v.argb & 0xff000000) != 0 && (iter.block->u.v.argb & 0xffffff) != 0xffffff)
 			break;
 
 		/* If we don't cover the coverage area, then we can't be a background. */
-		bbox = fz_expand_rect(iter.pos->bbox, 0.1f); /* Allow for rounding */
+		bbox = fz_expand_rect(iter.block->bbox, 0.1f); /* Allow for rounding */
 		if (!fz_contains_rect(bbox, coverage))
 			break;
 
@@ -989,8 +989,8 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 		{
 			/* Can't judge. Skip this check. */
 		}
-		else if ((iter.pos->bbox.y1 - iter.pos->bbox.y0) < 0.9f * (page->mediabox.y1 - page->mediabox.y0) ||
-			(iter.pos->bbox.x1 - iter.pos->bbox.x0) < 0.9f * (page->mediabox.x1 - page->mediabox.x0))
+		else if ((iter.block->bbox.y1 - iter.block->bbox.y0) < 0.9f * (page->mediabox.y1 - page->mediabox.y0) ||
+			(iter.block->bbox.x1 - iter.block->bbox.x0) < 0.9f * (page->mediabox.x1 - page->mediabox.x0))
 		{
 			break;
 		}
@@ -999,17 +999,17 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 		 * in the list, so it's simpler. */
 		if (iter.parent)
 		{
-			iter.parent->first_block = iter.pos->next;
-			if (iter.pos->next)
-				iter.pos->next->prev = NULL;
+			iter.parent->first_block = iter.block->next;
+			if (iter.block->next)
+				iter.block->next->prev = NULL;
 			else
 				iter.parent->last_block = NULL;
 		}
 		else
 		{
-			iter.page->first_block = iter.pos->next;
-			if (iter.pos->next)
-				iter.pos->next->prev = NULL;
+			iter.page->first_block = iter.block->next;
+			if (iter.block->next)
+				iter.block->next->prev = NULL;
 			else
 				iter.page->last_block = NULL;
 		}
