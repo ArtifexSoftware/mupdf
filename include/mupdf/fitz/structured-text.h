@@ -955,6 +955,7 @@ typedef struct
 typedef struct
 {
 	fz_stext_page *page;
+	fz_stext_struct *parent;
 	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;
