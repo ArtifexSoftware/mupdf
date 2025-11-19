@@ -1167,4 +1167,15 @@ fz_classify_stext_rect(fz_context *ctx, fz_stext_page *page, fz_structure classi
 int
 fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page);
 
+typedef struct
+{
+	/* The maximum width or height that should be considered for rafting. */
+	int max_size;
+	/* If non-zero, make a combined image, rather than just the bbox. */
+	int combine_image;
+} fz_image_raft_options;
+
+void fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_options *options);
+
+
 #endif
