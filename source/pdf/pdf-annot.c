@@ -407,7 +407,10 @@ pdf_load_annots(fz_context *ctx, pdf_page *page)
 		{
 			pdf_annot *widget;
 			for (widget = page->widgets; widget; widget = widget->next)
-				widget->needs_new_ap = -1; // request local only resynthesis
+			{
+				// request local only resynthesis
+				widget->needs_new_local_ap = 1;
+			}
 		}
 	}
 
@@ -454,6 +457,7 @@ pdf_annot_request_resynthesis(fz_context *ctx, pdf_annot *annot)
 	if (annot == NULL)
 		return;
 
+	annot->needs_new_local_ap = 0;
 	annot->needs_new_ap = 1;
 	annot->page->doc->resynth_required = 1;
 }
@@ -470,7 +474,11 @@ pdf_annot_request_synthesis(fz_context *ctx, pdf_annot *annot)
 int
 pdf_annot_needs_resynthesis(fz_context *ctx, pdf_annot *annot)
 {
-	return annot ? annot->needs_new_ap : 0;
+	if (annot == NULL)
+		return 0;
+	if (annot->needs_new_local_ap)
+		return -1;
+	return annot->needs_new_ap;
 }
 
 void pdf_set_annot_resynthesised(fz_context *ctx, pdf_annot *annot)
@@ -478,6 +486,8 @@ void pdf_set_annot_resynthesised(fz_context *ctx, pdf_annot *annot)
 	if (annot == NULL)
 		return;
 
+	if (annot->page->doc->local_xref_nesting == 0)
+		annot->needs_new_local_ap = 0;
 	annot->needs_new_ap = 0;
 	pdf_set_annot_has_changed(ctx, annot);
 }
