@@ -822,6 +822,11 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 		break;
 	case FZ_IMAGE_JPX:
 		tile = fz_load_jpx(ctx, image->buffer->buffer->data, image->buffer->buffer->len, image->super.colorspace);
+		if (image->super.use_decode &&
+			!fz_colorspace_is_indexed(ctx, image->super.colorspace) &&
+			!fz_colorspace_is_lab(ctx, image->super.colorspace)
+		)
+			fz_decode_tile(ctx, tile, image->super.decode);
 		break;
 	case FZ_IMAGE_PSD:
 		tile = fz_load_psd(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
@@ -1213,9 +1218,11 @@ fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colo
 	image->imagemask = imagemask;
 	image->intent = 0;
 	image->has_intent = 0;
+
 	image->use_colorkey = (colorkey != NULL);
 	if (colorkey)
 		memcpy(image->colorkey, colorkey, sizeof(int)*image->n*2);
+
 	image->use_decode = 0;
 	if (decode)
 	{
@@ -1224,12 +1231,13 @@ fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colo
 	else
 	{
 		float maxval = fz_colorspace_is_indexed(ctx, colorspace) ? (1 << bpc) - 1 : 1;
-		for (i = 0; i < image->n; i++)
+		for (i = 0; i < FZ_MAX_COLORS; i++)
 		{
 			image->decode[2*i] = 0;
 			image->decode[2*i+1] = maxval;
 		}
 	}
+
 	/* ICC spaces have the default decode arrays pickled into them.
 	 * For most spaces this is fine, because [ 0 1 0 1 0 1 ] is
 	 * idempotent. For Lab, however, we need to adjust it. */
