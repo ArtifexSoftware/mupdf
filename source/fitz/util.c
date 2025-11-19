@@ -748,7 +748,8 @@ fz_new_buffer_from_flattened_stext_page(fz_context *ctx, fz_stext_page *page, fz
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, *mapp);
+		if (mapp)
+			fz_free(ctx, *mapp);
 		fz_drop_buffer(ctx, buf);
 		fz_rethrow(ctx);
 	}
