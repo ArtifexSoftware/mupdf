@@ -1680,9 +1680,10 @@ pdf_lookup_page_label_imp(fz_context *ctx, pdf_obj *node, int index, struct page
 static struct page_label_range
 pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int index)
 {
-	struct page_label_range range = { 0, NULL };
 	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root));
 	pdf_obj *labels = pdf_dict_get(ctx, root, PDF_NAME(PageLabels));
+	pdf_obj *nums = pdf_dict_get(ctx, labels, PDF_NAME(Nums));
+	struct page_label_range range = { 0, NULL, 0, nums };
 	pdf_lookup_page_label_imp(ctx, labels, index, &range);
 	return range;
 }
