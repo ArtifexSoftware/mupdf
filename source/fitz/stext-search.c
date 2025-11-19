@@ -655,7 +655,7 @@ static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const 
 	Resub m;
 	int result = js_regexec(*prog, s, &m, bol ? 0 : REG_NOTBOL);
 	if (result < 0)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Regexp failure");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regexec failure");
 	if (result == 0)
 		return *endp = m.sub[0].ep, m.sub[0].sp;
 	return *endp = NULL, NULL;
@@ -743,7 +743,7 @@ init_regexp(fz_context *ctx, void *find_arg, const char *needle)
 
 	*progp = js_regcomp(needle, REG_NEWLINE, NULL);
 	if (*progp == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Bad Regexp");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp failure");
 }
 
 static void
@@ -753,7 +753,7 @@ init_regexp_insensitive(fz_context *ctx, void *find_arg, const char *needle)
 
 	*progp = js_regcomp(needle, REG_NEWLINE | REG_ICASE, NULL);
 	if (*progp == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Bad Regexp");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp failure");
 }
 
 static void
@@ -1437,8 +1437,8 @@ void fz_search_set_options(fz_context *ctx, fz_search *search, fz_search_options
 
 	if (search == NULL)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't set options in a non-existent search");
-	if (needle == NULL || *needle == 0)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search for an empty needle");
+	if (needle == NULL)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search for a non-existent needle");
 
 	transform = split_options(options, &finder);
 
@@ -1718,8 +1718,12 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 
 	if (search == NULL)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search forwards in a non-existent search");
-	if (search->needle == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search without setting a needle");
+
+	if (search->needle == NULL || *search->needle == 0)
+	{
+		result.reason = FZ_SEARCH_COMPLETE;
+		return result;
+	}
 
 	/* On entry, we assume that current_pos, current_spun_pos, and current_stext
 	 * all point to the same position within the document. This might be 0/0/NULL,
@@ -1970,10 +1974,14 @@ fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 
 	if (search == NULL)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search backwards in a non-existent search");
-	if (search->needle == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search without setting a needle");
 	if (search->finder->find_rev == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search backwards with these options");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search backwards with this finder");
+
+	if (search->needle == NULL || *search->needle == 0)
+	{
+		result.reason = FZ_SEARCH_COMPLETE;
+		return result;
+	}
 
 	/* On entry, we assume that current_pos, current_spun_pos, and current_stext
 	 * all point to the same position within the document. This might be 0/0/NULL,
@@ -2246,7 +2254,7 @@ void fz_feed_search(fz_context *ctx, fz_search *search, fz_stext_page *page, int
 	search_page *pg;
 
 	if (search == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't feed a NULL search");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't feed a non-existent search");
 
 	pg = search->backwards ? &search->previous_page : &search->next_page;
 	if (search->current_page.page == NULL)
