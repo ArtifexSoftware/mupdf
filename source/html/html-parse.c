@@ -1350,16 +1350,24 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 
 	tag = fz_xml_tag(node);
 
-	dir_att = fz_xml_att(node, "dir");
-	g->markup_dir = style->direction;
-	if (dir_att)
+	if (style->direction == FZ_BIDI_UNSET)
 	{
-		if (!strcmp(dir_att, "auto"))
-			g->markup_dir = FZ_BIDI_NEUTRAL;
-		else if (!strcmp(dir_att, "rtl"))
-			g->markup_dir = FZ_BIDI_RTL;
-		else if (!strcmp(dir_att, "ltr"))
-			g->markup_dir = FZ_BIDI_LTR;
+		dir_att = fz_xml_att(node, "dir");
+		if (dir_att)
+		{
+			if (!strcmp(dir_att, "auto"))
+				g->markup_dir = FZ_BIDI_NEUTRAL;
+			else if (!strcmp(dir_att, "rtl"))
+				g->markup_dir = FZ_BIDI_RTL;
+			else if (!strcmp(dir_att, "ltr"))
+				g->markup_dir = FZ_BIDI_LTR;
+			else
+				g->markup_dir = FZ_BIDI_LTR;
+		}
+	}
+	else
+	{
+		g->markup_dir = style->direction;
 	}
 
 	lang_att = fz_xml_att(node, "lang");
@@ -1426,7 +1434,7 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 	}
 
 	if (this_box == NULL)
-		return;
+		goto end;
 
 	if (tag && (!strcmp(tag, "ol") || !strcmp(tag, "ul") || !strcmp(tag, "dl")))
 	{
@@ -1467,6 +1475,7 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 		gen2_children(ctx, g, this_box, node, match);
 	}
 
+end:
 	g->markup_dir = save_markup_dir;
 	g->markup_lang = save_markup_lang;
 	g->href = save_href;
@@ -2000,7 +2009,8 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		fz_apply_css_style(ctx, g.set, &style, &root_match);
 
 		g.pool = tree->pool;
-		g.markup_dir = style.direction;
+		if (style.direction != FZ_BIDI_UNSET)
+			g.markup_dir = style.direction;
 		g.markup_lang = FZ_LANG_UNSET;
 
 		// Create root node

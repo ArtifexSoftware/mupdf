@@ -305,7 +305,7 @@ struct fz_css_style_s
 	/* Second group of 32 */
 	unsigned int visibility : 2;
 	unsigned int text_align : 2;
-	unsigned int direction : 1;
+	unsigned int direction : 2;
 	unsigned int list_style_type : 4;
 	unsigned int border_style_0 : 4;
 	unsigned int border_style_1 : 4;
@@ -315,9 +315,9 @@ struct fz_css_style_s
 	unsigned int text_decoration: 2;
 	unsigned int overflow_wrap : 1;
 	unsigned int position : 2;
-	unsigned int border_collapse : 1;
 
 	/* Third group of 32 */
+	unsigned int border_collapse : 1;
 	unsigned int hyphens : 2;
 };
 

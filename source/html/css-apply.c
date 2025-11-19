@@ -1823,7 +1823,7 @@ void
 fz_default_css_style(fz_context *ctx, fz_css_style *style)
 {
 	memset(style, 0, sizeof *style);
-	style->direction = FZ_BIDI_LTR;
+	style->direction = FZ_BIDI_UNSET;
 	style->visibility = V_VISIBLE;
 	style->text_align = TA_LEFT;
 	style->vertical_align = VA_BASELINE;
