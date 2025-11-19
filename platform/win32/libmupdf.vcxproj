@@ -836,6 +836,7 @@
     <ClCompile Include="..\..\source\fitz\stext-classify.c" />
     <ClCompile Include="..\..\source\fitz\stext-iterator.c" />
     <ClCompile Include="..\..\source\fitz\stext-para.c" />
+    <ClCompile Include="..\..\source\fitz\stext-raft.c" />
     <ClCompile Include="..\..\source\fitz\stext-table.c" />
     <ClCompile Include="..\..\source\fitz\text-decoder.c" />
     <ClCompile Include="..\..\source\fitz\uncfb.c" />
