@@ -1119,6 +1119,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				fz_set_pixmap_resolution(ctx, pix, resolution, resolution);
 			}
 
+			assert(pix != NULL); /* Reassure Coverity that there there must be a pix */
+
 			/* Output any page level headers (for banded formats) */
 			if (output_format != OUT_NONE)
 			{
