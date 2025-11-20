@@ -58,6 +58,12 @@ def declaration_text(
         for internal diagnostics.
     name_is_simple:
         true iff <name> is an identifier.
+    verbose:
+        .
+    expand_typedef:
+        .
+    top_level:
+        Prefix used for top-level names. When generating C# code, use `mupdf.`.
 
     If name_is_simple is false, we surround <name> with (...) if type is a
     function.

@@ -151,7 +151,7 @@ def make_outparam_helper_csharp(
         elif parse.is_pointer_to(type_, 'char'):
             write( f'string')
         else:
-            text = cpp.declaration_text(type_, '').strip()
+            text = cpp.declaration_text(type_, '', top_level='mupdf.').strip()
             if text == 'int16_t':           text = 'short'
             elif text == 'int64_t':         text = 'long'
             elif text == 'size_t':          text = 'ulong'
@@ -218,7 +218,7 @@ def make_outparam_helper_csharp(
         elif parse.is_pointer_to(arg.cursor.type, 'char'):
             write(f'string {arg.name_csharp}')
         else:
-            text = cpp.declaration_text(arg.cursor.type, arg.name_csharp).strip()
+            text = cpp.declaration_text(arg.cursor.type, arg.name_csharp, top_level='mupdf.').strip()
             text = util.clip(text, 'const ')
             text = text.replace('int16_t ', 'short ')
             text = text.replace('int64_t ', 'long ')
