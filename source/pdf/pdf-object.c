@@ -1351,7 +1351,7 @@ swap_fragments(fz_context *ctx, pdf_document *doc, pdf_journal_entry *entry)
 		obuf = xre->stm_buf;
 		xre->obj = frag->inactive;
 		type = xre->type;
-		xre->type = frag->newobj ? 0 : 'o';
+		xre->type = frag->newobj ? 0 : 'n';
 		frag->newobj = type == 0;
 		xre->stm_buf = frag->stream;
 		frag->inactive = old;
