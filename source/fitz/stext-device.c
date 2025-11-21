@@ -1250,10 +1250,10 @@ static uint32_t hexrgba_from_color(fz_context *ctx, fz_colorspace *colorspace, c
 	float rgb[3];
 	fz_convert_color(ctx, colorspace, color, fz_device_rgb(ctx), rgb, NULL, fz_default_color_params);
 	return
-		((uint32_t) (fz_clampi(alpha * 255 + 0.5f, 0, 255) << 24)) |
-		((uint32_t) (fz_clampi(rgb[0] * 255 + 0.5f, 0, 255) << 16)) |
-		((uint32_t) (fz_clampi(rgb[1] * 255 + 0.5f, 0, 255) << 8)) |
-		((uint32_t) (fz_clampi(rgb[2] * 255 + 0.5f, 0, 255)));
+		(((uint32_t) fz_clampi(alpha * 255 + 0.5f, 0, 255)) << 24) |
+		(((uint32_t) fz_clampi(rgb[0] * 255 + 0.5f, 0, 255)) << 16) |
+		(((uint32_t) fz_clampi(rgb[1] * 255 + 0.5f, 0, 255)) << 8) |
+		(((uint32_t) fz_clampi(rgb[2] * 255 + 0.5f, 0, 255)));
 }
 
 static void
