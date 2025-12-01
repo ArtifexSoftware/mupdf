@@ -2100,9 +2100,17 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 }
 
 static void
-add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect bbox, uint32_t flags, uint32_t argb, int id)
+add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect bbox, uint32_t flags, uint32_t argb, int id, float exp)
 {
 	fz_stext_block *b;
+
+	if (exp != 0)
+	{
+		bbox.x0 -= exp;
+		bbox.y0 -= exp;
+		bbox.x1 += exp;
+		bbox.y1 += exp;
+	}
 
 	if (tdev->flags & (FZ_STEXT_CLIP_RECT | FZ_STEXT_CLIP))
 	{
@@ -2132,6 +2140,7 @@ typedef struct
 	int count;
 	fz_point p[5];
 	int id;
+	float exp;
 } split_path_data;
 
 static void
@@ -2170,7 +2179,7 @@ maybe_rect(fz_context *ctx, split_path_data *sp)
 			for (i = 1; i < sp->count; i++)
 				bounds = fz_include_point_in_rect(bounds, sp->p[i]);
 			if (fz_is_valid_rect(sp->pending))
-				add_vector(ctx, sp->page, sp->dev, sp->pending, sp->flags | FZ_STEXT_VECTOR_IS_RECTANGLE | FZ_STEXT_VECTOR_CONTINUES, sp->argb, sp->id);
+				add_vector(ctx, sp->page, sp->dev, sp->pending, sp->flags | FZ_STEXT_VECTOR_IS_RECTANGLE | FZ_STEXT_VECTOR_CONTINUES, sp->argb, sp->id, sp->exp);
 			sp->pending = bounds;
 			return;
 		}
@@ -2271,7 +2280,7 @@ fz_path_walker split_path_rects =
 };
 
 static void
-add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, int stroke)
+add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, int stroke, float exp)
 {
 	int have_leftovers;
 	split_path_data sp;
@@ -2287,6 +2296,7 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 	sp.seg_bounds = fz_empty_rect;
 	sp.pending = fz_empty_rect;
 	sp.id = id;
+	sp.exp = exp;
 	fz_walk_path(ctx, path, &split_path_rects, &sp);
 
 	have_leftovers = fz_is_valid_rect(sp.leftovers);
@@ -2294,9 +2304,9 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 	maybe_rect(ctx, &sp);
 
 	if (fz_is_valid_rect(sp.pending))
-		add_vector(ctx, page, sp.dev, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb, id);
+		add_vector(ctx, page, sp.dev, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb, id, exp);
 	if (have_leftovers)
-		add_vector(ctx, page, sp.dev, sp.leftovers, sp.flags, sp.argb, id);
+		add_vector(ctx, page, sp.dev, sp.leftovers, sp.flags, sp.argb, id, exp);
 }
 
 static void
@@ -2315,7 +2325,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, 0);
+		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, 0, 0);
 }
 
 static void
@@ -2325,6 +2335,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 	fz_stext_page *page = tdev->page;
 	fz_rect path_bounds = fz_bound_path(ctx, path, ss, ctm);
 	fz_rect *bounds = actualtext_bounds((fz_stext_device *)dev);
+	float exp = ss->linewidth / 2;
 
 	/* If we're in an actualtext, then update the bounds to include this content. */
 	if (bounds != NULL)
@@ -2334,7 +2345,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, 1);
+		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, 1, exp);
 }
 
 static void
