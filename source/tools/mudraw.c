@@ -672,7 +672,9 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_m
 	}
 }
 
+#ifndef DISABLE_MUTHREADS
 static void worker_thread(void *arg);
+#endif
 
 static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps)
 {
@@ -1068,6 +1070,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				DEBUG_THREADS(("Using %d Bands\n", bands));
 			}
 
+#ifndef DISABLE_MUTHREADS
 			if (num_workers < bands && max_num_workers >= bands)
 			{
 				int i;
@@ -1106,14 +1109,13 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].pix->y += band * band_height;
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
 					workers[band].running = 1;
-#ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 					mu_trigger_semaphore(&workers[band].start);
-#endif
 				}
 				pix = workers[0].pix;
 			}
 			else
+#endif
 			{
 				pix = fz_new_pixmap_with_bbox(ctx, colorspace, band_ibounds, seps, alpha);
 				fz_set_pixmap_resolution(ctx, pix, resolution, resolution);
