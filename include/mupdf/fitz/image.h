@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -439,8 +439,8 @@ fz_pixmap *fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, 
 /**
 	Exposed because compression and decompression need to share this.
 */
-void opj_lock(fz_context *ctx);
-void opj_unlock(fz_context *ctx);
+void fz_opj_lock(fz_context *ctx);
+void fz_opj_unlock(fz_context *ctx);
 
 
 /**

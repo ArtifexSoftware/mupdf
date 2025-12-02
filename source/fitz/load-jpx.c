@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -99,42 +99,42 @@ typedef struct
  * threading systems.
  */
 
-static fz_context *opj_secret = NULL;
+static fz_context *fz_opj_secret = NULL;
 
 static void set_opj_context(fz_context *ctx)
 {
-	opj_secret = ctx;
+	fz_opj_secret = ctx;
 }
 
 static fz_context *get_opj_context(void)
 {
-	return opj_secret;
+	return fz_opj_secret;
 }
 
-void opj_lock(fz_context *ctx)
+void fz_opj_lock(fz_context *ctx)
 {
 	fz_ft_lock(ctx);
 
 	set_opj_context(ctx);
 }
 
-void opj_unlock(fz_context *ctx)
+void fz_opj_unlock(fz_context *ctx)
 {
 	set_opj_context(NULL);
 
 	fz_ft_unlock(ctx);
 }
 
-void *opj_malloc(size_t size)
+void *fz_opj_malloc(size_t size)
 {
 	fz_context *ctx = get_opj_context();
 
 	assert(ctx != NULL);
 
-	return Memento_label(fz_malloc_no_throw(ctx, size), "opj_malloc");
+	return Memento_label(fz_malloc_no_throw(ctx, size), "fz_opj_malloc");
 }
 
-void *opj_calloc(size_t n, size_t size)
+void *fz_opj_calloc(size_t n, size_t size)
 {
 	fz_context *ctx = get_opj_context();
 
@@ -143,7 +143,7 @@ void *opj_calloc(size_t n, size_t size)
 	return fz_calloc_no_throw(ctx, n, size);
 }
 
-void *opj_realloc(void *ptr, size_t size)
+void *fz_opj_realloc(void *ptr, size_t size)
 {
 	fz_context *ctx = get_opj_context();
 
@@ -152,7 +152,7 @@ void *opj_realloc(void *ptr, size_t size)
 	return fz_realloc_no_throw(ctx, ptr, size);
 }
 
-void opj_free(void *ptr)
+void fz_opj_free(void *ptr)
 {
 	fz_context *ctx = get_opj_context();
 
@@ -161,7 +161,7 @@ void opj_free(void *ptr)
 	fz_free(ctx, ptr);
 }
 
-static void * opj_aligned_malloc_n(size_t alignment, size_t size)
+static void * fz_opj_aligned_malloc_n(size_t alignment, size_t size)
 {
 	uint8_t *ptr;
 	size_t off;
@@ -170,7 +170,7 @@ static void * opj_aligned_malloc_n(size_t alignment, size_t size)
 		return NULL;
 
 	size += alignment + sizeof(uint8_t);
-	ptr = opj_malloc(size);
+	ptr = fz_opj_malloc(size);
 	if (ptr == NULL)
 		return NULL;
 	off = alignment-(((int)(intptr_t)ptr) & (alignment - 1));
@@ -178,17 +178,17 @@ static void * opj_aligned_malloc_n(size_t alignment, size_t size)
 	return ptr + off;
 }
 
-void * opj_aligned_malloc(size_t size)
+void * fz_opj_aligned_malloc(size_t size)
 {
-	return opj_aligned_malloc_n(16, size);
+	return fz_opj_aligned_malloc_n(16, size);
 }
 
-void * opj_aligned_32_malloc(size_t size)
+void * fz_opj_aligned_32_malloc(size_t size)
 {
-	return opj_aligned_malloc_n(32, size);
+	return fz_opj_aligned_malloc_n(32, size);
 }
 
-void opj_aligned_free(void* ptr_)
+void fz_opj_aligned_free(void* ptr_)
 {
 	uint8_t *ptr = (uint8_t *)ptr_;
 	uint8_t off;
@@ -196,14 +196,14 @@ void opj_aligned_free(void* ptr_)
 		return;
 
 	off = ptr[-1];
-	opj_free((void *)(((unsigned char *)ptr) - off));
+	fz_opj_free((void *)(((unsigned char *)ptr) - off));
 }
 
 #if 0
 /* UNUSED currently, and moderately tricky, so deferred until required */
-void * opj_aligned_realloc(void *ptr, size_t size)
+void * fz_opj_aligned_realloc(void *ptr, size_t size)
 {
-	return opj_realloc(ptr, size);
+	return fz_opj_realloc(ptr, size);
 }
 #endif
 
@@ -649,11 +649,11 @@ fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, fz_colorspa
 
 	fz_try(ctx)
 	{
-		opj_lock(ctx);
+		fz_opj_lock(ctx);
 		pix = jpx_read_image(ctx, &state, data, size, defcs, 0);
 	}
 	fz_always(ctx)
-		opj_unlock(ctx);
+		fz_opj_unlock(ctx);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
@@ -667,11 +667,11 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 
 	fz_try(ctx)
 	{
-		opj_lock(ctx);
+		fz_opj_lock(ctx);
 		jpx_read_image(ctx, &state, data, size, defcs, 1);
 	}
 	fz_always(ctx)
-		opj_unlock(ctx);
+		fz_opj_unlock(ctx);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 

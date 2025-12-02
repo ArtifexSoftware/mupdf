@@ -183,7 +183,7 @@ fz_write_pixmap_as_jpx(fz_context *ctx, fz_output *out, fz_pixmap *pix, int q)
 
 	fz_var(image);
 
-	opj_lock(ctx);
+	fz_opj_lock(ctx);
 	fz_try(ctx)
 	{
 		image = image_from_pixmap(ctx, pix);
@@ -301,7 +301,7 @@ fz_write_pixmap_as_jpx(fz_context *ctx, fz_output *out, fz_pixmap *pix, int q)
 			fz_throw(ctx, FZ_ERROR_LIBRARY, "Encoding failed");
 	}
 	fz_always(ctx)
-		opj_unlock(ctx);
+		fz_opj_unlock(ctx);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
