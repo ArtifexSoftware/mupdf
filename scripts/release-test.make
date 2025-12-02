@@ -6,6 +6,8 @@ run-release-test:
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-no-js-build
 	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make test-disable-threads-build
+	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-sanitize-build
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-valgrind-build
@@ -50,6 +52,12 @@ make-no-js-build:
 	$(MAKE) -j2 XCFLAGS=-DFZ_ENABLE_JS=0 build=release build/release/mutool
 
 test-no-js-build: make-no-js-build pdfref17.pdf
+	/usr/bin/test 38b6fd1d44108881f06fe8a260b0c7b3 == $$(./build/release/mutool draw -s5 pdfref17.pdf 1140 2>&1 | grep '^page pdfref17.pdf 1140 ' | cut -d' ' -f4)
+
+make-disable-threads-build:
+	$(MAKE) -j2 XCFLAGS=-DDISABLE_MUTHREADS build=release build/release/mutool
+
+test-disable-threads-build: make-disable-threads-build pdfref17.pdf
 	/usr/bin/test 38b6fd1d44108881f06fe8a260b0c7b3 == $$(./build/release/mutool draw -s5 pdfref17.pdf 1140 2>&1 | grep '^page pdfref17.pdf 1140 ' | cut -d' ' -f4)
 
 make-sanitize-build:
