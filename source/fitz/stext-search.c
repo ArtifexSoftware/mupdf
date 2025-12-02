@@ -1711,7 +1711,7 @@ static const char *step_back_utf8(const char *p)
 
 fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 {
-	fz_search_result result;
+	fz_search_result result = { 0 };
 	const char *begin, *end, *spun_begin, *spun_end;
 	size_t ix, begin_ix, end_ix;
 	char *needle;
