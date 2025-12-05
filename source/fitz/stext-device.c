@@ -1769,7 +1769,7 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 				/* Dot product with up. up is normalised */
 				dot = dx * up.x + dy * up.y;
 
-				if (dot > 0)
+				if (dot > 0 && dot <= 0.8f * ch->font->ascender * ch->size)
 					ch->flags |= FZ_STEXT_STRIKEOUT;
 				else
 					ch->flags |= FZ_STEXT_UNDERLINE;
