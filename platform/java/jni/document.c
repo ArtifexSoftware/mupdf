@@ -36,7 +36,7 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jstring jmagic, jobject jstream, jobject jarch, jobject jaccelerator)
+FUN(Document_openNativeWithStream)(JNIEnv *env, jclass cls, jobject jstream, jstring jmagic, jobject jarch, jobject jaccelerator)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
