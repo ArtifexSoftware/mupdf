@@ -1075,10 +1075,34 @@ svg_dev_begin_mask(fz_context *ctx, fz_device *dev, fz_rect bbox, int luminosity
 	int mask = sdev->id++;
 
 	out = start_def(ctx, sdev, 0);
-	fz_append_printf(ctx, out, "<mask id=\"mask_%d\">\n", mask);
+	fz_append_printf(ctx, out, "<g id=\"mask_%d_contents\">\n", mask);
+
+	/* For luminosity masks, we need to ensure the entire mask is "white", as otherwise it's initialised to
+	 * transparent. For alpha masks, we need to ensure that the mask is actually large enough, otherwise
+	 * SVG will minimise it. */
+	if (luminosity)
+		fz_append_printf(ctx, out, "<rect x=\"0\" y=\"0\" width=\"100%%\" height=\"100%%\" fill=\"white\"/>\n");
+	else
+		fz_append_printf(ctx, out, "<rect x=\"0\" y=\"0\" width=\"100%%\" height=\"100%%\" fill-opacity=\"0\"/>\n");
 
 	if (dev->container_len > 0)
-		dev->container[dev->container_len-1].user = mask;
+		dev->container[dev->container_len-1].user = mask ^ (luminosity ? 0x80000000 : 0);
+}
+
+static void
+send_tr(fz_context *ctx, fz_buffer *out, const char *s, fz_function *fn)
+{
+	int i;
+
+	fz_append_printf(ctx, out, "<%s type=\"table\" tableValues=\"", s);
+	for (i = 0; i < 256; i++)
+	{
+		float f = i/255.0f;
+		float g;
+		fz_eval_function(ctx, fn, &f, 1, &g, 1);
+		fz_append_printf(ctx, out, "%g ", g);
+	}
+	fz_append_printf(ctx, out, "\"></%s>\n", s);
 }
 
 static void
@@ -1087,14 +1111,44 @@ svg_dev_end_mask(fz_context *ctx, fz_device *dev, fz_function *tr)
 	svg_device *sdev = (svg_device*)dev;
 	fz_buffer *out = sdev->out;
 	int mask = 0;
+	int luminosity = 0;
 
 	if (dev->container_len > 0)
 		mask = dev->container[dev->container_len-1].user;
+	if (mask & 0x80000000)
+		luminosity = 1, mask &= ~0x80000000;
+
+	fz_append_printf(ctx, out, "</g>\n");
 
 	if (tr)
-		fz_warn(ctx, "Ignoring Transfer Function");
+	{
+		fz_append_printf(ctx, out, "<filter id=\"tr_%d\">\n", mask);
+		fz_append_printf(ctx, out, "<feComponentTransfer>\n");
+		if (luminosity)
+		{
+			send_tr(ctx, out, "feFuncR", tr);
+			send_tr(ctx, out, "feFuncG", tr);
+			send_tr(ctx, out, "feFuncB", tr);
+		}
+		else
+			send_tr(ctx, out, "feFuncA", tr);
+		fz_append_printf(ctx, out, "</feComponentTransfer>\n");
+		fz_append_printf(ctx, out, "</filter>\n");
+	}
 
-	fz_append_printf(ctx, out, "\"/>\n</mask>\n");
+	fz_append_printf(ctx, out, "<mask id=\"mask_%d\"", mask);
+	if (luminosity)
+		fz_append_printf(ctx, out, " mask-type=\"luminance\"");
+	else
+		fz_append_printf(ctx, out, " mask-type=\"alpha\"");
+	fz_append_printf(ctx, out, ">\n");
+	fz_append_printf(ctx, out, "<use xlink:href=\"#mask_%d_contents\"", mask);
+	if (tr)
+	{
+		fz_append_printf(ctx, out, " filter=\"url(#tr_%d)\"", mask);
+	}
+	fz_append_printf(ctx, out, "/>\n</mask>\n");
+
 	out = end_def(ctx, sdev, 0);
 	fz_append_printf(ctx, out, "<g mask=\"url(#mask_%d)\">\n", mask);
 }
