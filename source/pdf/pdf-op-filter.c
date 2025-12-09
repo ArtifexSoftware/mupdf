@@ -83,6 +83,8 @@ typedef struct filter_gstate
 	pdf_filter_gstate pending;
 	pdf_filter_gstate sent;
 	clip_op_t clip_op;
+	/* The current leading value that the caller assumes. */
+	float leading;
 	/* Opacity values are not queued, so don't go into pending/sent.
 	 * We only track these for invisible text removal. */
 	float ca;
@@ -119,14 +121,11 @@ typedef struct
 	pdf_obj *structarray;
 	filter_gstate *gstate;
 	pdf_text_object_state tos;
-	/* If Td_pending, then any Tm_pending can be ignored and we can just
-	 * send a Td with Td_value rather than the Tm. */
-	int Td_pending;
-	fz_point Td_value;
-	int Tm_pending;
+	fz_matrix sent_tlm;
+	fz_matrix sent_tm;
+	float Tm_adjust;
 	int BT_pending;
 	int in_BT;
-	float Tm_adjust;
 	tag_record *current_tags;
 	tag_record *pending_tags;
 	pdf_resource_stack *new_rstack;
@@ -551,12 +550,6 @@ done_SC:
 				if (p->super.chain->op_Tz)
 					p->super.chain->op_Tz(ctx, p->super.chain, gstate->pending.text.scale*100);
 			}
-			if (gstate->pending.text.leading != gstate->sent.text.leading)
-			{
-				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_TL)
-					p->super.chain->op_TL(ctx, p->super.chain, gstate->pending.text.leading);
-			}
 			if (gstate->pending.text.font != gstate->sent.text.font ||
 				gstate->pending.text.size != gstate->sent.text.size ||
 				gstate->pending.text.fontname != gstate->sent.text.fontname)
@@ -583,20 +576,79 @@ done_SC:
 			gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
 			gstate->sent.text.fontname = fz_keep_string(ctx, gstate->pending.text.fontname);
 
-			if (p->Td_pending != 0)
+			if (p->tos.tlm.a != p->sent_tlm.a ||
+				p->tos.tlm.b != p->sent_tlm.b ||
+				p->tos.tlm.c != p->sent_tlm.c ||
+				p->tos.tlm.d != p->sent_tlm.d ||
+				p->tos.tlm.e != p->sent_tlm.e ||
+				p->tos.tlm.f != p->sent_tlm.f)
 			{
 				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Td)
-					p->super.chain->op_Td(ctx, p->super.chain, p->Td_value.x, p->Td_value.y);
-				p->Tm_pending = 0;
-				p->Td_pending = 0;
-			}
-			else if (p->Tm_pending != 0)
-			{
-				gstate = ensure_pushed(ctx, p);
+				if (p->tos.tlm.a == p->sent_tlm.a &&
+					p->tos.tlm.b == p->sent_tlm.b &&
+					p->tos.tlm.c == p->sent_tlm.c &&
+					p->tos.tlm.d == p->sent_tlm.d)
+				{
+					/* We just differ in e and f. */
+					float X = p->tos.tlm.e - p->sent_tlm.e;
+					float Y = p->tos.tlm.f - p->sent_tlm.f;
+
+					/* So, can we use a Td here? */
+					/* A Td does the following update:
+					 *   Tm = Tlm = ( 1  0  0 ) x Tlm
+					 *              ( 0  1  0 )
+					 *              ( tx ty 0 )
+					 * so:
+					 *   Tlm.e += Tlm.a * tx + Tlm.c * ty
+					 *   Tlm.f += Tlm.b * tx + Tlm.d * ty
+					 * or:
+					 *   X = Tlm.a * tx + Tlm.c * ty
+					 *   Y = Tlm.b * tx + Tlm.d * ty
+					 *   Tlm.e += X
+					 *   Tlm.f += Y
+					 * We can get X and Y easily from looking at Tlm vs sent_Tlm,
+					 * but we really want tx and ty. So, notice that:
+					 *   (X,Y) = ( tx ty ) ( Tlm.a Tlm.b )
+					 *                     ( Tlm.c Tlm.d )
+					 * So, let's find the inverse matrix, and reverse that.
+					 * Then:
+					 *   (tx ty) = (1/det) (X Y) ( Tlm.d  -Tlm.b)
+					 *                           (-Tlm.c   Tlm.a)
+					 */
+					float det = p->tos.tlm.a * p->tos.tlm.d - p->tos.tlm.b * p->tos.tlm.c;
+					if (det < -0.001 || det > 0.001)
+					{
+						float scale = 1/det;
+						float tx = scale * (X *  p->tos.tlm.d - Y * p->tos.tlm.c);
+						float ty = scale * (X * -p->tos.tlm.b + Y * p->tos.tlm.a);
+
+						if (tx == 0 && ty == 0)
+						{
+							/* Nothing to do! */
+							goto sorted;
+						}
+						else if (tx == 0 && gstate->sent.text.leading == -ty)
+						{
+							/* We can send this using T*! */
+							if (p->super.chain->op_Tstar)
+								p->super.chain->op_Tstar(ctx, p->super.chain);
+							goto sorted;
+						}
+						else
+						{
+							gstate->sent.text.leading = -ty;
+							gstate->pending.text.leading = -ty;
+							if (p->super.chain->op_TD)
+								p->super.chain->op_TD(ctx, p->super.chain, tx, ty);
+							goto sorted;
+						}
+					}
+				}
+				/* Otherwise, we need to set Tm directly. */
 				if (p->super.chain->op_Tm)
 					p->super.chain->op_Tm(ctx, p->super.chain, p->tos.tlm.a, p->tos.tlm.b, p->tos.tlm.c, p->tos.tlm.d, p->tos.tlm.e, p->tos.tlm.f);
-				p->Tm_pending = 0;
+sorted:{}
+				p->sent_tlm = p->tos.tlm;
 			}
 		}
 	}
@@ -1849,11 +1901,11 @@ pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
 	filter_flush(ctx, p, 0);
 	p->tos.tm = fz_identity;
 	p->tos.tlm = fz_identity;
+	p->sent_tm = fz_identity;
+	p->sent_tlm = fz_identity;
 	p->BT_pending = 1;
 	p->text_sent = 0;
 	p->text_removed = 0;
-	p->Td_pending = 0;
-	p->Td_value.x = p->Td_value.y = 0;
 }
 
 static void
@@ -1955,6 +2007,7 @@ pdf_filter_TL(fz_context *ctx, pdf_processor *proc, float leading)
 		return;
 
 	filter_flush(ctx, p, FLUSH_OP);
+	p->gstate->leading = leading;
 	p->gstate->pending.text.leading = leading;
 }
 
@@ -2010,15 +2063,7 @@ pdf_filter_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	p->Tm_adjust = 0;
 	pdf_tos_translate(&p->tos, tx, ty);
-	if (p->Tm_pending)
-		return; /* Exit, just with Tm_pending */
-	if (p->Td_pending)
-		tx += p->Td_value.x, ty += p->Td_value.y;
-	p->Td_value.x = tx;
-	p->Td_value.y = ty;
-	p->Td_pending = 1;
 }
 
 static void
@@ -2029,7 +2074,7 @@ pdf_filter_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	p->gstate->pending.text.leading = -ty;
+	p->gstate->leading = -ty;
 	pdf_filter_Td(ctx, proc, tx, ty);
 }
 
@@ -2042,8 +2087,6 @@ pdf_filter_Tm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, f
 		return;
 
 	pdf_tos_set_matrix(&p->tos, a, b, c, d, e, f);
-	p->Tm_pending = 1;
-	p->Td_pending = 0;
 	p->Tm_adjust = 0;
 }
 
@@ -2056,13 +2099,7 @@ pdf_filter_Tstar(fz_context *ctx, pdf_processor *proc)
 		return;
 
 	p->Tm_adjust = 0;
-	filter_flush(ctx, p, FLUSH_ALL);
-	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
-	/* If Tm_pending, then just adjusting the matrix (as
-	 * pdf_tos_newline has done) is enough. Otherwise we
-	 * need to actually call the operator. */
-	if (!p->Tm_pending && p->super.chain->op_Tstar)
-		p->super.chain->op_Tstar(ctx, p->super.chain);
+	pdf_tos_newline(&p->tos, p->gstate->leading);
 }
 
 /* text showing */
@@ -2103,11 +2140,6 @@ pdf_filter_squote(fz_context *ctx, pdf_processor *proc, char *str, size_t len)
 	filter_flush(ctx, p, FLUSH_ALL);
 
 	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
-	/* If Tm_pending, then just adjusting the matrix (as
-	 * pdf_tos_newline has done) is enough. Otherwise we
-	 * need to do it manually. */
-	if (!p->Tm_pending && p->super.chain->op_Tstar)
-		p->super.chain->op_Tstar(ctx, p->super.chain);
 	filter_show_string(ctx, p, (unsigned char *)str, len);
 }
 
@@ -2128,11 +2160,6 @@ pdf_filter_dquote(fz_context *ctx, pdf_processor *proc, float aw, float ac, char
 	p->gstate->pending.text.word_space = aw;
 	p->gstate->pending.text.char_space = ac;
 	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
-	/* If Tm_pending, then just adjusting the matrix (as
-	 * pdf_tos_newline has done) is enough. Otherwise we
-	 * need to do it manually. */
-	if (!p->Tm_pending && p->super.chain->op_Tstar)
-		p->super.chain->op_Tstar(ctx, p->super.chain);
 	filter_show_string(ctx, p, (unsigned char*)str, len);
 }
 
