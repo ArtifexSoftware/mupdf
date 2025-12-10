@@ -777,6 +777,7 @@ typedef struct
 	int do_use_objstms; /* Use objstms if possible */
 	int compression_effort; /* 0 for default. 100 = max, 1 = min. */
 	int do_labels; /* Add labels to each object showing how it can be reached from the Root. */
+	int do_strip_invisible_text; /* Strip invisible text, requires sanitize. */
 } pdf_write_options;
 
 FZ_DATA extern const pdf_write_options pdf_default_write_options;
