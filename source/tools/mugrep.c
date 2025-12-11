@@ -141,7 +141,7 @@ show_match_snippet(char *file_name, int page_number, fz_stext_position begin, fz
 }
 
 static int
-mugrep_run(fz_context *ctx, char *filename, fz_document *doc, char *pattern, fz_search_options options, fz_stext_options *stext_options, int verbose)
+mugrep_run(char *filename, fz_document *doc, char *pattern, fz_search_options options, fz_stext_options *stext_options, int verbose)
 {
 	int page_count = fz_count_pages(ctx, doc);
 	fz_search *search = NULL;
@@ -242,8 +242,8 @@ int mugrep_main(int argc, char **argv)
 
 	if (isatty(1))
 	{
-		mark_open = "\e[1m";
-		mark_close = "\e[0m";
+		mark_open = "\x1b[1m";
+		mark_close = "\x1b[0m";
 	}
 
 	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nHb[:]:q")) != -1)
@@ -323,7 +323,7 @@ int mugrep_main(int argc, char **argv)
 					continue;
 				}
 
-			if (mugrep_run(ctx, filename, doc, pattern, options, &stext_options, verbose))
+			if (mugrep_run(filename, doc, pattern, options, &stext_options, verbose))
 				result = EXIT_SUCCESS;
 
 			fz_drop_document(ctx, doc);
