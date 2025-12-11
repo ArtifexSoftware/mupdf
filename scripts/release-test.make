@@ -82,33 +82,33 @@ make-all-disabled:
 	$(MAKE) -j2 XCFLAGS='-DFZ_ENABLE_CBZ=0 -DFZ_ENABLE_DOCX_OUTPUT=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_FB2=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_HTML_ENGINE=0 -DFZ_ENABLE_ICC=0 -DFZ_ENABLE_IMG=0 -DFZ_ENABLE_JPX=0 -DFZ_ENABLE_JS=0 -DFZ_ENABLE_MOBI=0 -DFZ_ENABLE_OCR_OUTPUT=0 -DFZ_ENABLE_ODT_OUTPUT=0 -DFZ_ENABLE_OFFICE=0 -DFZ_ENABLE_PDF=0 -DFZ_ENABLE_SPOT_RENDERING=0 -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_TXT=0 -DFZ_ENABLE_XPS=0 -DFZ_ENABLE_BROTLI=0'
 
 make-examples:
-	$(MAKE) -j2 build=debug
-	$(MAKE) -j2 build=debug examples
+	$(MAKE) -j2 build=release
+	$(MAKE) -j2 build=release examples
 
 test-examples: make-examples pdfref17.pdf
 	mkdir -p build/examples
-	build/debug/example pdfref17.pdf 1 > build/examples/out.pnm
-	cd build/examples; ../debug/multi-threaded ../../pdfref17.pdf; zip -0 ../examples.zip out*; cd ../..
-	/usr/bin/test ef3acade156a8c9e01f36575da6e14dc == $$(./build/debug/mutool draw -Ds5 build/examples.zip 2>&1 | md5sum - | cut -d' ' -f1)
-	cd build/examples; ../debug/storytest; cd ../..
-	/usr/bin/test 16ee5292a566ef337f663798603e6d82 == $$(./build/debug/mutool draw -Ds5 build/examples/leftright.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test fb0056830bf6670f675a0d8068016c52 == $$(./build/debug/mutool draw -Ds5 build/examples/out2.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 7904ed25c086adced8280f94f3366120 == $$(./build/debug/mutool draw -Ds5 build/examples/out3.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test c1bd90c127a6758168280b1eddd25462 == $$(./build/debug/mutool draw -Ds5 build/examples/out.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test c88e11423ca72c9751f716456dd36e84 == $$(./build/debug/mutool draw -Ds5 build/examples/out_toc.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 963dd1503dd1eb93d84052fa56b155df == $$(./build/debug/mutool draw -Ds5 build/examples/pos_absolute.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 428ec7e05b35b7b8566f7c0c9f913ef4 == $$(./build/debug/mutool draw -Ds5 build/examples/pos_absolute_sizes.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 7a351e2e067b31bffc540bb0265cb190 == $$(./build/debug/mutool draw -Ds5 build/examples/pos_fixed.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 41bd070f0bb2f262faff55b841e85795 == $$(./build/debug/mutool draw -Ds5 build/examples/pos_fixed_sizes.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 1e07e6b307dbab62b3a684288f587ef0 == $$(./build/debug/mutool draw -Ds5 build/examples/pos_relative.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test cb1dcd8beaafabc2d51aad6d1dde07e5 == $$(./build/debug/mutool draw -Ds5 build/examples/pos_static.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 42dba96b82354465ae2ea9727594a56b == $$(./build/debug/mutool draw -Ds5 build/examples/tablebordercollapse.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 812191fbbd7ce8bbe814e85ff2bbef86 == $$(./build/debug/mutool draw -Ds5 build/examples/tableborders.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 4d59e306a67afcaa2e907494dca7d234 == $$(./build/debug/mutool draw -Ds5 build/examples/tableborderwidths.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test e7cd28bcbd2a7af39324172542cec622 == $$(./build/debug/mutool draw -Ds5 build/examples/tablespan.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 993d324c7c5b3b44ff79e475416a372a == $$(./build/debug/mutool draw -Ds5 build/examples/tables.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 5c17970f54c4a7ad1ff35b2160cc2238 == $$(./build/debug/mutool draw -Ds5 build/examples/tablewidths.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test c227d685a08e517dc9974f1dfa12bba7 == $$(./build/debug/searchtest 2>&1 | md5sum - | cut -d' ' -f1)
+	build/release/example pdfref17.pdf 1 > build/examples/out.pnm
+	cd build/examples; ../release/multi-threaded ../../pdfref17.pdf; zip -0 ../examples.zip out*; cd ../..
+	/usr/bin/test ef3acade156a8c9e01f36575da6e14dc == $$(./build/release/mutool draw -Ds5 build/examples.zip 2>&1 | md5sum - | cut -d' ' -f1)
+	cd build/examples; ../release/storytest; cd ../..
+	/usr/bin/test 16ee5292a566ef337f663798603e6d82 == $$(./build/release/mutool draw -Ds5 build/examples/leftright.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test fb0056830bf6670f675a0d8068016c52 == $$(./build/release/mutool draw -Ds5 build/examples/out2.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 7904ed25c086adced8280f94f3366120 == $$(./build/release/mutool draw -Ds5 build/examples/out3.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test c1bd90c127a6758168280b1eddd25462 == $$(./build/release/mutool draw -Ds5 build/examples/out.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test c88e11423ca72c9751f716456dd36e84 == $$(./build/release/mutool draw -Ds5 build/examples/out_toc.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 963dd1503dd1eb93d84052fa56b155df == $$(./build/release/mutool draw -Ds5 build/examples/pos_absolute.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 428ec7e05b35b7b8566f7c0c9f913ef4 == $$(./build/release/mutool draw -Ds5 build/examples/pos_absolute_sizes.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 7a351e2e067b31bffc540bb0265cb190 == $$(./build/release/mutool draw -Ds5 build/examples/pos_fixed.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 41bd070f0bb2f262faff55b841e85795 == $$(./build/release/mutool draw -Ds5 build/examples/pos_fixed_sizes.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 1e07e6b307dbab62b3a684288f587ef0 == $$(./build/release/mutool draw -Ds5 build/examples/pos_relative.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test cb1dcd8beaafabc2d51aad6d1dde07e5 == $$(./build/release/mutool draw -Ds5 build/examples/pos_static.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 42dba96b82354465ae2ea9727594a56b == $$(./build/release/mutool draw -Ds5 build/examples/tablebordercollapse.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 812191fbbd7ce8bbe814e85ff2bbef86 == $$(./build/release/mutool draw -Ds5 build/examples/tableborders.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 4d59e306a67afcaa2e907494dca7d234 == $$(./build/release/mutool draw -Ds5 build/examples/tableborderwidths.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test e7cd28bcbd2a7af39324172542cec622 == $$(./build/release/mutool draw -Ds5 build/examples/tablespan.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 993d324c7c5b3b44ff79e475416a372a == $$(./build/release/mutool draw -Ds5 build/examples/tables.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 5c17970f54c4a7ad1ff35b2160cc2238 == $$(./build/release/mutool draw -Ds5 build/examples/tablewidths.pdf 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test c227d685a08e517dc9974f1dfa12bba7 == $$(./build/release/searchtest 2>&1 | md5sum - | cut -d' ' -f1)
 
 make-python-build:
 	$(MAKE) -j2 python
