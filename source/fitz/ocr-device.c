@@ -134,7 +134,7 @@ typedef struct fz_ocr_device_s
 
 	char *language;
 	char *datadir;
-	char *options;
+	fz_options *options;
 } fz_ocr_device;
 
 static void
@@ -391,7 +391,7 @@ drop_ocr_device(fz_context *ctx, fz_ocr_device *ocr)
 	fz_free(ctx, ocr->chars);
 	fz_free(ctx, ocr->language);
 	fz_free(ctx, ocr->datadir);
-	fz_free(ctx, ocr->options);
+	fz_drop_options(ctx, ocr->options);
 }
 
 static void
@@ -1123,7 +1123,7 @@ fz_new_ocr_device_with_options(fz_context *ctx,
 		const char *datadir,
 		int (*progress)(fz_context *, void *, int),
 		void *progress_arg,
-		const char *options)
+		fz_options *options)
 {
 #ifdef OCR_DISABLED
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "OCR Disabled in this build");
@@ -1132,9 +1132,6 @@ fz_new_ocr_device_with_options(fz_context *ctx,
 
 	if (target == NULL)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "OCR devices require a target");
-
-	if (options == NULL)
-		options = "";
 
 	dev = fz_new_derived_device(ctx, fz_ocr_device);
 
@@ -1181,7 +1178,7 @@ fz_new_ocr_device_with_options(fz_context *ctx,
 		fz_irect ibox;
 		fz_point res;
 
-		dev->options = fz_strdup(ctx, options);
+		dev->options = fz_keep_options(ctx, options);
 
 		dev->target = target;
 		dev->mediabox = mediabox;

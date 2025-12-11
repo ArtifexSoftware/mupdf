@@ -732,6 +732,9 @@
     <ClCompile Include="..\..\source\fitz\stext-raft.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\options.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
@@ -1027,6 +1030,9 @@
     </ClInclude>
     <ClInclude Include="..\..\source\pdf\pdf-imp.h">
       <Filter>pdf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\options.h">
+      <Filter>!include\fitz</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

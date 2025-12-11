@@ -4710,8 +4710,18 @@ static void ffi_Page_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
 	const char *needle = js_tostring(J, 1);
-	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, fz_parse_search_options);
+	fz_search_options options;
 	search_state state = { J, 0, 0 };
+
+	if (js_isnumber(J, 2))
+		options = js_tonumber(J, 2);
+	else if (js_isstring(J, 2))
+	{
+		fz_init_search_options(ctx, &options);
+		fz_parse_search_options(ctx, &options, js_tostring(J, 2));
+	}
+	else
+		options = FZ_SEARCH_IGNORE_CASE;
 
 	js_newarray(J);
 
@@ -6328,8 +6338,18 @@ static void ffi_DisplayList_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	const char *needle = js_tostring(J, 1);
-	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, fz_parse_search_options);
+	fz_search_options options;
 	search_state state = { J, 0, 0 };
+
+	if (js_isnumber(J, 2))
+		options = js_tonumber(J, 2);
+	else if (js_isstring(J, 2))
+	{
+		fz_init_search_options(ctx, &options);
+		fz_parse_search_options(ctx, &options, js_tostring(J, 2));
+	}
+	else
+		options = FZ_SEARCH_IGNORE_CASE;
 
 	js_newarray(J);
 
@@ -6501,8 +6521,18 @@ static void ffi_StructuredText_search(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	const char *needle = js_tostring(J, 1);
-	fz_search_options options =  ffi_toenum(J, 2, FZ_SEARCH_IGNORE_CASE, fz_parse_search_options);
+	fz_search_options options;
 	search_state state = { J, 0, 0 };
+
+	if (js_isnumber(J, 2))
+		options = js_tonumber(J, 2);
+	else if (js_isstring(J, 2))
+	{
+		fz_init_search_options(ctx, &options);
+		fz_parse_search_options(ctx, &options, js_tostring(J, 2));
+	}
+	else
+		options = FZ_SEARCH_IGNORE_CASE;
 
 	state.max_hits = js_iscoercible(J, 3) ? js_tointeger(J, 3) : 500;
 	js_newarray(J);

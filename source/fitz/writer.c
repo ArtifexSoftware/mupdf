@@ -28,7 +28,7 @@
  * option string. A plain key has the default value 'yes'. Use strncmp to compare
  * key/value strings. */
 static const char *
-fz_get_option(fz_context *ctx, const char **key, const char **val, const char *opts)
+get_option(fz_context *ctx, const char **key, const char **val, const char *opts)
 {
 	if (!opts || *opts == 0)
 		return NULL;
@@ -59,7 +59,7 @@ fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **v
 {
 	const char *straw;
 	size_t n = strlen(key);
-	while ((opts = fz_get_option(ctx, &straw, val, opts)))
+	while ((opts = get_option(ctx, &straw, val, opts)))
 		if (!strncmp(straw, key, n) && (straw[n] == '=' || straw[n] == ',' || straw[n] == 0))
 			return 1;
 	return 0;

@@ -3335,11 +3335,8 @@ static int parse_aa_opts(const char *val)
 	return 8;
 }
 
-fz_draw_options *
-fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
+void fz_init_draw_options(fz_context *ctx, fz_draw_options *opts)
 {
-	const char *val;
-
 	memset(opts, 0, sizeof *opts);
 
 	opts->x_resolution = 96;
@@ -3352,19 +3349,46 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 	opts->graphics = fz_aa_level(ctx);
 	opts->text = fz_text_aa_level(ctx);
 
-	if (fz_has_option(ctx, args, "rotate", &val))
+}
+
+fz_draw_options *
+fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
+{
+	fz_options *options = fz_new_options_from_string(ctx, args);
+	fz_draw_options *out;
+
+	fz_init_draw_options(ctx, opts);
+
+	fz_try(ctx)
+	{
+		out = fz_apply_draw_options(ctx, opts, options);
+		fz_warn_on_unused_options(ctx, options);
+	}
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return out;
+}
+
+fz_draw_options *fz_apply_draw_options(fz_context *ctx, fz_draw_options *opts, fz_options *args)
+{
+	const char *val;
+
+	if (fz_options_has_key(ctx, args, "rotate", &val))
 		opts->rotate = fz_atoi(val);
-	if (fz_has_option(ctx, args, "resolution", &val))
+	if (fz_options_has_key(ctx, args, "resolution", &val))
 		opts->x_resolution = opts->y_resolution = fz_atoi(val);
-	if (fz_has_option(ctx, args, "x-resolution", &val))
+	if (fz_options_has_key(ctx, args, "x-resolution", &val))
 		opts->x_resolution = fz_atoi(val);
-	if (fz_has_option(ctx, args, "y-resolution", &val))
+	if (fz_options_has_key(ctx, args, "y-resolution", &val))
 		opts->y_resolution = fz_atoi(val);
-	if (fz_has_option(ctx, args, "width", &val))
+	if (fz_options_has_key(ctx, args, "width", &val))
 		opts->width = fz_atoi(val);
-	if (fz_has_option(ctx, args, "height", &val))
+	if (fz_options_has_key(ctx, args, "height", &val))
 		opts->height = fz_atoi(val);
-	if (fz_has_option(ctx, args, "colorspace", &val))
+	if (fz_options_has_key(ctx, args, "colorspace", &val))
 	{
 		if (fz_option_eq(val, "gray") || fz_option_eq(val, "grey") || fz_option_eq(val, "mono"))
 			opts->colorspace = fz_device_gray(ctx);
@@ -3375,11 +3399,11 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 		else
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "unknown colorspace in options");
 	}
-	if (fz_has_option(ctx, args, "alpha", &val))
+	if (fz_options_has_key(ctx, args, "alpha", &val))
 		opts->alpha = fz_option_eq(val, "yes");
-	if (fz_has_option(ctx, args, "graphics", &val))
+	if (fz_options_has_key(ctx, args, "graphics", &val))
 		opts->text = opts->graphics = parse_aa_opts(val);
-	if (fz_has_option(ctx, args, "text", &val))
+	if (fz_options_has_key(ctx, args, "text", &val))
 		opts->text = parse_aa_opts(val);
 
 	/* Sanity check values */

@@ -377,7 +377,7 @@ static const char ocr_language_default[] = "eng";
 static const char *ocr_language = ocr_language_default;
 static const char *ocr_datadir = NULL;
 
-static char *options_string = NULL;
+static fz_options *user_options = NULL;
 
 static struct {
 	int active;
@@ -566,6 +566,7 @@ file_level_headers(fz_context *ctx)
 	{
 		fz_pclm_options opts = { 0 };
 		fz_parse_pclm_options(ctx, &opts, "compression=flate");
+		fz_apply_pclm_options(ctx, &opts, user_options);
 		bander = fz_new_pclm_band_writer(ctx, out, &opts);
 	}
 
@@ -580,10 +581,11 @@ file_level_headers(fz_context *ctx)
 			fz_strlcat(options, ocr_datadir, sizeof (options));
 		}
 		fz_parse_pdfocr_options(ctx, &opts, options);
+		fz_apply_pdfocr_options(ctx, &opts, user_options);
 		opts.skew_correct = skew_correct;
 		opts.skew_border = skew_border;
 		opts.skew_angle = skew_angle;
-		opts.options = options_string;
+		opts.options = user_options;
 		bander = fz_new_pdfocr_band_writer(ctx, out, &opts);
 	}
 }
@@ -718,7 +720,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
-				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, options_string);
+				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, user_options);
 			}
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -841,6 +843,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			stext_options.flags |= FZ_STEXT_COLLECT_STYLES;
 			if (output_format == OUT_STEXT_JSON || output_format == OUT_OCR_STEXT_JSON)
 				stext_options.flags |= FZ_STEXT_PRESERVE_SPANS;
+			fz_apply_stext_options(ctx, &stext_options, user_options);
 			tmediabox = fz_transform_rect(mediabox, ctm);
 			text = fz_new_stext_page(ctx, tmediabox);
 			dev = fz_new_stext_device(ctx, text, &stext_options);
@@ -855,7 +858,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
-				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, options_string);
+				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, user_options);
 			}
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
@@ -2080,6 +2083,7 @@ int mudraw_main(int argc, char **argv)
 	fz_alloc_context *alloc_ctx = NULL;
 	fz_locks_context *locks = NULL;
 	size_t max_store = FZ_STORE_DEFAULT;
+	char *options_string = NULL;
 
 	fz_var(doc);
 
@@ -2278,6 +2282,9 @@ int mudraw_main(int argc, char **argv)
 
 	fz_try(ctx)
 	{
+		if (options_string)
+			user_options = fz_new_options_from_string(ctx, options_string);
+
 		if (proof_filename)
 		{
 			fz_buffer *proof_buffer = fz_read_file(ctx, proof_filename);
@@ -2789,11 +2796,13 @@ int mudraw_main(int argc, char **argv)
 			fz_drop_context(bgprint.ctx);
 		}
 #endif /* DISABLE_MUTHREADS */
+		fz_warn_on_unused_options(ctx, user_options);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_colorspace(ctx, colorspace);
 		fz_drop_colorspace(ctx, proof_cs);
+		fz_drop_options(ctx, user_options);
 	}
 	fz_catch(ctx)
 	{

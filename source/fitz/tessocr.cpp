@@ -184,52 +184,19 @@ find_val(const char **val, const char **valend, const char *s)
 	return s;
 }
 
-static void
-send_var(fz_context *ctx, tesseract::TessBaseAPI *api, const char *key, const char *keyend, const char *val, const char *valend)
+static int
+send_var(fz_context *ctx, tesseract::TessBaseAPI *api, const char *key, const char *val)
 {
-	char *keystring;
-	char *valstring = NULL;
-	size_t kz = keyend - key;
-	size_t vz = valend - val;
+	if (!api->SetVariable(key, val == NULL ? "true" : val))
+		return 1;
 
-	if (kz == 0)
-		return;
-
-	keystring = (char *)fz_malloc(ctx, kz + 1);
-	memcpy(keystring, key, kz);
-	keystring[kz] = 0;
-
-	fz_var(valstring);
-
-	fz_try(ctx)
-	{
-		if (vz > 0)
-		{
-			valstring = (char *)fz_malloc(ctx, vz+1);
-			memcpy(valstring, val, vz);
-			valstring[vz] = 0;
-		}
-
-		if (!api->SetVariable(keystring, vz == 0 ? "true" : valstring))
-		{
-			if (vz == 0)
-				fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid tesseract option \"%s\"", keystring);
-			else
-				fz_throw(ctx, FZ_ERROR_ARGUMENT, "Invalid tesseract option \"%s\"=\"%s\"", keystring, valstring);
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, valstring);
-		fz_free(ctx, keystring);
-	}
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	return 0;
 }
 
-void *ocr_init(fz_context *ctx, const char *language, const char *datadir, const char *options)
+void *ocr_init(fz_context *ctx, const char *language, const char *datadir, fz_options *options)
 {
 	tesseract::TessBaseAPI *api;
+	int i, n;
 
 	fz_set_leptonica_mem(ctx);
 	api = new tesseract::TessBaseAPI();
@@ -257,25 +224,15 @@ void *ocr_init(fz_context *ctx, const char *language, const char *datadir, const
 		fz_throw(ctx, FZ_ERROR_LIBRARY, "Tesseract language initialisation failed");
 	}
 
-	if (options)
+	n = fz_count_options(ctx, options);
+	for (i = 0; i < n; i++)
 	{
-		const char *val, *valend, *key, *keyend;
-		const char *pos = options;
-		while (*pos)
-		{
-			/* Skip any spaces */
-			while (*pos == ' ')
-				pos++;
-			key = pos;
-			pos = find_equals_or_end(&keyend, pos);
-			pos = find_val(&val, &valend, pos);
+		const char *key, *val;
 
-			send_var(ctx, api, key, keyend, val, valend);
+		key = fz_get_option(ctx, options, i, &val);
 
-			if (*pos)
-				pos++;
-			key = pos;
-		}
+		if (send_var(ctx, api, key, val) == 0)
+			fz_access_option(ctx, options, i);
 	}
 
 	return api;

@@ -1409,28 +1409,46 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 }
 
 void
-fz_parse_svg_device_options(fz_context *ctx, fz_svg_device_options *opts, const char *args)
+fz_init_svg_device_options(fz_context *ctx, fz_svg_device_options *opts)
 {
-	const char *val;
-
 	memset(opts, 0, sizeof *opts);
 
 	opts->text_format = FZ_SVG_TEXT_AS_PATH;
 	opts->reuse_images = 1;
 	opts->resolution = 72;
 	opts->id = NULL;
+}
 
-	if (fz_has_option(ctx, args, "text", &val))
+void
+fz_parse_svg_device_options(fz_context *ctx, fz_svg_device_options *opts, const char *args)
+{
+	fz_options *options = fz_new_options_from_string(ctx, args);
+
+	fz_init_svg_device_options(ctx, opts);
+
+	fz_try(ctx)
+		fz_apply_svg_device_options(ctx, opts, options);
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void fz_apply_svg_device_options(fz_context *ctx, fz_svg_device_options *opts, fz_options *args)
+{
+	const char *val;
+
+	if (fz_options_has_key(ctx, args, "text", &val))
 	{
 		if (fz_option_eq(val, "text"))
 			opts->text_format = FZ_SVG_TEXT_AS_TEXT;
 		else if (fz_option_eq(val, "path"))
 			opts->text_format = FZ_SVG_TEXT_AS_PATH;
 	}
-	if (fz_has_option(ctx, args, "no-reuse-images", &val))
+	if (fz_options_has_key(ctx, args, "no-reuse-images", &val))
 		if (fz_option_eq(val, "yes"))
 			opts->reuse_images = 0;
-	if (fz_has_option(ctx, args, "resolution", &val))
+	if (fz_options_has_key(ctx, args, "resolution", &val))
 		opts->resolution = fz_atoi(val);
 }
 

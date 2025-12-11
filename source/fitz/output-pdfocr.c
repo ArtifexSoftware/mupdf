@@ -151,17 +151,42 @@ static const char funky_font6[] =
 
 #endif
 
+void
+fz_init_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts)
+{
+	memset(opts, 0, sizeof *opts);
+}
+
 fz_pdfocr_options *
 fz_parse_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts, const char *args)
 {
 #ifdef OCR_DISABLED
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "No OCR support in this build");
 #else
+	fz_options *options = fz_new_options_from_string(ctx, args);
+
+	fz_init_pdfocr_options(ctx, opts);
+
+	fz_try(ctx)
+		fz_apply_pdfocr_options(ctx, opts, options);
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+#endif
+	return opts;
+}
+
+void
+fz_apply_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts, fz_options *args)
+{
+#ifdef OCR_DISABLED
+	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "No OCR support in this build");
+#else
 	const char *val;
 
-	memset(opts, 0, sizeof *opts);
-
-	if (fz_has_option(ctx, args, "compression", &val))
+	if (fz_options_has_key(ctx, args, "compression", &val))
 	{
 		if (fz_option_eq(val, "none"))
 			opts->compress = 0;
@@ -170,22 +195,22 @@ fz_parse_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts, const char *ar
 		else
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported PDFOCR compression %s (none, or flate only)", val);
 	}
-	if (fz_has_option(ctx, args, "strip-height", &val))
+	if (fz_options_has_key(ctx, args, "strip-height", &val))
 	{
 		int i = fz_atoi(val);
 		if (i <= 0)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported PDFOCR strip height %d (suggest 0)", i);
 		opts->strip_height = i;
 	}
-	if (fz_has_option(ctx, args, "ocr-language", &val))
+	if (fz_options_has_key(ctx, args, "ocr-language", &val))
 	{
 		fz_copy_option(ctx, val, opts->language, nelem(opts->language));
 	}
-	if (fz_has_option(ctx, args, "ocr-datadir", &val))
+	if (fz_options_has_key(ctx, args, "ocr-datadir", &val))
 	{
 		fz_copy_option(ctx, val, opts->datadir, nelem(opts->datadir));
 	}
-	if (fz_has_option(ctx, args, "skew", &val))
+	if (fz_options_has_key(ctx, args, "skew", &val))
 	{
 		if (fz_option_eq(val, "auto"))
 			opts->skew_correct = 1;
@@ -195,7 +220,7 @@ fz_parse_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts, const char *ar
 			opts->skew_angle = fz_atof(val);
 		}
 	}
-	if (fz_has_option(ctx, args, "skew-border", &val))
+	if (fz_options_has_key(ctx, args, "skew-border", &val))
 	{
 		if (fz_option_eq(val, "increase"))
 			opts->skew_border = 0;
@@ -206,8 +231,6 @@ fz_parse_pdfocr_options(fz_context *ctx, fz_pdfocr_options *opts, const char *ar
 		else
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported skew-border option");
 	}
-
-	return opts;
 #endif
 }
 
@@ -965,7 +988,7 @@ pdfocr_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 {
 	pdfocr_band_writer *writer = (pdfocr_band_writer *)writer_;
 
-	fz_free(ctx, writer->options.options);
+	fz_drop_options(ctx, writer->options.options);
 	fz_free(ctx, writer->stripbuf);
 	fz_free(ctx, writer->compbuf);
 	fz_free(ctx, writer->page_obj);
@@ -1011,7 +1034,7 @@ fz_band_writer *fz_new_pdfocr_band_writer(fz_context *ctx, fz_output *out, const
 	fz_try(ctx)
 	{
 		if (options && options->options)
-			writer->options.options = fz_strdup(ctx, options->options);
+			writer->options.options = fz_keep_options(ctx, options->options);
 		writer->tessapi = ocr_init(ctx, writer->options.language, writer->options.datadir, writer->options.options);
 	}
 	fz_catch(ctx)

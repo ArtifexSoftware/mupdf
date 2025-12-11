@@ -32,14 +32,34 @@ const char *fz_pclm_write_options_usage =
 	"\tstrip-height=N: Strip height (default 16)\n"
 	"\n";
 
+void
+fz_init_pclm_options(fz_context *ctx, fz_pclm_options *opts)
+{
+	memset(opts, 0, sizeof *opts);
+}
+
 fz_pclm_options *
 fz_parse_pclm_options(fz_context *ctx, fz_pclm_options *opts, const char *args)
 {
+	fz_options *options = fz_new_options_from_string(ctx, args);
+	fz_init_pclm_options(ctx, opts);
+
+	fz_try(ctx)
+		fz_apply_pclm_options(ctx, opts, options);
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return opts;
+}
+
+void
+fz_apply_pclm_options(fz_context *ctx, fz_pclm_options *opts, fz_options *args)
+{
 	const char *val;
 
-	memset(opts, 0, sizeof *opts);
-
-	if (fz_has_option(ctx, args, "compression", &val))
+	if (fz_options_has_key(ctx, args, "compression", &val))
 	{
 		if (fz_option_eq(val, "none"))
 			opts->compress = 0;
@@ -48,15 +68,13 @@ fz_parse_pclm_options(fz_context *ctx, fz_pclm_options *opts, const char *args)
 		else
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported PCLm compression %s (none, or flate only)", val);
 	}
-	if (fz_has_option(ctx, args, "strip-height", &val))
+	if (fz_options_has_key(ctx, args, "strip-height", &val))
 	{
 		int i = fz_atoi(val);
 		if (i <= 0)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported PCLm strip height %d (suggest 16)", i);
 		opts->strip_height = i;
 	}
-
-	return opts;
 }
 
 void
