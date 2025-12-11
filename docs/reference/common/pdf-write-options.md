@@ -2,6 +2,8 @@
 
 These are the common options to functions that write PDF files.
 
+The options are specified using an <a href="option-strings.html">option string</a> of key-value pairs.
+
 decompress
 : Decompress all streams (except compress-fonts/images)
 
@@ -48,7 +50,7 @@ garbage=compact
 : Garbage collect unsued objects, and compact cross reference table
 
 garbage=deduplicate
-: Garbage collec unused objects, compact cross reference tables, and remove duplicate objects
+: Garbage collect unused objects, compact cross reference tables, and remove duplicate objects
 
 incremental
 : Write changes as incremental update

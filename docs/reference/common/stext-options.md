@@ -1,5 +1,7 @@
 # Structured Text Options
 
+The options are specified using an <a href="option-strings.html">option string</a> of key-value pairs.
+
 preserve-images
 : Keep images in output
 

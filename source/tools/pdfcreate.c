@@ -281,12 +281,12 @@ int pdfcreate_main(int argc, char **argv)
 		exit(1);
 	}
 
-	pdf_parse_write_options(ctx, &opts, flags);
-
 	fz_var(doc);
 
 	fz_try(ctx)
 	{
+		pdf_parse_write_options(ctx, &opts, flags);
+
 		doc = pdf_create_document(ctx);
 
 		for (i = fz_optind; i < argc; ++i)

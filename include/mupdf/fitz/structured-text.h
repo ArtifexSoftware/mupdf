@@ -711,11 +711,21 @@ typedef struct
 	fz_rect clip;
 } fz_stext_options;
 
+void fz_init_stext_options(fz_context *ctx, fz_stext_options *opts);
+
 /**
 	Parse stext device options from a comma separated key-value
 	string.
+
+	This initialises the opts structure.
 */
 fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string);
+
+/**
+	Parse stext device options from an fz_options struct
+	into an already initialised opts structure.
+*/
+void fz_apply_stext_options(fz_context *ctx, fz_stext_options *opts, fz_options *options);
 
 /**
 	Perform segmentation analysis on an (unstructured) page to look for
@@ -894,7 +904,7 @@ fz_device *fz_new_ocr_device(fz_context *ctx, fz_device *target, fz_matrix ctm, 
 			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg);
 
 fz_device *fz_new_ocr_device_with_options(fz_context *ctx, fz_device *target, fz_matrix ctm, fz_rect mediabox, int with_list, const char *language,
-			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg, const char *options);
+			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg, fz_options *options);
 
 fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, const fz_stext_options *opts);
 
@@ -928,7 +938,11 @@ typedef enum
 
 FZ_DATA extern const char *fz_search_options_usage;
 
-fz_search_options fz_parse_search_options(const char *options);
+void fz_init_search_options(fz_context *ctx, fz_search_options *options);
+
+fz_search_options *fz_parse_search_options(fz_context *ctx, fz_search_options *options, const char *args);
+
+void fz_apply_search_options(fz_context *ctx, fz_search_options *options, fz_options *opts);
 
 /**
 	Create a new search.

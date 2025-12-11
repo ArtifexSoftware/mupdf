@@ -2051,71 +2051,96 @@ val_is_rect(const char *val, fz_rect *rp)
 	return 1;
 }
 
+void fz_init_stext_options(fz_context *ctx, fz_stext_options *opts)
+{
+	memset(opts, 0, sizeof *opts);
+
+	opts->flags |= FZ_STEXT_CLIP;
+	opts->scale = 1;
+}
+
 fz_stext_options *
 fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string)
 {
-	const char *val;
+	fz_options *options = fz_new_options(ctx, string);
+	fz_try(ctx)
+	{
+		fz_init_stext_options(ctx, opts);
+		fz_apply_stext_options(ctx, opts, options);
+		fz_throw_on_unused_options(ctx, options, "stext");
+	}
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return opts;
+}
 
-	memset(opts, 0, sizeof *opts);
+#define SETCLEARBOOL(A, B, C) \
+ (A) = (B) ? ((A) | (C)) : ((A) & ~(C))
+
+void
+fz_apply_stext_options(fz_context *ctx, fz_stext_options *opts, fz_options *string)
+{
+	const char *val;
+	int b;
 
 	/* when adding options, remember to update fz_stext_options_usage above */
 
-	if (fz_has_option(ctx, string, "preserve-ligatures", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_PRESERVE_LIGATURES;
-	if (fz_has_option(ctx, string, "preserve-whitespace", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_PRESERVE_WHITESPACE;
-	if (fz_has_option(ctx, string, "preserve-images", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_PRESERVE_IMAGES;
-	if (fz_has_option(ctx, string, "inhibit-spaces", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_INHIBIT_SPACES;
-	if (fz_has_option(ctx, string, "dehyphenate", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_DEHYPHENATE;
-	if (fz_has_option(ctx, string, "preserve-spans", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_PRESERVE_SPANS;
-	if (fz_has_option(ctx, string, "structured", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_COLLECT_STRUCTURE;
-	if (fz_has_option(ctx, string, "use-cid-for-unknown-unicode", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE;
-	if (fz_has_option(ctx, string, "use-gid-for-unknown-unicode", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE;
-	if (fz_has_option(ctx, string, "accurate-bboxes", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_ACCURATE_BBOXES;
-	if (fz_has_option(ctx, string, "vectors", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_COLLECT_VECTORS;
-	if (fz_has_option(ctx, string, "lazy-vectors", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_LAZY_VECTORS;
-	if (fz_has_option(ctx, string, "ignore-actualtext", & val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_IGNORE_ACTUALTEXT;
-	if (fz_has_option(ctx, string, "segment", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_SEGMENT;
-	if (fz_has_option(ctx, string, "paragraph-break", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_PARAGRAPH_BREAK;
-	if (fz_has_option(ctx, string, "table-hunt", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_TABLE_HUNT;
-	if (fz_has_option(ctx, string, "collect-styles", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_COLLECT_STYLES;
-	if (fz_has_option(ctx, string, "accurate-ascenders", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_ACCURATE_ASCENDERS;
-	if (fz_has_option(ctx, string, "accurate-side-bearings", &val) && fz_option_eq(val, "yes"))
-		opts->flags |= FZ_STEXT_ACCURATE_SIDE_BEARINGS;
+	if (fz_lookup_option_boolean(ctx, string, "preserve-ligatures", &b))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_PRESERVE_LIGATURES);
+	if (fz_lookup_option_yes(ctx, string, "preserve-whitespace"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_PRESERVE_WHITESPACE);
+	if (fz_lookup_option_yes(ctx, string, "preserve-images"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_PRESERVE_IMAGES);
+	if (fz_lookup_option_yes(ctx, string, "inhibit-spaces"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_INHIBIT_SPACES);
+	if (fz_lookup_option_yes(ctx, string, "dehyphenate"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_DEHYPHENATE);
+	if (fz_lookup_option_yes(ctx, string, "preserve-spans"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_PRESERVE_SPANS);
+	if (fz_lookup_option_yes(ctx, string, "structured"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_COLLECT_STRUCTURE);
+	if (fz_lookup_option_yes(ctx, string, "use-cid-for-unknown-unicode"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_USE_CID_FOR_UNKNOWN_UNICODE);
+	if (fz_lookup_option_yes(ctx, string, "use-gid-for-unknown-unicode"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_USE_GID_FOR_UNKNOWN_UNICODE);
+	if (fz_lookup_option_yes(ctx, string, "accurate-bboxes"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_ACCURATE_BBOXES);
+	if (fz_lookup_option_yes(ctx, string, "vectors"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_COLLECT_VECTORS);
+	if (fz_lookup_option_yes(ctx, string, "lazy-vectors"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_LAZY_VECTORS);
+	if (fz_lookup_option_yes(ctx, string, "ignore-actualtext"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_IGNORE_ACTUALTEXT);
+	if (fz_lookup_option_yes(ctx, string, "segment"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_SEGMENT);
+	if (fz_lookup_option_yes(ctx, string, "paragraph-break"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_PARAGRAPH_BREAK);
+	if (fz_lookup_option_yes(ctx, string, "table-hunt"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_TABLE_HUNT);
+	if (fz_lookup_option_yes(ctx, string, "collect-styles"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_COLLECT_STYLES);
+	if (fz_lookup_option_yes(ctx, string, "accurate-ascenders"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_ACCURATE_ASCENDERS);
+	if (fz_lookup_option_yes(ctx, string, "accurate-side-bearings"))
+		SETCLEARBOOL(opts->flags, b, FZ_STEXT_ACCURATE_SIDE_BEARINGS);
 
-	opts->flags |= FZ_STEXT_CLIP;
-	if (fz_has_option(ctx, string, "mediabox-clip", &val))
+	if (fz_lookup_option(ctx, string, "mediabox-clip", &val))
 	{
 		fz_warn(ctx, "The 'mediabox-clip' option has been deprecated. Use 'clip' instead.");
-		if (fz_option_eq(val, "no"))
+		if (!strcmp(val, "no"))
 			opts->flags ^= FZ_STEXT_CLIP;
 	}
-	if (fz_has_option(ctx, string, "clip", &val) && fz_option_eq(val, "no"))
+	if (fz_lookup_option(ctx, string, "clip", &val) && !strcmp(val, "no"))
 		opts->flags ^= FZ_STEXT_CLIP;
-	if (fz_has_option(ctx, string, "clip-rect", &val) && val_is_rect(val, &opts->clip))
+	if (fz_lookup_option(ctx, string, "clip-rect", &val) && val_is_rect(val, &opts->clip))
 		opts->flags |= FZ_STEXT_CLIP_RECT;
 
-	opts->scale = 1;
-	if (fz_has_option(ctx, string, "resolution", &val))
+	if (fz_lookup_option(ctx, string, "resolution", &val))
 		opts->scale = fz_atof(val) / 96.0f; /* HTML base resolution is 96ppi */
 
-	return opts;
+	fz_validate_options(ctx, string, "stext");
 }
 
 typedef struct

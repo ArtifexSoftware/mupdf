@@ -246,6 +246,8 @@ int mugrep_main(int argc, char **argv)
 		mark_close = "\x1b[0m";
 	}
 
+	fz_init_search_options(ctx, &options);
+
 	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nHb[:]:q")) != -1)
 	{
 		switch (c)
@@ -254,7 +256,7 @@ int mugrep_main(int argc, char **argv)
 			fz_parse_stext_options(ctx, &stext_options, fz_optarg);
 			break;
 		case 'S':
-			options = fz_parse_search_options(fz_optarg);
+			fz_parse_search_options(ctx, &options, fz_optarg);
 			break;
 		case 'G':
 			options |= FZ_SEARCH_REGEXP | FZ_SEARCH_KEEP_LINES | FZ_SEARCH_KEEP_PARAGRAPHS;

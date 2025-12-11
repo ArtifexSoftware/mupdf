@@ -800,6 +800,9 @@ FZ_DATA extern const pdf_write_options pdf_default_write_options;
 */
 pdf_write_options *pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);
 
+void pdf_init_write_options(fz_context *ctx, pdf_write_options *opts);
+void pdf_apply_write_options(fz_context *ctx, pdf_write_options *opts, fz_options *args);
+
 /*
 	Returns true if there are digital signatures waiting to
 	to updated on save.

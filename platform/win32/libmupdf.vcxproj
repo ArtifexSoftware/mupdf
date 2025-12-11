@@ -1149,6 +1149,7 @@
     <ClCompile Include="..\..\source\fitz\memory.c" />
     <ClCompile Include="..\..\source\fitz\noto.c" />
     <ClCompile Include="..\..\source\fitz\ocr-device.c" />
+    <ClCompile Include="..\..\source\fitz\options.c" />
     <ClCompile Include="..\..\source\fitz\outline.c" />
     <ClCompile Include="..\..\source\fitz\output-cbz.c" />
     <ClCompile Include="..\..\source\fitz\output-csv.c" />
@@ -1327,6 +1328,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\json.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\link.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\log.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\options.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\outline.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\output-svg.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\output.h" />

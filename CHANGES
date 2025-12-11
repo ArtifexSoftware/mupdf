@@ -1,3 +1,9 @@
+List of changes in MuPDF 1.28
+
+	New internal options parsing API:
+		Removed fz_has_option, fz_copy_option, and fz_option_eq.
+		Added fz_options struct with constructors and accessors.
+
 List of changes in MuPDF 1.27
 
 	New and updated documentation! Build local HTML and Markdown versions from source with sphinx.

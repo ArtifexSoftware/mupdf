@@ -30,6 +30,7 @@
 #include "mupdf/fitz/shade.h"
 #include "mupdf/fitz/path.h"
 #include "mupdf/fitz/text.h"
+#include "mupdf/fitz/options.h"
 
 /**
 	The different format handlers (pdf, xps etc) interpret pages to
@@ -633,9 +634,23 @@ typedef struct
 FZ_DATA extern const char *fz_draw_options_usage;
 
 /**
-	Parse draw device options from a comma separated key-value string.
+	Initialise a draw_options struct to sensible values.
 */
-fz_draw_options *fz_parse_draw_options(fz_context *ctx, fz_draw_options *options, const char *string);
+void fz_init_draw_options(fz_context *ctx, fz_draw_options *draw_options);
+
+/**
+	Parse draw device options from a comma separated key-value string.
+
+	This initialises the draw_options struct first.
+*/
+fz_draw_options *fz_parse_draw_options(fz_context *ctx, fz_draw_options *draw_options, const char *string);
+
+/**
+	Parse draw device options from an fz_options structure.
+
+	This assumes that the draw_options struct has been initialised already.
+*/
+void fz_apply_draw_options(fz_context *ctx, fz_draw_options *draw_options, fz_options *options);
 
 /**
 	Create a new pixmap and draw device, using the specified options.

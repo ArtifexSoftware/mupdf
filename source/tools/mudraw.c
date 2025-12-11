@@ -326,6 +326,7 @@ static int showmd5 = 0;
 
 #if FZ_ENABLE_PDF
 static pdf_document *pdfout = NULL;
+static pdf_write_options pdfopts;
 #endif
 
 static int no_icc = 0;
@@ -377,7 +378,7 @@ static const char ocr_language_default[] = "eng";
 static const char *ocr_language = ocr_language_default;
 static const char *ocr_datadir = NULL;
 
-static char *options_string = NULL;
+static fz_options *user_options = NULL;
 
 static struct {
 	int active;
@@ -570,6 +571,7 @@ file_level_headers(fz_context *ctx)
 	{
 		fz_pclm_options opts = { 0 };
 		fz_parse_pclm_options(ctx, &opts, "compression=flate");
+		fz_apply_pclm_options(ctx, &opts, user_options);
 		bander = fz_new_pclm_band_writer(ctx, out, &opts);
 	}
 
@@ -584,10 +586,11 @@ file_level_headers(fz_context *ctx)
 			fz_strlcat(options, ocr_datadir, sizeof (options));
 		}
 		fz_parse_pdfocr_options(ctx, &opts, options);
+		fz_apply_pdfocr_options(ctx, &opts, user_options);
 		opts.skew_correct = skew_correct;
 		opts.skew_border = skew_border;
 		opts.skew_angle = skew_angle;
-		opts.options = options_string;
+		opts.options = user_options;
 		bander = fz_new_pdfocr_band_writer(ctx, out, &opts);
 	}
 }
@@ -651,12 +654,15 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_m
 		else
 			fz_clear_pixmap_with_value(ctx, pix, 255);
 
+		// NOTE: we do not use fz_draw_options in mutool draw!
+
 		dev = fz_new_draw_device_with_proof(ctx, fz_identity, pix, proof_cs);
 		apply_kill_switch(dev);
 		if (lowmemory)
 			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		if (alphabits_graphics == 0)
 			fz_enable_device_hints(ctx, dev, FZ_DONT_INTERPOLATE_IMAGES);
+		fz_throw_on_unused_options(ctx, user_options, "device");
 		if (list)
 			fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
 		else
@@ -722,10 +728,12 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
-				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, options_string);
+				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, user_options);
 			}
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
+
+			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
@@ -763,8 +771,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 			fz_write_printf(ctx, out_, "<page mediabox=\"%g %g %g %g\">\n",
 					tmediabox.x0, tmediabox.y0, tmediabox.x1, tmediabox.y1);
+
 			dev = fz_new_xmltext_device(ctx, out_);
 			apply_kill_switch(dev);
+			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
@@ -799,6 +809,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			apply_kill_switch(dev);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
+			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
@@ -834,7 +845,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_try(ctx)
 		{
 			fz_stext_options stext_options = { 0 };
-
 			stext_options.flags = (output_format == OUT_HTML ||
 						output_format == OUT_XHTML ||
 						output_format == OUT_OCR_HTML ||
@@ -848,12 +858,15 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			if (output_format == OUT_STEXT_JSON || output_format == OUT_OCR_STEXT_JSON)
 				stext_options.flags |= FZ_STEXT_PRESERVE_SPANS;
+			fz_apply_stext_options(ctx, &stext_options, user_options);
+
 			tmediabox = fz_transform_rect(mediabox, ctm);
 			text = fz_new_stext_page(ctx, tmediabox);
 			dev = fz_new_stext_device(ctx, text, &stext_options);
 			apply_kill_switch(dev);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
+
 			if (output_format == OUT_OCR_TEXT ||
 				output_format == OUT_OCR_STEXT_JSON ||
 				output_format == OUT_OCR_STEXT_XML ||
@@ -862,8 +875,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				pre_ocr_dev = dev;
 				dev = NULL;
-				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, options_string);
+				dev = fz_new_ocr_device_with_options(ctx, pre_ocr_dev, ctm, mediabox, 1, ocr_language, ocr_datadir, NULL, NULL, user_options);
 			}
+
+			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
@@ -930,6 +945,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 			dev = pdf_page_write(ctx, pdfout_, mediabox, &resources, &contents);
 			apply_kill_switch(dev);
+			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, cookie);
 			else
@@ -971,10 +987,14 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			opts.reuse_images = 1;
 			opts.resolution = resolution;
 			opts.id = 0;
+
+			fz_apply_svg_device_options(ctx, &opts, user_options);
+
 			dev = fz_new_svg_device_with_options(ctx, out_, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, &opts);
 			apply_kill_switch(dev);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
+			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
 			else
@@ -1153,17 +1173,23 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					bander = fz_new_psd_band_writer(ctx, out_);
 				else if (output_format == OUT_PWG)
 				{
+					fz_pwg_options opts;
+					fz_init_pwg_options(ctx, &opts);
+					fz_apply_pwg_options(ctx, &opts, user_options);
 					if (out_cs == CS_MONO)
-						bander = fz_new_mono_pwg_band_writer(ctx, out_, NULL);
+						bander = fz_new_mono_pwg_band_writer(ctx, out_, &opts);
 					else
-						bander = fz_new_pwg_band_writer(ctx, out_, NULL);
+						bander = fz_new_pwg_band_writer(ctx, out_, &opts);
 				}
 				else if (output_format == OUT_PCL)
 				{
+					fz_pcl_options opts;
+					fz_init_pcl_options(ctx, &opts);
+					fz_apply_pcl_options(ctx, &opts, user_options);
 					if (out_cs == CS_MONO)
-						bander = fz_new_mono_pcl_band_writer(ctx, out_, NULL);
+						bander = fz_new_mono_pcl_band_writer(ctx, out_, &opts);
 					else
-						bander = fz_new_color_pcl_band_writer(ctx, out_, NULL);
+						bander = fz_new_color_pcl_band_writer(ctx, out_, &opts);
 				}
 				if (bander)
 				{
@@ -2086,6 +2112,7 @@ int mudraw_main(int argc, char **argv)
 	fz_alloc_context *alloc_ctx = NULL;
 	fz_locks_context *locks = NULL;
 	size_t max_store = FZ_STORE_DEFAULT;
+	char *options_string = NULL;
 
 	fz_var(doc);
 
@@ -2298,6 +2325,9 @@ int mudraw_main(int argc, char **argv)
 
 	fz_try(ctx)
 	{
+		if (options_string)
+			user_options = fz_new_options(ctx, options_string);
+
 		if (proof_filename)
 		{
 			fz_buffer *proof_buffer = fz_read_file(ctx, proof_filename);
@@ -2545,6 +2575,14 @@ int mudraw_main(int argc, char **argv)
 				out = fz_new_output_with_path(ctx, output, 0);
 		}
 
+#if FZ_ENABLE_PDF
+		if (output_format == OUT_PDF)
+		{
+			pdf_init_write_options(ctx, &pdfopts);
+			pdf_apply_write_options(ctx, &pdfopts, user_options);
+		}
+#endif
+
 		filename = argv[fz_optind];
 
 		timing.count = 0;
@@ -2567,8 +2605,6 @@ int mudraw_main(int argc, char **argv)
 
 		fz_try(ctx)
 		{
-			if (!output_file_per_page)
-				file_level_headers(ctx);
 			fz_register_document_handlers(ctx);
 #ifdef HAVE_SMARTOFFICE
 			{
@@ -2576,6 +2612,9 @@ int mudraw_main(int argc, char **argv)
 				so_doc_handler_configure(ctx, cfg, SO_DOC_HANDLER_MODE, SO_DOC_HANDLER_MODE_PDF);
 			}
 #endif
+
+			if (!output_file_per_page)
+				file_level_headers(ctx);
 
 			while (fz_optind < argc)
 			{
@@ -2734,7 +2773,7 @@ int mudraw_main(int argc, char **argv)
 #if FZ_ENABLE_PDF
 			if (output_format == OUT_PDF)
 			{
-				pdf_save_document(ctx, pdfout, output, NULL);
+				pdf_save_document(ctx, pdfout, output, &pdfopts);
 				pdf_drop_document(ctx, pdfout);
 				pdfout = NULL;
 			}
@@ -2809,11 +2848,17 @@ int mudraw_main(int argc, char **argv)
 			fz_drop_context(bgprint.ctx);
 		}
 #endif /* DISABLE_MUTHREADS */
+
+		// Options should normally be checked before rendering, but this
+		// code is a bit complicated, so double check here in case we miss
+		// to validate it above.
+		fz_warn_on_unused_options(ctx, user_options, NULL);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_colorspace(ctx, colorspace);
 		fz_drop_colorspace(ctx, proof_cs);
+		fz_drop_options(ctx, user_options);
 	}
 	fz_catch(ctx)
 	{
