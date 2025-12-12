@@ -399,6 +399,11 @@ fz_apply_pcl_options(fz_context *ctx, fz_pcl_options *opts, fz_options *args)
 		else
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Expected 'yes' or 'no' for is_oce9050 value");
 	}
+	if (fz_options_has_key(ctx, args, "media_position", &val))
+	{
+		opts->media_position = fz_atoi(val);
+		opts->media_position_set = 1;
+	}
 }
 
 static void
@@ -505,10 +510,10 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 				fz_write_printf(ctx, out, "\033&l%dA", pcl->paper_size);
 			}
 			fz_write_string(ctx, out, "\033&l0o0l0E");
-			fz_write_string(ctx, out, pcl->odd_page_init);
+			fz_write_string(ctx, out, odd_page_init);
 		}
 		else
-			fz_write_string(ctx, out, pcl->even_page_init);
+			fz_write_string(ctx, out, even_page_init);
 	}
 	else
 	{
@@ -517,7 +522,7 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 			fz_write_printf(ctx, out, "\033&l%dA", pcl->paper_size);
 		}
 		fz_write_string(ctx, out, "\033&l0o0l0E");
-		fz_write_string(ctx, out, pcl->odd_page_init);
+		fz_write_string(ctx, out, odd_page_init);
 	}
 
 	fz_write_printf(ctx, out, "\033&l%dX", num_copies); /* # of copies */
@@ -529,7 +534,7 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 	/* receiving \033*rB, so we must reinitialize graphics mode. */
 	if (pcl->features & PCL_END_GRAPHICS_DOES_RESET)
 	{
-		fz_write_string(ctx, out, pcl->odd_page_init); /* Assume this does the right thing */
+		fz_write_string(ctx, out, odd_page_init); /* Assume this does the right thing */
 		fz_write_printf(ctx, out, "\033&l%dX", num_copies); /* # of copies */
 	}
 

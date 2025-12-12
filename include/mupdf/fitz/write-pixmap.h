@@ -464,6 +464,21 @@ typedef struct
 } fz_pwg_options;
 
 /**
+	Init pwg options to a sensible default.
+*/
+void fz_init_pwg_options(fz_context *ctx, fz_pwg_options *opts);
+
+/**
+	Initialise a pwg options struct, and parse the given options string.
+*/
+fz_pwg_options *fz_parse_pwg_options(fz_context *ctx, fz_pwg_options *opts, const char *args);
+
+/**
+	Apply the given options to an initialised pwg options struct.
+*/
+void fz_apply_pwg_options(fz_context *ctx, fz_pwg_options *opts, fz_options *args);
+
+/**
 	Save a pixmap as a PWG.
 */
 void fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg);

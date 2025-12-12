@@ -1149,17 +1149,23 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					bander = fz_new_psd_band_writer(ctx, out);
 				else if (output_format == OUT_PWG)
 				{
+					fz_pwg_options opts;
+					fz_init_pwg_options(ctx, &opts);
+					fz_apply_pwg_options(ctx, &opts, user_options);
 					if (out_cs == CS_MONO)
-						bander = fz_new_mono_pwg_band_writer(ctx, out, NULL);
+						bander = fz_new_mono_pwg_band_writer(ctx, out, &opts);
 					else
-						bander = fz_new_pwg_band_writer(ctx, out, NULL);
+						bander = fz_new_pwg_band_writer(ctx, out, &opts);
 				}
 				else if (output_format == OUT_PCL)
 				{
+					fz_pcl_options opts;
+					fz_init_pcl_options(ctx, &opts);
+					fz_apply_pcl_options(ctx, &opts, user_options);
 					if (out_cs == CS_MONO)
-						bander = fz_new_mono_pcl_band_writer(ctx, out, NULL);
+						bander = fz_new_mono_pcl_band_writer(ctx, out, &opts);
 					else
-						bander = fz_new_color_pcl_band_writer(ctx, out, NULL);
+						bander = fz_new_color_pcl_band_writer(ctx, out, &opts);
 				}
 				if (bander)
 				{
