@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -336,6 +336,8 @@ fz_slice_buffer(fz_context *ctx, fz_buffer *buf, int64_t start, int64_t end)
 void
 fz_append_buffer(fz_context *ctx, fz_buffer *buf, fz_buffer *extra)
 {
+	if (extra == NULL)
+		return;
 	if (buf->cap - buf->len < extra->len)
 	{
 		buf->data = fz_realloc(ctx, buf->data, buf->len + extra->len);
