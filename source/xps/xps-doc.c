@@ -528,6 +528,8 @@ xps_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, f
 	int ret = 0;
 	fz_xml *xml = NULL;
 	fz_xml *pos;
+	fz_buffer *buf = NULL;
+	fz_buffer *buf2 = NULL;
 
 	if (state)
 		*state = NULL;
@@ -537,6 +539,8 @@ xps_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, f
 	fz_var(arch);
 	fz_var(ret);
 	fz_var(xml);
+	fz_var(buf);
+	fz_var(buf2);
 
 	fz_try(ctx)
 	{
@@ -552,48 +556,21 @@ xps_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, f
 				break;
 		}
 
-		xml = fz_try_parse_xml_archive_entry(ctx, arch, "/_rels/.rels", 0);
-		if (xml == NULL)
-			xml = fz_try_parse_xml_archive_entry(ctx, arch, "\\_rels\\.rels", 0);
+		buf = xps_read_pieces(ctx, arch, "_rels/.rels");
+		if (buf == NULL)
+			buf = xps_read_pieces(ctx, arch, "_rels\\.rels");
 
-		if (xml)
-		{
-			pos = fz_xml_find_dfs(xml, "Relationship", "Type", "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
-			if (pos)
-				ret = 100;
-			break;
-		}
-
-		/* Cope with tricksy XPS's have the rels in multiple bits. */
-		count = fz_count_archive_entries(ctx, arch);
-
-		for (i = 0; i < count; i++)
-		{
-			name = fz_list_archive_entry(ctx, arch, i);
-			if (!name)
-				continue;
-			if (strncmp(name, "/_rels/.rels/", 13) == 0 ||
-				strncmp(name, "_rels/.rels/", 12) == 0 ||
-				strncmp(name, "\\_rels\\.rels\\", 13) == 0 ||
-				strncmp(name, "_rels\\.rels\\", 12) == 0)
-			{
-				xml = fz_try_parse_xml_archive_entry(ctx, arch, name, 0);
-				if (xml)
-				{
-					pos = fz_xml_find_dfs(xml, "Relationship", "Type", "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
-					if (pos)
-					{
-						ret = 100;
-						break;
-					}
-					fz_drop_xml(ctx, xml);
-					xml = NULL;
-				}
-			}
-		}
+		xml = fz_parse_xml(ctx, buf, 0);
+		pos = fz_xml_find_dfs(xml, "Relationship", "Type", REL_START_PART);
+		if (pos == NULL)
+			pos = fz_xml_find_dfs(xml, "Relationship", "Type", REL_START_PART_OXPS);
+		if (pos)
+			ret = 100;
 	}
 	fz_always(ctx)
 	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_buffer(ctx, buf2);
 		fz_drop_xml(ctx, xml);
 		fz_drop_archive(ctx, arch);
 	}
