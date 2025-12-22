@@ -1,3 +1,25 @@
+// Copyright (C) 2025 Artifex Software, Inc.
+//
+// This file is part of MuPDF.
+//
+// MuPDF is free software: you can redistribute it and/or modify it under the
+// terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option)
+// any later version.
+//
+// MuPDF is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with MuPDF. If not, see <https://www.gnu.org/licenses/agpl-3.0.en.html>
+//
+// Alternative licensing terms are available from the licensor.
+// For commercial licensing, see <https://www.artifex.com/> or contact
+// Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
+// CA 94129, USA, for further information.
+
 /*
  * Fuzzer for MuPDF path operations
  * This targets vector path construction and stroking
@@ -33,10 +55,16 @@ enum {
 	OP_COUNT
 };
 
+/* Small pixmap dimensions for rasterization tests */
+#define RASTER_WIDTH 64
+#define RASTER_HEIGHT 64
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
 	fz_path *path = NULL;
 	fz_stroke_state *stroke = NULL;
+	fz_pixmap *pix = NULL;
+	fz_device *dev = NULL;
 	fz_rect bounds;
 	size_t i = 0;
 
@@ -45,6 +73,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
 	fz_var(path);
 	fz_var(stroke);
+	fz_var(pix);
+	fz_var(dev);
 
 	fz_try(ctx)
 	{
@@ -129,9 +159,32 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
 		/* Trim the path */
 		fz_trim_path(ctx, path);
+
+		/* Exercise the rasterizer by filling and stroking the path */
+		pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), RASTER_WIDTH, RASTER_HEIGHT, NULL, 1);
+		fz_clear_pixmap_with_value(ctx, pix, 255);
+		dev = fz_new_draw_device(ctx, fz_identity, pix);
+
+		/* Fill the path */
+		{
+			float color[3] = { 0.5f, 0.5f, 0.5f };
+			fz_fill_path(ctx, dev, path, 0, fz_identity,
+			             fz_device_rgb(ctx), color, 1.0f, fz_default_color_params);
+		}
+
+		/* Stroke the path */
+		{
+			float color[3] = { 0.0f, 0.0f, 0.0f };
+			fz_stroke_path(ctx, dev, path, stroke, fz_identity,
+			               fz_device_rgb(ctx), color, 1.0f, fz_default_color_params);
+		}
+
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
+		fz_drop_device(ctx, dev);
+		fz_drop_pixmap(ctx, pix);
 		fz_drop_stroke_state(ctx, stroke);
 		fz_drop_path(ctx, path);
 	}

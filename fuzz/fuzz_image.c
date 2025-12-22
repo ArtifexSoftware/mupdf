@@ -1,3 +1,25 @@
+// Copyright (C) 2025 Artifex Software, Inc.
+//
+// This file is part of MuPDF.
+//
+// MuPDF is free software: you can redistribute it and/or modify it under the
+// terms of the GNU Affero General Public License as published by the Free
+// Software Foundation, either version 3 of the License, or (at your option)
+// any later version.
+//
+// MuPDF is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+// details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with MuPDF. If not, see <https://www.gnu.org/licenses/agpl-3.0.en.html>
+//
+// Alternative licensing terms are available from the licensor.
+// For commercial licensing, see <https://www.artifex.com/> or contact
+// Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
+// CA 94129, USA, for further information.
+
 /*
  * Fuzzer for MuPDF image loading (PNG, JPEG, TIFF, BMP, GIF, PSD, PNM, etc.)
  */
@@ -9,6 +31,7 @@
 #include <mupdf/fitz.h>
 
 #define MAX_INPUT_SIZE (1 * 1024 * 1024)  /* 1MB limit */
+#define MAX_IMAGE_DIM 8192  /* Safeguard against OOM */
 
 static fz_context *ctx = NULL;
 
@@ -39,7 +62,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 		img = fz_new_image_from_buffer(ctx, buf);
 		if (img)
 		{
-			pix = fz_get_pixmap_from_image(ctx, img, NULL, NULL, NULL, NULL);
+			/* Check dimensions before decoding full pixmap to prevent OOM */
+			if (img->w > 0 && img->h > 0 &&
+			    img->w < MAX_IMAGE_DIM && img->h < MAX_IMAGE_DIM)
+			{
+				pix = fz_get_pixmap_from_image(ctx, img, NULL, NULL, NULL, NULL);
+			}
 		}
 	}
 	fz_always(ctx)
