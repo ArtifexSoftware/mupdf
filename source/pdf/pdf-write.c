@@ -1879,6 +1879,7 @@ const char *fz_pdf_write_options_usage =
 	"\tlinearize: optimize for web browsers (no longer supported!)\n"
 	"\tclean: pretty-print graphics commands in content streams\n"
 	"\tsanitize: sanitize graphics commands in content streams\n"
+	"\tstrip-invisible-text: strip invisible text in content streams\n"
 	"\tgarbage: garbage collect unused objects\n"
 	"\tor garbage=compact: ... and compact cross reference table\n"
 	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
@@ -1930,6 +1931,8 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_clean = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "sanitize", &val))
 		opts->do_sanitize = fz_option_eq(val, "yes");
+	if (fz_has_option(ctx, args, "strip-invisible-text", &val))
+		opts->do_strip_invisible_text = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "incremental", &val))
 		opts->do_incremental = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "objstms", &val))
@@ -2755,6 +2758,37 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, cons
 	do_pdf_save_document(ctx, doc, &opts, in_opts);
 }
 
+static void pdf_strip_invisible_text(fz_context *ctx, pdf_document *doc)
+{
+	int i;
+	int n = pdf_count_pages(ctx, doc);
+	fz_rect rect;
+	pdf_annot *annot = NULL;
+	pdf_page *page = NULL;
+	pdf_redact_options opts = { 0, PDF_REDACT_IMAGE_NONE, PDF_REDACT_LINE_ART_NONE, PDF_REDACT_TEXT_REMOVE_INVISIBLE };
+
+	fz_var(page);
+
+	fz_try(ctx)
+	{
+		for (i = 0; i < n; i++)
+		{
+			page = pdf_load_page(ctx, doc, i);
+			annot = pdf_create_annot(ctx, page, PDF_ANNOT_REDACT);
+			rect = pdf_bound_page(ctx, page, FZ_MEDIA_BOX);
+			pdf_set_annot_rect(ctx, annot, rect);
+			pdf_redact_page(ctx, doc, page, &opts);
+			pdf_drop_page(ctx, page);
+			page = NULL;
+		}
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_page(ctx, page);
+		fz_rethrow(ctx);
+	}
+}
+
 void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, const pdf_write_options *in_opts)
 {
 	pdf_write_options opts_defaults = pdf_default_write_options;
@@ -2776,6 +2810,8 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Linearisation is no longer supported");
 	if (in_opts->do_incremental && in_opts->do_encrypt != PDF_ENCRYPT_KEEP)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't do incremental writes when changing encryption");
+	if (in_opts->do_strip_invisible_text && in_opts->do_sanitize == 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't strip invisible text without sanitizing");
 	if (in_opts->do_snapshot)
 	{
 		if (in_opts->do_incremental == 0 ||
@@ -2792,6 +2828,9 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 			in_opts->do_encrypt != PDF_ENCRYPT_KEEP)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't use these options when snapshotting!");
 	}
+
+	if (in_opts->do_strip_invisible_text)
+		pdf_strip_invisible_text(ctx, doc);
 
 	if (in_opts->do_appearance > 0)
 	{
@@ -2885,6 +2924,8 @@ pdf_format_write_options(fz_context *ctx, char *buffer, size_t buffer_len, const
 		ADD_OPT("clean=yes");
 	if (opts->do_sanitize)
 		ADD_OPT("sanitize=yes");
+	if (opts->do_strip_invisible_text)
+		ADD_OPT("strip-invisible-text=yes");
 	if (opts->do_incremental)
 		ADD_OPT("incremental=yes");
 	if (opts->do_encrypt == PDF_ENCRYPT_NONE)
