@@ -1364,7 +1364,10 @@ fz_new_text_writer_with_output(fz_context *ctx, const char *format, fz_output *o
 
 		wri->format = FZ_FORMAT_TEXT;
 		if (!strcmp(format, "text"))
+		{
 			wri->format = FZ_FORMAT_TEXT;
+			wri->opts.flags &= ~FZ_STEXT_COLLECT_STYLES | FZ_STEXT_PRESERVE_IMAGES;
+		}
 		else if (!strcmp(format, "html"))
 			wri->format = FZ_FORMAT_HTML;
 		else if (!strcmp(format, "xhtml"))
