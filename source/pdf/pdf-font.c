@@ -188,7 +188,8 @@ static int ft_kind(fz_context *ctx, FT_Face face)
 	return UNKNOWN;
 }
 
-static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
+/* We abuse the ctx param here; NULL means we are locked already! */
+static int ft_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
 	if (fontdesc->to_ttf_cmap)
 	{
@@ -250,7 +251,12 @@ static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 			}
 		}
 
-		return ft_char_index(fontdesc->font->ft_face, cid);
+		if (ctx)
+			fz_ft_lock(ctx);
+		cid = ft_char_index(fontdesc->font->ft_face, cid);
+		if (ctx)
+			fz_ft_unlock(ctx);
+		return cid;
 	}
 
 	if (fontdesc->cid_to_gid && (size_t)cid < fontdesc->cid_to_gid_len && cid >= 0)
@@ -263,20 +269,14 @@ int
 pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
 	if (fontdesc->font->ft_face)
-	{
-		int gid;
-		fz_ft_lock(ctx);
-		gid = ft_cid_to_gid(fontdesc, cid);
-		fz_ft_unlock(ctx);
-		return gid;
-	}
+		return ft_cid_to_gid(ctx, fontdesc, cid);
 	return cid;
 }
 
 static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
 	int mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
-	int gid = ft_cid_to_gid(fontdesc, cid);
+	int gid = ft_cid_to_gid(NULL, fontdesc, cid);
 	FT_Fixed adv = 0;
 	int fterr;
 	FT_Face face = fontdesc->font->ft_face;
