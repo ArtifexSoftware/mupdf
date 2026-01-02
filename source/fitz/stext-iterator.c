@@ -33,6 +33,22 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_begin(fz_stext_page *p
 	return pos;
 }
 
+fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_dfs(fz_stext_page *page)
+{
+	fz_stext_page_block_iterator pos;
+
+	pos = fz_stext_page_block_iterator_begin(page);
+
+	while (pos.block && pos.block->type == FZ_STEXT_BLOCK_STRUCT)
+	{
+		/* Move down. And loop. */
+		pos.parent = pos.block->u.s.down;
+		pos.block = pos.block->u.s.down->first_block;
+	}
+
+	return pos;
+}
+
 /* Iterates along, stopping at every block. Stops at the end of the run. */
 fz_stext_page_block_iterator fz_stext_page_block_iterator_next(fz_stext_page_block_iterator pos)
 {
