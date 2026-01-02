@@ -1100,6 +1100,12 @@ typedef struct
 fz_stext_page_block_iterator fz_stext_page_block_iterator_begin(fz_stext_page *page);
 
 /*
+	Create a new iterator, initialised to point at the first non-struct block on the page
+	in depth first search order.
+*/
+fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_dfs(fz_stext_page *page);
+
+/*
 	Move to the next block (never moving upwards).
 
 	If there is no next block, iterator.block is returned as NULL.
