@@ -437,7 +437,7 @@ unpack_drop(fz_context *ctx, void *state)
 fz_stream *
 fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n, int indexed, int pad, int skip)
 {
-	int src_stride = (w*depth*n+7)>>3;
+	int src_stride = ((int64_t)w*depth*n+7)>>3; // avoid overflow by bumping to 64-bit math
 	int dst_stride;
 	unpack_state *state;
 	fz_unpack_line_fn unpack_line = NULL;
