@@ -542,9 +542,6 @@ xps_recognize_doc_content(fz_context *ctx, const fz_document_handler *handler, f
 
 	fz_try(ctx)
 	{
-		int i, count;
-		const char *name;
-
 		if (stream == NULL)
 			arch = fz_keep_archive(ctx, dir);
 		else
