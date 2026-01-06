@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Artifex Software, Inc.
+// Copyright (C) 2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -52,13 +52,14 @@ guess_res(fz_stext_block *block)
 	 * So (1/w, 1/h) * T = extent of pixel in dest space.
 	 */
 	int w, h;
+	fz_point one_pix;
 
 	if (block->u.i.image == NULL)
 		return 72.0f; /* No image, just a placeholder. */
 
 	w = block->u.i.image->w;
 	h = block->u.i.image->h;
-	fz_point one_pix = { 1.0f/w, 1.0f/h };
+	one_pix = fz_make_point(1.0f/w, 1.0f/h);
 
 	one_pix = fz_transform_vector(one_pix, block->u.i.transform);
 
