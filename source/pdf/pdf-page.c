@@ -1992,7 +1992,7 @@ pdf_page_label(fz_context *ctx, pdf_document *doc, int index, char *buf, size_t 
 	if (range.label)
 		pdf_format_page_label(ctx, index - range.offset, range.label, buf, size);
 	else
-		fz_snprintf(buf, size, "%z", index + 1);
+		fz_snprintf(buf, size, "%d", index + 1);
 }
 
 void
