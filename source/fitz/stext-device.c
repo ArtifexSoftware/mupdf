@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1214,6 +1214,13 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 		memmove(mt->text, actualtext, z);
 		return;
 	}
+
+	/* if this is the first text on the page, and the actual text suffix matches the entire
+	 * span text, then no font will have been set above, so set the last used font to the
+	 * span font since flush_actualtext() assumes that a font has been set.
+	 */
+	if (!dev->last.font)
+		dev->last.font = fz_keep_font(ctx, font);
 
 	/* We found a matching postfix. It seems likely that this is going to be the only
 	 * text object we get, so send any remaining actualtext now. */
