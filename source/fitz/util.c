@@ -119,7 +119,15 @@ fz_new_pixmap_from_display_list_with_separations(fz_context *ctx, fz_display_lis
 	else
 		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
-	return fz_fill_pixmap_from_display_list(ctx, list, ctm, pix);
+	fz_try(ctx)
+		fz_fill_pixmap_from_display_list(ctx, list, ctm, pix);
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, pix);
+		fz_rethrow(ctx);
+	}
+
+	return pix;
 }
 
 fz_pixmap *
@@ -136,14 +144,9 @@ fz_fill_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, fz_matr
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
-	{
 		fz_drop_device(ctx, dev);
-	}
 	fz_catch(ctx)
-	{
-		fz_drop_pixmap(ctx, pix);
 		fz_rethrow(ctx);
-	}
 
 	return pix;
 }
