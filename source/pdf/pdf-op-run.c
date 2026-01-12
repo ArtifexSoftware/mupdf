@@ -152,13 +152,14 @@ struct pdf_run_processor
 	begin_layer_stack *begin_layer;
 	begin_layer_stack **next_begin_layer;
 
-	int mc_depth;
 	/* The nest_mark array holds a record of the way in which clips and
 	 * marked content are nested to ensure we pop stuff in the same order
-	 * that we push it - i.e. to keep calls nested nicely. An entry x,
-	 * where x >= 0 represents that a push has happened for mc_depth == x.
-	 * An entry x, where x < 0 means that -x clips have happened at this
-	 * position. */
+	 * that we push it - i.e. to keep calls nested nicely.
+	 *
+	 * When we detect pop_clip and end_layer operations that are out of order,
+	 * we always give priority to the pop_clip position and move the end_layer
+	 * calls.
+	 */
 	int nest_depth;
 	int nest_mark[1024];
 
@@ -166,9 +167,148 @@ struct pdf_run_processor
 	int process_structure;
 };
 
+/* NONE: finished entry (remove when exposed)
+ * LIVE_CLIP: unclosed clip
+ * LIVE_LAYER: unclosed layer
+ * DEAD_LAYER: closed layer that is waiting for its EMC
+ * ZOMBIE_LAYER: unclosed layer that has passed its EMC (close when exposed)
+ */
+enum { NONE, LIVE_CLIP, LIVE_LAYER, DEAD_LAYER, ZOMBIE_LAYER };
+
 /* Forward definition */
 static void
 pop_any_pending_mcid_changes(fz_context *ctx, pdf_run_processor *pr);
+
+static void trim_nest_stack(fz_context *ctx, pdf_run_processor *proc)
+{
+	// reap exposed zombie layers and pop finished entries from the nesting stack
+	while (proc->nest_depth > 0)
+	{
+		int mark = proc->nest_mark[proc->nest_depth-1];
+		if (mark == NONE)
+		{
+			--proc->nest_depth;
+		}
+		else if (mark == ZOMBIE_LAYER)
+		{
+			fz_end_layer(ctx, proc->dev);
+			--proc->nest_depth;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+static void push_nest(fz_context *ctx, pdf_run_processor *proc, int type)
+{
+	// Warn if there are any out-of-order tracking elements left on the stack.
+	if (proc->nest_depth > 0)
+	{
+		int mark = proc->nest_mark[proc->nest_depth-1];
+		if (mark != LIVE_CLIP && mark != LIVE_LAYER)
+			fz_warn(ctx, "invalid marked content sequence / clip nesting");
+	}
+
+	if (proc->nest_depth == nelem(proc->nest_mark))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "layer/clip nesting too deep");
+	proc->nest_mark[proc->nest_depth++] = type;
+}
+
+static void push_nest_clip(fz_context *ctx, pdf_run_processor *proc)
+{
+	// NOTE: We do not call fz_clip_* here (that is caller's responsibility).
+	// We only record the fact a clip mask has begun.
+	push_nest(ctx, proc, LIVE_CLIP);
+}
+
+static void push_nest_layer(fz_context *ctx, pdf_run_processor *proc)
+{
+	// NOTE: We do not call fz_begin_layer here (that is caller's responsibility).
+	// We only record the fact a layer has begun.
+	push_nest(ctx, proc, LIVE_LAYER);
+}
+
+static void
+pop_nest_until_empty(fz_context *ctx, pdf_run_processor *proc)
+{
+	while (proc->nest_depth > 0)
+	{
+		int mark = proc->nest_mark[proc->nest_depth-1];
+		if (mark == LIVE_CLIP)
+			fz_pop_clip(ctx, proc->dev);
+		else if (mark == LIVE_LAYER || mark == ZOMBIE_LAYER)
+			fz_end_layer(ctx, proc->dev);
+		--proc->nest_depth;
+	}
+}
+
+static void pop_nest_clip(fz_context *ctx, pdf_run_processor *proc)
+{
+	int i, mark;
+	for (i = proc->nest_depth - 1; i >= 0; --i)
+	{
+		mark = proc->nest_mark[i];
+		if (mark == LIVE_CLIP)
+		{
+			proc->nest_mark[i] = NONE;
+			fz_pop_clip(ctx, proc->dev);
+			trim_nest_stack(ctx, proc);
+			return;
+		}
+		else if (mark == LIVE_LAYER)
+		{
+			proc->nest_mark[i] = DEAD_LAYER;
+			fz_end_layer(ctx, proc->dev);
+		}
+		else if (mark == DEAD_LAYER)
+		{
+			/* do nothing */
+		}
+		else if (mark == ZOMBIE_LAYER)
+		{
+			fz_warn(ctx, "zombie layer inside clip (should never happen)");
+			proc->nest_mark[i] = DEAD_LAYER;
+			fz_end_layer(ctx, proc->dev);
+		}
+	}
+	fz_warn(ctx, "popped too many clips!");
+}
+
+static void pop_nest_layer(fz_context *ctx, pdf_run_processor *proc)
+{
+	int i, mark;
+	for (i = proc->nest_depth - 1; i >= 0; --i)
+	{
+		mark = proc->nest_mark[i];
+		if (mark == LIVE_CLIP)
+		{
+			/* ignore clips */
+		}
+		else if (mark == LIVE_LAYER)
+		{
+			/* found the corresponding live layer */
+			/* mark it for reaping */
+			proc->nest_mark[i] = ZOMBIE_LAYER;
+			trim_nest_stack(ctx, proc);
+			return;
+		}
+		else if (mark == DEAD_LAYER)
+		{
+			/* found the corresponding dead layer */
+			/* mark it as finished */
+			proc->nest_mark[i] = NONE;
+			trim_nest_stack(ctx, proc);
+			return;
+		}
+		else if (mark == ZOMBIE_LAYER)
+		{
+			/* ignore other zombies */
+		}
+	}
+	fz_warn(ctx, "popped too many layers!");
+}
 
 static void
 push_begin_layer(fz_context *ctx, pdf_run_processor *proc, const char *str)
@@ -200,12 +340,9 @@ flush_begin_layer(fz_context *ctx, pdf_run_processor *proc)
 	{
 		s = proc->begin_layer;
 
-		if (proc->nest_depth == nelem(proc->nest_mark))
-			fz_throw(ctx, FZ_ERROR_LIMIT, "layer/clip nesting too deep");
-
-		proc->nest_mark[proc->nest_depth++] = ++proc->mc_depth;
-
+		push_nest_layer(ctx, proc);
 		fz_begin_layer(ctx, proc->dev, s->layer);
+
 		proc->begin_layer = s->next;
 		fz_free(ctx, s->layer);
 		fz_free(ctx, s);
@@ -213,43 +350,12 @@ flush_begin_layer(fz_context *ctx, pdf_run_processor *proc)
 	proc->next_begin_layer = &proc->begin_layer;
 }
 
-static void nest_layer_clip(fz_context *ctx, pdf_run_processor *proc)
-{
-	if (proc->nest_depth == nelem(proc->nest_mark))
-		fz_throw(ctx, FZ_ERROR_LIMIT, "layer/clip nesting too deep");
-	if (proc->nest_depth > 0 && proc->nest_mark[proc->nest_depth-1] < 0)
-	{
-		/* The last mark was a clip. Just increase that count. */
-		proc->nest_mark[proc->nest_depth-1]--;
-	}
-	else
-	{
-		/* Create a new entry for a single clip. */
-		proc->nest_mark[proc->nest_depth++] = -1;
-	}
-}
-
 static void
 do_end_layer(fz_context *ctx, pdf_run_processor *proc)
 {
 	if (!proc->process_layers)
 		return;
-
-	if (proc->nest_depth > 0 && proc->nest_mark[proc->nest_depth-1] == proc->mc_depth)
-	{
-		fz_end_layer(ctx, proc->dev);
-		proc->nest_depth--;
-	}
-	else
-	{
-		/* If EMC is unbalanced with q/Q, we will emit the end layer
-		 * device call before or after the Q operator instead of its true location
-		 */
-		 fz_warn(ctx, "invalid marked content and clip nesting");
-	}
-
-	if (proc->mc_depth > 0)
-		proc->mc_depth--;
+	pop_nest_layer(ctx, proc);
 }
 
 typedef struct
@@ -578,29 +684,7 @@ pdf_grestore(fz_context *ctx, pdf_run_processor *pr)
 	{
 		fz_try(ctx)
 		{
-			// End layer early (before Q) if unbalanced Q appears between BMC and EMC.
-			while (pr->nest_depth > 0 && pr->nest_mark[pr->nest_depth-1] >= 0)
-			{
-				fz_end_layer(ctx, pr->dev);
-				pr->nest_depth--;
-			}
-
-			if (pr->nest_depth > 0)
-			{
-				/* So this one must be a clip record. */
-				fz_pop_clip(ctx, pr->dev);
-				/* Pop a single clip record off. */
-				pr->nest_mark[pr->nest_depth-1]++;
-				if (pr->nest_mark[pr->nest_depth-1] == 0)
-					pr->nest_depth--;
-			}
-
-			// End layer late (after Q) if unbalanced EMC appears between q and Q.
-			while (pr->nest_depth > 0 && pr->nest_mark[pr->nest_depth-1] > pr->mc_depth)
-			{
-				fz_end_layer(ctx, pr->dev);
-				pr->nest_depth--;
-			}
+			pop_nest_clip(ctx, pr);
 		}
 		fz_catch(ctx)
 		{
@@ -1004,7 +1088,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 
 		if (pr->clip)
 		{
-			nest_layer_clip(ctx, pr);
+			push_nest_clip(ctx, pr);
 			gstate->clip_depth++;
 			fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, gstate->ctm, bbox);
 			pr->clip = 0;
@@ -1164,7 +1248,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 
 		if (doclip)
 		{
-			nest_layer_clip(ctx, pr);
+			push_nest_clip(ctx, pr);
 			gstate->clip_depth++;
 			fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
 		}
@@ -1791,6 +1875,7 @@ end_layer(fz_context *ctx, pdf_run_processor *proc, pdf_obj *val)
 	pdf_obj *obj = pdf_dict_get(ctx, val, PDF_NAME(Title));
 	if (obj)
 	{
+		flush_begin_layer(ctx, proc);
 		do_end_layer(ctx, proc);
 	}
 }
@@ -3152,23 +3237,7 @@ pdf_close_run_processor(fz_context *ctx, pdf_processor *proc)
 	while (pr->gtop)
 		pdf_grestore(ctx, pr);
 
-	while (pr->nest_depth > 0)
-	{
-		if (pr->nest_mark[pr->nest_depth-1] < 0)
-		{
-			/* It's a clip. */
-			fz_pop_clip(ctx, pr->dev);
-			pr->nest_mark[pr->nest_depth-1]++;
-			if (pr->nest_mark[pr->nest_depth-1] == 0)
-				pr->nest_depth--;
-		}
-		else
-		{
-			/* It's a layer. */
-			fz_end_layer(ctx, pr->dev);
-			pr->nest_depth--;
-		}
-	}
+	pop_nest_until_empty(ctx, pr);
 
 	if (pr->process_structure)
 		pop_structure_to(ctx, pr, NULL);
@@ -3385,9 +3454,9 @@ pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_mat
 
 	if (dev->begin_layer || dev->end_layer)
 		proc->process_layers = 1;
+
 	if (dev->begin_structure || dev->end_structure)
 		proc->process_structure = 1;
-
 
 	fz_try(ctx)
 	{
