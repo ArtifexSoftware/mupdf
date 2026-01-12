@@ -161,6 +161,9 @@ struct pdf_run_processor
 	 * position. */
 	int nest_depth;
 	int nest_mark[1024];
+
+	int process_layers;
+	int process_structure;
 };
 
 /* Forward definition */
@@ -190,7 +193,7 @@ flush_begin_layer(fz_context *ctx, pdf_run_processor *proc)
 {
 	begin_layer_stack *s;
 
-	if (proc->dev->begin_layer == NULL)
+	if (!proc->process_layers)
 		return;
 
 	while (proc->begin_layer)
@@ -229,7 +232,7 @@ static void nest_layer_clip(fz_context *ctx, pdf_run_processor *proc)
 static void
 do_end_layer(fz_context *ctx, pdf_run_processor *proc)
 {
-	if (proc->dev->begin_structure == NULL)
+	if (!proc->process_layers)
 		return;
 
 	if (proc->nest_depth > 0 && proc->nest_mark[proc->nest_depth-1] == proc->mc_depth)
@@ -1859,7 +1862,7 @@ pop_structure_to(fz_context *ctx, pdf_run_processor *proc, pdf_obj *common)
 static void
 pop_any_pending_mcid_changes(fz_context *ctx, pdf_run_processor *pr)
 {
-	if (pr->dev->begin_structure == NULL || pr->pending_mcid_pop == NULL)
+	if (!pr->process_structure || pr->pending_mcid_pop == NULL)
 		return;
 
 	pop_structure_to(ctx, pr, pr->pending_mcid_pop);
@@ -2096,8 +2099,8 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 		/* Check to see if val contains an MCID. */
 		mc_dict = lookup_mcid(ctx, proc, val);
 
-		/* No point in layer processing if we don't support begin_layer */
-		if (proc->dev->begin_layer != NULL)
+		/* No point in layer processing unnecessarily */
+		if (proc->process_layers)
 		{
 			/* Start any optional content layers. */
 			if (pdf_name_eq(ctx, tag, PDF_NAME(OC)))
@@ -2109,7 +2112,7 @@ push_marked_content(fz_context *ctx, pdf_run_processor *proc, const char *tagstr
 		}
 
 		/* Structure */
-		if (proc->dev->begin_structure != NULL && mc_dict && !proc->broken_struct_tree)
+		if (proc->process_structure && mc_dict && !proc->broken_struct_tree)
 		{
 			fz_try(ctx)
 				mc->structure_pushed = send_begin_structure(ctx, proc, mc_dict);
@@ -3167,7 +3170,7 @@ pdf_close_run_processor(fz_context *ctx, pdf_processor *proc)
 		}
 	}
 
-	if (pr->dev->begin_structure != NULL)
+	if (pr->process_structure)
 		pop_structure_to(ctx, pr, NULL);
 
 	clear_marked_content(ctx, pr);
@@ -3380,6 +3383,12 @@ pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_mat
 
 	proc->next_begin_layer = &proc->begin_layer;
 
+	if (dev->begin_layer || dev->end_layer)
+		proc->process_layers = 1;
+	if (dev->begin_structure || dev->end_structure)
+		proc->process_structure = 1;
+
+
 	fz_try(ctx)
 	{
 		proc->path = fz_new_path(ctx);
@@ -3425,7 +3434,7 @@ pdf_new_run_processor(fz_context *ctx, pdf_document *doc, fz_device *dev, fz_mat
 
 			/* Annotations and XObjects can be their own content items. We spot this by
 			 * the struct_parent looking up to be a singular object. */
-			if (proc->dev->begin_structure != NULL && struct_parent != -1 && struct_tree_root)
+			if (proc->process_structure && struct_parent != -1 && struct_tree_root)
 			{
 				pdf_obj *struct_obj = pdf_lookup_number(ctx, pdf_dict_get(ctx, struct_tree_root, PDF_NAME(ParentTree)), struct_parent);
 				if (pdf_is_dict(ctx, struct_obj))
