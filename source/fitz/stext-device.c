@@ -152,6 +152,9 @@ typedef struct
 	int rect_max;
 	int rect_len;
 	rect_details *rects;
+
+	fz_stext_block *lazy_vectors;
+	fz_stext_block *lazy_vectors_tail;
 } fz_stext_device;
 
 const char *fz_stext_options_usage =
@@ -323,9 +326,8 @@ add_block_to_page(fz_context *ctx, fz_stext_page *page, int type, int id)
 	}
 	else if (!page->last_block)
 	{
-		page->last_block = block;
-		if (!page->first_block)
-			page->first_block = block;
+		assert(!page->first_block);
+		page->first_block = page->last_block = block;
 	}
 	else
 	{
@@ -333,6 +335,59 @@ add_block_to_page(fz_context *ctx, fz_stext_page *page, int type, int id)
 		page->last_block = block;
 	}
 	return block;
+}
+
+static fz_stext_block *
+add_lazy_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, int id)
+{
+	fz_stext_block *block = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
+	block->bbox = fz_empty_rect;
+	block->prev = tdev->lazy_vectors_tail;
+	block->type = FZ_STEXT_BLOCK_VECTOR;
+	block->id = id;
+
+	if (tdev->lazy_vectors == NULL)
+		tdev->lazy_vectors = block;
+	else
+		tdev->lazy_vectors_tail->next = block;
+	tdev->lazy_vectors_tail = block;
+
+	return block;
+}
+
+static void
+flush_lazy_vectors(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev)
+{
+	if (tdev->lazy_vectors == NULL)
+		return;
+
+	if (page->last_struct)
+	{
+		if (page->last_struct->last_block)
+		{
+			page->last_struct->last_block->next = tdev->lazy_vectors;
+			tdev->lazy_vectors->prev = page->last_struct->last_block;
+			page->last_struct->last_block = tdev->lazy_vectors_tail;
+		}
+		else
+		{
+			page->last_struct->first_block = tdev->lazy_vectors;
+			page->last_struct->last_block = tdev->lazy_vectors_tail;
+		}
+	}
+	else if (!page->last_block)
+	{
+		page->first_block = tdev->lazy_vectors;
+		page->last_block = tdev->lazy_vectors_tail;
+	}
+	else
+	{
+		page->last_block->next = tdev->lazy_vectors;
+		tdev->lazy_vectors->prev = page->last_block;
+		page->last_block = tdev->lazy_vectors_tail;
+	}
+
+	tdev->lazy_vectors = tdev->lazy_vectors_tail = NULL;
 }
 
 static fz_stext_block *
@@ -839,6 +894,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	/* Start a new block (but only at the beginning of a text object) */
 	if (new_para || !cur_block)
 	{
+		flush_lazy_vectors(ctx, page, dev);
 		cur_block = add_text_block_to_page(ctx, page, dev->id);
 		cur_line = cur_block->u.t.last_line;
 	}
@@ -1470,8 +1526,10 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ct
 
 	/* If the alpha is less than 50% then it's probably a watermark or effect or something. Skip it. */
 	if (alpha >= 0.5f)
+	{
+		flush_lazy_vectors(ctx, tdev->page, tdev);
 		add_image_block_to_page(ctx, tdev->page, ctm, img, tdev->id);
-
+	}
 }
 
 static void
@@ -1813,6 +1871,8 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 	if ((tdev->flags & FZ_STEXT_DEHYPHENATE) && fz_is_unicode_hyphen(tdev->lastchar) && tdev->lastline != NULL)
 		tdev->lastline->flags |= FZ_STEXT_LINE_FLAGS_JOINED;
 
+	flush_lazy_vectors(ctx, page, tdev);
+
 	fixup_bboxes_and_bidi(ctx, page->first_block);
 
 	if (tdev->opts.flags & FZ_STEXT_COLLECT_STYLES)
@@ -2127,7 +2187,10 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect 
 			return;
 	}
 
-	b = add_block_to_page(ctx, page, FZ_STEXT_BLOCK_VECTOR, id);
+	if (tdev->flags & FZ_STEXT_LAZY_VECTORS)
+		b = add_lazy_vector(ctx, page, tdev, id);
+	else
+		b = add_block_to_page(ctx, page, FZ_STEXT_BLOCK_VECTOR, id);
 
 	b->bbox = bbox;
 	b->u.v.flags = flags;

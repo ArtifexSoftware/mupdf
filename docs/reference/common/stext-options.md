@@ -59,3 +59,6 @@ segment
 
 table-hunt
 : Hunt for tables within a (segmented) page
+
+lazy-vectors
+: Delay vectors in the extration slightly if they would otherwise split an extracted text line.
