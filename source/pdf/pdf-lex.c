@@ -25,6 +25,8 @@
 
 #include <string.h>
 
+#define PDF_MAX_NAME_LENGTH 4095
+
 #define IS_NUMBER \
 	'+':case'-':case'.':case'0':case'1':case'2':case'3':\
 	case'4':case'5':case'6':case'7':case'8':case'9'
@@ -268,17 +270,17 @@ static void
 lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 {
 	char *s = lb->scratch;
-	char *e = s + fz_minz(127, lb->size);
+	char *e = s + fz_minz(PDF_MAX_NAME_LENGTH, lb->size);
 	int c;
 
 	while (1)
 	{
 		if (s == e)
 		{
-			if (e - lb->scratch < 127)
+			if (e - lb->scratch < PDF_MAX_NAME_LENGTH)
 			{
 				s += pdf_lexbuf_grow(ctx, lb);
-				e = lb->scratch + fz_minz(127, lb->size);
+				e = lb->scratch + fz_minz(PDF_MAX_NAME_LENGTH, lb->size);
 			}
 			else
 			{
