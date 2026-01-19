@@ -627,6 +627,65 @@ typedef struct
 {
 	fz_rect bbox;
 	stext_pos *pos;
+	int num_lines;
+	float line_height;
+	int changed;
+	fz_stext_line *prev_line;
+} linegap_data;
+
+static int
+linegap_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, void *arg, float line_height)
+{
+	linegap_data *data = (linegap_data *)arg;
+	float diff;
+
+	if (data->num_lines == 0)
+		data->line_height = line_height;
+
+	diff = fabsf(data->line_height -  line_height);
+	/* 0.25f is an arbitrary threshold chosen to avoid small line difference sizes due to
+	 * sub/superscript etc. */
+	if (diff >= 0.25f * line_height)
+	{
+		if (data->line_height > line_height)
+		{
+			/* Looks like our line height got smaller. That suggests we
+			 * want to split before the previous line. */
+			(void)split_block_at_line(ctx, data->pos, block, data->prev_line);
+		}
+		else
+		{
+			/* Our line height got bigger. Break the block here! */
+			(void)split_block_at_line(ctx, data->pos, block, line);
+		}
+		data->changed = 1;
+		return 1;
+	}
+
+	data->num_lines++;
+	data->prev_line = line;
+
+	return 0;
+}
+
+static int
+break_paragraphs_by_line_gap(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
+{
+	indent_data data[1];
+
+	data->pos = pos;
+	data->bbox = bbox;
+	data->changed = 0;
+
+	line_walker(ctx, block, linegap_newline, NULL, NULL, data);
+
+	return data->changed;
+}
+
+typedef struct
+{
+	fz_rect bbox;
+	stext_pos *pos;
 	float line_gap;
 	float prev_line_gap;
 	int looking_for_space;
@@ -1542,6 +1601,19 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			fz_write_printf(ctx, fz_stddbg(ctx), "C");
 #endif
 
+			/* Now look at breaking based upon line gaps */
+			if (break_paragraphs_by_line_gap(ctx, &pos, block, bbox))
+				next_block = block->next; /* We split the block! */
+			if (block->type != FZ_STEXT_BLOCK_TEXT)
+			{
+				next_block = block;
+				break;
+			}
+
+#ifdef DEBUG_PARA_SPLITS
+			fz_write_printf(ctx, fz_stddbg(ctx), "D");
+#endif
+
 			/* Now we're going to look for unindented paragraphs. We do this by
 			 * considering if the first word on the next line would have fitted
 			 * into the space left at the end of the previous line. */
@@ -1554,7 +1626,7 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			}
 
 #ifdef DEBUG_PARA_SPLITS
-			fz_write_printf(ctx, fz_stddbg(ctx), "D");
+			fz_write_printf(ctx, fz_stddbg(ctx), "E");
 #endif
 
 			/* Now look to see if a block looks like fully justified text. If it
@@ -1569,7 +1641,7 @@ do_para_break(fz_context *ctx, fz_stext_page *page, fz_stext_block **pfirst, fz_
 			}
 
 #ifdef DEBUG_PARA_SPLITS
-			fz_write_printf(ctx, fz_stddbg(ctx), "E");
+			fz_write_printf(ctx, fz_stddbg(ctx), "F");
 #endif
 
 			/* Look for bulleted list items. */
