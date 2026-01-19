@@ -1,3 +1,4 @@
+#define TOFU_CJK_EXT 1 /* PyMuPDF override. */
 // Copyright (C) 2004-2025 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
