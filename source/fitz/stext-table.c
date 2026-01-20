@@ -3280,11 +3280,84 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 	return failed;
 }
 
+/* Is cell (x,y) plausibly part of a bordered cell (or 'super-cell'
+ * allowing for spanning)? */
+static int
+plausibly_bordered_spanned_cell(cells_t *cells, int x, int y)
+{
+	int minx, miny, maxx, maxy;
+
+	for (minx = x; minx >= 0; minx--)
+	{
+		cell_t *cell = get_cell(cells, minx, y);
+		if (cell->v_line)
+			break;
+	}
+	if (minx < 0)
+		return 0;
+	for (maxx = x+1; maxx < cells->w-1; maxx++)
+	{
+		cell_t *cell = get_cell(cells, maxx, y);
+		if (cell->v_line)
+			break;
+	}
+	if (maxx == cells->w)
+		return 0;
+	for (miny = y; miny >= 0; miny--)
+	{
+		cell_t *cell = get_cell(cells, x, miny);
+		if (cell->h_line)
+			break;
+	}
+	if (miny < 0)
+		return 0;
+	for (maxy = y+1; maxy < cells->h-1; maxy++)
+	{
+		cell_t *cell = get_cell(cells, x, maxy);
+		if (cell->h_line)
+			break;
+	}
+	if (maxy == cells->h)
+		return 0;
+
+	/* So we know have a plausible size for this large cell. */
+	/* Now check that borders exist everywhere we expect. */
+	for (x = minx; x < maxx; x++)
+	{
+		cell_t *cell = get_cell(cells, x, miny);
+		if (!cell->h_line)
+			return 0;
+		cell = get_cell(cells, x, maxy);
+		if (!cell->h_line)
+			return 0;
+	}
+	for (y = miny; y < maxy; y++)
+	{
+		cell_t *cell = get_cell(cells, minx, y);
+		if (!cell->v_line)
+			return 0;
+		cell = get_cell(cells, maxx, y);
+		if (!cell->v_line)
+			return 0;
+	}
+
+	/* And now nowhere we don't. */
+	for (y = miny+1; y < maxy-1; y++)
+		for (x = minx+1; x < maxx-1; x++)
+		{
+			cell_t *cell = get_cell(cells, x, y);
+			if (cell->h_line || cell->v_line)
+				return 0;
+		}
+
+	return 1;
+}
+
 /* The score for a table can be thought of as a judgement of
  * how 'awkward' a table is.
  *
- *  + Score 1 for every empty cell that doesn't have "supporting"
- *    borders.
+ *  + Score 1 for every empty cell that isn't part of a properly
+ *    bordered region, (or 0.5 if it's 'half' bordered)
  *  + Score 1 for every 'crossing' between cells.
  */
 static float
@@ -3312,14 +3385,27 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 			}
 			else if (cell->h_line && cell->v_line && right->v_line && below->h_line)
 			{
-				/* The cell is properly bordered. */
+				/* The cell is trivially bordered. */
+			}
+			else if (plausibly_bordered_spanned_cell(gd->cells, x, y))
+			{
+			}
+			else if (cell->h_line && below->h_line)
+			{
+				/* The cell is halfway bordered. */
+				score += 1;
+			}
+			else if (cell->v_line && right->v_line)
+			{
+				/* The cell is halfway bordered. */
+				score += 1;
 			}
 			else
-				score++;
+				score += 2;
 		}
 	}
 
-	return score / (float)num_cells;
+	return score / (float)num_cells / 2.0;
 }
 
 static int
