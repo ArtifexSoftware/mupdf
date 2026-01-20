@@ -1380,10 +1380,24 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 		else if (x <= pos->list[i].max)
 		{
 			/* We are in the range for the ith divider. */
-			if (i == 0 || i == pos->len-1)
+			if (i == 0)
 			{
-				/* Never move the outermost pos in, because they have been
-				 * calculated to be just big enough already. */
+				/* Never move the first pos down, because it's been
+				 * calculated to be just big enough already. But we might
+				 * have to split it. */
+				if (pos->list[0].pos + WIGGLE_ROOM < x)
+					goto split;
+
+				return 0;
+			}
+			if (i == pos->len-1)
+			{
+				/* Never move the last pos in, because it's been
+				 * calculated to be just big enough already. But we might
+				 * have to split it. */
+				if (pos->list[i].pos - WIGGLE_ROOM > x)
+					goto split;
+
 				return i;
 			}
 			if (pos->list[i].reinforcement == 0)
@@ -1404,6 +1418,7 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 				return i;
 			}
 			/* We need to split i into i and i+1. */
+split:
 			pos = split_grid_pos(ctx, gd, row, i, pos->list[i].pos > x);
 			if (pos->list[i].pos > x)
 			{
