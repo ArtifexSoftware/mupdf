@@ -671,7 +671,7 @@ linegap_newline(fz_context *ctx, fz_stext_block *block, fz_stext_line *line, voi
 static int
 break_paragraphs_by_line_gap(fz_context *ctx, stext_pos *pos, fz_stext_block *block, fz_rect bbox)
 {
-	indent_data data[1];
+	linegap_data data[1];
 
 	data->pos = pos;
 	data->bbox = bbox;
