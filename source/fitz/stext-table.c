@@ -3439,10 +3439,20 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 		{
 			if (block->u.s.down)
 			{
+				float my_subtable_score;
 				int background = 0;
-				num_subtables += do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds, subtable_score, score_threshold);
+				int st;
+#ifdef DEBUG_TABLE_STRUCTURE
+				printf("Looking for subtable\n");
+#endif
+				st = do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds, &my_subtable_score, score_threshold);
+				num_subtables += st;
+#ifdef DEBUG_TABLE_STRUCTURE
+				printf("subtable scored %g in %d subtables\n", my_subtable_score, st);
+#endif
 				if (background)
 					*has_background = 1;
+				*subtable_score += my_subtable_score;
 				count++;
 			}
 		}
@@ -3490,25 +3500,43 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 		{
 			/* Our table's score needs to be lower than the sum of the scores
 			 * for the subtables for us to accept it. */
-			int x, y;
+			int x, y, ditch;
 			if (score > *subtable_score)
+			{
+#ifdef DEBUG_TABLE_STRUCTURE
+				printf("Ignoring table as score (%g) > subtable_score (%g)\n", score, *subtable_score);
+#endif
 				break;
+			}
 			/* We are risking throwing away a table we've already found for this
 			 * one. Only do it if this one is really convincing. */
+			ditch = 0;
 			for (x = 0; x < gd.xpos->len; x++)
 				if (gd.xpos->list[x].uncertainty != 0)
-					break;
+					ditch = 1;
 			if (x != gd.xpos->len)
-				break;
+				ditch = 2;
 			for (y = 0; y < gd.ypos->len; y++)
 				if (gd.ypos->list[y].uncertainty != 0)
-					break;
+					ditch = 3;
 			if (y != gd.ypos->len)
+				ditch = 4;
+			if (ditch)
+			{
+#ifdef DEBUG_TABLE_STRUCTURE
+				printf("Ignoring table as it seems uncertain (%d).\n", ditch);
+#endif
 				break;
+			}
 		}
 
 		if (score > score_threshold)
+		{
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("Ignoring table as score (%g) > score_threshold (%g)\n", score, score_threshold);
+#endif
 			break;
+		}
 
 		*subtable_score = score;
 
