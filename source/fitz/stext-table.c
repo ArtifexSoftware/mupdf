@@ -2723,7 +2723,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 	r.y0 = gd->ypos->list[0].pos;
 	r.y1 = gd->ypos->list[h-1].pos;
 #ifdef DEBUG_TABLE_STRUCTURE
-	fz_print_stext_page_as_xml(ctx, fz_stddbg(ctx), page, 0);
+	fz_print_stext_page_as_xml(ctx, fz_stdout(ctx), page, 0);
 #endif
 	top.block = *first_block;
 	top.parent = parent;
