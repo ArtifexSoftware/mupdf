@@ -1458,43 +1458,71 @@ find_cell_r(fz_stext_grid_positions *pos, float x)
 	return -1;
 }
 
-/* Add a horizontal line. Return 1 if the line doesn't seem to be a border line.
- * Record which cells that was a border for. */
+/* Lookup the position of a horizontal line, reinforcing as appropriate. */
 static void
 add_h_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1)
+{
+	float y = (y0 + y1) / 2;
+	(void)find_grid_pos(ctx, gd, 1, y, 0);
+}
+
+/* Lookup the position of a vertical line, reinforcing as appropriate. */
+static void
+add_v_line(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0, float x1)
+{
+	float x = (x0 + x1) / 2;
+	(void)find_grid_pos(ctx, gd, 0, x, 0);
+}
+
+/* Lookup the position of a rectangle, reinforcing as appropriate. */
+static void
+add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1, int stroked)
+{
+	(void)find_grid_pos(ctx, gd, 0, x0, 0);
+	(void)find_grid_pos(ctx, gd, 0, x1, 0);
+	(void)find_grid_pos(ctx, gd, 1, y0, 0);
+	(void)find_grid_pos(ctx, gd, 1, y1, 0);
+}
+
+/* Add a horizontal line (with no reinforcement).
+ * Record which cells that was a border for. */
+static void
+add_h_line2(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1)
 {
 	int start = find_grid_pos(ctx, gd, 0, x0, 1);
 	int end = find_grid_pos(ctx, gd, 0, x1, 1);
 	float y = (y0 + y1) / 2;
-	int yidx = find_grid_pos(ctx, gd, 1, y, 0);
+	int yidx = find_grid_pos(ctx, gd, 1, y, 1);
 	int i;
 
 	for (i = start; i < end; i++)
 		get_cell(gd->cells, i, yidx)->h_line++;
 }
 
-/* Add a vertical line. Return 1 if the line doesn't seem to be a border line.
+/* Add a vertical line (with no reinforcement).
  * Record which cells that was a border for. */
 static void
-add_v_line(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0, float x1)
+add_v_line2(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0, float x1)
 {
 	int start = find_grid_pos(ctx, gd, 1, y0, 1);
 	int end = find_grid_pos(ctx, gd, 1, y1, 1);
 	float x = (x0 + x1) / 2;
-	int xidx = find_grid_pos(ctx, gd, 0, x, 0);
+	int xidx = find_grid_pos(ctx, gd, 0, x, 1);
 	int i;
 
 	for (i = start; i < end; i++)
 		get_cell(gd->cells, xidx, i)->v_line++;
 }
 
+/* Add a rectangle (with no reinforcement).
+ * Record which cells that was a border for. */
 static void
-add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1, int stroked)
+add_hv_line2(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1, int stroked)
 {
-	int ix0 = find_grid_pos(ctx, gd, 0, x0, 0);
-	int ix1 = find_grid_pos(ctx, gd, 0, x1, 0);
-	int iy0 = find_grid_pos(ctx, gd, 1, y0, 0);
-	int iy1 = find_grid_pos(ctx, gd, 1, y1, 0);
+	int ix0 = find_grid_pos(ctx, gd, 0, x0, 1);
+	int ix1 = find_grid_pos(ctx, gd, 0, x1, 1);
+	int iy0 = find_grid_pos(ctx, gd, 1, y0, 1);
+	int iy1 = find_grid_pos(ctx, gd, 1, y1, 1);
 	int i;
 
 	if (stroked)
@@ -1710,6 +1738,52 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			{
 				/* Rectangle */
 				(void) add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1, block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED);
+			}
+		}
+	}
+}
+
+static void
+walk_grid_lines2(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
+{
+	for (; block != NULL; block = block->next)
+	{
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			if (block->u.s.down)
+				walk_grid_lines2(ctx, gd, block->u.s.down->first_block);
+			continue;
+		}
+		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
+		{
+			fz_rect r;
+			float w, h;
+
+			/* Only process rectangle blocks. */
+			if ((block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
+				continue;
+
+			r = fz_collate_small_vector_run(&block);
+			r = fz_intersect_rect(r, gd->bounds);
+			if (!fz_is_valid_rect(r))
+				continue;
+
+			w = r.x1 - r.x0;
+			h = r.y1 - r.y0;
+			if (w > h && h < 2)
+			{
+				/* Thin, wide line */
+				(void) add_h_line2(ctx, gd, r.x0, r.x1, r.y0, r.y1);
+			}
+			else if (w < h && w < 2)
+			{
+				/* Thin, wide line */
+				(void) add_v_line2(ctx, gd, r.y0, r.y1, r.x0, r.x1);
+			}
+			else
+			{
+				/* Rectangle */
+				(void) add_hv_line2(ctx, gd, r.x0, r.x1, r.y0, r.y1, block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED);
 			}
 		}
 	}
@@ -3151,8 +3225,11 @@ find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *
 			gd->has_background = 1;
 
 		/* Walk the content looking for grid lines. These
-		 * lines refine our positions. */
+		 * lines refine our positions. 2 passes. First pass
+		 * ensures that all the lines are in the grid. Second
+		 * pass then marks them. */
 		walk_grid_lines(ctx, gd, content);
+		walk_grid_lines2(ctx, gd, content);
 		/* Now, we walk the content looking for content that crosses
 		 * these grid lines. This allows us to spot spanned cells. */
 		if (calculate_spanned_content(ctx, gd, content))
