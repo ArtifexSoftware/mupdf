@@ -101,7 +101,7 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_next_dfs(fz_stext_page
 	{
 		pos = fz_stext_page_block_iterator_next(pos);
 
-		if (pos.block)
+		while (pos.block)
 		{
 			if (pos.block->type != FZ_STEXT_BLOCK_STRUCT)
 				return pos;
@@ -109,7 +109,6 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_next_dfs(fz_stext_page
 			/* Move down. And loop. */
 			pos.parent = pos.block->u.s.down;
 			pos.block = pos.block->u.s.down->first_block;
-			continue;
 		}
 
 		/* We've hit the end of the row. Move up. */
