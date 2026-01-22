@@ -1182,7 +1182,53 @@ typedef struct
 	int combine_image;
 } fz_image_raft_options;
 
-void fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_options *options);
+void
+fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_options *options);
 
+/*
+	Flotilla/Raft handling
+
+	We call any 2-dimensional area that's covered by (some type of) content
+	a raft. i.e. it's made up of several distinct objects ("planks") lashed
+	together into something that covers a large flat area (a "raft").
+
+	The set of all such non-overlapping rafts on a page can be called a
+	"flotilla".
+
+	For instance, the borders and/or backgrounds from a table would form a
+	raft behind the text content. And the boundaries of that raft might
+	help us distinguish that table from an adjacent table on a different
+	raft.
+
+	While we could theoretically make rafts from anything, images and
+	vectors seem like the best bet. We could make rafts from mixed images
+	and vectors, but to start with, I think we'll get best results from
+	images and vectors separately.
+*/
+typedef struct fz_flotilla fz_flotilla;
+
+/*
+	Construct a flotilla from all the (rectangular) vectors on a page.
+*/
+fz_flotilla *
+fz_new_flotilla_from_stext_page_vectors(fz_context *ctx, fz_stext_page *page);
+
+/*
+	Drop the flotilla.
+*/
+void
+fz_drop_flotilla(fz_context *ctx, fz_flotilla *f);
+
+/*
+	How many rafts in this flotilla?
+*/
+int
+fz_flotilla_size(fz_context *ctx, fz_flotilla *flot);
+
+/*
+	Return the bounds of the ith raft in the flotilla.
+*/
+fz_rect
+fz_flotilla_raft(fz_context *ctx, fz_flotilla *flot, int i);
 
 #endif
