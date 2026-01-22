@@ -236,3 +236,227 @@ fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_option
 		iter.block->u.i.transform = inv;
 	}
 }
+
+/* A bunch of rafts makes a flotilla. */
+typedef struct
+{
+	fz_rect area;
+} fz_raft;
+
+struct fz_flotilla
+{
+	int len;
+	int max;
+	fz_raft *rafts;
+};
+
+fz_flotilla *
+fz_new_flotilla(fz_context *ctx)
+{
+	return fz_malloc_struct(ctx, fz_flotilla);
+}
+
+void
+fz_drop_flotilla(fz_context *ctx, fz_flotilla *f)
+{
+	if (!f)
+		return;
+	fz_free(ctx, f->rafts);
+	fz_free(ctx, f);
+}
+
+static void
+add_raft_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_raft r)
+{
+	if (f->len == f->max)
+	{
+		int newmax = f->max * 2;
+		if (newmax == 0)
+			newmax = 8;
+		f->rafts = (fz_raft *) fz_realloc(ctx, f->rafts, sizeof(f->rafts[0]) * newmax);
+		f->max = newmax;
+	}
+
+	f->rafts[f->len++] = r;
+}
+
+/* Without FUDGE this would be equivalent to:
+ * fz_is_valid_rect(fz_intersect_rect(r, s))
+ * but faster.
+ *
+ * With FUDGE it is slightly forgiving to allow for FP inaccuracies.
+ */
+ #define FUDGE 0.1f
+static int
+overlap_or_abut(fz_rect r, fz_rect s)
+{
+	return (r.x1 >= s.x0 - FUDGE && r.x0 <= s.x1 + FUDGE && r.y1 >= s.y0 - FUDGE && r.y0 <= s.y1 + FUDGE);
+}
+
+#ifdef DEBUG_RAFT
+static void
+verify(fz_context *ctx, fz_flotilla *f)
+{
+	int i, j;
+
+	printf("Dump: len=%d\n", f->len);
+	for (i = 0; i < f->len; i++)
+	{
+		printf("%d: %g %g %g %g\n", i, f->rafts[i].area.x0, f->rafts[i].area.y0, f->rafts[i].area.x1, f->rafts[i].area.y1);
+	}
+
+	for (i = 0; i < f->len-1; i++)
+	{
+		for (j = i+1; j < f->len; j++)
+		{
+			if (overlap_or_abut(f->rafts[i].area, f->rafts[j].area))
+			{
+				printf("%d and %d overlap!\n", i, j);
+				assert(i == j);
+			}
+		}
+	}
+}
+#endif
+
+static void
+add_plank_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_rect rect)
+{
+	int i, j;
+
+#ifdef DEBUG_RAFT
+	verify(ctx, f);
+
+	printf("%g %g %g %g\n", rect.x0, rect.y0, rect.x1, rect.y1);
+#endif
+
+	/* Does the plank extend any of the existing rafts? */
+	for (i = f->len-1; i >= 0; i--)
+	{
+		if (overlap_or_abut(rect, f->rafts[i].area))
+		{
+			/* We overlap. */
+			fz_rect r = fz_union_rect(f->rafts[i].area, rect);
+			if (r.x0 == f->rafts[i].area.x0 &&
+				r.y0 == f->rafts[i].area.y0 &&
+				r.x1 == f->rafts[i].area.x1 &&
+				r.y1 == f->rafts[i].area.y1)
+			{
+				/* We were entirely contained. Nothing more to do. */
+#ifdef DEBUG_RAFT
+				printf("Contained\n");
+#endif
+				return;
+			}
+			f->rafts[i].area = r;
+#ifdef DEBUG_RAFT
+			printf("Overlap %d -> %g %g %g %g\n", i, r.x0, r.y0, r.x1, r.y1);
+#endif
+			break;
+		}
+	}
+
+	if (i >= 0)
+	{
+		/* We've extended raft[i]. We now need to check if any other raft overlaps
+		 * with the extended one. */
+
+		/* But our new one might have bridged between two (or more!) existing rafts. */
+		/* Unfortunately, if we bridge between 2 rafts, that new larger raft might now
+		 * intersect with more rafts. So we need to repeatedly scan. */
+		while (1)
+		{
+			int changed = 0;
+
+			for (j = f->len-1; j > i; j--)
+			{
+				if (overlap_or_abut(f->rafts[j].area, f->rafts[i].area))
+				{
+					/* Update raft i to be the union of the two. */
+					f->rafts[i].area = fz_union_rect(f->rafts[j].area, f->rafts[i].area);
+#ifdef DEBUG_RAFT
+					printf("Bridge %d -> %g %g %g %g\n", j, f->rafts[i].area.x0, f->rafts[i].area.y0, f->rafts[i].area.x1, f->rafts[i].area.y1);
+#endif
+					/* Shorten the list by moving the end one down to be the ith one. */
+					f->len--;
+					if (j != f->len)
+					{
+						f->rafts[j] = f->rafts[f->len];
+					}
+					changed = 1;
+				}
+			}
+
+			for (j = i-1; j >= 0; j--)
+			{
+				if (overlap_or_abut(f->rafts[j].area, f->rafts[i].area))
+				{
+					/* Update raft j to be the union of the two. */
+					f->rafts[j].area = fz_union_rect(f->rafts[j].area, f->rafts[i].area);
+#ifdef DEBUG_RAFT
+					printf("Bridge %d -> %g %g %g %g\n", j, f->rafts[j].area.x0, f->rafts[j].area.y0, f->rafts[j].area.x1, f->rafts[j].area.y1);
+#endif
+					/* Shorten the list by moving the end one down to be the ith one. */
+					f->len--;
+					if (i != f->len)
+					{
+						f->rafts[i] = f->rafts[f->len];
+						i = j;
+					}
+					changed = 1;
+				}
+			}
+
+			if (!changed)
+				break;
+		}
+	}
+	else
+	{
+		/* This didn't overlap anything else. Make a new raft. */
+		fz_raft raft = { rect };
+		add_raft_to_flotilla(ctx, f, raft);
+	}
+}
+
+fz_flotilla *
+fz_new_flotilla_from_stext_page_vectors(fz_context *ctx, fz_stext_page *page)
+{
+	fz_flotilla *flot = fz_new_flotilla(ctx);
+	fz_stext_page_block_iterator it;
+
+	fz_try(ctx)
+	{
+		for (it = fz_stext_page_block_iterator_begin_dfs(page);
+			!fz_stext_page_block_iterator_eod_dfs(it);
+			it = fz_stext_page_block_iterator_next_dfs(it))
+		{
+			if (it.block->type != FZ_STEXT_BLOCK_VECTOR)
+				continue;
+			if (!(it.block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE))
+				continue;
+			add_plank_to_flotilla(ctx, flot, it.block->bbox);
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_flotilla(ctx, flot);
+		fz_rethrow(ctx);
+	}
+
+	return flot;
+}
+
+int
+fz_flotilla_size(fz_context *ctx, fz_flotilla *flot)
+{
+	return flot ? flot->len : 0;
+}
+
+fz_rect
+fz_flotilla_raft_area(fz_context *ctx, fz_flotilla *flot, int i)
+{
+	if (flot == NULL || i < 0 || i >= flot->len)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "out of range raft in flotilla");
+	return flot->rafts[i].area;
+}
