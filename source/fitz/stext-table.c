@@ -3435,7 +3435,7 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 	{
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
-			if (block->u.s.down)
+			if (block->u.s.down && fz_is_valid_rect(fz_intersect_rect(top_bounds, block->bbox)))
 			{
 				float my_subtable_score;
 				int background = 0;
@@ -3482,6 +3482,8 @@ do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int
 	{
 		/* Now see whether the content looks like tables. */
 		fz_rect bounds = walk_to_find_bounds(ctx, *first_block);
+
+		bounds = fz_intersect_rect(bounds, top_bounds);
 
 		if (find_table_within_bounds(ctx, &gd, *first_block, bounds))
 			break;
