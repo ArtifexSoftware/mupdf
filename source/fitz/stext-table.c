@@ -2721,6 +2721,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 	r.y0 = gd->ypos->list[0].pos;
 	r.y1 = gd->ypos->list[h-1].pos;
 #ifdef DEBUG_TABLE_STRUCTURE
+	printf("Region %g %g %g %g\n", r.x0, r.y0, r.x1, r.y1);
 	fz_print_stext_page_as_xml(ctx, fz_stdout(ctx), page, 0);
 #endif
 	top.block = *first_block;
@@ -3594,14 +3595,39 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 {
 	int has_background = 0;
 	float score;
+	fz_flotilla *flot;
+	int found = 0;
 
 	if (page == NULL)
 		return;
 
 	assert(verify_stext(ctx, page, NULL));
 
-	/* FIXME: Nasty heuristic threshold. */
-	do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score, 0.3f);
+	flot = fz_new_flotilla_from_stext_page_vectors(ctx, page);
+	fz_try(ctx)
+	{
+		int i;
+		int n = fz_flotilla_size(ctx, flot);
+
+		for (i = 0; i < n; i++)
+		{
+			fz_rect r = fz_flotilla_raft_area(ctx, flot, i);
+
+			/* FIXME: Nasty heuristic threshold. */
+			found += do_table_hunt(ctx, page, NULL, &has_background, r, &score, 0.8f);
+		}
+	}
+	fz_always(ctx)
+		fz_drop_flotilla(ctx, flot);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	/* If we can't find any that way, fall back to hunting within segments. */
+	if (found == 0)
+	{
+		/* FIXME: Nasty heuristic threshold. */
+		do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score, 0.3f);
+	}
 
 	assert(verify_stext(ctx, page, NULL));
 }
