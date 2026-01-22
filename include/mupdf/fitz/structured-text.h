@@ -1229,6 +1229,6 @@ fz_flotilla_size(fz_context *ctx, fz_flotilla *flot);
 	Return the bounds of the ith raft in the flotilla.
 */
 fz_rect
-fz_flotilla_raft(fz_context *ctx, fz_flotilla *flot, int i);
+fz_flotilla_raft_area(fz_context *ctx, fz_flotilla *flot, int i);
 
 #endif
