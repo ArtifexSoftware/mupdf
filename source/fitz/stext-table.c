@@ -1741,7 +1741,7 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			h = r.y1 - r.y0;
 			if (w > h && h < 2)
 			{
-				/* Thin, wide line */
+				/* Thin, tall line */
 				(void) add_h_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 			else if (w < h && w < 2)
