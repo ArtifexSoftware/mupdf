@@ -676,6 +676,8 @@ break_paragraphs_by_line_gap(fz_context *ctx, stext_pos *pos, fz_stext_block *bl
 	data->pos = pos;
 	data->bbox = bbox;
 	data->changed = 0;
+	data->prev_line = NULL;
+	data->num_lines = 0;
 
 	line_walker(ctx, block, linegap_newline, NULL, NULL, data);
 
