@@ -1541,8 +1541,15 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, fz_matrix ct
 	/* If the alpha is less than 50% then it's probably a watermark or effect or something. Skip it. */
 	if (alpha >= 0.5f)
 	{
+		fz_stext_block *block;
 		flush_lazy_vectors(ctx, tdev->page, tdev);
-		add_image_block_to_page(ctx, tdev->page, ctm, img, tdev->id);
+		block = add_image_block_to_page(ctx, tdev->page, ctm, img, tdev->id);
+		if (tdev->opts.flags & FZ_STEXT_CLIP)
+		{
+			fz_rect clip = fz_device_current_scissor(ctx, dev);
+			clip = fz_intersect_rect(clip, tdev->page->mediabox);
+			block->bbox = fz_intersect_rect(block->bbox, clip);
+		}
 	}
 }
 

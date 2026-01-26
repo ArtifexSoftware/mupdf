@@ -127,10 +127,10 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 
 	FZ_STEXT_CLIP: If this option is set, characters that would be entirely
 	clipped away by the current clipping path (or, more accurate, the smallest
-	bbox that contains the current clipping path) will be ignored. The
-	clip path is guaranteed to be smaller then the page mediabox, hence
-	this option subsumes an older, now deprecated, FZ_STEXT_MEDIABOX_CLIP
-	option.
+	bbox that contains the current clipping path) will be ignored. The bboxes
+	of images will be similarly reduced in size. The clip path is guaranteed
+	to be smaller then the page mediabox, hence this option subsumes an older,
+	now deprecated, FZ_STEXT_MEDIABOX_CLIP option.
 
 	FZ_STEXT_CLIP_RECT: If this option is set, characters that would be entirely
 	clipped away by the specified 'clip' rectangle in the options struct
