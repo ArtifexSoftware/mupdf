@@ -145,7 +145,7 @@ populate_destination(fz_context *ctx, pdf_document *doc, pdf_obj *dest, int is_r
 		rect.y0 = arg2v;
 		rect.x1 = arg3v;
 		rect.y1 = arg4v;
-		fz_transform_rect(rect, ctm);
+		rect = fz_transform_rect(rect, ctm);
 		destination->x = fz_min(rect.x0, rect.x1);
 		destination->y = fz_min(rect.y0, rect.y1);
 		destination->w = fz_abs(rect.x1 - rect.x0);
@@ -1406,7 +1406,7 @@ pdf_new_dest_from_link(fz_context *ctx, pdf_document *doc, const char *uri, int 
 				r.y0 = val.y;
 				r.x1 = val.x + val.w;
 				r.y1 = val.y + val.h;
-				fz_transform_rect(r, invctm);
+				r = fz_transform_rect(r, invctm);
 				pdf_array_push(ctx, dest, PDF_NAME(FitR));
 				pdf_array_push_real(ctx, dest, r.x0);
 				pdf_array_push_real(ctx, dest, r.y0);
