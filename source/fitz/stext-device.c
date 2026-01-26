@@ -725,12 +725,12 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		if (glyph == -1)
 		{
 			if (dev->last_was_fake_bold)
-				goto move_pen_and_exit;
+				return;
 		}
 		else if (check_for_fake_bold(ctx, page->first_block, font, c, p, size, flags))
 		{
 			dev->last_was_fake_bold = 1;
-			goto move_pen_and_exit;
+			return;
 		}
 		dev->last_was_fake_bold = 0;
 	}
@@ -915,7 +915,6 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &p, &q, bidi, dev->color, 0, flags, dev->flags);
 
-move_pen_and_exit:
 	dev->lastchar = c;
 	dev->lastbidi = bidi;
 	dev->lastline = cur_line;
