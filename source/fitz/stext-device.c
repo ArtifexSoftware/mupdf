@@ -1982,6 +1982,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_ACCURATE_BBOXES;
 	if (fz_has_option(ctx, string, "vectors", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_COLLECT_VECTORS;
+	if (fz_has_option(ctx, string, "lazy-vectors", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_LAZY_VECTORS;
 	if (fz_has_option(ctx, string, "ignore-actualtext", & val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_IGNORE_ACTUALTEXT;
 	if (fz_has_option(ctx, string, "segment", &val) && fz_option_eq(val, "yes"))
