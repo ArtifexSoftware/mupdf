@@ -950,15 +950,11 @@ pfm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 				for (x = 0; x < w; x++)
 					for (k = 0; k < n; k++)
 					{
-						uint32_t u;
 						float f;
-
 						if (pnm->endian == ENDIAN_LITTLE)
-							u = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+							f = fz_unpack_float_le(p);
 						else
-							u = p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24);
-						memcpy(&f, &u, sizeof(float));
-
+							f = fz_unpack_float(p);
 						*sample++ = f / pnm->scale;
 						p += sizeof(float);
 					}

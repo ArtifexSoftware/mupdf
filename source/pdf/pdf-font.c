@@ -537,8 +537,8 @@ pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *fontn
 	}
 }
 
-#define TTF_U16(p) ((uint16_t) ((p)[0]<<8) | ((p)[1]))
-#define TTF_U32(p) ((uint32_t) ((p)[0]<<24) | ((p)[1]<<16) | ((p)[2]<<8) | ((p)[3]))
+#define TTF_U16(p) fz_unpack_uint16(p)
+#define TTF_U32(p) fz_unpack_uint32(p)
 
 static fz_buffer *
 pdf_extract_cff_subtable(fz_context *ctx, unsigned char *data, size_t size)

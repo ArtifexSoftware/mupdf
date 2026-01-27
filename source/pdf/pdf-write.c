@@ -1354,10 +1354,7 @@ static void writexrefstreamsubsect(fz_context *ctx, pdf_document *doc, pdf_write
 			f3 = opts->gen_list[num];
 		}
 		fz_append_byte(ctx, fzbuf, f1);
-		fz_append_byte(ctx, fzbuf, f2>>24);
-		fz_append_byte(ctx, fzbuf, f2>>16);
-		fz_append_byte(ctx, fzbuf, f2>>8);
-		fz_append_byte(ctx, fzbuf, f2);
+		fz_append_int32_be(ctx, fzbuf, f2);
 		fz_append_byte(ctx, fzbuf, f3);
 	}
 }

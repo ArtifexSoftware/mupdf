@@ -196,24 +196,9 @@ static const uint8_t standard_encoding[256] =
 
 /* Simple functions for bigendian fetching/putting */
 
-static uint32_t get16(const uint8_t *d)
-{
-	return (d[0]<<8)|d[1];
-}
-
-static void put32(uint8_t *d, uint32_t v)
-{
-	d[0] = v>>24;
-	d[1] = v>>16;
-	d[2] = v>>8;
-	d[3] = v;
-}
-
-static void put16(uint8_t *d, uint32_t v)
-{
-	d[0] = v>>8;
-	d[1] = v;
-}
+#define get16 fz_unpack_uint16
+#define put16 fz_pack_uint16
+#define put32 fz_pack_uint32
 
 static void put8(uint8_t *d, uint32_t v)
 {
@@ -462,7 +447,7 @@ dict_get_byte(fz_context *ctx, dict_iterator *di)
 static dict_arg
 dict_get_arg(fz_context *ctx, dict_iterator *di)
 {
-	uint8_t b0, b1, b2, b3, b4;
+	uint32_t b0, b1, b2, b3, b4;
 	dict_arg d;
 
 	b0 = dict_get_byte(ctx, di);
@@ -705,16 +690,12 @@ dict_write_arg(fz_context *ctx, fz_output *out, dict_arg d)
 	else if (-32768 <= si && si <= 32767)
 	{
 		fz_write_byte(ctx, out, 28);
-		fz_write_byte(ctx, out, si>>8);
-		fz_write_byte(ctx, out, si);
+		fz_write_uint16_be(ctx, out, si);
 	}
 	else
 	{
 		fz_write_byte(ctx, out, 29);
-		fz_write_byte(ctx, out, si>>24);
-		fz_write_byte(ctx, out, si>>16);
-		fz_write_byte(ctx, out, si>>8);
-		fz_write_byte(ctx, out, si);
+		fz_write_uint32_be(ctx, out, si);
 	}
 }
 
@@ -1251,7 +1232,7 @@ overflow:
 				break;
 			}
 			PUSH(1);
-			stack[sp-1] = ((pc[0]<<24) | (pc[1]<<16) | (pc[2]<<8) | pc[3]) / 65536.0;
+			stack[sp-1] = fz_unpack_uint32(pc) / 65536.0;
 			pc += 4;
 			break;
 		case 247: case 248: case 249: case 250: /* number */
@@ -2047,18 +2028,14 @@ make_new_private_dict(fz_context *ctx, cff_t *cff)
 				/* We can code it with a 3 byte encoding */
 				len += 4;
 				fz_write_byte(ctx, out, 28);
-				fz_write_byte(ctx, out, len>>8);
-				fz_write_byte(ctx, out, len);
+				fz_write_uint16_be(ctx, out, len);
 			}
 			else
 			{
 				/* We can code it with a 5 byte encoding */
 				len += 5;
 				fz_write_byte(ctx, out, 29);
-				fz_write_byte(ctx, out, len>>24);
-				fz_write_byte(ctx, out, len>>16);
-				fz_write_byte(ctx, out, len>>8);
-				fz_write_byte(ctx, out, len);
+				fz_write_uint32_be(ctx, out, len);
 			}
 			fz_write_byte(ctx, out, DICT_OP_Subrs);
 		}
@@ -2185,10 +2162,7 @@ read_fdarray_and_privates(fz_context *ctx, cff_t *cff)
 					/* We can code it with a 5 byte encoding */
 					len += 5;
 					fz_write_byte(ctx, out, 29);
-					fz_write_byte(ctx, out, len>>24);
-					fz_write_byte(ctx, out, len>>16);
-					fz_write_byte(ctx, out, len>>8);
-					fz_write_byte(ctx, out, len);
+					fz_write_uint32_be(ctx, out, len);
 				}
 				fz_write_byte(ctx, out, DICT_OP_Subrs);
 			}

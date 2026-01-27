@@ -866,111 +866,53 @@ fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image)
 static uint32_t read16(const uint8_t *d, size_t *pos, size_t len, int order)
 {
 	size_t p = *pos;
-	uint32_t v;
-
 	if (p+1 >= len)
-	{
-		*pos = len;
-		return 0;
-	}
-
+		return *pos = len, 0;
 	if (order)
-	{
-		v = d[p++]<<8; /* BE */
-		v |= d[p++];
-	}
+		return *pos = p+2, fz_unpack_uint16(d+p);
 	else
-	{
-		v = d[p++]; /* LE */
-		v |= d[p++]<<8;
-	}
-
-	*pos = p;
-
-	return v;
+		return *pos = p+2, fz_unpack_uint16_le(d+p);
 }
 
 static uint32_t read32(const uint8_t *d, size_t *pos, size_t len, int order)
 {
 	size_t p = *pos;
-	uint32_t v;
-
 	if (p+3 >= len)
-	{
-		*pos = len;
-		return 0;
-	}
-
+		return *pos = len, 0;
 	if (order)
-	{
-		v = d[p++]<<24; /* BE */
-		v |= d[p++]<<16;
-		v |= d[p++]<<8;
-		v |= d[p++];
-	}
+		return *pos = p+4, fz_unpack_uint32(d+p);
 	else
-	{
-		v = d[p++];
-		v |= d[p++]<<8; /* LE */
-		v |= d[p++]<<16;
-		v |= d[p++]<<24;
-	}
-
-	*pos = p;
-
-	return v;
+		return *pos = p+4, fz_unpack_uint32_le(d+p);
 }
 
 static void write16(uint8_t *d, size_t *pos, size_t len, int order, uint32_t v)
 {
 	size_t p = *pos;
-
 	if (p+1 >= len)
 	{
 		*pos = len;
 		return;
 	}
-
 	if (order)
-	{
-		d[p++] = (v>>8);
-		d[p++] = v;
-	}
+		fz_pack_uint16(d+p, v);
 	else
-	{
-		d[p++] = v;
-		d[p++] = (v>>8);
-	}
-
-	*pos = p;
+		fz_pack_uint16_le(d+p, v);
+	*pos = p+2;
 }
 
-static void write32( uint8_t *d, size_t *pos, size_t len, int order, uint32_t v)
+static void write32(uint8_t *d, size_t *pos, size_t len, int order, uint32_t v)
 {
 	size_t p = *pos;
-
 	if (p+3 >= len)
 	{
 		*pos = len;
 		return;
 	}
-
 	if (order)
-	{
-		d[p++] = (v>>24);
-		d[p++] = (v>>16);
-		d[p++] = (v>>8);
-		d[p++] = v;
-	}
+		fz_pack_uint32(d+p, v);
 	else
-	{
-		d[p++] = v;
-		d[p++] = (v>>8);
-		d[p++] = (v>>16);
-		d[p++] = (v>>24);
-	}
-
-	*pos = p;
+		fz_pack_uint32_le(d+p, v);
+	*pos = p+4;
 }
 
 fz_buffer *

@@ -344,7 +344,7 @@ struct jbig2_segment_header {
 /* coverity[-tainted_data_return] */
 static uint32_t getu32(const unsigned char *data)
 {
-	return ((uint32_t)data[0]<<24) | ((uint32_t)data[1]<<16) | ((uint32_t)data[2]<<8) | (uint32_t)data[3];
+	return fz_unpack_uint32(data);
 }
 
 static size_t

@@ -792,13 +792,13 @@ static inline unsigned readshort(struct tiff *tiff)
 
 static inline unsigned tiff_readlong(struct tiff *tiff)
 {
-	int a = tiff_readbyte(tiff);
-	int b = tiff_readbyte(tiff);
-	int c = tiff_readbyte(tiff);
-	int d = tiff_readbyte(tiff);
+	unsigned int a = tiff_readbyte(tiff);
+	unsigned int b = tiff_readbyte(tiff);
+	unsigned int c = tiff_readbyte(tiff);
+	unsigned int d = tiff_readbyte(tiff);
 	if (tiff->order == TII)
-		return (unsigned)((d << 24) | (c << 16) | (b << 8) | a);
-	return (unsigned)((a << 24) | (b << 16) | (c << 8) | d);
+		return (d << 24) | (c << 16) | (b << 8) | a;
+	return (a << 24) | (b << 16) | (c << 8) | d;
 }
 
 static void

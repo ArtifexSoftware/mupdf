@@ -391,7 +391,7 @@ fz_append_rune(fz_context *ctx, fz_buffer *buf, int c)
 }
 
 void
-fz_append_int32_be(fz_context *ctx, fz_buffer *buf, int x)
+fz_append_uint32_be(fz_context *ctx, fz_buffer *buf, uint32_t x)
 {
 	fz_append_byte(ctx, buf, (x >> 24) & 0xFF);
 	fz_append_byte(ctx, buf, (x >> 16) & 0xFF);
@@ -400,14 +400,14 @@ fz_append_int32_be(fz_context *ctx, fz_buffer *buf, int x)
 }
 
 void
-fz_append_int16_be(fz_context *ctx, fz_buffer *buf, int x)
+fz_append_uint16_be(fz_context *ctx, fz_buffer *buf, uint16_t x)
 {
 	fz_append_byte(ctx, buf, (x >> 8) & 0xFF);
 	fz_append_byte(ctx, buf, (x) & 0xFF);
 }
 
 void
-fz_append_int32_le(fz_context *ctx, fz_buffer *buf, int x)
+fz_append_uint32_le(fz_context *ctx, fz_buffer *buf, uint32_t x)
 {
 	fz_append_byte(ctx, buf, (x)&0xFF);
 	fz_append_byte(ctx, buf, (x>>8)&0xFF);
@@ -416,10 +416,34 @@ fz_append_int32_le(fz_context *ctx, fz_buffer *buf, int x)
 }
 
 void
-fz_append_int16_le(fz_context *ctx, fz_buffer *buf, int x)
+fz_append_uint16_le(fz_context *ctx, fz_buffer *buf, uint16_t x)
 {
 	fz_append_byte(ctx, buf, (x)&0xFF);
 	fz_append_byte(ctx, buf, (x>>8)&0xFF);
+}
+
+void
+fz_append_int32_be(fz_context *ctx, fz_buffer *buf, int32_t x)
+{
+	fz_append_uint32_be(ctx, buf, x);
+}
+
+void
+fz_append_int16_be(fz_context *ctx, fz_buffer *buf, int16_t x)
+{
+	fz_append_uint16_be(ctx, buf, x);
+}
+
+void
+fz_append_int32_le(fz_context *ctx, fz_buffer *buf, int32_t x)
+{
+	fz_append_uint32_le(ctx, buf, x);
+}
+
+void
+fz_append_int16_le(fz_context *ctx, fz_buffer *buf, int16_t x)
+{
+	fz_append_uint16_le(ctx, buf, x);
 }
 
 void

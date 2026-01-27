@@ -359,19 +359,21 @@ int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm) { return (int64_t)fz_r
 float
 fz_read_float_le(fz_context *ctx, fz_stream *stm)
 {
-	union {float f;int32_t i;} u;
-
-	u.i = fz_read_int32_le(ctx, stm);
-	return u.f;
+	uint32_t u;
+	float x;
+	u = fz_read_uint32_le(ctx, stm);
+	memcpy(&x, &u, sizeof x);
+	return x;
 }
 
 float
 fz_read_float(fz_context *ctx, fz_stream *stm)
 {
-	union {float f;int32_t i;} u;
-
-	u.i = fz_read_int32(ctx, stm);
-	return u.f;
+	uint32_t u;
+	float x;
+	u = fz_read_uint32(ctx, stm);
+	memcpy(&x, &u, sizeof x);
+	return x;
 }
 
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len)

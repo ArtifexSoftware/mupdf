@@ -2403,16 +2403,12 @@ fz_extract_ttf_from_ttc(fz_context *ctx, fz_font *font)
 		/* Calculate the new sum. */
 		for (j = 0; j < len; j += 4)
 		{
-			uint32_t v = (data[j]<<24) | (data[j+1]<<16) | (data[j+2]<<8) | (data[j+3]);
-			sum += v;
+			sum += fz_unpack_uint32(data + j);
 		}
 		sum = 0xb1b0afba-sum;
 
 		/* Insert it. */
-		data[csumpos] = sum>>24;
-		data[csumpos+1] = sum>>16;
-		data[csumpos+2] = sum>>8;
-		data[csumpos+3] = sum;
+		fz_pack_uint32(data + csumpos, sum);
 	}
 
 	return buf;
