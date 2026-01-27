@@ -316,63 +316,63 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 			switch (cmd)
 			{
 			case 'F':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				*fill_rule = atoi(args[i]);
 				i ++;
 				break;
 
 			case 'M':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				fz_moveto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
 				i += 2;
 				break;
 			case 'm':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_moveto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
 				i += 2;
 				break;
 
 			case 'L':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				fz_lineto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
 				i += 2;
 				break;
 			case 'l':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
 				i += 2;
 				break;
 
 			case 'H':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, fz_atof(args[i]), pt.y);
 				i += 1;
 				break;
 			case 'h':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y);
 				i += 1;
 				break;
 
 			case 'V':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x, fz_atof(args[i]));
 				i += 1;
 				break;
 			case 'v':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x, pt.y + fz_atof(args[i]));
 				i += 1;
 				break;
 
 			case 'C':
-				if (i + 5 >= n) break;
+				if (i + 5 >= n) goto missing_args;
 				x1 = fz_atof(args[i+0]);
 				y1 = fz_atof(args[i+1]);
 				x2 = fz_atof(args[i+2]);
@@ -387,7 +387,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'c':
-				if (i + 5 >= n) break;
+				if (i + 5 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]) + pt.x;
 				y1 = fz_atof(args[i+1]) + pt.y;
@@ -403,7 +403,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'S':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]);
 				y1 = fz_atof(args[i+1]);
@@ -417,7 +417,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 's':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]) + pt.x;
 				y1 = fz_atof(args[i+1]) + pt.y;
@@ -431,7 +431,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'Q':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				x1 = fz_atof(args[i+0]);
 				y1 = fz_atof(args[i+1]);
 				x2 = fz_atof(args[i+2]);
@@ -440,7 +440,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				i += 4;
 				break;
 			case 'q':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]) + pt.x;
 				y1 = fz_atof(args[i+1]) + pt.y;
@@ -451,7 +451,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'A':
-				if (i + 6 >= n) break;
+				if (i + 6 >= n) goto missing_args;
 				xps_draw_arc(ctx, doc, path,
 					fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
 					atoi(args[i+3]), atoi(args[i+4]),
@@ -459,7 +459,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				i += 7;
 				break;
 			case 'a':
-				if (i + 6 >= n) break;
+				if (i + 6 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				xps_draw_arc(ctx, doc, path,
 					fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
@@ -471,6 +471,12 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 			case 'Z':
 			case 'z':
 				fz_closepath(ctx, path);
+				break;
+
+			missing_args:
+				fz_warn(ctx, "ignoring command with too few arguments '%c'", cmd);
+				if (old == cmd) /* avoid infinite loop */
+					i++;
 				break;
 
 			default:
