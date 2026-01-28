@@ -64,6 +64,13 @@ typedef unsigned __int64 uint64_t;
 #include <stdint.h> /* needed for int64_t */
 #endif
 
+/* Detect if we can use stdckdint.h */
+#ifdef __has_include
+#if __has_include(<stdckdint.h>)
+#define HAVE_STDCKDINT_H 1
+#endif
+#endif
+
 #include "mupdf/memento.h"
 #include "mupdf/fitz/track-usage.h"
 
