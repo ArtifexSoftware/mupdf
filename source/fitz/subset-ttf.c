@@ -180,7 +180,7 @@ read_table(fz_context *ctx, fz_stream *stm, uint32_t tag, int compulsory)
 	return buf;
 }
 
-#define TAG(s) fz_unpack_uint32(s)
+#define TAG(s) fz_unpack_uint32((uint8_t*)s)
 
 static void
 add_table(fz_context *ctx, ttf_t *ttf, uint32_t tag, fz_buffer *tab)
