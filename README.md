@@ -6,11 +6,6 @@
   <strong>A lightweight, high-performance PDF, XPS, and eBook engine.</strong>
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/github/license/ArtifexSoftware/mupdf?style=flat-square&color=blue" alt="License">
-  <img src="https://img.shields.io/github/stars/ArtifexSoftware/mupdf?style=flat-square" alt="Stars">
-</p>
-
 ---
 
 ## 📱 Mobile Version
@@ -47,7 +42,7 @@ PDF, XPS, and E-book documents.
 
 ## LICENSE
 
-MuPDF is Copyright (c) 2006-2026 Artifex Software, Inc.
+MuPDF is Copyright (c) 2006-2023 Artifex Software, Inc.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free
