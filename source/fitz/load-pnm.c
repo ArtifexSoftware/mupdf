@@ -63,7 +63,7 @@ struct info
 	int subimages;
 	fz_colorspace *cs;
 	int width, height;
-	int maxval, bitdepth;
+	int maxval;
 	int depth, alpha;
 	int tupletype;
 	int endian;
@@ -86,17 +86,6 @@ static inline int iswhite(int a)
 		return 1;
 	}
 	return 0;
-}
-
-static inline int bitdepth_from_maxval(int maxval)
-{
-	int depth = 0;
-	while (maxval)
-	{
-		maxval >>= 1;
-		depth++;
-	}
-	return depth;
 }
 
 static const unsigned char *
@@ -383,13 +372,11 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 	if (pnm->maxval <= 0 || pnm->maxval >= 65536)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "maximum sample value of out range in pnm image: %d", pnm->maxval);
 
-	pnm->bitdepth = bitdepth_from_maxval(pnm->maxval);
-
 	if (pnm->height <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image width must be > 0");
-	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
 
 	if (onlymeta)
@@ -520,8 +507,6 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 	if (pnm->maxval <= 0 || pnm->maxval >= 65536)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "maximum sample value of out range in pnm image: %d", pnm->maxval);
 
-	pnm->bitdepth = bitdepth_from_maxval(pnm->maxval);
-
 	if (pnm->height <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 	if (pnm->width <= 0)
@@ -535,7 +520,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 	}
 	else
 	{
-		size_t bytes_per_sample = (pnm->bitdepth-1)/8 + 1;
+		size_t bytes_per_sample = (pnm->maxval <= 255 ? 1 : 2);
 		span = (size_t)n * bytes_per_sample;
 		if ((size_t)pnm->width > SIZE_MAX / span)
 			fz_throw(ctx, FZ_ERROR_LIMIT, "image row too large");
@@ -739,13 +724,11 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 	if (pnm->maxval < minval || pnm->maxval > maxval)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "maxval out of range");
 
-	pnm->bitdepth = bitdepth_from_maxval(pnm->maxval);
-
 	if (pnm->height <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image width must be > 0");
-	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / (fz_colorspace_n(ctx, pnm->cs) + pnm->alpha))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
 
 	if (onlymeta)
@@ -917,7 +900,7 @@ pfm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image width must be > 0");
-	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
 
 	if (onlymeta)
