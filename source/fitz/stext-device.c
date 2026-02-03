@@ -639,9 +639,10 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 							{
 								/* OK, we can be bold. */
 								ch->flags |= FZ_STEXT_BOLD;
-								return 1;
 							}
-							/* Ignore this and keep going */
+							/* Whether we have recorded this as being bold or not, still
+							 * claim we did, so we swallow the space and don't reemit it. */
+							return 1;
 						}
 						else
 						{
