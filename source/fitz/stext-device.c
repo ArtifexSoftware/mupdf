@@ -122,6 +122,10 @@ typedef struct
 	fz_stext_page *page;
 	int id;
 	fz_point pen, start;
+	// maybe_bullet: True if the 'start' position recorded was done so after either some actualtext
+	// on an image, or after a glyph that's known to be used for bullets. This is used to stop us
+	// spotting an 'indented' paragraph, because it's possibly just a bulleted list.
+	int maybe_bullet;
 	fz_point lag_pen;
 	fz_matrix trm;
 	int new_obj;
@@ -654,6 +658,65 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 	return 0;
 }
 
+static int
+plausible_bullet(int c)
+{
+	return (c == '*' ||
+		c == 0x00B7 || /* Middle Dot */
+		c == 0x2022 || /* Bullet */
+		c == 0x2023 || /* Triangular Bullet */
+		c == 0x2043 || /* Hyphen Bullet */
+		c == 0x204C || /* Back leftwards bullet */
+		c == 0x204D || /* Back rightwards bullet */
+		c == 0x2219 || /* Bullet operator */
+		c == 0x25C9 || /* Fisheye */
+		c == 0x25CB || /* White circle */
+		c == 0x25CF || /* Black circle */
+		c == 0x25D8 || /* Inverse Bullet */
+		c == 0x25E6 || /* White Bullet */
+		c == 0x2619 || /* Reversed Rotated Floral Heart Bullet / Fleuron */
+		c == 0x261a || /* Black left pointing index */
+		c == 0x261b || /* Black right pointing index */
+		c == 0x261c || /* White left pointing index */
+		c == 0x261d || /* White up pointing index */
+		c == 0x261e || /* White right pointing index */
+		c == 0x261f || /* White down pointing index */
+		c == 0x2765 || /* Rotated Heavy Heart Black Heart Bullet */
+		c == 0x2767 || /* Rotated Floral Heart Bullet / Fleuron */
+		c == 0x29BE || /* Circled White Bullet */
+		c == 0x29BF || /* Circled Bullet */
+		c == 0x2660 || /* Black Spade suit */
+		c == 0x2661 || /* White Heart suit */
+		c == 0x2662 || /* White Diamond suit */
+		c == 0x2663 || /* Black Club suit */
+		c == 0x2664 || /* White Spade suit */
+		c == 0x2665 || /* Black Heart suit */
+		c == 0x2666 || /* Black Diamond suit */
+		c == 0x2667 || /* White Clud suit */
+		c == 0x1F446 || /* WHITE UP POINTING BACKHAND INDEX */
+		c == 0x1F447 || /* WHITE DOWN POINTING BACKHAND INDEX */
+		c == 0x1F448 || /* WHITE LEFT POINTING BACKHAND INDEX */
+		c == 0x1F449 || /* WHITE RIGHT POINTING BACKHAND INDEX */
+		c == 0x1f597 || /* White down pointing left hand index */
+		c == 0x1F598 || /* SIDEWAYS WHITE LEFT POINTING INDEX */
+		c == 0x1F599 || /* SIDEWAYS WHITE RIGHT POINTING INDEX */
+		c == 0x1F59A || /* SIDEWAYS BLACK LEFT POINTING INDEX */
+		c == 0x1F59B || /* SIDEWAYS BLACK RIGHT POINTING INDEX */
+		c == 0x1F59C || /* BLACK LEFT POINTING BACKHAND INDEX */
+		c == 0x1F59D || /* BLACK RIGHT POINTING BACKHAND INDEX */
+		c == 0x1F59E || /* SIDEWAYS WHITE UP POINTING INDEX */
+		c == 0x1F59F || /* SIDEWAYS WHITE DOWN POINTING INDEX */
+		c == 0x1F5A0 || /* SIDEWAYS BLACK UP POINTING INDEX */
+		c == 0x1F5A1 || /* SIDEWAYS BLACK DOWN POINTING INDEX */
+		c == 0x1F5A2 || /* BLACK UP POINTING BACKHAND INDEX */
+		c == 0x1F5A3 || /* BLACK DOWN POINTING BACKHAND INDEX */
+		c == 0x1FBC1 || /* LEFT THIRD WHITE RIGHT POINTING INDEX */
+		c == 0x1FBC2 || /* MIDDLE THIRD WHITE RIGHT POINTING INDEX */
+		c == 0x1FBC3 || /* RIGHT THIRD WHITE RIGHT POINTING INDEX */
+		c == 0xFFFD || /* UNICODE_REPLACEMENT_CHARACTER */
+		0);
+}
+
 static void
 fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int c, int glyph, fz_matrix trm, float adv, int wmode, int bidi, int force_new_line, int flags)
 {
@@ -880,7 +943,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		{
 			/* Check indent to spot text-indent style paragraphs */
 			if (wmode == 0 && cur_line && dev->new_obj)
-				if ((p.x - dev->start.x) > 0.5f)
+				if ((p.x - dev->start.x) > 0.5f && !dev->maybe_bullet)
 					new_para = 1;
 			new_line = 1;
 		}
@@ -909,6 +972,10 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	{
 		cur_line = add_line_to_block(ctx, page, cur_block, &ndir, wmode, bidi);
 		dev->start = p;
+		if (glyph == -2)
+			dev->maybe_bullet = 1;
+		else
+			dev->maybe_bullet = plausible_bullet(c);
 	}
 
 	/* Henceforth treat such non-glyphs in the usual way. */
