@@ -1484,6 +1484,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 		tdev->last.trm.d = tdev->metatext->bounds.y1 - tdev->metatext->bounds.y0;
 		tdev->last.trm.e = tdev->metatext->bounds.x0;
 		tdev->last.trm.f = tdev->metatext->bounds.y0;
+		tdev->last.valid = 1;
 	}
 	else
 	{
