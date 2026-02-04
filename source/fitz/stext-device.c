@@ -784,6 +784,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		q.y = trm.f;
 	}
 
+	//printf("%g,%g \"%c\" %g,%g\n", p.x, p.y, c, q.x, q.y);
+
 	if ((dev->opts.flags & FZ_STEXT_COLLECT_STYLES) != 0)
 	{
 		if (glyph == -1)
@@ -830,8 +832,10 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		/* Largely supplanted by the check_for_fake_bold mechanism above,
 		 * but we leave this in for backward compatibility as it's cheap,
 		 * and works even when FZ_STEXT_COLLECT_STYLES is not set. */
-		dist = hypotf(q.x - dev->pen.x, q.y - dev->pen.y) / size;
-		if (dist < FAKE_BOLD_MAX_DIST && c == dev->lastchar)
+		dist = hypotf(p.x - dev->lag_pen.x, p.y - dev->lag_pen.y) / size;
+		/* This can trigger improperly for glyphs that come from actualtext
+		 * as they are frequently overlaid. Therefore rely on glyph >= 0. */
+		if (dist < FAKE_BOLD_MAX_DIST && c == dev->lastchar && glyph >= 0)
 			return;
 
 		/* Calculate how far we've moved since the last character. */
@@ -1225,6 +1229,9 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 
 		if (rune == 0)
 			break;
+
+		dev->last.trm.e = dev->pen.x;
+		dev->last.trm.f = dev->pen.y;
 
 		fz_add_stext_char(ctx, dev, dev->last.font,
 			rune,
