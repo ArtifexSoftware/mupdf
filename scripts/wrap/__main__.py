@@ -732,23 +732,30 @@ Usage:
 
             Windows specifics:
 
-                * On Windows we support building for specific cpus and python
-                  versions.
+                On Windows we support building for specific cpus and python
+                versions:
 
-                * We use `py -0f' to find the matching installed Python along
-                  with its Python.h and python.lib.
+                    * We use `py -0f' to find the matching installed Python along
+                      with its Python.h and python.lib.
 
-                * We append -x32 or -x64 for current system if not already
-                  present.
+                    * We append -x32 or -x64 for current system if not already
+                      present.
 
-                * We append -py<current_python_version> if '-py...' is not
-                  already present.
+                    * We append -py<current_python_version> if '-py...' is not
+                      already present.
 
-                For example:
+                    For example:
 
-                    -d build/shared-release-x32
-                    -d build/shared-release-x32-py3.8
-                    -d build/shared-release-x64-py3.9
+                        -d build/shared-release-x32
+                        -d build/shared-release-x32-py3.8
+                        -d build/shared-release-x64-py3.9
+
+                Special handling of -TOFU_CJK_EXT:
+
+                    If <directory> contains `-TOFU_CJK_EXT`, we append `TofuCjkExt`
+                    to the build type passed to devenv, for example:
+
+                        devenv ... /Build "ReleaseTofuCjkExt|x64" ...
 
         --doc <languages>
             Generates documentation for the different APIs in
@@ -1576,6 +1583,9 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
     cflags = os.environ.get('XCXXFLAGS', '')
 
     windows_build_type = build_dirs.windows_build_type()
+    windows_build_type2 = windows_build_type
+    if '-TOFU_CJK_EXT' in build_dirs.dir_so:
+        windows_build_type2 += 'TofuCjkExt'
     so_version = get_so_version( build_dirs)
 
     if build_csharp:
@@ -1634,7 +1644,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                     #
                     win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv)
                     jlib.log(f'Building mupdfcpp.dll by running devenv ...')
-                    build = f'{windows_build_type}|{build_dirs.cpu.windows_config}'
+                    build = f'{windows_build_type2}|{build_dirs.cpu.windows_config}'
                     command = (
                             f'cd {build_dirs.dir_mupdf}&&'
                             f'"{devenv}"'
