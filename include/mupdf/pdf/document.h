@@ -198,9 +198,15 @@ pdf_document *pdf_keep_document(fz_context *ctx, pdf_document *doc);
 	detect any errors.
 
 	The result of the check is saved, so calling this function again
-	after the initial check is a no-op.
+	after a successful completion is a no-op.
+
+	If this function throws (either because of out of memory (SYSTEM),
+	or other reasons) then the file should be considered suspect.
+
+	Returns non-zero if a repair was triggered during checking, and
+	hence changes to the file may have been lost.
 */
-void pdf_check_document(fz_context *ctx, pdf_document *doc);
+int pdf_check_document(fz_context *ctx, pdf_document *doc);
 
 /*
 	down-cast a fz_document to a pdf_document.

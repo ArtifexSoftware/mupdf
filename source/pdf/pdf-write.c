@@ -2388,25 +2388,25 @@ unpack_objstm_objs(fz_context *ctx, pdf_document *doc, int xref_len)
 	}
 }
 
-void
+int
 pdf_check_document(fz_context *ctx, pdf_document *doc)
 {
 	int num;
+	int repaired_before;
 
 	if (doc->checked)
-		return;
-	doc->checked = 1;
+		return 0;
+
+	repaired_before = doc->repair_attempted;
 
 	for (num = 1; num < pdf_xref_len(ctx, doc); ++num)
 	{
 		if (pdf_object_exists(ctx, doc, num))
-		{
-			fz_try(ctx)
-				(void) pdf_cache_object(ctx, doc, num);
-			fz_catch(ctx)
-				fz_report_error(ctx);
-		}
+			(void) pdf_cache_object(ctx, doc, num);
 	}
+	doc->checked = 1;
+
+	return repaired_before != doc->repair_attempted;
 }
 
 static void
