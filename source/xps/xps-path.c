@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -875,6 +875,9 @@ xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri
 	fz_rect area;
 	int fill_rule;
 	int dash_len = 0;
+
+	fz_var(stroke_path);
+	fz_var(path);
 
 	/*
 	 * Extract attributes and extended attributes.

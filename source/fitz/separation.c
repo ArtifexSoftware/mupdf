@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -778,6 +778,8 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 			 * 704726. */
 			temp->x = src->x;
 			temp->y = src->y;
+
+			fz_var(temp);
 
 			fz_try(ctx)
 			{

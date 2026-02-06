@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -380,10 +380,12 @@ pdf_verify_embedded_file_checksum(fz_context *ctx, pdf_obj *fs)
 	unsigned char digest[16];
 	pdf_obj *params;
 	const char *checksum;
-	fz_buffer *contents;
+	fz_buffer *contents = NULL;
 	int valid = 0;
 	size_t len;
 	pdf_obj *file = get_file_stream_and_name(ctx, fs, NULL);
+
+	fz_var(contents);
 
 	if (!pdf_is_stream(ctx, file))
 		return 1;
@@ -1153,6 +1155,7 @@ pdf_add_filespec_from_link(fz_context *ctx, pdf_document *doc, const char *uri)
 {
 	char *file = NULL;
 	pdf_obj *filespec = NULL;
+	fz_var(file);
 	fz_try(ctx)
 	{
 		if (is_file_uri(ctx, uri))
@@ -1439,6 +1442,7 @@ pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const char *uri)
 
 	fz_var(needle);
 	fz_var(name);
+	fz_var(desturi);
 
 	fz_try(ctx)
 	{

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -354,10 +354,12 @@ void
 xps_parse_fixed_page(fz_context *ctx, xps_document *doc, fz_matrix ctm, xps_page *page)
 {
 	fz_xml *root, *node;
-	xps_resource *dict;
+	xps_resource *dict = NULL;
 	char base_uri[1024];
 	fz_rect area;
 	char *s;
+
+	fz_var(dict);
 
 	fz_strlcpy(base_uri, page->fix->name, sizeof base_uri);
 	s = strrchr(base_uri, '/');

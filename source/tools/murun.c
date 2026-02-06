@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -7935,8 +7935,11 @@ static void ffi_PDFDocument_saveToBuffer(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *options = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	pdf_write_options pwo;
-	fz_buffer *buf;
-	fz_output *out;
+	fz_buffer *buf = NULL;
+	fz_output *out = NULL;
+
+	fz_var(out);
+	fz_var(buf);
 
 	fz_try(ctx)
 	{

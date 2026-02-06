@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -303,7 +303,7 @@ jxr_decode_block_alpha(jxr_image_t image, int mx, int my, int *data)
 static void
 jxr_read_image(fz_context *ctx, const unsigned char *data, int size, struct info *info, int only_metadata)
 {
-	jxr_container_t container;
+	jxr_container_t container = NULL;
 	jxr_image_t image = NULL;
 	jxr_image_t alpha = NULL;
 	size_t i;
@@ -311,6 +311,7 @@ jxr_read_image(fz_context *ctx, const unsigned char *data, int size, struct info
 
 	fz_var(image);
 	fz_var(alpha);
+	fz_var(container);
 
 	fz_try(ctx)
 	{

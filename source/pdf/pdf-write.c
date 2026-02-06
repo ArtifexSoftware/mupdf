@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -831,6 +831,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	fz_var(buf);
 	fz_var(tmp_comp);
 	fz_var(tmp_hex);
+	fz_var(tmp_unhex);
 	fz_var(obj);
 
 	fz_try(ctx)

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -191,6 +191,8 @@ generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 {
 	fz_buffer *buffer_html = NULL;
 	fz_html *html = NULL;
+
+	fz_var(buffer_html);
 
 	fz_try(ctx)
 	{

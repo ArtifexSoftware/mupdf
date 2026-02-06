@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2023 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -126,6 +126,8 @@ png_write_icc(fz_context *ctx, png_band_writer *writer, fz_colorspace *cs)
 
 		name = cs->name;
 		size = csize + strlen(name) + 2;
+
+		fz_var(chunk);
 
 		fz_try(ctx)
 		{
