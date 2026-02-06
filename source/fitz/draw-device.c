@@ -699,7 +699,7 @@ push_group_for_separations(fz_context *ctx, fz_draw_device *dev, fz_color_params
 }
 
 static void
-fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, fz_matrix in_ctm,
+fz_draw_fill_path_aux(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, fz_matrix in_ctm,
 	fz_colorspace *colorspace_in, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
@@ -714,7 +714,6 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
-	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
 	if (state->in_smask)
 		color_params.ri |= FZ_RI_IN_SOFTMASK;
 
@@ -762,7 +761,15 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 }
 
 static void
-fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, fz_matrix in_ctm,
+fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, fz_matrix in_ctm,
+	fz_colorspace *colorspace_in, const float *color, float alpha, fz_color_params color_params)
+{
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	fz_draw_fill_path_aux(ctx, devp, path, even_odd, in_ctm, colorspace_in, color, alpha, color_params);
+}
+
+static void
+fz_draw_stroke_path_aux(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, fz_matrix in_ctm,
 	fz_colorspace *colorspace_in, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
@@ -780,7 +787,6 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
-	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
 	if (state->in_smask)
 		color_params.ri |= FZ_RI_IN_SOFTMASK;
 
@@ -848,6 +854,14 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT && alpha != 1)
 		fz_knockout_end(ctx, dev);
+}
+
+static void
+fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, fz_matrix in_ctm,
+	fz_colorspace *colorspace_in, const float *color, float alpha, fz_color_params color_params)
+{
+	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
+	fz_draw_stroke_path_aux(ctx, devp, path, stroke, in_ctm, colorspace_in, color, alpha, color_params);
 }
 
 static void
@@ -1143,7 +1157,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 				if (path)
 				{
 					fz_try(ctx)
-						fz_draw_fill_path(ctx, devp, path, 0, in_ctm, colorspace, color, alpha, color_params);
+						fz_draw_fill_path_aux(ctx, devp, path, 0, in_ctm, colorspace, color, alpha, color_params);
 					fz_always(ctx)
 						fz_drop_path(ctx, path);
 					fz_catch(ctx)
@@ -1247,7 +1261,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 				else
 				{
 					fz_try(ctx)
-						fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, colorspace, color, alpha, color_params);
+						fz_draw_stroke_path_aux(ctx, devp, path, stroke, in_ctm, colorspace, color, alpha, color_params);
 					fz_always(ctx)
 						fz_drop_path(ctx, path);
 					fz_catch(ctx)
@@ -1365,7 +1379,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 						state[1].mask = NULL;
 						fz_try(ctx)
 						{
-							fz_draw_fill_path(ctx, devp, path, 0, in_ctm, fz_device_gray(ctx), &white, 1, fz_default_color_params);
+							fz_draw_fill_path_aux(ctx, devp, path, 0, in_ctm, fz_device_gray(ctx), &white, 1, fz_default_color_params);
 						}
 						fz_always(ctx)
 						{
@@ -1490,7 +1504,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 						state[0].mask = NULL;
 						fz_try(ctx)
 						{
-							fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, fz_device_gray(ctx), &white, 1, fz_default_color_params);
+							fz_draw_stroke_path_aux(ctx, devp, path, stroke, in_ctm, fz_device_gray(ctx), &white, 1, fz_default_color_params);
 						}
 						fz_always(ctx)
 						{
