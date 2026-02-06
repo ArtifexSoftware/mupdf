@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Artifex Software, Inc.
+// Copyright (C) 2023-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1209,6 +1209,7 @@ fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, 
 			fz_free(ctx, info.footnotes[i]);
 		fz_free(ctx, info.footnotes);
 		fz_drop_output(ctx, info.out);
+		fz_free(ctx, info.label);
 		fz_drop_archive(ctx, archive);
 		fz_drop_stream(ctx, stream);
 	}
