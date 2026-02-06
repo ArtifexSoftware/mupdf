@@ -1358,16 +1358,24 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 		pdf_gstate *fill_gstate = NULL;
 		pdf_gstate *stroke_gstate = NULL;
 		pdf_gsave(ctx, pr);
-		gstate = pr->gstate + pr->gtop;
-		if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.gstate_num >= 0)
-			fill_gstate = pr->gstate + gstate->fill.gstate_num;
-		if (gstate->stroke.kind == PDF_MAT_PATTERN && gstate->stroke.gstate_num >= 0)
-			stroke_gstate = pr->gstate + gstate->stroke.gstate_num;
-		pdf_drop_font(ctx, gstate->text.font);
-		gstate->text.font = NULL; /* don't inherit the current font... */
-		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs, fill_gstate, stroke_gstate);
-		pr->dev->flags = old_flags;
-		pdf_grestore(ctx, pr);
+		fz_try(ctx)
+		{
+			gstate = pr->gstate + pr->gtop;
+			if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.gstate_num >= 0)
+				fill_gstate = pr->gstate + gstate->fill.gstate_num;
+			if (gstate->stroke.kind == PDF_MAT_PATTERN && gstate->stroke.gstate_num >= 0)
+				stroke_gstate = pr->gstate + gstate->stroke.gstate_num;
+			pdf_drop_font(ctx, gstate->text.font);
+			gstate->text.font = NULL; /* don't inherit the current font... */
+			fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs, fill_gstate, stroke_gstate);
+		}
+		fz_always(ctx)
+		{
+			pr->dev->flags = old_flags;
+			pdf_grestore(ctx, pr);
+		}
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->tos.text_mode = 3;
 	}
