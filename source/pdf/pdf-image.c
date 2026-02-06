@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -272,7 +272,6 @@ pdf_load_jpx_as_compressed_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 {
 	fz_buffer *buf = NULL;
 	fz_image *img = NULL;
-	fz_image *mask = NULL;
 	fz_colorspace *cs = NULL;
 	pdf_obj *obj;
 	int i, n;
@@ -306,7 +305,6 @@ pdf_load_jpx_as_compressed_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 	fz_always(ctx)
 	{
 		fz_drop_colorspace(ctx, cs);
-		fz_drop_image(ctx, mask);
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
