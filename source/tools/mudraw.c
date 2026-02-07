@@ -393,6 +393,10 @@ static struct {
 	fz_page *page;
 	int interptime;
 	fz_separations *seps;
+
+	char *pdfout_path;
+	pdf_document *pdfout;
+	fz_output *out;
 } bgprint;
 
 static struct {
@@ -676,7 +680,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_m
 static void worker_thread(void *arg);
 #endif
 
-static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps)
+static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps, pdf_document *pdfout, fz_output *out)
 {
 	fz_rect mediabox;
 	fz_device *dev = NULL;
@@ -1517,6 +1521,22 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			bgprint.pagenum = pagenum;
 			bgprint.interptime = start;
 			bgprint.error = 0;
+			if (output_file_per_page)
+			{
+#if FZ_ENABLE_PDF
+				if (output_format == OUT_PDF)
+				{
+					bgprint.pdfout_path = fz_strdup(ctx, output_path);
+					bgprint.pdfout = pdfout;
+					pdfout = NULL;
+				}
+				else
+#endif
+				{
+					bgprint.out = out;
+					out = NULL;
+				}
+			}
 #ifndef DISABLE_MUTHREADS
 			mu_trigger_semaphore(&bgprint.start);
 #else
@@ -1531,7 +1551,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		if (!quiet || showfeatures || showtime || showmd5)
 			fprintf(stderr, "page %s %d%s", filename, pagenum, features);
 		fz_try(ctx)
-			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps);
+			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps, pdfout, out);
 		fz_always(ctx)
 		{
 			fz_drop_display_list(ctx, list);
@@ -1547,7 +1567,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (output_file_per_page)
 	{
 #if FZ_ENABLE_PDF
-		if (output_format == OUT_PDF)
+		if (output_format == OUT_PDF && pdfout)
 		{
 			pdf_save_document(ctx, pdfout, output_path, NULL);
 			pdf_drop_document(ctx, pdfout);
@@ -1555,6 +1575,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		else
 #endif
+		if (out)
 		{
 			fz_close_output(ctx, out);
 			fz_drop_output(ctx, out);
@@ -1785,7 +1806,14 @@ static void bgprint_worker(void *arg)
 			memset(&cookie, 0, sizeof(cookie));
 			fz_try(bgprint.ctx)
 			{
-				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps);
+				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps, bgprint.pdfout, bgprint.out);
+#if FZ_ENABLE_PDF
+				if (bgprint.pdfout_path && bgprint.pdfout)
+					pdf_save_document(bgprint.ctx, bgprint.pdfout, bgprint.pdfout_path, NULL);
+				else
+#endif
+				if (bgprint.out)
+					fz_close_output(bgprint.ctx, bgprint.out);
 				DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
 			}
 			fz_always(bgprint.ctx)
@@ -1793,6 +1821,12 @@ static void bgprint_worker(void *arg)
 				fz_drop_display_list(bgprint.ctx, bgprint.list);
 				fz_drop_separations(bgprint.ctx, bgprint.seps);
 				fz_drop_page(bgprint.ctx, bgprint.page);
+				pdf_drop_document(bgprint.ctx, bgprint.pdfout);
+				fz_free(bgprint.ctx, bgprint.pdfout_path);
+				fz_drop_output(bgprint.ctx, bgprint.out);
+				bgprint.pdfout = NULL;
+				bgprint.pdfout_path = NULL;
+				bgprint.out = NULL;
 			}
 			fz_catch(bgprint.ctx)
 			{
