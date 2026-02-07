@@ -1796,6 +1796,7 @@ static void bgprint_worker(void *arg)
 			}
 			fz_catch(bgprint.ctx)
 			{
+				fz_report_error(bgprint.ctx);
 				DEBUG_THREADS(("BGPrint failed on page %d\n", pagenum));
 				bgprint.error = 1;
 			}
