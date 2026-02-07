@@ -1367,7 +1367,7 @@ static void bgprint_flush(void)
 
 static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 {
-	fz_page *page;
+	fz_page *page = NULL;
 	fz_display_list *list = NULL;
 	fz_device *dev = NULL;
 	int start;
@@ -1379,6 +1379,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_var(list);
 	fz_var(dev);
 	fz_var(seps);
+	fz_var(page);
 
 	start = (showtime ? gettime() : 0);
 
@@ -1396,11 +1397,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			out = fz_new_output_with_path(ctx, output_path, 0);
 	}
 
-	page = fz_load_page(ctx, doc, pagenum - 1);
-
-	if (spots != SPOTS_NONE)
+	fz_try(ctx)
 	{
-		fz_try(ctx)
+		page = fz_load_page(ctx, doc, pagenum - 1);
+
+		if (spots != SPOTS_NONE)
 		{
 			seps = fz_page_separations(ctx, page);
 			if (seps)
@@ -1428,16 +1429,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				seps = fz_new_separations(ctx, 0);
 			}
 		}
-		fz_catch(ctx)
-		{
-			fz_drop_page(ctx, page);
-			fz_rethrow(ctx);
-		}
-	}
 
-	if (uselist)
-	{
-		fz_try(ctx)
+		if (uselist)
 		{
 			list = fz_new_display_list(ctx, fz_bound_page_box(ctx, page, page_box));
 			dev = fz_new_list_device(ctx, list);
@@ -1445,143 +1438,118 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			fz_run_page(ctx, page, dev, fz_identity, &cookie);
 			fz_close_device(ctx, dev);
-		}
-		fz_always(ctx)
-		{
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
-			fz_rethrow(ctx);
+
+			if (bgprint.active && showtime)
+			{
+				int end = gettime();
+				start = end - start;
+			}
 		}
 
-		if (bgprint.active && showtime)
+		if (showfeatures)
 		{
-			int end = gettime();
-			start = end - start;
-		}
-	}
-
-	if (showfeatures)
-	{
-		int iscolor;
-		dev = fz_new_test_device(ctx, &iscolor, 0.02f, 0, NULL);
-		apply_kill_switch(dev);
-		if (lowmemory)
-			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-		fz_try(ctx)
-		{
+			int iscolor;
+			dev = fz_new_test_device(ctx, &iscolor, 0.02f, 0, NULL);
+			apply_kill_switch(dev);
+			if (lowmemory)
+				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
 				fz_run_display_list(ctx, list, dev, fz_identity, fz_infinite_rect, NULL);
 			else
 				fz_run_page(ctx, page, dev, fz_identity, &cookie);
 			fz_close_device(ctx, dev);
+			features = iscolor ? " color" : " grayscale";
 		}
-		fz_always(ctx)
-		{
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
-			fz_rethrow(ctx);
-		}
-		features = iscolor ? " color" : " grayscale";
-	}
 
-	if (bgprint.active)
-	{
-		bgprint_flush();
-		if (bgprint.error)
+		if (bgprint.active)
 		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
+			bgprint_flush();
+			if (bgprint.error)
+			{
+				/* it failed, do not continue trying */
+				bgprint.active = 0;
+			}
+			else if (bgprint.active)
+			{
+				if (!quiet || showfeatures || showtime || showmd5)
+					fprintf(stderr, "page %s %d%s", filename, pagenum, features);
 
-			/* it failed, do not continue trying */
-			bgprint.active = 0;
+				/* hand page, list, seps and possibly (pdf) output over to thread for rendering */
+				bgprint.started = 1;
+				bgprint.page = page;
+				page = NULL;
+				bgprint.list = list;
+				list = NULL;
+				bgprint.seps = seps;
+				seps = NULL;
+				bgprint.filename = filename;
+				bgprint.pagenum = pagenum;
+				bgprint.interptime = start;
+				bgprint.error = 0;
+				if (output_file_per_page)
+				{
+#if FZ_ENABLE_PDF
+					if (output_format == OUT_PDF)
+					{
+						bgprint.pdfout_path = fz_strdup(ctx, output_path);
+						bgprint.pdfout = pdfout;
+						pdfout = NULL;
+					}
+					else
+#endif
+					{
+						bgprint.out = out;
+						out = NULL;
+					}
+				}
+#ifndef DISABLE_MUTHREADS
+				mu_trigger_semaphore(&bgprint.start);
+#endif
+			}
 		}
-		else if (bgprint.active)
+		else
 		{
 			if (!quiet || showfeatures || showtime || showmd5)
 				fprintf(stderr, "page %s %d%s", filename, pagenum, features);
-
-			bgprint.started = 1;
-			bgprint.page = page;
-			bgprint.list = list;
-			bgprint.seps = seps;
-			bgprint.filename = filename;
-			bgprint.pagenum = pagenum;
-			bgprint.interptime = start;
-			bgprint.error = 0;
-			if (output_file_per_page)
-			{
-#if FZ_ENABLE_PDF
-				if (output_format == OUT_PDF)
-				{
-					bgprint.pdfout_path = fz_strdup(ctx, output_path);
-					bgprint.pdfout = pdfout;
-					pdfout = NULL;
-				}
-				else
-#endif
-				{
-					bgprint.out = out;
-					out = NULL;
-				}
-			}
-#ifndef DISABLE_MUTHREADS
-			mu_trigger_semaphore(&bgprint.start);
-#else
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
-#endif
-		}
-	}
-	else
-	{
-		if (!quiet || showfeatures || showtime || showmd5)
-			fprintf(stderr, "page %s %d%s", filename, pagenum, features);
-		fz_try(ctx)
 			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps, pdfout, out);
-		fz_always(ctx)
-		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_separations(ctx, seps);
-			fz_drop_page(ctx, page);
 		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
-	}
 
-	if (output_file_per_page)
-	{
+		if (output_file_per_page)
+		{
 #if FZ_ENABLE_PDF
-		if (output_format == OUT_PDF && pdfout)
-		{
-			pdf_save_document(ctx, pdfout, output_path, NULL);
-			pdf_drop_document(ctx, pdfout);
-			pdfout = NULL;
-		}
-		else
+			if (output_format == OUT_PDF && pdfout)
+				pdf_save_document(ctx, pdfout, output_path, NULL);
+			else
 #endif
-		if (out)
-		{
-			fz_close_output(ctx, out);
-			fz_drop_output(ctx, out);
-			out = NULL;
+			if (out)
+				fz_close_output(ctx, out);
 		}
 	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+		fz_drop_display_list(ctx, list);
+		fz_drop_separations(ctx, seps);
+		fz_drop_page(ctx, page);
+		if (output_file_per_page)
+		{
+#if FZ_ENABLE_PDF
+			if (output_format == OUT_PDF && pdfout)
+			{
+				pdf_drop_document(ctx, pdfout);
+				pdfout = NULL;
+			}
+			else
+#endif
+			if (out)
+			{
+				fz_drop_output(ctx, out);
+				out = NULL;
+			}
+		}
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void drawrange(fz_context *ctx, fz_document *doc, const char *range)
