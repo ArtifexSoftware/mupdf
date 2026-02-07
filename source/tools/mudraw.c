@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2189,8 +2189,22 @@ int mudraw_main(int argc, char **argv)
 #endif
 		case 'y': layer_config = fz_optarg; break;
 		case 'Y': layer_list = 1; break;
-		case 'z': layer_off[layer_off_len++] = !strcmp(fz_optarg, "all") ? -1 : fz_atoi(fz_optarg); break;
-		case 'Z': layer_on[layer_on_len++] = !strcmp(fz_optarg, "all") ? -1 : fz_atoi(fz_optarg); break;
+		case 'z':
+			if (layer_off_len == nelem(layer_off))
+			{
+				fprintf(stderr, "too many layers to turn off\n");
+				exit(1);
+			}
+			layer_off[layer_off_len++] = !strcmp(fz_optarg, "all") ? -1 : fz_atoi(fz_optarg);
+			break;
+		case 'Z':
+			if (layer_on_len == nelem(layer_on))
+			{
+				fprintf(stderr, "too many layers to turn on\n");
+				exit(1);
+			}
+			layer_on[layer_on_len++] = !strcmp(fz_optarg, "all") ? -1 : fz_atoi(fz_optarg);
+			break;
 		case 'a': useaccel = 0; break;
 		case 'k':
 		{
