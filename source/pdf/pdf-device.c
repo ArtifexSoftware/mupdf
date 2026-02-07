@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1236,6 +1236,7 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->groups);
 	fz_free(ctx, pdev->alphas);
 	fz_free(ctx, pdev->gstates);
+	pdf_drop_document(ctx, pdev->doc);
 }
 
 fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topctm, pdf_obj *resources, fz_buffer *buf)
@@ -1275,7 +1276,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 
 	fz_try(ctx)
 	{
-		dev->doc = doc;
+		dev->doc = pdf_keep_document(ctx, doc);
 		dev->resources = pdf_keep_obj(ctx, resources);
 		dev->gstates = fz_malloc_struct(ctx, gstate);
 		if (buf)
