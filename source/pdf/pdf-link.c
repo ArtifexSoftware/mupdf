@@ -698,40 +698,40 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *dict,
 fz_link *
 pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *annots, int pagenum, fz_matrix page_ctm)
 {
-	fz_link *link, *head, *tail;
+	fz_link *head, *tail;
 	pdf_obj *obj;
 	int i, n;
 
 	head = tail = NULL;
-	link = NULL;
 
 	n = pdf_array_len(ctx, annots);
 	for (i = 0; i < n; i++)
 	{
+		fz_link *link;
+
 		/* FIXME: Move the try/catch out of the loop for performance? */
 		fz_try(ctx)
 		{
 			obj = pdf_array_get(ctx, annots, i);
 			link = pdf_load_link(ctx, doc, page, obj, pagenum, page_ctm);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-			fz_report_error(ctx);
-			link = NULL;
-		}
-
-		if (link)
-		{
 			if (!head)
 				head = tail = link;
-			else
+			else if (link)
 			{
 				tail->next = link;
 				tail = link;
 			}
 		}
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) == FZ_ERROR_TRYLATER || fz_caught(ctx) == FZ_ERROR_SYSTEM)
+			{
+				fz_drop_link(ctx, head);
+				fz_rethrow(ctx);
+			}
+			fz_report_error(ctx);
+		}
+
 	}
 
 	return head;
