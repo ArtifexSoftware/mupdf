@@ -3032,7 +3032,7 @@ pdf_writer_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 fz_document_writer *
 fz_new_pdf_writer_with_output(fz_context *ctx, fz_output *out, const char *options)
 {
-	pdf_writer *wri;
+	pdf_writer *wri = NULL;
 
 	fz_var(wri);
 
@@ -3046,7 +3046,8 @@ fz_new_pdf_writer_with_output(fz_context *ctx, fz_output *out, const char *optio
 	fz_catch(ctx)
 	{
 		fz_drop_output(ctx, out);
-		pdf_drop_document(ctx, wri->pdf);
+		if (wri)
+			pdf_drop_document(ctx, wri->pdf);
 		fz_free(ctx, wri);
 		fz_rethrow(ctx);
 	}

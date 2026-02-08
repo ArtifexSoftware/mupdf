@@ -1656,7 +1656,7 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 {
 	fz_display_list_image *image = (fz_display_list_image *)image_;
 	fz_matrix ctm;
-	fz_device *dev;
+	fz_device *dev = NULL;
 	fz_pixmap *pix;
 
 	fz_var(dev);

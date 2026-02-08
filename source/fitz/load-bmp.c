@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -187,8 +187,8 @@ bmp_read_file_header(fz_context *ctx, struct info *info, const unsigned char *be
 static unsigned char *
 bmp_decompress_huffman1d(fz_context *ctx, struct info *info, const unsigned char *p, const unsigned char **end)
 {
-	fz_stream *encstm, *decstm;
-	fz_buffer *buf;
+	fz_stream *encstm, *decstm = NULL;
+	fz_buffer *buf = NULL;
 	unsigned char *decoded;
 	size_t size;
 
