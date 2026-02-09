@@ -141,8 +141,8 @@ fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_option
 	fz_matrix inv;
 	fz_colorspace *cs = NULL;
 
-	for (iter = fz_stext_page_block_iterator_begin(stext);
-		!fz_stext_page_block_iterator_eod(iter);
+	for (iter = fz_stext_page_block_iterator_begin_dfs(stext);
+		!fz_stext_page_block_iterator_eod_dfs(iter);
 		iter = end)
 	{
 		int n;
@@ -165,7 +165,7 @@ fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_option
 
 		/* So we have a plausible starting position. Do we have stuff we can
 		 * raft with it? */
-		for (n = 0; !fz_stext_page_block_iterator_eod(end);
+		for (n = 0; !fz_stext_page_block_iterator_eod_dfs(end);
 			n++, end = fz_stext_page_block_iterator_next_dfs(end))
 		{
 			if (end.block->type != FZ_STEXT_BLOCK_IMAGE)
