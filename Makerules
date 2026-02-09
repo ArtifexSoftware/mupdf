@@ -174,9 +174,12 @@ else ifeq ($(build),coverage)
 else ifeq ($(build),native)
   CFLAGS += -pipe -O2 -DNDEBUG -march=native
   LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
-else ifeq ($(build),memento)
+else ifeq ($(findstring memento,$(build)),memento)
   CFLAGS += -pipe -g -DMEMENTO -DMEMENTO_MUPDF_HACKS
   LDFLAGS += -g -rdynamic
+  ifeq ($(build),memento-squeeze)
+    CFLAGS += -DMEMENTO_SQUEEZEBUILD
+  endif
   ifneq ($(HAVE_LIBDL),no)
     CFLAGS += -DHAVE_LIBDL
     ifeq ($(OS),OpenBSD)

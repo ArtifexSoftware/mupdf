@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -55,7 +55,13 @@ do_scavenging_malloc(fz_context *ctx, size_t size)
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
 			return p;
 		}
-	} while (fz_store_scavenge(ctx, size, &phase));
+	}
+#ifdef MEMENTO_SQUEEZEBUILD
+	while (0);
+	(void) phase;
+#else
+	while (fz_store_scavenge(ctx, size, &phase));
+#endif
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 
 	return NULL;
@@ -75,7 +81,13 @@ do_scavenging_realloc(fz_context *ctx, void *p, size_t size)
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
 			return q;
 		}
-	} while (fz_store_scavenge(ctx, size, &phase));
+	}
+#ifdef MEMENTO_SQUEEZEBUILD
+	while (0);
+	(void) phase;
+#else
+	while (fz_store_scavenge(ctx, size, &phase));
+#endif
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 
 	return NULL;
