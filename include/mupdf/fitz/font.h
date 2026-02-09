@@ -770,7 +770,7 @@ typedef enum
 } fz_ascdesc_source;
 
 #define FZ_MAX_TRUSTWORTHY_ASCENT 8
-#define FZ_MAX_TRUSTWORTHY_DESCENT -2
+#define FZ_MAX_TRUSTWORTHY_DESCENT -3
 
 struct fz_font
 {
