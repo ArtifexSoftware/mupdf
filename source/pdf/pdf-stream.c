@@ -723,7 +723,7 @@ pdf_open_object_array(fz_context *ctx, pdf_document *doc, pdf_obj *list)
 	{
 		pdf_obj *obj = pdf_array_get(ctx, list, i);
 		fz_try(ctx)
-			fz_concat_push_drop(ctx, stm, pdf_open_stream(ctx, obj));
+			fz_concat_push_drop(ctx, stm, pdf_open_image_stream(ctx, doc, pdf_to_num(ctx, obj), NULL, 0));
 		fz_catch(ctx)
 		{
 			if (fz_caught(ctx) == FZ_ERROR_TRYLATER || fz_caught(ctx) == FZ_ERROR_SYSTEM)
