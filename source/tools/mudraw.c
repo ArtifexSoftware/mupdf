@@ -2077,8 +2077,8 @@ int mudraw_main(int argc, char **argv)
 	fz_document *doc = NULL;
 	int c;
 	fz_context *ctx;
-	trace_info trace_info = { 0, 0, 0, 0, 0, 0 };
-	fz_alloc_context trace_alloc_ctx = { &trace_info, trace_malloc, trace_realloc, trace_free };
+	trace_info info = { 0, 0, 0, 0, 0, 0 };
+	fz_alloc_context trace_alloc_ctx = { &info, trace_malloc, trace_realloc, trace_free };
 	fz_alloc_context *alloc_ctx = NULL;
 	fz_locks_context *locks = NULL;
 	size_t max_store = FZ_STORE_DEFAULT;
@@ -2178,9 +2178,9 @@ int mudraw_main(int argc, char **argv)
 			break;
 #endif
 		case 'm':
-			if (fz_optarg[0] == 's') trace_info.mem_limit = fz_atoi64(&fz_optarg[1]);
-			else if (fz_optarg[0] == 'a') trace_info.alloc_limit = fz_atoi64(&fz_optarg[1]);
-			else trace_info.mem_limit = fz_atoi64(fz_optarg);
+			if (fz_optarg[0] == 's') info.mem_limit = fz_atoi64(&fz_optarg[1]);
+			else if (fz_optarg[0] == 'a') info.alloc_limit = fz_atoi64(&fz_optarg[1]);
+			else info.mem_limit = fz_atoi64(fz_optarg);
 			break;
 		case 'L': lowmemory = 1; break;
 		case 'P':
@@ -2278,7 +2278,7 @@ int mudraw_main(int argc, char **argv)
 	}
 #endif
 
-	if (trace_info.mem_limit || trace_info.alloc_limit || showmemory)
+	if (info.mem_limit || info.alloc_limit || showmemory)
 		alloc_ctx = &trace_alloc_ctx;
 
 	if (lowmemory)
@@ -2825,10 +2825,10 @@ int mudraw_main(int argc, char **argv)
 	fin_mudraw_locks();
 #endif /* DISABLE_MUTHREADS */
 
-	if (trace_info.mem_limit || trace_info.alloc_limit || showmemory)
+	if (info.mem_limit || info.alloc_limit || showmemory)
 	{
 		char buf[200];
-		fz_snprintf(buf, sizeof buf, "Memory use total=%zu peak=%zu current=%zu\nAllocations total=%zu\n", trace_info.total, trace_info.peak, trace_info.current, trace_info.allocs);
+		fz_snprintf(buf, sizeof buf, "Memory use total=%zu peak=%zu current=%zu\nAllocations total=%zu\n", info.total, info.peak, info.current, info.allocs);
 		fprintf(stderr, "%s", buf);
 	}
 

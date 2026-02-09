@@ -271,6 +271,7 @@ JBIG2DEC_CFLAGS += -Ithirdparty/jbig2dec
 JBIG2DEC_BUILD_CFLAGS += -Iinclude
 JBIG2DEC_BUILD_CFLAGS += -DHAVE_STDINT_H
 JBIG2DEC_BUILD_CFLAGS += -DJBIG_EXTERNAL_MEMENTO_H=\"mupdf/memento.h\"
+JBIG2DEC_BUILD_CFLAGS += -Wno-shadow
 
 JBIG2DEC_SRC += thirdparty/jbig2dec/jbig2.c
 JBIG2DEC_SRC += thirdparty/jbig2dec/jbig2_arith.c
@@ -980,6 +981,8 @@ ZXINGCPP_SRC += thirdparty/zint/backend/vector.c
 # --- EXTRACT ---
 
 EXTRACT_CFLAGS += -Ithirdparty/extract/include -Ithirdparty/extract/src
+
+EXTRACT_BUILD_CFLAGS += -Wno-shadow
 
 EXTRACT_SRC += thirdparty/extract/src/alloc.c
 EXTRACT_SRC += thirdparty/extract/src/astring.c
