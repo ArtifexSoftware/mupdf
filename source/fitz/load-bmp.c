@@ -1388,50 +1388,50 @@ fz_load_bmp_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len,
 	const unsigned char *end = buf + len;
 	const unsigned char *p = begin;
 	struct info info = { 0 };
-	int nextoffset = 0;
-	int origidx = subimage;
+	uint32_t prevoffset = 0;
+	uint32_t nextoffset = 0;
+	uint32_t headsize = 0;
+	int count = 0;
 
-	(void) p;
+	if (end - p < 14)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for BMP/BA header");
 
-	do
+	if (is_bitmap_array(p))
 	{
-		p = begin + nextoffset;
-
-		if (end - p < 14)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for bitmap array (%02x%02x) in bmp image", p[0], p[1]);
-
-		if (is_bitmap_array(p))
+		do
 		{
-			/* read16(p+0) == type */
-			/* read32(p+2) == size of this header in bytes */
+			p = begin + nextoffset;
+			if (end - p < 14)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for BA header");
+
+			if (!is_bitmap_array(p))
+				fz_throw(ctx, FZ_ERROR_FORMAT, "non-BA header in bitmap array");
+
+			headsize = read32(p+2); /* size of this header in bytes */
+			if (headsize < 14)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "invalid BA header size (%d)", (int)headsize);
+
+			prevoffset = nextoffset;
 			nextoffset = read32(p + 6);
-			/* read16(p+10) == suitable pelx dimensions */
-			/* read16(p+12) == suitable pely dimensions */
-			p += 14;
-			(void) p;
-		}
-		else if (is_bitmap(p))
-		{
-			nextoffset = 0;
-		}
-		else
-		{
-			fz_warn(ctx, "treating invalid subimage as end of file");
-			nextoffset = 0;
-		}
+			if (nextoffset > 0 && nextoffset <= prevoffset + 14)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "invalid BA offset to next header");
 
-		if (end - begin < nextoffset)
-		{
-			fz_warn(ctx, "treating invalid next subimage offset as end of file");
-			nextoffset = 0;
-		}
-		else
-			subimage--;
+			/* width = read16(p+10) */
+			/* height = read16(p+12) */
 
-	} while (subimage >= 0 && nextoffset > 0);
+			p += headsize;
+		} while (nextoffset > 0 && count++ < subimage);
+		if (count != subimage)
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "subimage index (%d) out of range in bmp image", subimage);
+	}
 
-	if (subimage != -1)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "subimage index (%d) out of range in bmp image", origidx);
+	if (end - p < 14)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for BMP header");
+
+	if (!is_bitmap(p))
+	{
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "subimage index (%d) out of range in bmp image", subimage);
+	}
 
 	fz_try(ctx)
 	{
@@ -1453,46 +1453,50 @@ fz_load_bmp_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len
 {
 	const unsigned char *begin = buf;
 	const unsigned char *end = buf + len;
+	const unsigned char *p = begin;
+	uint32_t prevoffset = 0;
 	uint32_t nextoffset = 0;
+	uint32_t headsize = 0;
 	int count = 0;
 
-	do
+	if (end - p < 14)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for BMP/BA header");
+
+	if (is_bitmap_array(p))
 	{
-		const unsigned char *p = begin + nextoffset;
-
-		if (end - p < 14)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for bitmap array in bmp image");
-
-		if (is_bitmap_array(p))
+		do
 		{
-			/* read16(p+0) == type */
-			/* read32(p+2) == size of this header in bytes */
+			p = begin + nextoffset;
+			if (end - p < 14)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "not enough data for BA header");
+
+			if (!is_bitmap_array(p))
+				fz_throw(ctx, FZ_ERROR_FORMAT, "non-BA header in bitmap array");
+
+			headsize = read32(p+2); /* size of this header in bytes */
+			if (headsize < 14)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "invalid BA header size (%d)", (int)headsize);
+
+			prevoffset = nextoffset;
 			nextoffset = read32(p + 6);
+			if (nextoffset > 0 && nextoffset <= prevoffset + 14)
+				fz_throw(ctx, FZ_ERROR_FORMAT, "invalid BA offset to next header");
+
 			/* read16(p+10) == suitable pelx dimensions */
 			/* read16(p+12) == suitable pely dimensions */
-			p += 14;
-		}
-		else if (is_bitmap(p))
-		{
-			nextoffset = 0;
-		}
-		else
-		{
-			fz_warn(ctx, "treating invalid subimage as end of file");
-			nextoffset = 0;
-		}
 
-		if ((uint32_t) (end - begin) < nextoffset)
-		{
-			fz_warn(ctx, "treating invalid next subimage offset as end of file");
-			nextoffset = 0;
-		}
-		else
-			count++;
+			count += 1;
+		} while (nextoffset > 0);
 
-	} while (nextoffset > 0);
+		return count;
+	}
 
-	return count;
+	if (is_bitmap(p))
+	{
+		return 1;
+	}
+
+	return 0;
 }
 
 fz_pixmap *
