@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2332,17 +2332,15 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 static void
 clear_marked_content(fz_context *ctx, pdf_run_processor *pr)
 {
-	if (pr->marked_content == NULL)
-		return;
+	while (pr->marked_content)
+		pop_marked_content(ctx, pr, 1);
+}
 
-	fz_try(ctx)
-		while (pr->marked_content)
-			pop_marked_content(ctx, pr, 1);
-	fz_always(ctx)
-		while (pr->marked_content)
-			pop_marked_content(ctx, pr, 0);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+static void
+drop_marked_content(fz_context *ctx, pdf_run_processor *pr)
+{
+	while (pr->marked_content)
+		pop_marked_content(ctx, pr, 0);
 }
 
 static void
@@ -2515,10 +2513,11 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 		{
 			fz_set_default_colorspaces(ctx, pr->dev, save_default_cs);
 		}
+		clear_marked_content(ctx, pr);
 	}
 	fz_always(ctx)
 	{
-		clear_marked_content(ctx, pr);
+		drop_marked_content(ctx, pr);
 		pr->marked_content = save_marked_content;
 		pr->default_cs = save_default_cs;
 		fz_drop_default_colorspaces(ctx, xobj_default_cs);
@@ -3279,8 +3278,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 		fz_free(ctx, stk);
 	}
 
-	while (pr->marked_content)
-		pop_marked_content(ctx, pr, 0);
+	drop_marked_content(ctx, pr);
 
 	pdf_drop_obj(ctx, pr->mcid_sent);
 
