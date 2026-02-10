@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Artifex Software, Inc.
+// Copyright (C) 2023-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1455,6 +1455,7 @@ pdf_new_opcount_filter(
 	void *options_)
 {
 	pdf_opcount_processor *proc = pdf_new_processor(ctx, sizeof * proc);
+	proc->super.drop_processor = pdf_drop_opcount_processor;
 
 	fz_try(ctx)
 	{
@@ -1462,12 +1463,14 @@ pdf_new_opcount_filter(
 		proc->mine = pdf_new_buffer_processor(ctx, proc->buffer, 0, 0);
 	}
 	fz_catch(ctx)
+	{
+		pdf_drop_processor(ctx, &proc->super);
 		fz_rethrow(ctx);
+	}
 
 	proc->op_usage = (op_usage_t *)options_;
 
 	proc->super.close_processor = pdf_close_opcount_processor;
-	proc->super.drop_processor = pdf_drop_opcount_processor;
 
 	proc->super.push_resources = pdf_opcount_push_resources;
 	proc->super.pop_resources = pdf_opcount_pop_resources;
