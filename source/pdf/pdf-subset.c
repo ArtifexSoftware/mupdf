@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -537,7 +537,7 @@ do_adjust_simple_font(fz_context *ctx, pdf_document *doc, font_usage_t *font, in
 	if (old_widths)
 	{
 		int j = 0;
-		widths = pdf_new_array(ctx, doc, new_lastchar - new_firstchar + 1);
+		widths = pdf_dict_put_array(ctx, obj, PDF_NAME(Widths), new_lastchar - new_firstchar + 1);
 		for (i = new_firstchar; i <= new_lastchar; i++)
 		{
 			if (font->cids.heap[j] == i)
@@ -548,7 +548,6 @@ do_adjust_simple_font(fz_context *ctx, pdf_document *doc, font_usage_t *font, in
 			else
 				pdf_array_push_int(ctx, widths, 0);
 		}
-		pdf_dict_put_drop(ctx, obj, PDF_NAME(Widths), widths);
 	}
 }
 
