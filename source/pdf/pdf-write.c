@@ -2274,10 +2274,6 @@ flush_gathered(fz_context *ctx, pdf_document *doc, objstm_gather_data *data)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_output(ctx, data->content_out);
-		data->content_out = NULL;
-		fz_drop_buffer(ctx, data->content_buf);
-		data->content_buf = NULL;
 		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, ref);
 		fz_drop_buffer(ctx, newbuf);
@@ -2285,6 +2281,15 @@ flush_gathered(fz_context *ctx, pdf_document *doc, objstm_gather_data *data)
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+}
+
+static void
+drop_data_gathered(fz_context *ctx, objstm_gather_data *data)
+{
+	fz_drop_output(ctx, data->content_out);
+	data->content_out = NULL;
+	fz_drop_buffer(ctx, data->content_buf);
+	data->content_buf = NULL;
 }
 
 static void
@@ -2332,7 +2337,10 @@ objstm_gather(fz_context *ctx, pdf_xref_entry *x, int i, pdf_document *doc, objs
 	x->gen = data->n;
 	data->n++;
 	if (data->n == OBJSTM_MAXOBJS || len > OBJSTM_MAXLEN)
+	{
 		flush_gathered(ctx, doc, data);
+		drop_data_gathered(ctx, data);
+	}
 }
 
 static void
@@ -2345,15 +2353,23 @@ gather_to_objstms(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int
 	data.root_num = pdf_to_num(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)));
 	data.info_num = pdf_to_num(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Info)));
 
-	count = pdf_xref_len(ctx, doc);
-	for (num = 1; num < count; ++num)
+	fz_try(ctx)
 	{
-		pdf_xref_entry *x = pdf_get_xref_entry_no_change(ctx, doc, num);
-		if (x)
-			objstm_gather(ctx, x, num, doc, &data);
-	}
+		count = pdf_xref_len(ctx, doc);
+		for (num = 1; num < count; ++num)
+		{
+			pdf_xref_entry *x = pdf_get_xref_entry_no_change(ctx, doc, num);
+			if (x)
+				objstm_gather(ctx, x, num, doc, &data);
+		}
 
-	flush_gathered(ctx, doc, &data);
+		flush_gathered(ctx, doc, &data);
+	}
+	fz_always(ctx)
+		drop_data_gathered(ctx, &data);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 }
 
 static void
