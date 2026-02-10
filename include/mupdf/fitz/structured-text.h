@@ -1247,4 +1247,12 @@ fz_flotilla_size(fz_context *ctx, fz_flotilla *flot);
 fz_rect
 fz_flotilla_raft_area(fz_context *ctx, fz_flotilla *flot, int i);
 
+/*
+	Internal debugging function to verify the soundness
+	of an stext page.
+
+	title: optional string to be printed.
+*/
+void fz_verify_stext_page(fz_context *ctx, fz_stext_page *page, const char *title);
+
 #endif

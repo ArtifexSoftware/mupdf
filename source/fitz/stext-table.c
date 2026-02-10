@@ -2239,62 +2239,136 @@ unlink_block(fz_stext_block *block, fz_stext_block **first, fz_stext_block **las
 	}
 }
 
-#ifndef NDEBUG
-static int
-verify_stext(fz_context *ctx, fz_stext_page *page, fz_stext_struct *src)
+static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz_stext_struct *src)
 {
 	fz_stext_block *block;
 	fz_stext_block **first = src ? &src->first_block : &page->first_block;
 	fz_stext_block **last = src ? &src->last_block : &page->last_block;
-	int max = 0;
+	int max = -1;
+	int fail = 0;
 
-	assert((*first == NULL) == (*last == NULL));
+	if ((*first == NULL) != (*last == NULL))
+	{
+		fz_write_printf(ctx, out, "*first(%p) = %p *last(%p) = %p - should both be NULL or non-NULL\n",
+			first, *first, last, *last);
+		fail = 1;
+	}
 
 	for (block = *first; block != NULL; block = block->next)
 	{
 		fz_stext_line *line;
 
 		if (block->prev == NULL)
-			assert(*first == block);
-		else
-			assert(block->prev->next == block);
+		{
+			if (*first != block)
+			{
+				fz_write_printf(ctx, out, "first=%p *first=%p should equal block=%p\n", first, *first, block);
+				fail = 1;
+			}
+		}
+		else if (block->prev->next != block)
+		{
+			fz_write_printf(ctx, out, "block->prev(%p)->next=%p should equal block=%p\n", block->prev, block->prev->next, block);
+			fail = 1;
+		}
 		if (block->next == NULL)
-			assert(*last == block);
-		else
-			assert(block->next->prev == block);
+		{
+			if (*last != block)
+			{
+				fz_write_printf(ctx, out, "*last(%p)=%p should equal block=%p\n", last, *last, block);
+				fail = 1;
+			}
+		}
+		else if (block->next->prev != block)
+		{
+			fz_write_printf(ctx, out, "block->next(%p)->prev=%p should equal block=%p\n", block->next, block->next->prev, block);
+			fail = 1;
+		}
 
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
 			if (block->u.s.down)
 			{
-				int m = verify_stext(ctx, page, block->u.s.down);
-				if (m > max)
-					max = m;
+				if (block->u.s.down->up != block)
+				{
+					fz_write_printf(ctx, out, "block->u.s.down(%p)->up should equal block(%p)\n", block->u.s.down, block->u.s.down->up, block);
+					fail = 1;
+				}
+				if (block->u.s.down->parent != src)
+				{
+					fz_write_printf(ctx, out, "block(%p)->u.s.down(%p)->parent=%p should equal src=%p\n", block, block->u.s.down, block->u.s.down->parent, src);
+					fail = 1;
+				}
+				fail |= verify_stext(ctx, out, page, block->u.s.down);
+				if (block->u.s.index <= max)
+				{
+					fz_write_printf(ctx, out, "block(%p)->u.s.index=%d should be > max=%d\n", block, block->u.s.index, max);
+					fail = 1;
+				}
+				max = block->u.s.index;
 			}
 			continue;
 		}
 		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
-		assert((block->u.t.first_line == NULL) == (block->u.t.last_line == NULL));
+		if ((block->u.t.first_line == NULL) != (block->u.t.last_line == NULL))
+		{
+			fz_write_printf(ctx, out, "block(%p)->u.t.first_line=%p and block->u.t.last_line=(%p) should both be NULL or non-NULL\n", block, block->u.t.first_line, block->u.t.last_line);
+			fail = 2;
+		}
 		for (line = block->u.t.first_line; line != NULL; line = line->next)
 		{
 			fz_stext_char *ch;
 
 			if (line->next == NULL)
-				assert(block->u.t.last_line == line);
-			else
-				assert(line->next->prev == line);
+			{
+				if (block->u.t.last_line != line)
+				{
+					fz_write_printf(ctx, out, "block(%p)->u.t.last_line=%p should equal line=%p\n", block, block->u.t.last_line, line);
+					fail = 2;
+				}
+			}
+			else if (line->next->prev != line)
+			{
+				fz_write_printf(ctx, out, "line->next(%p)->prev=%p should equal line=%p\n", line->next, line->next->prev, line);
+				fail = 2;
+			}
 
-			assert((line->first_char == NULL) == (line->last_char == NULL));
+			if ((line->first_char == NULL) != (line->last_char == NULL))
+			{
+				fz_write_printf(ctx, out, "line(%p)->first_char=%p and line->last_char=%p should both be NULL or non-NULL\n", line, line->first_char, line->last_char);
+				fail = 2;
+			}
 
 			for (ch = line->first_char; ch != NULL; ch = ch->next)
-				assert(ch->next != NULL || line->last_char == ch);
+			{
+				if (ch->next == NULL && line->last_char != ch)
+				{
+					fz_write_printf(ctx, out, "line(%p)->last_char=%p but last char=%p\n", line, line->last_char, ch);
+					fail = 2;
+				}
+			}
 		}
 	}
 
-	return max+1;
+	return fail;
 }
-#endif
+
+void
+fz_verify_stext_page(fz_context *ctx, fz_stext_page *page, const char *title)
+{
+	int fail;
+
+	if (title)
+		fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+
+	fail = verify_stext(ctx, fz_stddbg(ctx), page, NULL);
+	if (fail == 0)
+		return;
+
+	fz_print_stext_page_as_xml_with_flags(ctx, fz_stddbg(ctx), page, 0, FZ_STEXT_XML_FLAGS_POINTERS | ((fail & 2) ? FZ_STEXT_XML_FLAGS_CHARS : 0));
+	assert("SText verification failed" == NULL);
+}
 
 static fz_rect
 move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *dest, fz_stext_struct *src, fz_rect r)
@@ -3602,7 +3676,9 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 	if (page == NULL)
 		return;
 
-	assert(verify_stext(ctx, page, NULL));
+#ifndef NDEBUG
+	fz_verify_stext_page(ctx, page, "fz_table_hunt: entry");
+#endif
 
 	flot = fz_new_flotilla_from_stext_page_vectors(ctx, page);
 	fz_try(ctx)
@@ -3630,7 +3706,9 @@ fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 		do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score, 0.3f);
 	}
 
-	assert(verify_stext(ctx, page, NULL));
+#ifndef NDEBUG
+	fz_verify_stext_page(ctx, page, "fz_table_hunt: exit");
+#endif
 }
 
 void
@@ -3642,13 +3720,17 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 	if (page == NULL)
 		return;
 
-	assert(verify_stext(ctx, page, NULL));
+#ifndef NDEBUG
+	fz_verify_stext_page(ctx, page, "fz_table_hunt_within_bounds: entry");
+#endif
 
 	fz_segment_stext_rect(ctx, page, rect);
 
 	do_table_hunt(ctx, page, NULL, &has_background, rect, &score, 1);
 
-	assert(verify_stext(ctx, page, NULL));
+#ifndef NDEBUG
+	fz_verify_stext_page(ctx, page, "fz_table_hunt_within_bounds: exit");
+#endif
 }
 
 fz_stext_block *
