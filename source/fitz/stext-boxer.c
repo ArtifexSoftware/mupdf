@@ -700,6 +700,7 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, fz_re
 
 	newblock->u.s.down->first_block = target;
 	newblock->u.s.down->last_block = last;
+	newblock->u.s.down->parent = target_parent;
 	target->prev = NULL;
 
 	for (block = target; block->next != NULL; block = block->next)

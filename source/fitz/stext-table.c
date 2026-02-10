@@ -577,7 +577,7 @@ add_struct_block_before(fz_context *ctx, fz_stext_block *before, fz_stext_page *
 	if (before)
 	{
 		int idx2 = idx+1;
-		for (block = before->next; block != NULL; block = block->next)
+		for (block = before; block != NULL; block = block->next)
 		{
 			if (block->type != FZ_STEXT_BLOCK_STRUCT)
 				continue;
@@ -2322,6 +2322,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 					move_contained_content(ctx, page, dest, block->u.s.down, r);
 					continue;
 				}
+				block->u.s.down->parent = dest;
 			}
 			unlink_block(block, sfirst, slast);
 			insert_block_before(block, before, page, dest);
