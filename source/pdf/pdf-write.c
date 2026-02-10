@@ -412,7 +412,7 @@ renumber_stored_object_ref(fz_context *ctx, pdf_obj **objp, pdf_write_state *opt
 
 static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
-	pdf_xref_entry *newxref = NULL;
+	pdf_xref_entry *newxref = NULL, *newxref_to_free = NULL;
 	int newlen;
 	int num;
 	int *new_use_list;
@@ -422,6 +422,7 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	new_use_list = fz_calloc(ctx, opts->list_len, sizeof(int));
 
 	fz_var(newxref);
+	fz_var(newxref_to_free);
 	fz_try(ctx)
 	{
 		/* Apply renumber map to indirect references in all objects in xref */
@@ -474,8 +475,13 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		doc->ocg = NULL;
 
 		/* Create new table for the reordered, compacted xref */
-		newxref = Memento_label(fz_malloc_array(ctx, xref_len + 3, pdf_xref_entry), "pdf_xref_entries");
+		newxref_to_free = newxref = Memento_label(fz_malloc_array(ctx, xref_len + 3, pdf_xref_entry), "pdf_xref_entries");
 		newxref[0] = *pdf_get_xref_entry_no_null(ctx, doc, 0);
+		for (num = 1; num < xref_len + 3; num++)
+		{
+			newxref[num].stm_buf = NULL;
+			newxref[num].obj = NULL;
+		}
 
 		/* Move used objects into the new compacted xref */
 		newlen = 0;
@@ -504,12 +510,20 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			}
 		}
 
+		newxref_to_free = NULL;
 		pdf_replace_xref(ctx, doc, newxref, newlen + 1);
-		newxref = NULL;
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, newxref);
+		if (newxref_to_free)
+		{
+			for (num = 0; num < xref_len + 3; num++)
+			{
+				pdf_drop_obj(ctx, newxref_to_free[num].obj);
+				fz_drop_buffer(ctx, newxref_to_free[num].stm_buf);
+			}
+			fz_free(ctx, newxref_to_free);
+		}
 		fz_free(ctx, new_use_list);
 		fz_rethrow(ctx);
 	}
