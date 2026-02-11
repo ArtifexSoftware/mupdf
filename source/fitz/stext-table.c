@@ -2641,12 +2641,19 @@ tidy_td_divs(fz_context *ctx, fz_stext_struct *parent)
 	while (1)
 	{
 		fz_stext_block *block = parent->first_block;
+		fz_stext_block *b;
 
 		if (block == NULL || block->next != NULL || block->type != FZ_STEXT_BLOCK_STRUCT || block->u.s.down == NULL || block->u.s.down->standard != FZ_STRUCTURE_DIV)
 			return;
 
 		parent->first_block = block->u.s.down->first_block;
 		parent->last_block = block->u.s.down->last_block;
+
+		for (b = parent->first_block; b != NULL; b = b->next)
+		{
+			if (b->type == FZ_STEXT_BLOCK_STRUCT && b->u.s.down)
+				b->u.s.down->parent = parent;
+		}
 	}
 }
 
