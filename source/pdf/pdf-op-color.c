@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -974,12 +974,18 @@ pdf_color_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *
 	}
 
 	fz_keep_image(ctx, image);
-	if (p->options->image_rewrite)
-		p->options->image_rewrite(ctx, p->options->opaque, &image, p->gstate->ctm, NULL);
+	fz_try(ctx)
+	{
+		if (p->options->image_rewrite)
+			p->options->image_rewrite(ctx, p->options->opaque, &image, p->gstate->ctm, NULL);
 
-	if (p->super.chain->op_BI)
-		p->super.chain->op_BI(ctx, p->super.chain, image, colorspace);
-	fz_drop_image(ctx, image);
+		if (p->super.chain->op_BI)
+			p->super.chain->op_BI(ctx, p->super.chain, image, colorspace);
+	}
+	fz_always(ctx)
+		fz_drop_image(ctx, image);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
