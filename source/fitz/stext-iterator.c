@@ -39,11 +39,26 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_dfs(fz_stext_pag
 
 	pos = fz_stext_page_block_iterator_begin(page);
 
-	while (pos.block && pos.block->type == FZ_STEXT_BLOCK_STRUCT)
+	while (1)
 	{
-		/* Move down. And loop. */
-		pos.parent = pos.block->u.s.down;
-		pos.block = pos.block->u.s.down->first_block;
+		/* We cannot stop on a struct block. */
+		while (pos.block && pos.block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			/* Move down. */
+			pos.parent = pos.block->u.s.down;
+			pos.block = pos.block->u.s.down->first_block;
+		}
+
+		/* If we're on a block, we're done. */
+		if (pos.block != NULL)
+			break;
+
+		/* We can only stop on a NULL block, if we're at the end. */
+		if (pos.parent == NULL)
+			return pos;
+		/* Move up, and along. */
+		pos.block = pos.parent->up->next;
+		pos.parent = pos.parent->parent;
 	}
 
 	return pos;
