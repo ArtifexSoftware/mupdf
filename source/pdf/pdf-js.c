@@ -650,7 +650,7 @@ static void util_printf_d(fz_context *ctx, fz_buffer *out, int ds, int sign, int
 	if (value < 0)
 	{
 		sign = '-';
-		a = -value;
+		a = -(unsigned)value; // cast to avoid UB on -INT_MIN
 	}
 	else
 	{
