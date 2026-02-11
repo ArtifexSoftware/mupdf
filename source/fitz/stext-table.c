@@ -2377,6 +2377,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 	fz_stext_block **sfirst = src ? &src->first_block : &page->first_block;
 	fz_stext_block **slast = src ? &src->last_block : &page->last_block;
 	fz_stext_block *block, *next_block;
+	int max;
 
 	for (block = *sfirst; block != NULL; block = next_block)
 	{
@@ -2539,6 +2540,19 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 				}
 			}
 		}
+	}
+
+	/* Now run through where we put blocks ensuring the indexes make sense. */
+	max = 0;
+	before = dest ? dest->first_block : page->first_block;
+	for (block = before; block != NULL; block = block->next)
+	{
+		if (block->type != FZ_STEXT_BLOCK_STRUCT)
+			continue;
+
+		if (block->u.s.index < max)
+			block->u.s.index = max;
+		max = block->u.s.index+1;
 	}
 
 	return r;
