@@ -64,7 +64,7 @@ public final class AndroidDrawDevice extends NativeDevice
 		this(bitmap, 0, 0, true);
 	}
 
-	public static Bitmap drawPage(Page page, Matrix ctm) {
+	public static Bitmap drawPage(Page page, Matrix ctm, boolean isLuminanceInverted) {
 		RectI ibox = new RectI(page.getBounds().transform(ctm));
 		int w = ibox.x1 - ibox.x0;
 		int h = ibox.y1 - ibox.y0;
@@ -72,6 +72,7 @@ public final class AndroidDrawDevice extends NativeDevice
 		AndroidDrawDevice dev = new AndroidDrawDevice(bmp, ibox.x0, ibox.y0);
 		try {
 			page.run(dev, ctm, null);
+			if (isLuminanceInverted) dev.invertLuminance();
 			dev.close();
 		} finally {
 			dev.destroy();
@@ -79,12 +80,16 @@ public final class AndroidDrawDevice extends NativeDevice
 		return bmp;
 	}
 
+	public static Bitmap drawPage(Page page, Matrix ctm) {
+		return drawPage(page, ctm, false);
+	}
+
 	public static Bitmap drawPage(Page page, float dpi, int rotate) {
-		return drawPage(page, new Matrix(dpi / 72).rotate(rotate));
+		return drawPage(page, new Matrix(dpi / 72).rotate(rotate), false);
 	}
 
 	public static Bitmap drawPage(Page page, float dpi) {
-		return drawPage(page, new Matrix(dpi / 72));
+		return drawPage(page, new Matrix(dpi / 72), false);
 	}
 
 	public static Matrix fitPage(Page page, int fitW, int fitH) {
