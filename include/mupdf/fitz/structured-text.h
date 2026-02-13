@@ -147,6 +147,17 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	details (currently just the bbox) of vector graphics. This is intended
 	to be of use in segmentation analysis.
 
+	FZ_STEXT_LAZY_VECTORS: If this option is set, we will defer collected
+	vectors to the end of the text run they appear in. This prevents vector
+	drawn strikeouts, or diacritics/accents/marks from breaking the flow
+	of text.
+
+	FZ_STEXT_FUZZY_VECTORS: If this option is set, we 'fuzzily' collect
+	rectangular vectors of the same colour together. This enables us to
+	spot where 'pixels' or 'slices' of vectors are used to create the
+	appearance of characters on the page without exploding the storage
+	and processing time requirements.
+
 	FZ_STEXT_IGNORE_ACTUALTEXT: If this option is set, we will no longer
 	replace text by the ActualText replacement specified in the document.
 
@@ -203,6 +214,7 @@ enum
 	FZ_STEXT_ACCURATE_ASCENDERS = (1<<18),
 	FZ_STEXT_ACCURATE_SIDE_BEARINGS = (1<<19),
 	FZ_STEXT_LAZY_VECTORS = (1<<20),
+	FZ_STEXT_FUZZY_VECTORS = (1<<21),
 
 	/* An old, deprecated option. */
 	FZ_STEXT_MEDIABOX_CLIP = FZ_STEXT_CLIP
