@@ -2084,6 +2084,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_COLLECT_VECTORS;
 	if (fz_has_option(ctx, string, "lazy-vectors", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_LAZY_VECTORS;
+	if (fz_has_option(ctx, string, "fuzzy-vectors", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_FUZZY_VECTORS;
 	if (fz_has_option(ctx, string, "ignore-actualtext", & val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_IGNORE_ACTUALTEXT;
 	if (fz_has_option(ctx, string, "segment", &val) && fz_option_eq(val, "yes"))
@@ -2307,6 +2309,129 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect 
 		bbox = fz_intersect_rect(bbox, r);
 		if (!fz_is_valid_rect(bbox))
 			return;
+	}
+
+	/* Can we just add this one onto the previous one? */
+	/* Only if it's a small rectangle... */
+	if ((flags & FZ_STEXT_VECTOR_IS_RECTANGLE) && bbox.x1 - bbox.x0 <= 2 && bbox.y1 - bbox.y0 <= 2)
+	{
+		fz_stext_block *prev;
+		/* Find b = the previous block. */
+		if (tdev->flags & FZ_STEXT_LAZY_VECTORS)
+			b = tdev->lazy_vectors_tail;
+		else if (page->last_struct)
+			b = page->last_struct->last_block;
+		else
+			b = page->last_block;
+
+		if (b && b->type == FZ_STEXT_BLOCK_VECTOR && b->u.v.argb == argb && b->u.v.flags == flags)
+		{
+			/* Maybe we can join it? */
+			float fudge = 0.001f;
+			if (b->bbox.x0 == bbox.x0 && b->bbox.x1 == bbox.x1 && b->bbox.y1 + fudge >= bbox.y0 && b->bbox.y0 - fudge <= bbox.y1)
+			{
+				/* Stacks vertically. */
+				b->bbox.y0 = fz_min(b->bbox.y0, bbox.y0);
+				b->bbox.y1 = fz_max(b->bbox.y1, bbox.y1);
+				return;
+			}
+			else if (b->bbox.y0 == bbox.y0 && b->bbox.y1 == bbox.y1 && b->bbox.x1 + fudge >= bbox.x0 && b->bbox.x0 - fudge <= bbox.x1)
+			{
+				/* Stacks horizontally. */
+				b->bbox.x0 = fz_min(b->bbox.x0, bbox.x0);
+				b->bbox.x1 = fz_max(b->bbox.x1, bbox.x1);
+				return;
+			}
+
+			/* So, we can't add our new vector onto the previous one. But can we merge the 2 previous ones? */
+			/* The intent here is that we allow a set of vector 'blocks' to be merged together, perhaps:
+			 *    ABC
+			 * Then we allow another set to be merged together, perhaps DE:
+			 *    ABC
+			 *    DE
+			 * Then when we get another block that can't be merged into DE (perhaps F):
+			 *    ABC
+			 *    DE
+			 *    F
+			 * We'll consider ABC and DE for merging. Whatevever block that F ends up
+			 * in later (maybe FGH):
+			 *    ABC
+			 *    DE
+			 *    FGH
+			 * will be considered for merging later. We can always do this "exactly" (if the blocks
+			 * line up precisely), but to do this 'lossily', we guard it with 'FUZZY_VECTORS'.
+			 */
+			prev = b->prev;
+			while (prev && prev->type == FZ_STEXT_BLOCK_VECTOR && (prev->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE))
+			{
+				/* Lossless merging. */
+				if (prev->bbox.x0 == b->bbox.x0 && prev->bbox.x1 == b->bbox.x1 && prev->bbox.y1 + fudge >= b->bbox.y0 && prev->bbox.y0 - fudge <= b->bbox.y1)
+				{
+					/* Stacks exactly vertically. Very rarely hit. */
+					prev->bbox.y0 = fz_min(prev->bbox.y0, b->bbox.y0);
+					prev->bbox.y1 = fz_max(prev->bbox.y1, b->bbox.y1);
+					return;
+				}
+				else if (prev->bbox.y0 == b->bbox.y0 && prev->bbox.y1 == b->bbox.y1 && prev->bbox.x1 + fudge >= b->bbox.x0 && prev->bbox.x0 - fudge <= b->bbox.x1)
+				{
+					/* Stacks horizontally.  Very rarely hit. */
+					prev->bbox.x0 = fz_min(prev->bbox.x0, b->bbox.x0);
+					prev->bbox.x1 = fz_max(prev->bbox.x1, b->bbox.x1);
+					return;
+				}
+				if (tdev->flags & FZ_STEXT_FUZZY_VECTORS)
+				{
+					/* Be more forgiving in how we merge vectors */
+					/* We need to be careful not to merge together differently oriented borders for table cells.
+					 *        C
+					 *        |
+					 *        v
+					 *     +-----+-----+
+					 * A-> |     |     |
+					 *     +-----+-----+
+					 * B-> |     |     |
+					 *     +-----+-----+
+					 *
+					 * It'd be fine to merge borders A and B together, because it still signifies the same
+					 * edges. It would NOT be fine to merge A and C together, because we'd lose the sense
+					 * of them being borders, and just have a blob that covered the cell.
+					 * The fudge2 logic below should hopefully allow for this, as well as allowing us to
+					 * match blocks like:
+					 *    ABC
+					 *   DE FG
+					 *    HIJ
+					 *   KL MN
+					 *    OPQ
+					 */
+					float fudge2 = 2;
+					if ((fabsf(prev->bbox.x0 - b->bbox.x0) <= fudge2 || fabsf(prev->bbox.x1 - b->bbox.x1) <= fudge2) && prev->bbox.y1 + fudge >= b->bbox.y0 && prev->bbox.y0 - fudge <= b->bbox.y1)
+					{
+						/* Stacks vertically. */
+						goto join;
+					}
+					else if ((fabsf(prev->bbox.y0 - b->bbox.y0) <= fudge2 || fabsf(prev->bbox.y1 - b->bbox.y1) <= fudge2) && prev->bbox.x1 + fudge >= b->bbox.x0 && prev->bbox.x0 - fudge <= b->bbox.x1)
+					{
+						/* Stacks horizontally. */
+	join:
+						prev->bbox.x0 = fz_min(prev->bbox.x0, b->bbox.x0);
+						prev->bbox.x1 = fz_max(prev->bbox.x1, b->bbox.x1);
+						prev->bbox.y0 = fz_min(prev->bbox.y0, b->bbox.y0);
+						prev->bbox.y1 = fz_max(prev->bbox.y1, b->bbox.y1);
+						/* Unlink b (so, fiddle with b->prev, which is not necessarily prev!) */
+						b->prev->next = NULL;
+						if (tdev->flags & FZ_STEXT_LAZY_VECTORS)
+							tdev->lazy_vectors_tail = b->prev;
+						else if (page->last_struct)
+							page->last_struct->last_block = b->prev;
+						else
+							page->last_block = b->prev;
+						break;
+					}
+				}
+				/* Now, allow for looking further back. */
+				prev = prev->prev;
+			}
+		}
 	}
 
 	if (tdev->flags & FZ_STEXT_LAZY_VECTORS)
