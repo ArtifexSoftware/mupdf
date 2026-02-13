@@ -23,12 +23,15 @@
 #include "mupdf/fitz.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 /* #define DEBUG_WRITE_AS_PS */
 
 /* #define DEBUG_TABLE_STRUCTURE */
 
 /* #define DEBUG_TABLE_HUNT */
+
+/* #define DEBUG_TABLE_SCORES */
 
 /*
  * The algorithm.
@@ -896,16 +899,18 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 #endif
 }
 
-/* We want to check for whether a DIV that we are about to descend into
- * contains a column of justified text. We will accept some headers in
- * this text, but not JUST headers. */
+/* We want to check for whether a given region contains a column
+ * of justified text. We will accept some headers in this text, but
+ * not JUST headers. */
 static int
-all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
+all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block, fz_rect bounds)
 {
 	int just_headers = 1;
 
 	for (; block != NULL; block = block->next)
 	{
+		if (fz_is_empty_rect(fz_intersect_rect(block->bbox, bounds)))
+			continue;
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
 			if (block->u.s.down == NULL)
@@ -918,7 +923,7 @@ all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
 				block->u.s.down->standard == FZ_STRUCTURE_H5 ||
 				block->u.s.down->standard == FZ_STRUCTURE_H6)
 				continue;
-			if (!all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block))
+			if (!all_blocks_are_justified_or_headers(ctx, block->u.s.down->first_block, bounds))
 				return 0;
 		}
 		just_headers = 0;
@@ -933,52 +938,6 @@ all_blocks_are_justified_or_headers(fz_context *ctx, fz_stext_block *block)
 }
 
 #define TWO_INCHES (72*2)
-
-/* Walk through the blocks, finding the bbox. */
-static fz_rect
-walk_to_find_bounds(fz_context *ctx, fz_stext_block *first_block)
-{
-	fz_rect bounds = fz_empty_rect;
-	fz_stext_block *block;
-	fz_stext_line *line;
-	fz_stext_char *ch;
-
-	for (block = first_block; block != NULL; block = block->next)
-	{
-		switch (block->type)
-		{
-		case FZ_STEXT_BLOCK_STRUCT:
-			if (!block->u.s.down)
-				continue;
-			if (block->u.s.down->standard == FZ_STRUCTURE_H)
-			{
-				if (block->next != NULL &&
-					block->next->type == FZ_STEXT_BLOCK_TEXT &&
-					block->next->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL)
-					continue;
-			}
-			bounds = fz_union_rect(bounds, walk_to_find_bounds(ctx, block->u.s.down->first_block));
-			break;
-		case FZ_STEXT_BLOCK_VECTOR:
-			bounds = fz_union_rect(bounds, block->bbox);
-			break;
-		case FZ_STEXT_BLOCK_TEXT:
-			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL && block->bbox.x1 - block->bbox.x0 >= TWO_INCHES)
-				continue;
-			for (line = block->u.t.first_line; line != NULL; line = line->next)
-			{
-				for (ch = line->first_char; ch != NULL; ch = ch->next)
-				{
-					if (ch->c != ' ')
-						bounds = fz_union_rect(bounds, fz_rect_from_quad(ch->quad));
-				}
-			}
-			break;
-		}
-	}
-
-	return bounds;
-}
 
 static void
 walk_to_find_content(fz_context *ctx, div_list *xs, div_list *ys, fz_stext_block *first_block, fz_rect bounds)
@@ -1164,7 +1123,22 @@ typedef struct
 	fz_stext_grid_positions *ypos;
 	fz_rect bounds;
 	int has_background;
+	float score;
 } grid_walker_data;
+
+/* This frees the contents, not the block itself! */
+static void
+drop_grid_walker_data(fz_context *ctx, grid_walker_data *data)
+{
+	if (data == NULL)
+		return;
+	fz_free(ctx, data->xpos);
+	fz_free(ctx, data->ypos);
+	fz_free(ctx, data->cells);
+	data->xpos = NULL;
+	data->ypos = NULL;
+	data->cells = NULL;
+}
 
 static fz_stext_grid_info *
 copy_grid_info_to_pool(fz_context *ctx, fz_stext_page *page, cells_t *cells)
@@ -2861,7 +2835,7 @@ tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *pare
 	}
 }
 
-static fz_stext_struct *
+static fz_stext_block *
 transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_stext_struct *parent)
 {
 	int w = gd->xpos->len;
@@ -3011,7 +2985,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 	}
 	tidy_orphaned_tables(ctx, page, parent);
 
-	return table;
+	return table->up;
 }
 
 static void
@@ -3368,75 +3342,6 @@ bad_region:
 	return changed;
 }
 
-static int
-find_table_within_bounds(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content, fz_rect bounds)
-{
-	div_list xs = { 0 };
-	div_list ys = { 0 };
-	int failed = 1;
-	int bg;
-
-	fz_try(ctx)
-	{
-		walk_to_find_content(ctx, &xs, &ys, content, bounds);
-
-		sanitize_positions(ctx, &xs);
-		sanitize_positions(ctx, &ys);
-
-		/* Run across the line, counting 'winding' */
-		/* If we don't have at least 2 rows and 2 columns, give up. */
-		if (xs.len <= 2 || ys.len <= 2)
-			break;
-
-		gd->xpos = make_table_positions(ctx, &xs, bounds.x0, bounds.x1);
-		gd->ypos = make_table_positions(ctx, &ys, bounds.y0, bounds.y1);
-		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
-
-		bg = walk_for_background(ctx, gd, content);
-		if (bg == BACKGROUND_FOUND)
-			gd->has_background = 1;
-
-		/* Walk the content looking for grid lines. These
-		 * lines refine our positions. 2 passes. First pass
-		 * ensures that all the lines are in the grid. Second
-		 * pass then marks them. */
-		walk_grid_lines(ctx, gd, content);
-		walk_grid_lines2(ctx, gd, content);
-		/* Now, we walk the content looking for content that crosses
-		 * these grid lines. This allows us to spot spanned cells. */
-		if (calculate_spanned_content(ctx, gd, content))
-			break; /* Unlikely to be a table. */
-
-#ifdef DEBUG_TABLE_STRUCTURE
-		asciiart_table(gd);
-#endif
-		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
-		do
-		{
-			merge_columns(gd);
-			merge_rows(gd);
-		}
-		while (remove_bordered_empty_cells(gd));
-
-		/* Did we shrink the table so much it's not a table any more? */
-		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
-			break;
-
-		failed = 0;
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, xs.list);
-		fz_free(ctx, ys.list);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return failed;
-}
-
 /* Is cell (x,y) plausibly part of a bordered cell (or 'super-cell'
  * allowing for spanning)? */
 static int
@@ -3516,6 +3421,10 @@ plausibly_bordered_spanned_cell(cells_t *cells, int x, int y)
  *  + Score 1 for every empty cell that isn't part of a properly
  *    bordered region, (or 0.5 if it's 'half' bordered)
  *  + Score 1 for every 'crossing' between cells.
+ *
+ * The score is the "average cell badness" for a table. (So,
+ * a table with half unbordered cells will score the same
+ * regardless of the size of the table).
  */
 static float
 score_table(fz_context *ctx, grid_walker_data *gd)
@@ -3566,321 +3475,536 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 }
 
 static int
-do_table_hunt(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, int *has_background, fz_rect top_bounds, float *subtable_score, float score_threshold)
+find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 {
-	fz_stext_block *block;
-	int count;
-	fz_stext_block **first_block = parent ? &parent->first_block : &page->first_block;
-	int num_subtables = 0;
-	grid_walker_data gd = { 0 };
-	float score;
-
-	*subtable_score = 0;
-
-	/* No content? Just bale. */
-	if (*first_block == NULL)
-		return 0;
-
-	/* If all the content here looks like a column of text, don't
-	 * hunt for a table within it. */
-	if (all_blocks_are_justified_or_headers(ctx, *first_block))
-		return num_subtables;
-
-	gd.bounds = top_bounds;
-
-	/* First off, descend into any children to see if those look like tables. */
-	count = 0;
-	for (block = *first_block; block != NULL; block = block->next)
-	{
-		if (block->type == FZ_STEXT_BLOCK_STRUCT)
-		{
-			if (block->u.s.down && fz_is_valid_rect(fz_intersect_rect(top_bounds, block->bbox)))
-			{
-				float my_subtable_score;
-				int background = 0;
-				int st;
-#ifdef DEBUG_TABLE_STRUCTURE
-				printf("Looking for subtable\n");
-#endif
-				st = do_table_hunt(ctx, page, block->u.s.down, &background, top_bounds, &my_subtable_score, score_threshold);
-				num_subtables += st;
-#ifdef DEBUG_TABLE_STRUCTURE
-				printf("subtable scored %g in %d subtables\n", my_subtable_score, st);
-#endif
-				if (background)
-					*has_background = 1;
-				*subtable_score += my_subtable_score;
-				count++;
-			}
-		}
-		else if (block->type == FZ_STEXT_BLOCK_TEXT)
-			count++;
-	}
-
-	/* If we don't have at least a single child, no more to hunt. */
-	/* We only need a single block, because a single text block can
-	 * contain an entire unbordered table. */
-	if (count < 1)
-		return num_subtables;
-
-	/* If at least one of the subtables we found has a background on it, then
-	 * probably they all do, and we've probably got a good match. */
-	if (*has_background)
-		return num_subtables;
-
-	/* We only look for a table at this level if we either at the top
-	 * or on a div. This saves us looking for tables within an 'H'
-	 * for example. */
-	if (parent != NULL && parent->standard != FZ_STRUCTURE_DIV)
-		return num_subtables;
-
-
-	fz_var(gd);
+	div_list xs = { 0 };
+	div_list ys = { 0 };
+	int found = 0;
+	int bg;
 
 	fz_try(ctx)
 	{
-		/* Now see whether the content looks like tables. */
-		fz_rect bounds = walk_to_find_bounds(ctx, *first_block);
-
-		bounds = fz_intersect_rect(bounds, top_bounds);
-
-		if (find_table_within_bounds(ctx, &gd, *first_block, bounds))
+		if (all_blocks_are_justified_or_headers(ctx, content, gd->bounds))
 			break;
 
-		score = score_table(ctx, &gd);
-#ifdef DEBUG_TABLE_STRUCTURE
-		printf("Bounds: %g %g %g %g Score: %g\n",
-			bounds.x0, bounds.y0, bounds.x1, bounds.y1, score);
-#endif
+		walk_to_find_content(ctx, &xs, &ys, content, gd->bounds);
 
-		*has_background = gd.has_background;
+		sanitize_positions(ctx, &xs);
+		sanitize_positions(ctx, &ys);
 
-		if (num_subtables > 0)
-		{
-			/* Our table's score needs to be lower than the sum of the scores
-			 * for the subtables for us to accept it. */
-			int x, y, ditch;
-			if (score > *subtable_score)
-			{
-#ifdef DEBUG_TABLE_STRUCTURE
-				printf("Ignoring table as score (%g) > subtable_score (%g)\n", score, *subtable_score);
-#endif
-				break;
-			}
-			/* We are risking throwing away a table we've already found for this
-			 * one. Only do it if this one is really convincing. */
-			ditch = 0;
-			for (x = 0; x < gd.xpos->len; x++)
-				if (gd.xpos->list[x].uncertainty != 0)
-					ditch = 1;
-			if (x != gd.xpos->len)
-				ditch = 2;
-			for (y = 0; y < gd.ypos->len; y++)
-				if (gd.ypos->list[y].uncertainty != 0)
-					ditch = 3;
-			if (y != gd.ypos->len)
-				ditch = 4;
-			if (ditch)
-			{
-#ifdef DEBUG_TABLE_STRUCTURE
-				printf("Ignoring table as it seems uncertain (%d).\n", ditch);
-#endif
-				break;
-			}
-		}
-
-		if (score > score_threshold)
-		{
-#ifdef DEBUG_TABLE_STRUCTURE
-			printf("Ignoring table as score (%g) > score_threshold (%g)\n", score, score_threshold);
-#endif
+		/* Run across the line, counting 'winding' */
+		/* If we don't have at least 2 rows and 2 columns, give up. */
+		if (xs.len <= 2 || ys.len <= 2)
 			break;
-		}
 
-		*subtable_score = score;
+		gd->xpos = make_table_positions(ctx, &xs, gd->bounds.x0, gd->bounds.x1);
+		gd->ypos = make_table_positions(ctx, &ys, gd->bounds.y0, gd->bounds.y1);
+		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
+
+		bg = walk_for_background(ctx, gd, content);
+		if (bg == BACKGROUND_FOUND)
+			gd->has_background = 1;
+
+		/* Walk the content looking for grid lines. These
+		 * lines refine our positions. 2 passes. First pass
+		 * ensures that all the lines are in the grid. Second
+		 * pass then marks them. */
+		walk_grid_lines(ctx, gd, content);
+		walk_grid_lines2(ctx, gd, content);
+		/* Now, we walk the content looking for content that crosses
+		 * these grid lines. This allows us to spot spanned cells. */
+		if (calculate_spanned_content(ctx, gd, content))
+			break; /* Unlikely to be a table. */
 
 #ifdef DEBUG_TABLE_STRUCTURE
-		printf("Transcribing table: (%g,%g)->(%g,%g)\n",
-			gd.xpos->list[0].pos,
-			gd.ypos->list[0].pos,
-			gd.xpos->list[gd.xpos->len-1].pos,
-			gd.ypos->list[gd.ypos->len-1].pos);
+		asciiart_table(gd);
 #endif
-
-		(void)transcribe_table(ctx, &gd, page, parent);
-		num_subtables = 1;
-#ifdef DEBUG_WRITE_AS_PS
+		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
+		do
 		{
-			int i;
-			printf("%% TABLE\n");
-			for (i = 0; i < block->u.b.xs->len; i++)
-			{
-				if (block->u.b.xs->list[i].uncertainty)
-					printf("0 1 0 setrgbcolor\n");
-				else
-					printf("0 0.5 0 setrgbcolor\n");
-				printf("%g %g moveto %g %g lineto stroke\n",
-					block->u.b.xs->list[i].pos, block->bbox.y0,
-					block->u.b.xs->list[i].pos, block->bbox.y1);
-			}
-			for (i = 0; i < block->u.b.ys->len; i++)
-			{
-				if (block->u.b.ys->list[i].uncertainty)
-					printf("0 1 0 setrgbcolor\n");
-				else
-				printf("0 0.5 0 setrgbcolor\n");
-				printf("%g %g moveto %g %g lineto stroke\n",
-					block->bbox.x0, block->u.b.ys->list[i].pos,
-					block->bbox.x1, block->u.b.ys->list[i].pos);
-			}
+			merge_columns(gd);
+			merge_rows(gd);
 		}
-#endif
+		while (remove_bordered_empty_cells(gd));
+
+		/* Did we shrink the table so much it's not a table any more? */
+		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
+			break;
+
+		found = 1;
+
+		gd->score = score_table(ctx, gd);
 	}
 	fz_always(ctx)
 	{
-		fz_free(ctx, gd.xpos);
-		fz_free(ctx, gd.ypos);
-		fz_free(ctx, gd.cells);
+		fz_free(ctx, xs.list);
+		fz_free(ctx, ys.list);
 	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return found;
+}
+
+/**
+*/
+typedef struct
+{
+	grid_walker_data data;
+	int from_raft;
+	int found;
+} fz_potential_table;
+
+/**
+	A list of potential tables.
+*/
+typedef struct
+{
+	int len;
+	int max;
+	fz_potential_table *tables;
+} fz_potential_table_list;
+
+static fz_potential_table_list *
+fz_new_potential_table_list(fz_context *ctx)
+{
+	return fz_malloc_struct(ctx, fz_potential_table_list);
+}
+
+static void
+fz_drop_potential_table_list(fz_context *ctx, fz_potential_table_list *tlist)
+{
+	int i;
+
+	if (tlist == NULL)
+		return;
+
+	if (tlist->tables)
+	{
+		for (i = 0; i < tlist->len; i++)
+			drop_grid_walker_data(ctx, &tlist->tables[i].data);
+		fz_free(ctx, tlist->tables);
+	}
+	fz_free(ctx, tlist);
+}
+
+static void
+fz_push_potential_table(fz_context *ctx, fz_potential_table_list *tlist, fz_rect r, int from_raft)
+{
+	if (tlist->len == tlist->max)
+	{
+		int n = tlist->max * 2;
+		if (n == 0)
+			n = 16;
+		tlist->tables = fz_realloc_array(ctx, tlist->tables, n, fz_potential_table);
+		tlist->max = n;
+	}
+
+	memset(&tlist->tables[tlist->len], 0, sizeof(tlist->tables[0]));
+	tlist->tables[tlist->len].data.bounds = r;
+	tlist->tables[tlist->len].from_raft = from_raft;
+	tlist->len++;
+}
+
+static void
+fz_drop_potential_table(fz_context *ctx, fz_potential_table *table)
+{
+	if (table)
+		drop_grid_walker_data(ctx, &table->data);
+}
+
+static int
+drop_contained_tables(fz_context *ctx, fz_potential_table_list *list, int lo, int hi, int at)
+{
+	int i, j;
+	for (i = lo, j = lo; i < hi; i++)
+	{
+		if (i != at)
+		{
+			if (fz_contains_rect(list->tables[at].data.bounds, list->tables[i].data.bounds))
+			{
+				fz_drop_potential_table(ctx, &list->tables[i]);
+				continue; /* They overlap, so drop this one. */
+			}
+		}
+		if (i != j)
+			list->tables[j] = list->tables[i];
+		j++;
+	}
+	return j;
+}
+
+#ifdef DEBUG_TABLE_SCORES
+static void
+list_tables(fz_context *ctx, fz_potential_table_list *list, const char *title)
+{
+	int i, n;
+
+	if (title)
+		printf("%s\n", title);
+
+	n = list->len;
+	for (i = 0; i < n; i++)
+	{
+		printf("%d: box=(%g %g %g %g) score=%g raft=%d\n",
+			i,
+			list->tables[i].data.bounds.x0,
+			list->tables[i].data.bounds.y0,
+			list->tables[i].data.bounds.x1,
+			list->tables[i].data.bounds.y1,
+			list->tables[i].data.score,
+			list->tables[i].from_raft);
+	}
+}
+#endif
+
+static float
+scaled_table_score(fz_potential_table_list *list, int k)
+{
+	float score = list->tables[k].data.score;
+	float w = list->tables[k].data.bounds.x1 - list->tables[k].data.bounds.x0;
+	float h = list->tables[k].data.bounds.y1 - list->tables[k].data.bounds.y0;
+
+	if (w <= 0 || h <= 0)
+		return 999999; /* Zero area tables are bad choices. */
+	return score / w / h;
+}
+
+static int
+table_size_cmp(const void *a_, const void *b_)
+{
+	const fz_potential_table *a = a_;
+	const fz_potential_table *b = b_;
+	float w_a = (a->data.bounds.x1 - a->data.bounds.x0);
+	float h_a = (a->data.bounds.y1 - a->data.bounds.y0);
+	float area_a = (w_a > 0 && h_a > 0) ? w_a * h_a : 0;
+	float w_b = (b->data.bounds.x1 - b->data.bounds.x0);
+	float h_b = (b->data.bounds.y1 - b->data.bounds.y0);
+	float area_b = (w_b > 0 && h_b > 0) ? w_b * h_b : 0;
+
+	if (area_a < area_b)
+		return -1;
+	else if (area_a > area_b)
+		return 1;
+	/* Some extra logic to ensure stability */
+	else if (a < b)
+		return -1;
+	else if (a > b)
+		return 1;
+	return 0;
+}
+
+/* Takes ownership of list, and frees before return. */
+static fz_stext_block *
+hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list)
+{
+	int i, j, k, n;
+	fz_stext_block *last = NULL;
+
+	if (!list)
+		return NULL;
+
+	fz_try(ctx)
+	{
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "pre find_table");
+#endif
+
+		/* Look for tables in all the possible positions */
+		n = list->len;
+		for (i = 0; i < n; i++)
+			list->tables[i].found = find_table(ctx, &list->tables[i].data, page->first_block);
+
+		/* Cull the tables that weren't found. */
+		n = list->len;
+		for (j = 0, i = 0; i < n; i++)
+		{
+			if (!list->tables[i].found)
+			{
+				fz_drop_potential_table(ctx, &list->tables[i]);
+				continue;
+			}
+			if (i != j)
+				list->tables[j] = list->tables[i];
+			j++;
+		}
+		list->len = j;
+
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "pre raft cull");
+#endif
+
+		/* Remove any tables that are masked by tables that came from rafts. */
+		n = list->len;
+		for (j = 0, i = 0; i < n; i++)
+		{
+			if (!list->tables[i].from_raft)
+			{
+				/* Is 'i' masked by a from_raft one? */
+				for (k = 0; k < n; k++)
+				{
+					if (!list->tables[k].from_raft)
+						continue;
+					if (fz_contains_rect(list->tables[k].data.bounds, list->tables[i].data.bounds))
+						break;
+				}
+				if (k != n)
+				{
+					fz_drop_potential_table(ctx, &list->tables[i]);
+					continue;
+				}
+			}
+#ifndef NDEBUG
+			else
+			{
+				/* i is from a raft. No other one from a raft can intersect it. */
+				for (k = 0; k < n; k++)
+				{
+					if (i == k)
+						continue;
+					if (!list->tables[k].from_raft)
+						continue;
+					assert(fz_is_empty_rect(fz_intersect_rect(list->tables[i].data.bounds, list->tables[k].data.bounds)));
+				}
+			}
+#endif
+			if (i != j)
+				list->tables[j] = list->tables[i];
+			j++;
+		}
+		list->len = j;
+
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "pre sort");
+#endif
+		qsort(&list->tables[0], list->len, sizeof(list->tables[0]), table_size_cmp);
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "pre cull");
+#endif
+
+		/* Further cull the tables. */
+		/* For each table, look to see if it contains others. Choose between this table
+		 * or the ones it contains */
+		n = list->len;
+		for (j = 0, i = 0; i < n; i++)
+		{
+			/* At any point in this loop: 0..j, and i to n are valid. */
+			float overlapped_score = 0;
+			int num_overlaps = 0;
+			for (k = 0; k < n; k++)
+			{
+				if (k == j)
+				{
+					k = i+1;
+					if (k == n)
+						break;
+				}
+				if (fz_contains_rect(list->tables[i].data.bounds, list->tables[k].data.bounds))
+				{
+					/* We contain table k. */
+					overlapped_score += scaled_table_score(list, k);
+					num_overlaps++;
+				}
+			}
+			/* If we don't overlap anything, nothing to worry about. Just keep us. */
+			if (num_overlaps)
+			{
+				if (overlapped_score <= scaled_table_score(list, i))
+				{
+					/* The "badness" for the subtables is less than the "badness" for this table. Drop this table. */
+					fz_drop_potential_table(ctx, &list->tables[i]);
+					continue;
+				}
+				/* Drop all the tables we contain. */
+				j = drop_contained_tables(ctx, list, 0, j, i);
+				n = list->len = drop_contained_tables(ctx, list, i+1, n, i);
+			}
+			if (i != j)
+				list->tables[j] = list->tables[i];
+			j++;
+		}
+		list->len = j;
+
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "post contained cull");
+#endif
+
+		/* We need to cull to the point where no 2 tables overlap. At this point
+		 * we just keep the better of any 2 intersecting tables. */
+		n = list->len;
+		for (j = 0, i = 0; i < n; i++)
+		{
+			/* At any point in this loop: 0..j, and i to n are valid. */
+			for (k = 0; k < n; k++)
+			{
+				if (k == j)
+				{
+					k = i+1;
+					if (k == n)
+						break;
+				}
+				if (!fz_is_empty_rect(fz_intersect_rect(list->tables[i].data.bounds, list->tables[k].data.bounds)))
+				{
+					if (list->tables[i].data.score > list->tables[k].data.score)
+					{
+						/* We intersect another table that scores better than us. Remove us. */
+						break;
+					}
+					else if (list->tables[i].data.score == list->tables[k].data.score && i < k)
+					{
+						/* We intersect another table that scores the same as us, and it's bigger. Remove us. */
+						break;
+					}
+				}
+			}
+			if (k != n)
+			{
+				fz_drop_potential_table(ctx, &list->tables[i]);
+				continue;
+			}
+			if (i != j)
+				list->tables[j] = list->tables[i];
+			j++;
+		}
+		list->len = j;
+
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "final tables");
+#endif
+
+		/* Cull the tables that score too high. */
+		n = list->len;
+		for (j = 0, i = 0; i < n; i++)
+		{
+			if (list->tables[i].data.score > 0.3f) /* Nasty heuristic constant! */
+			{
+				fz_drop_potential_table(ctx, &list->tables[i]);
+				continue;
+			}
+			if (i != j)
+				list->tables[j] = list->tables[i];
+			j++;
+		}
+		list->len = j;
+
+#ifdef DEBUG_TABLE_SCORES
+		list_tables(ctx, list, "final final tables");
+#endif
+
+		/* Transcribe the remaining tables */
+		n = list->len;
+		for (i = 0; i < n; i++)
+		{
+#ifndef NDEBUG
+			fz_verify_stext_page(ctx, page, "pre transcribe");
+#endif
+			last = transcribe_table(ctx, &list->tables[i].data, page, NULL);
+		}
+#ifndef NDEBUG
+		fz_verify_stext_page(ctx, page, "post transcribe");
+#endif
+	}
+	fz_always(ctx)
+		fz_drop_potential_table_list(ctx, list);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return num_subtables;
+	return last;
 }
 
 void
 fz_table_hunt(fz_context *ctx, fz_stext_page *page)
 {
-	int has_background = 0;
-	float score;
-	fz_flotilla *flot;
-	int found = 0;
+	fz_table_hunt_within_bounds(ctx, page, fz_infinite_rect);
+}
+
+static void
+push_segment_areas(fz_context *ctx, fz_potential_table_list *list, fz_stext_page *page, fz_stext_struct *parent, fz_rect bounds, fz_rect parentr)
+{
+	fz_stext_block *first_block = parent ? parent->first_block : page->first_block;
+	fz_stext_block *block;
+
+	for (block = first_block; block != NULL; block = block->next)
+	{
+		if (block->type != FZ_STEXT_BLOCK_STRUCT || block->u.s.down == NULL)
+			continue;
+		if (fz_is_empty_rect(fz_intersect_rect(block->bbox, bounds)))
+			continue;
+		push_segment_areas(ctx, list, page, block->u.s.down, bounds, block->bbox);
+		if (block->u.s.down->standard == FZ_STRUCTURE_DIV && !strcmp(block->u.s.down->raw, "Split") && fz_contains_rect(bounds, block->bbox))
+		{
+			assert(fz_contains_rect(parentr, block->bbox));
+			fz_push_potential_table(ctx, list, block->bbox, 0);
+		}
+	}
+}
+
+void
+fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+{
+	fz_potential_table_list *list;
+	fz_flotilla *flot = NULL;
 
 	if (page == NULL)
 		return;
 
-#ifndef NDEBUG
-	fz_verify_stext_page(ctx, page, "fz_table_hunt: entry");
-#endif
+	list = fz_new_potential_table_list(ctx);
 
-	flot = fz_new_flotilla_from_stext_page_vectors(ctx, page);
+	fz_var(flot);
+
 	fz_try(ctx)
 	{
-		int i;
-		int n = fz_flotilla_size(ctx, flot);
+		int i, n;
 
+		/* First, find the different vector rafts on the page. */
+		flot = fz_new_flotilla_from_stext_page_vectors(ctx, page);
+		n = fz_flotilla_size(ctx, flot);
+
+		/* Now push an entry for every raft that is contained within bounds. */
 		for (i = 0; i < n; i++)
 		{
 			fz_rect r = fz_flotilla_raft_area(ctx, flot, i);
 
-			/* FIXME: Nasty heuristic threshold. */
-			found += do_table_hunt(ctx, page, NULL, &has_background, r, &score, 0.8f);
+			if (!fz_contains_rect(bounds, r))
+				continue;
+
+			fz_push_potential_table(ctx, list, r, 1);
 		}
+
+		/* Now push potential table areas by walking for segments. */
+		push_segment_areas(ctx, list, page, NULL, bounds, fz_infinite_rect);
 	}
 	fz_always(ctx)
 		fz_drop_flotilla(ctx, flot);
 	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	/* If we can't find any that way, fall back to hunting within segments. */
-	if (found == 0)
 	{
-		/* FIXME: Nasty heuristic threshold. */
-		do_table_hunt(ctx, page, NULL, &has_background, fz_infinite_rect, &score, 0.3f);
+		fz_drop_potential_table_list(ctx, list);
+		fz_rethrow(ctx);
 	}
 
-#ifndef NDEBUG
-	fz_verify_stext_page(ctx, page, "fz_table_hunt: exit");
-#endif
-}
-
-void
-fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect rect)
-{
-	int has_background = 0;
-	float score;
-
-	if (page == NULL)
-		return;
-
-#ifndef NDEBUG
-	fz_verify_stext_page(ctx, page, "fz_table_hunt_within_bounds: entry");
-#endif
-
-	fz_segment_stext_rect(ctx, page, rect);
-
-	do_table_hunt(ctx, page, NULL, &has_background, rect, &score, 1);
-
-#ifndef NDEBUG
-	fz_verify_stext_page(ctx, page, "fz_table_hunt_within_bounds: exit");
-#endif
+	hunt_potential_tables(ctx, page, list);
 }
 
 fz_stext_block *
 fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
 {
-	fz_stext_struct *table = NULL;
-	grid_walker_data gd = { 0 };
+	fz_potential_table_list *list;
 
-	/* No content? Just bale. */
-	if (page == NULL || page->first_block == NULL)
+	if (page == NULL)
 		return NULL;
 
-	fz_var(gd);
+	/* Make a list, even though we're only going to push one entry in. */
+	list = fz_new_potential_table_list(ctx);
 
 	fz_try(ctx)
-	{
-		gd.bounds = bounds;
-		if (find_table_within_bounds(ctx, &gd, page->first_block, bounds))
-			break;
-
-#ifdef DEBUG_TABLE_STRUCTURE
-		printf("Transcribing table: (%g,%g)->(%g,%g)\n",
-			gd.xpos->list[0].pos,
-			gd.ypos->list[0].pos,
-			gd.xpos->list[gd.xpos->len-1].pos,
-			gd.ypos->list[gd.ypos->len-1].pos);
-#endif
-
-		/* Now we should have the entire table calculated. */
-		table = transcribe_table(ctx, &gd, page, NULL);
-#ifdef DEBUG_WRITE_AS_PS
-		if (table && table->first_block && table->first_block->type == FZ_STEXT_BLOCK_GRID)
-		{
-			int i;
-			fz_stext_block *block = table->first_block;
-			printf("%% TABLE\n");
-			for (i = 0; i < block->u.b.xs->len; i++)
-			{
-				if (block->u.b.xs->list[i].uncertainty)
-					printf("0 1 0 setrgbcolor\n");
-				else
-					printf("0 0.5 0 setrgbcolor\n");
-				printf("%g %g moveto %g %g lineto stroke\n",
-					block->u.b.xs->list[i].pos, block->bbox.y0,
-					block->u.b.xs->list[i].pos, block->bbox.y1);
-			}
-			for (i = 0; i < block->u.b.ys->len; i++)
-			{
-				if (block->u.b.ys->list[i].uncertainty)
-					printf("0 1 0 setrgbcolor\n");
-				else
-				printf("0 0.5 0 setrgbcolor\n");
-				printf("%g %g moveto %g %g lineto stroke\n",
-					block->bbox.x0, block->u.b.ys->list[i].pos,
-					block->bbox.x1, block->u.b.ys->list[i].pos);
-			}
-		}
-#endif
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, gd.xpos);
-		fz_free(ctx, gd.ypos);
-		fz_free(ctx, gd.cells);
-	}
+		fz_push_potential_table(ctx, list, bounds, 0);
 	fz_catch(ctx)
+	{
+		fz_drop_potential_table_list(ctx, list);
 		fz_rethrow(ctx);
+	}
 
-	return table ? table->first_block : NULL;
+	return hunt_potential_tables(ctx, page, list);
 }
