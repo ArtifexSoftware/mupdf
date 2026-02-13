@@ -134,7 +134,7 @@ int pdfclean_main(int argc, char **argv)
 	opts.write = pdf_default_write_options;
 	opts.write.dont_regenerate_id = 1;
 
-	while ((c = fz_getopt_long(argc, argv, "ade:fgilmp:stcvzDAE:LO:U:P:SZ", longopts)) != -1)
+	while ((c = fz_getopt_long(argc, argv, "ade:fgiIlmp:stcvzDAE:LO:U:P:SZ", longopts)) != -1)
 	{
 		switch (c)
 		{
@@ -144,6 +144,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'z': opts.write.do_compress += 1; break;
 		case 'f': opts.write.do_compress_fonts += 1; break;
 		case 'i': opts.write.do_compress_images += 1; break;
+		case 'I': opts.write.do_strip_invisible_text += 1; break;
 		case 'a': opts.write.do_ascii += 1; break;
 		case 'e': opts.write.compression_effort = fz_atoi(fz_optarg); break;
 		case 'g': opts.write.do_garbage += 1; break;
