@@ -111,7 +111,7 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 		fz_rethrow(ctx);
 
 	/* Create a new kids array with our new pages in */
-	kids = pdf_new_array(ctx, doc, 1);
+	kids = pdf_dict_put_array(ctx, pages, PDF_NAME(Kids), 1);
 
 	kidcount = 0;
 	for (page=0; page < num_pages; page++)
@@ -229,9 +229,8 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 		}
 	}
 
-	/* Update page count and kids array */
+	/* Update page count */
 	pdf_dict_put_int(ctx, pages, PDF_NAME(Count), kidcount);
-	pdf_dict_put_drop(ctx, pages, PDF_NAME(Kids), kids);
 }
 
 int pdfposter_main(int argc, char **argv)
