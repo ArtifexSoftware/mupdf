@@ -65,19 +65,24 @@ typedef struct
 fz_image *
 fz_keep_image(fz_context *ctx, fz_image *image)
 {
-	return fz_keep_key_storable(ctx, &image->key_storable);
+	if (image)
+		return fz_keep_key_storable(ctx, &image->key_storable);
+	return NULL;
 }
 
 fz_image *
 fz_keep_image_store_key(fz_context *ctx, fz_image *image)
 {
-	return fz_keep_key_storable_key(ctx, &image->key_storable);
+	if (image)
+		return fz_keep_key_storable_key(ctx, &image->key_storable);
+	return NULL;
 }
 
 void
 fz_drop_image_store_key(fz_context *ctx, fz_image *image)
 {
-	fz_drop_key_storable_key(ctx, &image->key_storable);
+	if (image)
+		fz_drop_key_storable_key(ctx, &image->key_storable);
 }
 
 static int
@@ -145,7 +150,8 @@ static const fz_store_type fz_image_store_type =
 void
 fz_drop_image(fz_context *ctx, fz_image *image)
 {
-	fz_drop_key_storable(ctx, &image->key_storable);
+	if (image)
+		fz_drop_key_storable(ctx, &image->key_storable);
 }
 
 static void

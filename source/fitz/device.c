@@ -851,13 +851,16 @@ fz_structure_from_string(const char *str)
 fz_function *
 fz_keep_function(fz_context *ctx, fz_function *func)
 {
-	return fz_keep_storable(ctx, &func->storable);
+	if (func)
+		return fz_keep_storable(ctx, &func->storable);
+	return NULL;
 }
 
 void
 fz_drop_function(fz_context *ctx, fz_function *func)
 {
-	fz_drop_storable(ctx, &func->storable);
+	if (func)
+		fz_drop_storable(ctx, &func->storable);
 }
 
 size_t

@@ -916,8 +916,19 @@ fz_unlock(fz_context *ctx, int lock)
 
 /* Lock-safe reference counting functions */
 
+#define fz_keep_imp(C,P,R) fz_keep_imp_aux((C), (P), (P) ? (R) : NULL)
+#define fz_keep_imp8(C,P,R) fz_keep_imp8_aux((C), (P), (P) ? (R) : NULL)
+#define fz_keep_imp16(C,P,R) fz_keep_imp16_aux((C), (P), (P) ? (R) : NULL)
+
+#define fz_keep_imp_locked(C,P,R) fz_keep_imp_locked_aux((C), (P), (P) ? (R) : NULL)
+#define fz_keep_imp8_locked(C,P,R) fz_keep_imp8_locked_aux((C), (P), (P) ? (R) : NULL)
+
+#define fz_drop_imp(C,P,R) fz_drop_imp_aux((C), (P), (P) ? (R) : NULL)
+#define fz_drop_imp8(C,P,R) fz_drop_imp8_aux((C), (P), (P) ? (R) : NULL)
+#define fz_drop_imp16(C,P,R) fz_drop_imp16_aux((C), (P), (P) ? (R) : NULL)
+
 static inline void *
-fz_keep_imp(fz_context *ctx, void *p, int *refs)
+fz_keep_imp_aux(fz_context *ctx, void *p, int *refs)
 {
 	if (p)
 	{
@@ -934,7 +945,7 @@ fz_keep_imp(fz_context *ctx, void *p, int *refs)
 }
 
 static inline void *
-fz_keep_imp_locked(fz_context *ctx FZ_UNUSED, void *p, int *refs)
+fz_keep_imp_locked_aux(fz_context *ctx FZ_UNUSED, void *p, int *refs)
 {
 	if (p)
 	{
@@ -949,7 +960,7 @@ fz_keep_imp_locked(fz_context *ctx FZ_UNUSED, void *p, int *refs)
 }
 
 static inline void *
-fz_keep_imp8_locked(fz_context *ctx FZ_UNUSED, void *p, int8_t *refs)
+fz_keep_imp8_locked_aux(fz_context *ctx FZ_UNUSED, void *p, int8_t *refs)
 {
 	if (p)
 	{
@@ -964,7 +975,7 @@ fz_keep_imp8_locked(fz_context *ctx FZ_UNUSED, void *p, int8_t *refs)
 }
 
 static inline void *
-fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs)
+fz_keep_imp8_aux(fz_context *ctx, void *p, int8_t *refs)
 {
 	if (p)
 	{
@@ -981,7 +992,7 @@ fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs)
 }
 
 static inline void *
-fz_keep_imp16(fz_context *ctx, void *p, int16_t *refs)
+fz_keep_imp16_aux(fz_context *ctx, void *p, int16_t *refs)
 {
 	if (p)
 	{
@@ -998,7 +1009,7 @@ fz_keep_imp16(fz_context *ctx, void *p, int16_t *refs)
 }
 
 static inline int
-fz_drop_imp(fz_context *ctx, void *p, int *refs)
+fz_drop_imp_aux(fz_context *ctx, void *p, int *refs)
 {
 	if (p)
 	{
@@ -1019,7 +1030,7 @@ fz_drop_imp(fz_context *ctx, void *p, int *refs)
 }
 
 static inline int
-fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs)
+fz_drop_imp8_aux(fz_context *ctx, void *p, int8_t *refs)
 {
 	if (p)
 	{
@@ -1040,7 +1051,7 @@ fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs)
 }
 
 static inline int
-fz_drop_imp16(fz_context *ctx, void *p, int16_t *refs)
+fz_drop_imp16_aux(fz_context *ctx, void *p, int16_t *refs)
 {
 	if (p)
 	{

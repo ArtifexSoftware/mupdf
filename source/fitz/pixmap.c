@@ -34,13 +34,16 @@
 fz_pixmap *
 fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
-	return fz_keep_storable(ctx, &pix->storable);
+	if (pix)
+		return fz_keep_storable(ctx, &pix->storable);
+	return NULL;
 }
 
 void
 fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
-	fz_drop_storable(ctx, &pix->storable);
+	if (pix)
+		fz_drop_storable(ctx, &pix->storable);
 }
 
 void

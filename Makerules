@@ -113,6 +113,7 @@ else
   SO := so
 endif
 
+SANITIZE_FLAGS += -fsanitize=undefined
 SANITIZE_FLAGS += -fsanitize=address
 SANITIZE_FLAGS += -fsanitize=leak
 

@@ -2744,7 +2744,8 @@ fz_drop_tile_record_imp(fz_context *ctx, fz_storable *storable)
 static void
 fz_drop_tile_record(fz_context *ctx, tile_record *tile)
 {
-	fz_drop_storable(ctx, &tile->storable);
+	if (tile)
+		fz_drop_storable(ctx, &tile->storable);
 }
 
 static tile_record *

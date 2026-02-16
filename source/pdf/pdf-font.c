@@ -610,13 +610,16 @@ pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
 pdf_font_desc *
 pdf_keep_font(fz_context *ctx, pdf_font_desc *fontdesc)
 {
-	return fz_keep_storable(ctx, &fontdesc->storable);
+	if (fontdesc)
+		return fz_keep_storable(ctx, &fontdesc->storable);
+	return NULL;
 }
 
 void
 pdf_drop_font(fz_context *ctx, pdf_font_desc *fontdesc)
 {
-	fz_drop_storable(ctx, &fontdesc->storable);
+	if (fontdesc)
+		fz_drop_storable(ctx, &fontdesc->storable);
 }
 
 static int

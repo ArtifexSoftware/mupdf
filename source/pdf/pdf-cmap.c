@@ -58,14 +58,17 @@ pdf_new_cmap(fz_context *ctx)
 pdf_cmap *
 pdf_keep_cmap(fz_context *ctx, pdf_cmap *cmap)
 {
-	return fz_keep_storable(ctx, &cmap->storable);
+	if (cmap)
+		return fz_keep_storable(ctx, &cmap->storable);
+	return NULL;
 }
 
 /* Could be a macro for speed */
 void
 pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap)
 {
-	fz_drop_storable(ctx, &cmap->storable);
+	if (cmap)
+		fz_drop_storable(ctx, &cmap->storable);
 }
 
 void

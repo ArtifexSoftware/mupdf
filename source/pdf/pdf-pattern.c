@@ -28,13 +28,16 @@
 pdf_pattern *
 pdf_keep_pattern(fz_context *ctx, pdf_pattern *pat)
 {
-	return fz_keep_storable(ctx, &pat->storable);
+	if (pat)
+		return fz_keep_storable(ctx, &pat->storable);
+	return NULL;
 }
 
 void
 pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat)
 {
-	fz_drop_storable(ctx, &pat->storable);
+	if (pat)
+		fz_drop_storable(ctx, &pat->storable);
 }
 
 static void
