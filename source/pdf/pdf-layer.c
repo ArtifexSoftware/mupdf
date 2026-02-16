@@ -845,18 +845,21 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		len = pdf_array_len(ctx, ocgs);
 
 		doc->ocg = fz_malloc_struct(ctx, pdf_ocg_descriptor);
-		doc->ocg->ocgs = fz_calloc(ctx, len, sizeof(*doc->ocg->ocgs));
 		doc->ocg->len = len;
 		doc->ocg->num_configs = num_configs;
 
-		for (i = 0; i < len; i++)
+		if (len > 0)
 		{
-			pdf_obj *o = pdf_array_get(ctx, ocgs, i);
-			doc->ocg->ocgs[i].obj = pdf_keep_obj(ctx, o);
-			doc->ocg->ocgs[i].n = pdf_to_num(ctx, o);
-			doc->ocg->ocgs[i].state = 1;
+			doc->ocg->ocgs = fz_calloc(ctx, len, sizeof(*doc->ocg->ocgs));
+			for (i = 0; i < len; i++)
+			{
+				pdf_obj *o = pdf_array_get(ctx, ocgs, i);
+				doc->ocg->ocgs[i].obj = pdf_keep_obj(ctx, o);
+				doc->ocg->ocgs[i].n = pdf_to_num(ctx, o);
+				doc->ocg->ocgs[i].state = 1;
+			}
+			qsort(doc->ocg->ocgs, len, sizeof(doc->ocg->ocgs[0]), ocgcmp);
 		}
-		qsort(doc->ocg->ocgs, len, sizeof(doc->ocg->ocgs[0]), ocgcmp);
 
 		pdf_select_layer_config(ctx, doc, -1);
 	}
