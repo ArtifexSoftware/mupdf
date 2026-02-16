@@ -249,6 +249,37 @@ export function installLoadFontFunction(f: (name: string, script: string, bold: 
 
 /* -------------------------------------------------------------------------- */
 
+interface Log {
+	error?(message: string): void
+	warning?(message: string): void
+}
+
+var $libmupdf_log: Log | null = null
+
+declare global {
+	function $libmupdf_log_error(message: Pointer<"char">): void
+	function $libmupdf_log_warning(message: Pointer<"char">): void
+}
+
+globalThis.$libmupdf_log_error = function (message) {
+	$libmupdf_log?.error?.(fromString(message))
+}
+
+globalThis.$libmupdf_log_warning = function (message) {
+	$libmupdf_log?.warning?.(fromString(message))
+}
+
+export function setLog(log: Log | ((message:string)=>void) | null) {
+	if (typeof log === "function") {
+		$libmupdf_log = { error: log, warning: log }
+	} else {
+		$libmupdf_log = log
+	}
+	libmupdf._wasm_enable_log_callback(log !== null)
+}
+
+/* -------------------------------------------------------------------------- */
+
 // To pass Rect and Matrix as pointer arguments
 const _wasm_int = Malloc<"int">(4)
 const _wasm_point = Malloc<"fz_point">(4 * 6) >> 2
@@ -4593,6 +4624,7 @@ export default {
 	disableICC,
 	setUserCSS,
 	installLoadFontFunction,
+	setLog,
 
 	// class
 	Buffer,

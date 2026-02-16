@@ -2583,6 +2583,32 @@ void wasm_walk_text(fz_text *text, int walk_id)
 	}
 }
 
+// --- LOG CALLBACK ---
+
+static void
+log_error_callback(void *user, const char *message)
+{
+	EM_ASM({ globalThis.$libmupdf_log_error($0) }, message);
+}
+
+static void
+log_warning_callback(void *user, const char *message)
+{
+	EM_ASM({ globalThis.$libmupdf_log_warning($0) }, message);
+}
+
+EXPORT
+void wasm_enable_log_callback(boolean enable)
+{
+	if (enable) {
+		fz_set_error_callback(ctx, log_error_callback, NULL);
+		fz_set_warning_callback(ctx, log_warning_callback, NULL);
+	} else {
+		fz_set_error_callback(ctx, NULL, NULL);
+		fz_set_warning_callback(ctx, NULL, NULL);
+	}
+}
+
 // --- JAVASCRIPT CALLBACK DEVICE ---
 
 typedef struct
