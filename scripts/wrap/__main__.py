@@ -2288,7 +2288,8 @@ def make_docs( build_dirs, languages_original):
         jlib.fs_ensure_empty_dir( outdir)
         dname = f'{name}.doxygen'
         dname2 = os.path.join( outdir, dname)
-        jlib.system( f'cd {outdir}; rm -f {dname}0; doxygen -g {dname}0', out='return')
+        assert not os.path.exists(f'{outdir}/{dname}0')
+        jlib.system( f'cd {outdir} && doxygen -g {dname}0', out='return')
         with open( dname2+'0') as f:
             dtext = f.read()
         dtext, n = re.subn( '\nPROJECT_NAME *=.*\n', f'\nPROJECT_NAME = {name}\n', dtext)
@@ -2301,7 +2302,7 @@ def make_docs( build_dirs, languages_original):
         with open( dname2, 'w') as f:
             f.write( dtext)
         #jlib.system( f'diff -u {dname2}0 {dname2}', raise_errors=False)
-        command = f'cd {outdir}; doxygen {dname}'
+        command = f'cd {outdir} && doxygen {dname}'
         jlib.system( command, out='return', verbose=1)
         jlib.log( 'have created: {outdir}/html/index.html')
 
@@ -2321,9 +2322,10 @@ def make_docs( build_dirs, languages_original):
             pythonpath = os.path.relpath( f'{build_dirs.dir_so}', f'{out_dir}/python')
             input_relpath = os.path.relpath( f'{build_dirs.dir_so}/mupdf.py', f'{out_dir}/python')
             jlib.system(
-                    f'cd {out_dir}/python && LD_LIBRARY_PATH={ld_library_path} PYTHONPATH={pythonpath} pydoc3 -w {input_relpath}',
+                    f'cd {out_dir}/python && python -m pydoc -w {input_relpath}',
                     out='log',
                     verbose=True,
+                    env_extra = dict(LD_LIBRARY_PATH=ld_library_path, PYTHONPATH=pythonpath),
                     )
             path = f'{out_dir}/python/mupdf.html'
             assert os.path.isfile( path)
