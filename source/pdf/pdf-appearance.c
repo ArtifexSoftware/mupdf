@@ -1937,6 +1937,9 @@ write_string_with_quadding(fz_context *ctx, fz_buffer *buf,
 				write_string(ctx, buf, lang, font, fontname, size, a, b-1);
 			else
 				write_string(ctx, buf, lang, font, fontname, size, a, b);
+			// If \r followed by \n, skip the \n; \r\n is a single newline not two.
+			if (b[-1] == '\r' && b[0] == '\n')
+				 ++b;
 			a = b;
 			px = x;
 		}
@@ -2074,6 +2077,9 @@ layout_string_with_quadding(fz_context *ctx, fz_layout_block *out,
 				layout_string(ctx, out, lang, font, size, xorig+x, y, a, b);
 				add_line_at_end = 0;
 			}
+			// If \r followed by \n, skip the \n; \r\n is a single newline not two.
+			if (b[-1] == '\r' && b[0] == '\n')
+				++b;
 			a = b;
 			y -= lineheight;
 		}
