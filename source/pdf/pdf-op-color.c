@@ -1074,11 +1074,8 @@ pdf_color_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_im
 			if (p->gstate->unmarked & UNMARKED_FILL)
 				mark_fill(ctx, p);
 		}
-		else
-		{
-			if (p->options->image_rewrite)
-				p->options->image_rewrite(ctx, p->options->opaque, &image, p->gstate->ctm, im_obj);
-		}
+		if (p->options->image_rewrite)
+			p->options->image_rewrite(ctx, p->options->opaque, &image, p->gstate->ctm, im_obj);
 
 		/* If it's been rewritten add the new one, otherwise copy the old one across. */
 		if (image != orig)

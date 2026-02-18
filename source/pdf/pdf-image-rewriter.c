@@ -148,7 +148,7 @@ classify_pixmap(fz_context *ctx, fz_pixmap *pix)
 	if (pix->s)
 		return IMAGE_COLOR;
 
-	if (fz_colorspace_is_gray(ctx, pix->colorspace))
+	if (fz_colorspace_is_gray(ctx, pix->colorspace) || pix->colorspace == NULL)
 	{
 		int n = pix->n;
 		int h = pix->h;
@@ -156,7 +156,7 @@ classify_pixmap(fz_context *ctx, fz_pixmap *pix)
 		const unsigned char *s = pix->samples;
 
 		/* Loop until we know it's not bitonal */
-		if (pix->alpha)
+		if (pix->alpha && pix->n > 1)
 		{
 			while (h--)
 			{
@@ -680,7 +680,8 @@ recompress_image(fz_context *ctx, fz_pixmap *pix, int type, int fmt, int method,
 		if (cbuf)
 		{
 			bpc = 1;
-			cs = fz_device_gray(ctx);
+			if (!oldimg->imagemask)
+				cs = fz_device_gray(ctx);
 		}
 	}
 	if (cbuf == NULL)
@@ -691,7 +692,7 @@ recompress_image(fz_context *ctx, fz_pixmap *pix, int type, int fmt, int method,
 
 	/* fz_new_image_from_compressed_buffer takes ownership of compressed buffer, even
 	 * in failure case. */
-	return fz_new_image_from_compressed_buffer(ctx, pix->w, pix->h, bpc, cs, pix->xres, pix->yres, interpolate, 0, NULL, NULL, cbuf, oldimg->mask);
+	return fz_new_image_from_compressed_buffer(ctx, pix->w, pix->h, bpc, cs, pix->xres, pix->yres, interpolate, oldimg->imagemask, NULL, NULL, cbuf, oldimg->mask);
 }
 
 static void
@@ -732,6 +733,10 @@ do_image_rewrite(fz_context *ctx, void *opaque, fz_image **image, fz_matrix ctm,
 	/* What sort of image is this? */
 	pix = fz_get_pixmap_from_image(ctx, *image, NULL, NULL, NULL, NULL);
 	type = classify_pixmap(ctx, pix);
+
+	/* get_pixmap "helpfully" inverts imagemasks. So put them back. */
+	if ((*image)->imagemask)
+		fz_invert_pixmap(ctx, pix);
 
 	fz_var(newpix);
 
