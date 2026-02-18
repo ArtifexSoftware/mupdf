@@ -61,7 +61,7 @@ match_long_option(int argc, char * const *argv, const fz_getopt_long_options *lo
 		/* If there is an arg from a predefined list, try to match that here. */
 		if (arg == 1)
 		{
-			fz_optitem = fz_opt_from_list(&opt[z+1], &s[z+1]);
+			fz_optitem = fz_opt_from_list(fz_optarg, &s[z+1]);
 			if (longopts->flag)
 				*longopts->flag = fz_optitem;
 			if (fz_optitem < 0)
