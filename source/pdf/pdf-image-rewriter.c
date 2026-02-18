@@ -828,7 +828,7 @@ do_image_rewrite(fz_context *ctx, void *opaque, fz_image **image, fz_matrix ctm,
 			size_t newsize = fz_image_size(ctx, newimg);
 			if (orig_len != 0)
 				oldsize = orig_len;
-			if (oldsize <= newsize)
+			if (oldsize <= newsize && info->opts->recompress_when == FZ_RECOMPRESS_WHEN_SMALLER)
 			{
 				/* Old one was smaller! Don't mess with it. */
 				fz_drop_image(ctx, newimg);
