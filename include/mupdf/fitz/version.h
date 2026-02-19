@@ -23,9 +23,9 @@
 #ifndef MUPDF_FITZ_VERSION_H
 #define MUPDF_FITZ_VERSION_H
 #ifndef FZ_VERSION
-#define FZ_VERSION "1.27.2"
+#define FZ_VERSION "1.27.3"
 #define FZ_VERSION_MAJOR 1
 #define FZ_VERSION_MINOR 27
-#define FZ_VERSION_PATCH 2
+#define FZ_VERSION_PATCH 3
 #endif
 #endif
