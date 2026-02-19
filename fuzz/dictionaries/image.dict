@@ -1,0 +1,69 @@
+# Image format magic bytes and keywords for fuzzing
+
+# PNG
+"\x89PNG"
+"\x0d\x0a\x1a\x0a"
+"IHDR"
+"PLTE"
+"IDAT"
+"IEND"
+"tEXt"
+"zTXt"
+"iTXt"
+"gAMA"
+"cHRM"
+"sRGB"
+"iCCP"
+"bKGD"
+"pHYs"
+"sBIT"
+"tRNS"
+
+# JPEG
+"\xff\xd8\xff"
+"\xff\xe0"
+"\xff\xe1"
+"\xff\xdb"
+"\xff\xc0"
+"\xff\xc2"
+"\xff\xc4"
+"\xff\xda"
+"\xff\xd9"
+"JFIF"
+"Exif"
+
+# GIF
+"GIF87a"
+"GIF89a"
+
+# BMP
+"BM"
+
+# TIFF
+"II\x2a\x00"
+"MM\x00\x2a"
+
+# PSD
+"8BPS"
+
+# JPEG 2000
+"\x00\x00\x00\x0c\x6a\x50"
+"jp2 "
+"jpx "
+"jpm "
+
+# JPEG XR
+"WMPHOTO"
+"II\xbc\x01"
+
+# PNM
+"P1"
+"P2"
+"P3"
+"P4"
+"P5"
+"P6"
+"P7"
+
+# JBIG2
+"\x97\x4a\x42\x32\x0d\x0a\x1a\x0a"
