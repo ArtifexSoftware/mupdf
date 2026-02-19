@@ -221,6 +221,12 @@ class Cpu:
             self.windows_name = 'x64'
             self.windows_config = 'x64'
             self.windows_suffix = '64'
+        elif name in ('arm64', 'ARM64'):
+            self.bits = 64
+            self.windows_subdir = 'ARM64/'
+            self.windows_name = 'ARM64'
+            self.windows_config = 'ARM64'
+            self.windows_suffix = '64'
         else:
             assert 0, f'Unrecognised cpu name: {name}'
 
@@ -239,9 +245,14 @@ def python_version():
 
 def cpu_name():
     '''
-    Returns 'x32' or 'x64' depending on Python build.
+    Returns 'x32', 'x64' or 'ARM64' depending on Python build.
     '''
-    ret = f'x{32 if sys.maxsize == 2**31 - 1 else 64}'
+    machine = platform.machine().lower()
+    if machine in ('arm64', 'aarch64'):
+        ret = 'arm64'
+    else:
+        #log(f'sys.maxsize={hex(sys.maxsize)}')
+        ret = f'x{32 if sys.maxsize == 2**31 - 1 else 64}'
     #jlib.log(f'returning ret={ret!r}')
     return ret
 
@@ -335,7 +346,7 @@ class BuildDirs:
             self.cpu = None
             self.python_version = None
             for flag in flags:
-                if flag in ('x32', 'x64'):
+                if flag in ('x32', 'x64', 'arm64', 'ARM64'):
                     self.cpu = Cpu(flag)
                 if flag.startswith('py'):
                     self.python_version = flag[2:]

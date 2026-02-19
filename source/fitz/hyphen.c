@@ -34,6 +34,13 @@ extern const unsigned char _binary_resources_hyphen_hyph_all_zip_end;
 
 #else
 
+#ifdef _M_ARM64
+// Disable embedded hyphen data on ARM64 to avoid linker alignment errors
+#define HYPH_STD NULL, 0
+#define HYPH_ALL NULL, 0
+
+#else
+
 extern const unsigned char _binary_hyph_std_zip[];
 extern const unsigned int _binary_hyph_std_zip_size;
 #define HYPH_STD _binary_hyph_std_zip, _binary_hyph_std_zip_size
@@ -41,6 +48,7 @@ extern const unsigned int _binary_hyph_std_zip_size;
 extern const unsigned char _binary_hyph_all_zip[];
 extern const unsigned int _binary_hyph_all_zip_size;
 #define HYPH_ALL _binary_hyph_all_zip, _binary_hyph_all_zip_size
+#endif
 
 #endif
 

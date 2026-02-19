@@ -1880,12 +1880,16 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                 if state.state_.windows:
 
                     libdir = f'{build_dirs.dir_mupdf}/platform/win32/'
-                    mupdfcpp_lib = f'{build_dirs.dir_mupdf}/platform/win32/'
-                    if build_dirs.cpu.bits == 64:
+                    if build_dirs.cpu.name == 'arm64':
+                        libdir += 'ARM64/'
+                    elif build_dirs.cpu.bits == 64:
                         libdir += 'x64/'
                     libdir += 'Debug/' if debug else 'Memento/' if memento else 'Release/'
                     libs = list()
-                    libs.append(libdir + ('mupdfcpp64.lib' if build_dirs.cpu.bits == 64 else 'mupdfcpp.lib'))
+                    if build_dirs.cpu.name in ('arm64', 'x64'):
+                        libs.append(libdir + f'mupdfcpp{build_dirs.cpu.windows_suffix}.lib')
+                    else:
+                        libs.append(libdir + 'mupdfcpp.lib')
                     if memento:
                         libs.append(libdir + 'libmupdf.lib')
 
