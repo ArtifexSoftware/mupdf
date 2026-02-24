@@ -1107,6 +1107,8 @@ typedef struct
 	int h_crossed;
 	int v_crossed;
 	int full;
+	fz_rect content;
+	float fontsize;
 } cell_t;
 
 typedef struct
@@ -1785,9 +1787,10 @@ is_numeric(int c)
 }
 
 static int
-mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect s)
+mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect s, float baseline, float fontsize)
 {
 	fz_rect r = fz_intersect_rect(gd->bounds, s);
+	fz_rect line_ext = { r.x0, fz_max(r.y0, baseline-fontsize), r.x1, baseline };
 	int x0, x1, y0, y1, x, y;
 
 	/* Check for non-validity rather than empty here, as e.g.
@@ -1817,7 +1820,16 @@ mark_cells_for_content(fz_context *ctx, grid_walker_data *gd, fz_rect s)
 	}
 	for (y = y0; y <= y1; y++)
 		for (x = x0; x <= x1; x++)
-			get_cell(gd->cells, x, y)->full++;
+		{
+			cell_t *c = get_cell(gd->cells, x, y);
+			c->full++;
+			if (fontsize != 0)
+			{
+				c->content = fz_union_rect(c->content, line_ext);
+				if (fontsize > c->fontsize)
+					c->fontsize = fontsize;
+			}
+		}
 
 	return 0;
 }
@@ -1983,7 +1995,7 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 			switch (classify_vector(ctx, gd, block->bbox, !!(block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE)))
 			{
 			case VECTOR_IS_CONTENT:
-				mark_cells_for_content(ctx, gd, block->bbox);
+				mark_cells_for_content(ctx, gd, block->bbox, 0, 0);
 				break;
 			case VECTOR_IS_BORDER:
 			case VECTOR_IS_IGNORABLE:
@@ -2041,7 +2053,7 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 					}
 					else
 						was_numeric = is_numeric(ch->c);
-					duff += mark_cells_for_content(ctx, gd, fz_rect_from_quad(ch->quad));
+					duff += mark_cells_for_content(ctx, gd, fz_rect_from_quad(ch->quad), ch->origin.y, ch->size);
 				}
 			}
 		}
@@ -3121,6 +3133,8 @@ merge_column(grid_walker_data *gd, int x)
 		d->h_line = s[0].h_line; /* == s[1].h_line */
 		d->v_crossed = s[0].v_crossed;
 		d->v_line = s[0].v_line;
+		d->content = fz_union_rect(s[0].content, s[1].content);
+		d->fontsize = fz_max(s[0].fontsize, s[1].fontsize);
 		if (x < gd->cells->w - 2)
 			memmove(d+1, s+2, sizeof(*d) * (gd->cells->w - 2 - x));
 	}
@@ -3215,6 +3229,8 @@ merge_row(grid_walker_data *gd, int y)
 			d->full = d[w].full;
 		if (d->v_crossed == 0)
 			d->v_crossed = d[w].v_crossed;
+		d->content = fz_union_rect(d->content, d[w].content);
+		d->fontsize = fz_max(d->fontsize, d[w].fontsize);
 		d++;
 	}
 	if (y < gd->cells->h - 2)
@@ -3255,14 +3271,6 @@ merge_rows(grid_walker_data *gd)
 		}
 		if (x == gd->cells->w-1)
 			goto merge_row;
-		/* We only ever want to merge rows if content crossed between them somewhere.
-		 * Don't use uncertainty for this, because uncertainty doesn't allow for
-		 * whitespace. */
-		for (x = 0; x < gd->cells->w-1; x++)
-			if (get_cell(gd->cells, x, y+1)->h_crossed == 1)
-				break;
-		if (x == gd->cells->w-1)
-			continue;
 		/* This requires all the pairs of cells in those 2 rows to be mergeable. */
 		for (x = 0; x < gd->cells->w-1; x++)
 		{
@@ -3277,9 +3285,18 @@ merge_rows(grid_walker_data *gd)
 			/* If we differ in v linedness, we can't merge */
 			if (!!a->v_line != !!b->v_line)
 				goto cant_merge;
-			/* If both are full, we can only merge if we cross. */
-			if (a->full && b->full && b->h_crossed)
-				continue;
+			/* If both are full... */
+			if (a->full && b->full)
+			{
+				float fs;
+				/* We can merge if we cross. */
+				if (b->h_crossed)
+					continue;
+				/* We can merge if the line spacing looks reasonable. */
+				fs = fz_max(a->fontsize, b->fontsize);
+				if (a->content.y1 + fs/2 >= b->content.y0)
+					continue;
+			}
 			/* Otherwise we can't merge */
 			break;
 		}
@@ -3591,6 +3608,18 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 	return score / (float)num_cells / 2.0;
 }
 
+static void
+init_cell_regions(fz_context *ctx, cells_t *cells)
+{
+	int i;
+	int n = cells->w * cells->h;
+	cell_t *c = cells->cell;
+
+	for (i = 0; i < n; i++, c++)
+		c->content = fz_empty_rect;
+}
+
+
 static int
 find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 {
@@ -3628,6 +3657,8 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		 * pass then marks them. */
 		walk_grid_lines(ctx, gd, content);
 		walk_grid_lines2(ctx, gd, content);
+
+		init_cell_regions(ctx, gd->cells);
 		/* Now, we walk the content looking for content that crosses
 		 * these grid lines. This allows us to spot spanned cells. */
 		if (calculate_spanned_content(ctx, gd, content))
