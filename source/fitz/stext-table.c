@@ -3750,6 +3750,70 @@ list_tables(fz_context *ctx, fz_potential_table_list *list, const char *title)
 }
 #endif
 
+static void
+cull_unhelpful_background_fills(fz_context *ctx, fz_stext_page *page)
+{
+	fz_stext_page_block_iterator iter, iter2, iter3;
+
+	for (iter = fz_stext_page_block_iterator_begin_dfs(page);
+		!fz_stext_page_block_iterator_eod_dfs(iter);
+		iter = fz_stext_page_block_iterator_next_dfs(iter))
+	{
+		fz_stext_block *block = iter.block;
+		/* We are only interested in rectangular, solid filled vectors here */
+		if (block->type != FZ_STEXT_BLOCK_VECTOR ||
+			(block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0 ||
+			(block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED) != 0 ||
+			(block->u.v.argb>>24) != 0xFF)
+			continue;
+		/* So, that vector can 'mask' any vectors that follow it that are
+		 * entirely contained within it, with the same colors. */
+		/* We want to walk forward from where we currently are, but never go higher in
+		 * the heirarchy. */
+		iter2 = fz_stext_page_block_iterator_begin_from_dfs(page, iter.block, iter.parent);
+		for (iter2 = fz_stext_page_block_iterator_next(iter2);
+			!fz_stext_page_block_iterator_eod_dfs(iter2);
+			iter2 = fz_stext_page_block_iterator_next_dfs(iter2))
+		{
+			fz_stext_block *block2 = iter2.block;
+			fz_stext_block *next;
+			/* We are looking for any rectangular non-stroked vector of a matching color
+			 * that is contained in the original one. */
+			if ((block2->type != FZ_STEXT_BLOCK_VECTOR) ||
+				(block2->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0 ||
+				(block2->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED) != 0 ||
+				(block2->u.v.argb != block->u.v.argb) ||
+				(!fz_contains_rect(block->bbox, block2->bbox)))
+					continue; /* Keep hunting */
+
+			/* So we have a candidate vector. In order for us to be able to safely remove
+			 * this vector as being 'unhelpful' then there cannot be anything in between the
+			 * block, and block2 that overlaps block2. */
+			iter3 = fz_stext_page_block_iterator_begin_from_dfs(page, iter.block, iter.parent);
+			for (iter3 = fz_stext_page_block_iterator_next(iter3);
+				iter2.block != iter3.block;
+				iter3 = fz_stext_page_block_iterator_next_dfs(iter3))
+			{
+				fz_stext_block *block3 = iter3.block;
+				if (fz_overlaps_rect(block2->bbox, block3->bbox))
+					break;
+			}
+			if (iter2.block != iter3.block)
+				continue;
+
+			/* Remove this vector. It's masked by the outside one. */
+			next = block2->next;
+			block2->prev->next = next;
+			if (next)
+				next->prev = block2->prev;
+			else if (iter.parent)
+				iter.parent->last_block = block2->prev;
+			else
+				iter.page->last_block = block2->prev;
+		}
+	}
+}
+
 static float
 scaled_table_score(fz_potential_table_list *list, int k)
 {
@@ -3798,6 +3862,8 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 
 	fz_try(ctx)
 	{
+		cull_unhelpful_background_fills(ctx, page);
+
 #ifdef DEBUG_TABLE_SCORES
 		list_tables(ctx, list, "pre find_table");
 #endif
