@@ -2835,6 +2835,95 @@ tidy_orphaned_tables(fz_context *ctx, fz_stext_page *page, fz_stext_struct *pare
 	}
 }
 
+/* Tiny the contents of TD up slightly; mainly this is to glue lines that may have been
+ * broken apart by earlier processing back together again. */
+static void
+tidy_td(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent)
+{
+	fz_stext_block *block;
+	fz_stext_block *next;
+	fz_stext_char *ch;
+
+	for (block = parent->first_block; block != NULL; block = next)
+	{
+		float fs0, baseline0;
+		float fs1, baseline1;
+		float bot, top;
+		next = block->next;
+		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
+			tidy_td(ctx, page, block->u.s.down);
+			continue;
+		}
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
+			continue;
+		if (next == NULL)
+			continue;
+		if (next->type != FZ_STEXT_BLOCK_TEXT)
+			continue;
+		/* Expect the left hand edges to match (allow for an indent) */
+		if (fabsf(next->bbox.x0 - block->bbox.x0) > 36)
+			continue; /* Too big a difference */
+		if (next->bbox.y0 < block->bbox.y1)
+			continue; /* Only if we continue downwards. */
+		if (block->u.t.last_line == NULL || next->u.t.first_line == NULL)
+			continue; /* Shouldn't happen... */
+		fs0 = 0;
+		baseline0 = 0;
+		for (ch = block->u.t.last_line->first_char; ch != NULL; ch = ch->next)
+		{
+			if (fs0 < ch->size)
+			{
+				fs0 = ch->size;
+				baseline0 = ch->origin.y;
+			}
+		}
+		if (fs0 == 0)
+			continue;
+		fs1 = 0;
+		baseline1 = 0;
+		for (ch = next->u.t.first_line->first_char; ch != NULL; ch = ch->next)
+		{
+			if (fs1 < ch->size)
+			{
+				fs1 = ch->size;
+				baseline1 = ch->origin.y;
+			}
+		}
+		if (fs1 == 0)
+			continue;
+		/* Font sizes should mostly match */
+		if (fabsf(fs0 - fs1) >= 0.5f)
+			continue;
+		/* This is a heuristic. Default linespacing is 120%, but we use 150% here
+		 * to be a bit more forgiving. */
+		bot = baseline0 + fs0/2;
+		top = baseline1 - fs1;
+		if (top < next->bbox.y0)
+			top = next->bbox.y0;
+
+		if (bot >= top)
+		{
+			/* Glue these two blocks together. */
+			/* Move the lines from next onto the end of block. */
+			block->u.t.last_line->next = next->u.t.first_line;
+			next->u.t.first_line->prev = block->u.t.last_line;
+			block->u.t.last_line = next->u.t.last_line;
+			/* update the bbox */
+			block->bbox = fz_union_rect(block->bbox, next->bbox);
+			/* Make block point to the block after next. */
+			block->next = next->next;
+			/* If that's the end, then correct the parents last_block pointer */
+			if (next->next == NULL)
+				parent->last_block = block;
+			else
+				next->next->prev = block;
+			/* And loop again */
+			next = block;
+		}
+	}
+}
+
 static fz_stext_block *
 transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_stext_struct *parent)
 {
@@ -2953,6 +3042,7 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 			 * can end up empty. */
 			td->up->bbox = r;
 			move_contained_content(ctx, page, td, parent, r);
+			tidy_td(ctx, page, td);
 #ifdef DEBUG_TABLE_STRUCTURE
 			printf("(%d,%d) + (%d,%d)\n", x, y, cellw, cellh);
 #endif
