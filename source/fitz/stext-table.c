@@ -2479,42 +2479,69 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 				{
 					/* Need to walk the line and just take parts */
 					fz_stext_line *newline = NULL;
-					fz_stext_char *ch, *next_ch, *prev_ch = NULL;
+					fz_stext_char *ch, *ch2, *next_ch, *prev_ch = NULL;
 
-					for (ch = line->first_char; ch != NULL; ch = next_ch)
+					/* We need to be careful to use the vextent from chars that share a baseline,
+					 * not the vextent of individual chars, less we cut through a line and lose
+					 * half the chars. */
+					for (ch = line->first_char; ch != NULL; ch = ch->next)
 					{
 						fz_rect crect = fz_rect_from_quad(ch->quad);
-						float x = (crect.x0 + crect.x1)/2;
-						float y = (crect.y0 + crect.y1)/2;
-						next_ch = ch->next;
-						if (r.x0 > x || r.x1 < x || r.y0 > y || r.y1 < y)
+						float vmin = crect.y0;
+						float vmax = crect.y1;
+						float x, y;
+
+						/* Find the next run of chars that have the same baseline, and their combined vextent. */
+						for (ch2 = ch->next; ch2 != NULL; ch2 = ch2->next)
 						{
-							prev_ch = ch;
-							continue;
+							if (ch2->origin.y != ch->origin.y)
+								break;
+							crect = fz_rect_from_quad(ch2->quad);
+							if (crect.y0 < vmin)
+								vmin = crect.y0;
+							if (crect.y1 > vmax)
+								vmax = crect.y1;
 						}
-						/* Take this char */
-						if (newline == NULL)
+
+						/* So ch to ch2 (not inclusive) all have the same baseline. */
+						y = (vmin + vmax)/2;
+
+						for (ch = line->first_char; ch != ch2; ch = next_ch)
 						{
-							newline = fz_pool_alloc(ctx, page->pool, sizeof(*newline));
-							newline->dir = line->dir;
-							newline->wmode = line->wmode;
-							newline->bbox = fz_empty_rect;
+							crect = fz_rect_from_quad(ch->quad);
+							x = (crect.x0 + crect.x1)/2;
+							next_ch = ch->next;
+							if (r.x0 > x || r.x1 < x || r.y0 > y || r.y1 < y)
+							{
+								prev_ch = ch;
+								continue;
+							}
+							/* Take this char */
+							if (newline == NULL)
+							{
+								newline = fz_pool_alloc(ctx, page->pool, sizeof(*newline));
+								newline->dir = line->dir;
+								newline->wmode = line->wmode;
+								newline->bbox = fz_empty_rect;
+							}
+							/* Unlink char */
+							if (prev_ch == NULL)
+								line->first_char = next_ch;
+							else
+								prev_ch->next = next_ch;
+							if (next_ch == NULL)
+								line->last_char = prev_ch;
+							/* Relink char */
+							ch->next = NULL;
+							if (newline->last_char == NULL)
+								newline->first_char = ch;
+							else
+								newline->last_char->next = ch;
+							newline->last_char = ch;
+							newline->bbox = fz_union_rect(newline->bbox, crect);
 						}
-						/* Unlink char */
-						if (prev_ch == NULL)
-							line->first_char = next_ch;
-						else
-							prev_ch->next = next_ch;
-						if (next_ch == NULL)
-							line->last_char = prev_ch;
-						/* Relink char */
-						ch->next = NULL;
-						if (newline->last_char == NULL)
-							newline->first_char = ch;
-						else
-							newline->last_char->next = ch;
-						newline->last_char = ch;
-						newline->bbox = fz_union_rect(newline->bbox, crect);
+						if (ch == NULL)
+							break;
 					}
 					if (line->first_char == NULL)
 					{
