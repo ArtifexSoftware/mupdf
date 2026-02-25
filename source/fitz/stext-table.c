@@ -27,6 +27,8 @@
 
 /* #define DEBUG_WRITE_AS_PS */
 
+/* #define DEBUG_TABLE_SPLITS */
+
 /* #define DEBUG_TABLE_STRUCTURE */
 
 /* #define DEBUG_TABLE_HUNT */
@@ -1198,7 +1200,7 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, int i, int early)
 	cells = gd->cells = fz_realloc_flexible(ctx, gd->cells, cells_t, cell, (gd->cells->w + (1-row)) * (gd->cells->h + row));
 	/* If both pass, then we're safe to shuffle the data. */
 
-#ifdef DEBUG_TABLE_STRUCTURE
+#ifdef DEBUG_TABLE_SPLITS
 	printf("Before split %s %d\n", row ? "row" : "col", i);
 	asciiart_table(gd);
 #endif
@@ -1265,10 +1267,6 @@ split_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, int i, int early)
 		}
 	}
 
-#ifdef DEBUG_TABLE_STRUCTURE
-	printf("After split\n");
-	asciiart_table(gd);
-#endif
 	return pos;
 }
 
@@ -1294,7 +1292,7 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 
 	assert(x >= pos->list[0].min && x <= pos->list[pos->len-1].max);
 
-#ifdef DEBUG_TABLE_STRUCTURE
+#ifdef DEBUG_TABLE_SPLITS
 	printf("Looking for %g in %s splits:\n", x, row ? "row" : "col");
 	for (i = 0; i < pos->len; i++)
 	{
@@ -1343,7 +1341,7 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 		{
 			/* Split i into i and i+1, and make i the new one. */
 			assert(i > 0);
-#ifdef DEBUG_TABLE_STRUCTURE
+#ifdef DEBUG_TABLE_SPLITS
 			printf("Splitting before %d\n", i);
 #endif
 			pos = split_grid_pos(ctx, gd, row, i, 1);
@@ -1351,6 +1349,10 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 			pos->list[i].pos = x;
 			pos->list[i].max = pos->list[i+1].min = (pos->list[i+1].pos + x)/2;
 			pos->list[i].reinforcement = 1;
+#ifdef DEBUG_TABLE_SPLITS
+			printf("After split\n");
+			asciiart_table(gd);
+#endif
 			return i;
 		}
 		else if (x <= pos->list[i].max)
@@ -1399,23 +1401,31 @@ split:
 			if (pos->list[i].pos > x)
 			{
 				/* Make i the new one */
-#ifdef DEBUG_TABLE_STRUCTURE
+#ifdef DEBUG_TABLE_SPLITS
 				printf("Splitting %d (early)\n", i);
 #endif
 				pos->list[i].pos = x;
 				pos->list[i].max = pos->list[i+1].min = (pos->list[i+1].pos + x)/2;
 				pos->list[i].reinforcement = 1;
+#ifdef DEBUG_TABLE_SPLITS
+				printf("After split\n");
+				asciiart_table(gd);
+#endif
 				return i;
 			}
 			else
 			{
 				/* Make i+1 the new one */
-#ifdef DEBUG_TABLE_STRUCTURE
+#ifdef DEBUG_TABLE_SPLITS
 				printf("Splitting %d (late)\n", i);
 #endif
 				pos->list[i+1].pos = x;
 				pos->list[i].max = pos->list[i+1].min = (pos->list[i].pos + x)/2;
 				pos->list[i].reinforcement = 1;
+#ifdef DEBUG_TABLE_SPLITS
+				printf("After split\n");
+				asciiart_table(gd);
+#endif
 				return i+1;
 			}
 		}
@@ -2079,6 +2089,12 @@ asciiart_table(grid_walker_data *gd)
 	int h = gd->ypos->len;
 	int x, y;
 
+	for (x = 0; x < w; x++)
+	{
+		for (y = 0; y < x; y++)
+			printf("| ");
+		printf("(%d:%g %g %g)\n", x, gd->xpos->list[x].min, gd->xpos->list[x].pos, gd->xpos->list[x].max);
+	}
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w-1; x++)
@@ -2104,7 +2120,7 @@ asciiart_table(grid_walker_data *gd)
 				printf(" ");
 			}
 		}
-		printf("+\n");
+		printf("+ (%d:%g %g %g)\n", y, gd->ypos->list[y].min, gd->ypos->list[y].pos, gd->ypos->list[y].max);
 		if (y == h-1)
 			break;
 		for (x = 0; x < w; x++)
@@ -3630,6 +3646,13 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 
 	fz_try(ctx)
 	{
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("Hunting in: %g %g %g %g\n",
+			gd->bounds.x0,
+			gd->bounds.y0,
+			gd->bounds.x1,
+			gd->bounds.y1);
+#endif
 		if (all_blocks_are_justified_or_headers(ctx, content, gd->bounds))
 			break;
 
@@ -3647,6 +3670,11 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		gd->ypos = make_table_positions(ctx, &ys, gd->bounds.y0, gd->bounds.y1);
 		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
 
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("Grid from scanning content:\n");
+		asciiart_table(gd);
+#endif
+
 		bg = walk_for_background(ctx, gd, content);
 		if (bg == BACKGROUND_FOUND)
 			gd->has_background = 1;
@@ -3658,6 +3686,11 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		walk_grid_lines(ctx, gd, content);
 		walk_grid_lines2(ctx, gd, content);
 
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("Grid after considering vectors:\n");
+		asciiart_table(gd);
+#endif
+
 		init_cell_regions(ctx, gd->cells);
 		/* Now, we walk the content looking for content that crosses
 		 * these grid lines. This allows us to spot spanned cells. */
@@ -3665,6 +3698,7 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 			break; /* Unlikely to be a table. */
 
 #ifdef DEBUG_TABLE_STRUCTURE
+		printf("Grid after patterning content:\n");
 		asciiart_table(gd);
 #endif
 		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
@@ -3682,6 +3716,16 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		found = 1;
 
 		gd->score = score_table(ctx, gd);
+#ifdef DEBUG_TABLE_STRUCTURE
+		printf("%d x %d table found in: %g %g %g %g with score %g\n",
+			gd->xpos->len,
+			gd->ypos->len,
+			gd->bounds.x0,
+			gd->bounds.y0,
+			gd->bounds.x1,
+			gd->bounds.y1,
+			gd->score);
+#endif
 	}
 	fz_always(ctx)
 	{
