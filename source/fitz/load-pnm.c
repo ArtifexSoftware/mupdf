@@ -222,7 +222,10 @@ pnm_read_int(fz_context *ctx, const unsigned char *p, const unsigned char *e, in
 	while (p < e && *p >= '0' && *p <= '9')
 	{
 		if (number)
-			*number = *number * 10 + *p - '0';
+		{
+			if (fz_ckd_mul_int(number, *number, 10) || fz_ckd_add_int(number, *number, *p - '0'))
+				fz_throw(ctx, FZ_ERROR_FORMAT, "integer overflow in pnm image");
+		}
 		p++;
 	}
 
@@ -890,6 +893,7 @@ static fz_pixmap *
 pfm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, const unsigned char *e, int onlymeta, int rgb, const unsigned char **out)
 {
 	fz_pixmap *pix = NULL;
+	size_t w, h, n, size;
 
 	fz_var(pix);
 
@@ -900,33 +904,26 @@ pfm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image width must be > 0");
-	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs))
+
+	w = pnm->width;
+	h = pnm->height;
+	n = fz_colorspace_n(ctx, pnm->cs);
+
+	if (fz_ckd_mul_size(&size, w, h) || fz_ckd_mul_size(&size, size, n) || fz_ckd_mul_size(&size, size, sizeof (float)))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
+
+	if (e < p || (size_t)(e - p) < size)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "truncated image");
 
 	if (onlymeta)
 	{
-		size_t w = pnm->width;
-		size_t h = pnm->height;
-		int n = fz_colorspace_n(ctx, pnm->cs);
-		size_t size = w * h * n * sizeof(float);
-
-		if (e < p || (size_t)(e - p) < size)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "truncated image");
-
 		p += size;
 	}
 	else
 	{
 		float *samples = NULL;
 		float *sample;
-		int w = pnm->width;
-		int h = pnm->height;
-		int n = fz_colorspace_n(ctx, pnm->cs);
-		size_t size = (size_t) w * h * n * sizeof(float);
-		int x, y, k;
-
-		if (e < p || (size_t)(e - p) < size)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "truncated image");
+		size_t x, y, k;
 
 		sample = samples = fz_malloc(ctx, size);
 		fz_try(ctx)
