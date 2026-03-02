@@ -656,9 +656,12 @@ void fz_disable_icc(fz_context *ctx);
 	Throws exception in the event of failure to allocate.
 */
 #define fz_malloc_array(CTX, COUNT, TYPE) \
-	((TYPE*)Memento_label(fz_malloc(CTX, (COUNT) * sizeof(TYPE)), #TYPE "[]"))
+	((TYPE*)Memento_label(fz_malloc_array_imp((CTX), (COUNT), sizeof(TYPE)), #TYPE "[]"))
 #define fz_realloc_array(CTX, OLD, COUNT, TYPE) \
-	((TYPE*)Memento_label(fz_realloc(CTX, OLD, (COUNT) * sizeof(TYPE)), #TYPE "[]"))
+	((TYPE*)Memento_label(fz_realloc_array_imp((CTX), (OLD), (COUNT), sizeof(TYPE)), #TYPE "[]"))
+
+void *fz_malloc_array_imp(fz_context *ctx, size_t nmemb, size_t size);
+void *fz_realloc_array_imp(fz_context *ctx, void *p, size_t nmemb, size_t size);
 
 /**
 	Allocate uninitialized memory of a given size.
