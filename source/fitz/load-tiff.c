@@ -102,8 +102,8 @@ struct tiff
 	fz_colorspace *colorspace;
 	unsigned char *samples;
 	unsigned char *data;
-	int tilestride;
-	int stride;
+	unsigned tilestride;
+	unsigned stride;
 };
 
 enum
@@ -1371,6 +1371,22 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid subsampling factor");
 	}
 
+	if (
+		fz_ckd_mul_uint(&tiff->stride, tiff->imagewidth, tiff->samplesperpixel) ||
+		fz_ckd_mul_uint(&tiff->stride, tiff->stride, tiff->bitspersample) ||
+		fz_ckd_add_uint(&tiff->stride, tiff->stride, 7)
+	)
+		fz_throw(ctx, FZ_ERROR_LIMIT, "invalid image size (integer overflow)");
+	tiff->stride >>= 3;
+
+	if (
+		fz_ckd_mul_uint(&tiff->tilestride, tiff->tilewidth, tiff->samplesperpixel) ||
+		fz_ckd_mul_uint(&tiff->tilestride, tiff->tilestride, tiff->bitspersample) ||
+		fz_ckd_add_uint(&tiff->tilestride, tiff->tilestride, 7)
+	)
+		fz_throw(ctx, FZ_ERROR_LIMIT, "invalid image size (integer overflow)");
+	tiff->tilestride >>= 3;
+
 	switch (tiff->photometric)
 	{
 	case 0: /* WhiteIsZero -- inverted */
@@ -1434,9 +1450,6 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	default:
 		fz_throw(ctx, FZ_ERROR_FORMAT, "unknown photometric: %d", tiff->photometric);
 	}
-
-	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
-	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
 #if FZ_ENABLE_ICC
 	if (tiff->profile && tiff->profilesize > 0)
