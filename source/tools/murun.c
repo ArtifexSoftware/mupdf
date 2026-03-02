@@ -5400,6 +5400,7 @@ static void ffi_Pixmap_saveAsPKM(js_State *J)
 		rethrow(J);
 }
 
+#if FZ_ENABLE_JPX
 static void ffi_Pixmap_saveAsJPX(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -5412,6 +5413,7 @@ static void ffi_Pixmap_saveAsJPX(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 }
+#endif
 
 static void ffi_Pixmap_convertToColorSpace(js_State *J)
 {
@@ -12554,7 +12556,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.saveAsPNM", ffi_Pixmap_saveAsPNM, 1);
 		jsB_propfun(J, "Pixmap.saveAsPBM", ffi_Pixmap_saveAsPBM, 1);
 		jsB_propfun(J, "Pixmap.saveAsPKM", ffi_Pixmap_saveAsPKM, 1);
+		#if FZ_ENABLE_JPX
 		jsB_propfun(J, "Pixmap.saveAsJPX", ffi_Pixmap_saveAsJPX, 2);
+		#endif
 	}
 	js_setregistry(J, "fz_pixmap");
 
