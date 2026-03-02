@@ -267,6 +267,7 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 	unsigned int x, y;
 	unsigned int stride;
 	unsigned int srcstride;
+	unsigned int size;
 
 	/* colormap has first all red, then all green, then all blue values */
 	/* colormap values are 0..65535, bits is 4 or 8 */
@@ -281,18 +282,21 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 	if (tiff->colormaplen < (unsigned)maxval * 3)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "insufficient colormap data");
 
-	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2))
-		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
+	if (fz_ckd_mul_uint(&srcstride, tiff->imagewidth, tiff->bitspersample * (1 + tiff->extrasamples)))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "image too wide");
+	srcstride = srcstride + 7 / 8;
 
-	srcstride = (tiff->imagewidth * (1 + tiff->extrasamples) * tiff->bitspersample + 7) / 8;
 	if (tiff->stride < 0 || srcstride > (unsigned int)tiff->stride)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "insufficient data for format");
 
-	/* Multiplying by two at the end because each component value in the
-	   colormap is 16 bits wide. */
-	stride = tiff->imagewidth * (3 + !!tiff->extrasamples) * 2;
+	/* Multiplying by two at the end because each component value in the colormap is 16 bits wide. */
+	if (fz_ckd_mul_uint(&stride, tiff->imagewidth, (3 + !!tiff->extrasamples) * 2))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "image too wide");
 
-	samples = Memento_label(fz_malloc(ctx, (size_t)stride * tiff->imagelength), "tiff_samples");
+	if (fz_ckd_mul_uint(&size, stride, tiff->imagelength))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
+
+	samples = Memento_label(fz_malloc(ctx, size), "tiff_samples");
 
 	for (y = 0; y < tiff->imagelength; y++)
 	{
@@ -1580,10 +1584,7 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned i;
 
-	if (tiff->imagelength > UINT_MAX / tiff->stride)
-		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
-	tiff->samples = Memento_label(fz_malloc(ctx, (size_t)tiff->imagelength * tiff->stride), "tiff_samples");
-	memset(tiff->samples, 0x00, (size_t)tiff->imagelength * tiff->stride);
+	tiff->samples = Memento_label(fz_calloc(ctx, tiff->stride, tiff->imagelength), "tiff_samples");
 
 	if (tiff->tilelength && tiff->tilewidth && tiff->tileoffsets && tiff->tilebytecounts)
 		tiff_decode_tiles(ctx, tiff);
