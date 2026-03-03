@@ -211,15 +211,36 @@ fz_opt_from_list(char *opt, const char *optlist)
 	return -1;
 }
 
+#ifdef _WIN32
+static int
+magic_windows_path(const char *opt, const char *magic)
+{
+	const char *seg = opt;
+	const char *s;
+	size_t z = strlen(magic);
+
+	/* Find the start of the last segment */
+	for (s = opt; *s; s++)
+		if ((*s == '\\' || *s == '/') && s[1] != 0)
+			seg = s+1;
+
+	/* If we aren't followed by magic, we can't match. */
+	if (fz_strncasecmp(seg, magic, z))
+		return 0;
+	/* We can match anything after magic as long as it starts with, nothing, :, \, /, or . */
+	return (seg[z] == 0 || seg[z] == '\\' || seg[z] == '/' || seg[z] == ':' || seg[z] == '.');
+}
+#endif
+
 char *
 fz_optpath(char *opt)
 {
 	if (!strcmp(opt, "-"))
 		return "/dev/stdout";
 #ifdef _WIN32
-	if (!fz_strcasecmp(opt, "con"))
+	if (magic_windows_path(opt, "con"))
 		return "/dev/stdout";
-	if (!fz_strcasecmp(opt, "nul"))
+	if (magic_windows_path(opt, "nul"))
 		return "/dev/null";
 #endif
 	return opt;
