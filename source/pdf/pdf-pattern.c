@@ -23,6 +23,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#include <float.h>
+
 pdf_pattern *
 pdf_keep_pattern(fz_context *ctx, pdf_pattern *pat)
 {
@@ -79,6 +81,17 @@ pdf_load_pattern(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		pat->ystep = pdf_dict_get_real(ctx, dict, PDF_NAME(YStep));
 		pat->bbox = pdf_dict_get_rect(ctx, dict, PDF_NAME(BBox));
 		pat->matrix = pdf_dict_get_matrix(ctx, dict, PDF_NAME(Matrix));
+
+		if (fz_abs(pat->xstep) <= FLT_EPSILON)
+		{
+			fz_warn(ctx, "tiling pattern must have non-zero xstep");
+			pat->xstep = 1;
+		}
+		if (fz_abs(pat->ystep) <= FLT_EPSILON)
+		{
+			fz_warn(ctx, "tiling pattern must have non-zero ystep");
+			pat->ystep = 1;
+		}
 
 		pat->resources = pdf_dict_get(ctx, dict, PDF_NAME(Resources));
 		if (pat->resources)
