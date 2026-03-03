@@ -35,7 +35,8 @@ static pdf_function *pdf_load_function_imp(fz_context *ctx, pdf_obj *dict, int i
 enum
 {
 	MAX_N = FZ_MAX_COLORS,
-	MAX_M = FZ_MAX_COLORS
+	MAX_M = FZ_MAX_COLORS,
+	MAX_STITCHING = 256,
 };
 
 enum
@@ -1277,6 +1278,10 @@ load_stitching_func(fz_context *ctx, pdf_function *func_, pdf_obj *dict, pdf_cyc
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "stitching function has no input functions");
 
 	k = pdf_array_len(ctx, obj);
+	if (k < 1)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "no sub-functions in stitching function");
+	if (k > MAX_STITCHING)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "too many sub-functions in stitching function");
 
 	func->funcs = Memento_label(fz_malloc_array(ctx, k, pdf_function*), "stitch_fns");
 	func->bounds = Memento_label(fz_malloc_array(ctx, k - 1, float), "stitch_bounds");
