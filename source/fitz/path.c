@@ -1006,12 +1006,21 @@ bound_curveto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float y
 	arg->prev = p;
 }
 
+static void
+bound_closepath(fz_context *ctx, void *arg_)
+{
+	bound_path_arg *arg = (bound_path_arg *)arg_;
+	if (arg->only_right_angles && !eq0(arg->prev.x - arg->move.x) && !eq0(arg->prev.y - arg->move.y))
+		arg->only_right_angles = 0;
+	arg->prev = arg->move;
+}
+
 static const fz_path_walker bound_path_walker =
 {
 	bound_moveto,
 	bound_lineto,
 	bound_curveto,
-	NULL
+	bound_closepath
 };
 
 static fz_rect
