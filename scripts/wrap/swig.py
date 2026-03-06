@@ -896,6 +896,28 @@ def build_swig(
             %ignore fz_lock_debug_lock;
             %ignore fz_lock_debug_unlock;
 
+            // If we don't ignore fz_ckd_*, windows builds fail with link
+            // errors such as: error LNK2019: unresolved external symbol
+            // fz_ckd_add_uint referenced in function _wrap_fz_ckd_add_uint
+            //
+            %ignore fz_ckd_mul_i32;
+            %ignore fz_ckd_mul_u32;
+            %ignore fz_ckd_mul_int;
+            %ignore fz_ckd_mul_uint;
+            %ignore fz_ckd_mul_size;
+
+            %ignore fz_ckd_add_i32;
+            %ignore fz_ckd_add_u32;
+            %ignore fz_ckd_add_int;
+            %ignore fz_ckd_add_uint;
+            %ignore fz_ckd_add_size;
+
+            %ignore fz_ckd_sub_i32;
+            %ignore fz_ckd_sub_u32;
+            %ignore fz_ckd_sub_int;
+            %ignore fz_ckd_sub_uint;
+            %ignore fz_ckd_sub_size;
+
             %ignore Memento_cpp_new;
             %ignore Memento_cpp_delete;
             %ignore Memento_cpp_new_array;
