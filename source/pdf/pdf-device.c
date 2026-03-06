@@ -151,9 +151,9 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 			join = FZ_LINEJOIN_MITER;
 		fz_append_printf(ctx, gs->buf, "%d j\n", join);
 	}
-	if (!gs->stroke_state || gs->stroke_state->miterlimit != stroke_state->miterlimit)
+	if (!gs->stroke_state || fz_max(1.0f, gs->stroke_state->miterlimit) != fz_max(1.0f, stroke_state->miterlimit))
 	{
-		fz_append_printf(ctx, gs->buf, "%g M\n", stroke_state->miterlimit);
+		fz_append_printf(ctx, gs->buf, "%g M\n", fz_max(1.0f, stroke_state->miterlimit));
 	}
 	if (gs->stroke_state == NULL && stroke_state->dash_len == 0)
 	{
