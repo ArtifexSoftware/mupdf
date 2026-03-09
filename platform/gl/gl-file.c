@@ -503,7 +503,7 @@ int ui_save_file(char *filename_, void (*extra_panel)(void), const char *label)
 			ui_layout(B, X, NW, ui.padsize, ui.padsize);
 			if (ui_button("Cancel") || (!ui.focus && ui.key == KEY_ESCAPE))
 			{
-				filename[0] = 0;
+				filename_[0] = 0;
 				rv = 1;
 			}
 		}
@@ -519,13 +519,13 @@ int ui_save_file(char *filename_, void (*extra_panel)(void), const char *label)
 			ui_layout(R, NONE, CENTER, 0, 0);
 			if (ui_button("Save"))
 			{
-				fz_snprintf(filename, PATH_MAX, "%s/%s", fc.curdir, fc.input_file.text);
+				fz_snprintf(filename_, PATH_MAX, "%s/%s", fc.curdir, fc.input_file.text);
 				rv = 1;
 
 				/* Show confirmation dialog if we would overwrite another file. */
-				if (strcmp(filename, fc.original_file_name))
+				if (strcmp(filename_, fc.original_file_name))
 				{
-					if (fz_file_exists(ctx, filename))
+					if (fz_file_exists(ctx, filename_))
 					{
 						fc.confirm = 1;
 						rv = 0;
