@@ -629,7 +629,7 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 			/* Both a and b are sorted. Easy. */
 			for (i = 0; i < DICT(a)->len; i++)
 			{
-				if (pdf_objcmp(ctx, DICT(a)->items[i].k, DICT(b)->items[i].k))
+				if (!pdf_name_eq(ctx, DICT(a)->items[i].k, DICT(b)->items[i].k))
 					return 1;
 				if (pdf_objcmp(ctx, DICT(a)->items[i].v, DICT(b)->items[i].v))
 					return 1;
@@ -643,14 +643,28 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 			{
 				pdf_obj *key = DICT(a)->items[i].k;
 				pdf_obj *val = DICT(a)->items[i].v;
-				for (j = 0; j < len; j++)
+				for (j = i; j != len; j++)
 				{
-					if (pdf_objcmp(ctx, key, DICT(b)->items[j].k) == 0 &&
-						pdf_objcmp(ctx, val, DICT(b)->items[j].v) == 0)
-						break; /* Match */
+					if (pdf_name_eq(ctx, key, DICT(b)->items[j].k))
+					{
+						if (pdf_objcmp(ctx, val, DICT(b)->items[j].v) == 0)
+							goto match; /* Match */
+						return 1;
+					}
 				}
-				if (j == len)
-					return 1;
+				for (j = 0; j != i; j++)
+				{
+					if (pdf_name_eq(ctx, key, DICT(b)->items[j].k))
+					{
+						if (pdf_objcmp(ctx, val, DICT(b)->items[j].v) == 0)
+							goto match; /* Match */
+						return 1;
+					}
+				}
+				/* We must differ! */
+				return 1;
+match:
+				continue;
 			}
 		}
 		/* Dicts are identical, but if they are streams, we can only be sure
