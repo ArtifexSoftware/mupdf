@@ -101,6 +101,8 @@ pdf_load_pattern(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			pdf_keep_obj(ctx, pat->resources);
 
 		pat->contents = pdf_keep_obj(ctx, dict);
+
+		pat->uses_blending = pdf_pattern_uses_blending(ctx, dict, NULL);
 	}
 	fz_catch(ctx)
 	{

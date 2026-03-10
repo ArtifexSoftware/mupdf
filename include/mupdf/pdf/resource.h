@@ -36,6 +36,8 @@ void pdf_empty_store(fz_context *ctx, pdf_document *doc);
 void pdf_purge_locals_from_store(fz_context *ctx, pdf_document *doc);
 void pdf_purge_object_from_store(fz_context *ctx, pdf_document *doc, int num);
 
+int pdf_pattern_uses_blending(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cycle_up);
+
 /*
  * Structures used for managing resource locations and avoiding multiple
  * occurrences when resources are added to the document. The search for existing
@@ -126,6 +128,7 @@ typedef struct
 	pdf_obj *resources;
 	pdf_obj *contents;
 	int id; /* unique ID for caching rendered tiles */
+	int uses_blending;
 } pdf_pattern;
 
 pdf_pattern *pdf_load_pattern(fz_context *ctx, pdf_document *doc, pdf_obj *obj);

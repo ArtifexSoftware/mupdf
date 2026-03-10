@@ -445,7 +445,7 @@ pdf_extgstate_uses_blending(fz_context *ctx, pdf_obj *dict)
 	return 0;
 }
 
-static int
+int
 pdf_pattern_uses_blending(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cycle_up)
 {
 	pdf_obj *obj;
