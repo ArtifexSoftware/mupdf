@@ -2239,7 +2239,7 @@ unlink_block(fz_stext_block *block, fz_stext_block **first, fz_stext_block **las
 	}
 }
 
-static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz_stext_struct *src)
+static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz_stext_struct *src, const char *title)
 {
 	fz_stext_block *block;
 	fz_stext_block **first = src ? &src->first_block : &page->first_block;
@@ -2249,6 +2249,11 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 
 	if ((*first == NULL) != (*last == NULL))
 	{
+		if (title)
+		{
+			fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+			title = NULL;
+		}
 		fz_write_printf(ctx, out, "*first(%p) = %p *last(%p) = %p - should both be NULL or non-NULL\n",
 			first, *first, last, *last);
 		fail = 1;
@@ -2262,12 +2267,22 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 		{
 			if (*first != block)
 			{
+				if (title)
+				{
+					fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+					title = NULL;
+				}
 				fz_write_printf(ctx, out, "first=%p *first=%p should equal block=%p\n", first, *first, block);
 				fail = 1;
 			}
 		}
 		else if (block->prev->next != block)
 		{
+			if (title)
+			{
+				fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+				title = NULL;
+			}
 			fz_write_printf(ctx, out, "block->prev(%p)->next=%p should equal block=%p\n", block->prev, block->prev->next, block);
 			fail = 1;
 		}
@@ -2275,12 +2290,22 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 		{
 			if (*last != block)
 			{
+				if (title)
+				{
+					fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+					title = NULL;
+				}
 				fz_write_printf(ctx, out, "*last(%p)=%p should equal block=%p\n", last, *last, block);
 				fail = 1;
 			}
 		}
 		else if (block->next->prev != block)
 		{
+			if (title)
+			{
+				fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+				title = NULL;
+			}
 			fz_write_printf(ctx, out, "block->next(%p)->prev=%p should equal block=%p\n", block->next, block->next->prev, block);
 			fail = 1;
 		}
@@ -2291,17 +2316,32 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 			{
 				if (block->u.s.down->up != block)
 				{
+					if (title)
+					{
+						fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+						title = NULL;
+					}
 					fz_write_printf(ctx, out, "block->u.s.down(%p)->up should equal block(%p)\n", block->u.s.down, block->u.s.down->up, block);
 					fail = 1;
 				}
 				if (block->u.s.down->parent != src)
 				{
+					if (title)
+					{
+						fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+						title = NULL;
+					}
 					fz_write_printf(ctx, out, "block(%p)->u.s.down(%p)->parent=%p should equal src=%p\n", block, block->u.s.down, block->u.s.down->parent, src);
 					fail = 1;
 				}
-				fail |= verify_stext(ctx, out, page, block->u.s.down);
+				fail |= verify_stext(ctx, out, page, block->u.s.down, title);
 				if (block->u.s.index <= max)
 				{
+					if (title)
+					{
+						fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+						title = NULL;
+					}
 					fz_write_printf(ctx, out, "block(%p)->u.s.index=%d should be > max=%d\n", block, block->u.s.index, max);
 					fail = 1;
 				}
@@ -2313,6 +2353,11 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 			continue;
 		if ((block->u.t.first_line == NULL) != (block->u.t.last_line == NULL))
 		{
+			if (title)
+			{
+				fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+				title = NULL;
+			}
 			fz_write_printf(ctx, out, "block(%p)->u.t.first_line=%p and block->u.t.last_line=(%p) should both be NULL or non-NULL\n", block, block->u.t.first_line, block->u.t.last_line);
 			fail = 2;
 		}
@@ -2324,18 +2369,33 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 			{
 				if (block->u.t.last_line != line)
 				{
+					if (title)
+					{
+						fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+						title = NULL;
+					}
 					fz_write_printf(ctx, out, "block(%p)->u.t.last_line=%p should equal line=%p\n", block, block->u.t.last_line, line);
 					fail = 2;
 				}
 			}
 			else if (line->next->prev != line)
 			{
+				if (title)
+				{
+					fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+					title = NULL;
+				}
 				fz_write_printf(ctx, out, "line->next(%p)->prev=%p should equal line=%p\n", line->next, line->next->prev, line);
 				fail = 2;
 			}
 
 			if ((line->first_char == NULL) != (line->last_char == NULL))
 			{
+				if (title)
+				{
+					fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+					title = NULL;
+				}
 				fz_write_printf(ctx, out, "line(%p)->first_char=%p and line->last_char=%p should both be NULL or non-NULL\n", line, line->first_char, line->last_char);
 				fail = 2;
 			}
@@ -2344,6 +2404,11 @@ static int verify_stext(fz_context *ctx, fz_output *out, fz_stext_page *page, fz
 			{
 				if (ch->next == NULL && line->last_char != ch)
 				{
+					if (title)
+					{
+						fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
+						title = NULL;
+					}
 					fz_write_printf(ctx, out, "line(%p)->last_char=%p but last char=%p\n", line, line->last_char, ch);
 					fail = 2;
 				}
@@ -2359,10 +2424,7 @@ fz_verify_stext_page(fz_context *ctx, fz_stext_page *page, const char *title)
 {
 	int fail;
 
-	if (title)
-		fz_write_printf(ctx, fz_stddbg(ctx), "%s\n", title);
-
-	fail = verify_stext(ctx, fz_stddbg(ctx), page, NULL);
+	fail = verify_stext(ctx, fz_stddbg(ctx), page, NULL, title);
 	if (fail == 0)
 		return;
 
