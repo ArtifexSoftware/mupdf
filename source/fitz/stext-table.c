@@ -1341,6 +1341,11 @@ find_grid_pos(fz_context *ctx, grid_walker_data *gd, int row, float x, int inacc
 		{
 			/* Split i into i and i+1, and make i the new one. */
 			assert(i > 0);
+			if (x >= pos->list[i].min - WIGGLE_ROOM)
+			{
+				/* Never split into regions that would be too small. */
+				return i;
+			}
 #ifdef DEBUG_TABLE_SPLITS
 			printf("Splitting before %d\n", i);
 #endif
@@ -1428,6 +1433,11 @@ split:
 #endif
 				return i+1;
 			}
+		}
+		else if (x <= pos->list[i].max + WIGGLE_ROOM)
+		{
+			/* Never split into regions that would be too small. */
+			return i;
 		}
 	}
 	assert("Never happens" == NULL);
