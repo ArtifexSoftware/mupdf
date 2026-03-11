@@ -1487,7 +1487,7 @@ add_v_line(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0, 
 
 /* Lookup the position of a rectangle, reinforcing as appropriate. */
 static void
-add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1, int stroked)
+add_hv_line(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1)
 {
 	(void)find_grid_pos(ctx, gd, 0, x0, 0);
 	(void)find_grid_pos(ctx, gd, 0, x1, 0);
@@ -1528,7 +1528,7 @@ add_v_line2(fz_context *ctx, grid_walker_data *gd, float y0, float y1, float x0,
 /* Add a rectangle (with no reinforcement).
  * Record which cells that was a border for. */
 static void
-add_hv_line2(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1, int stroked)
+add_hv_line2(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0, float y1)
 {
 	int ix0 = find_grid_pos(ctx, gd, 0, x0, 1);
 	int ix1 = find_grid_pos(ctx, gd, 0, x1, 1);
@@ -1536,18 +1536,15 @@ add_hv_line2(fz_context *ctx, grid_walker_data *gd, float x0, float x1, float y0
 	int iy1 = find_grid_pos(ctx, gd, 1, y1, 1);
 	int i;
 
-	if (stroked)
+	for (i = ix0; i < ix1; i++)
 	{
-		for (i = ix0; i < ix1; i++)
-		{
-			get_cell(gd->cells, i, iy0)->h_line++;
-			get_cell(gd->cells, i, iy1)->h_line++;
-		}
-		for (i = iy0; i < iy1; i++)
-		{
-			get_cell(gd->cells, ix0, i)->v_line++;
-			get_cell(gd->cells, ix1, i)->v_line++;
-		}
+		get_cell(gd->cells, i, iy0)->h_line++;
+		get_cell(gd->cells, i, iy1)->h_line++;
+	}
+	for (i = iy0; i < iy1; i++)
+	{
+		get_cell(gd->cells, ix0, i)->v_line++;
+		get_cell(gd->cells, ix1, i)->v_line++;
 	}
 }
 
@@ -1738,17 +1735,17 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			if (w > h && h < 2)
 			{
 				/* Thin, tall line */
-				(void) add_h_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
+				add_h_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 			else if (w < h && w < 2)
 			{
 				/* Thin, wide line */
-				(void) add_v_line(ctx, gd, r.y0, r.y1, r.x0, r.x1);
+				add_v_line(ctx, gd, r.y0, r.y1, r.x0, r.x1);
 			}
 			else
 			{
 				/* Rectangle */
-				(void) add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1, block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED);
+				add_hv_line(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 		}
 	}
@@ -1784,17 +1781,17 @@ walk_grid_lines2(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			if (w > h && h < 2)
 			{
 				/* Thin, wide line */
-				(void) add_h_line2(ctx, gd, r.x0, r.x1, r.y0, r.y1);
+				add_h_line2(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 			else if (w < h && w < 2)
 			{
 				/* Thin, wide line */
-				(void) add_v_line2(ctx, gd, r.y0, r.y1, r.x0, r.x1);
+				add_v_line2(ctx, gd, r.y0, r.y1, r.x0, r.x1);
 			}
 			else
 			{
 				/* Rectangle */
-				(void) add_hv_line2(ctx, gd, r.x0, r.x1, r.y0, r.y1, block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED);
+				add_hv_line2(ctx, gd, r.x0, r.x1, r.y0, r.y1);
 			}
 		}
 	}
