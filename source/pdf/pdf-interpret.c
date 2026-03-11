@@ -1712,7 +1712,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				{
 					fz_rethrow(ctx);
 				}
-				else if (caught == FZ_ERROR_SYNTAX)
+				else if (caught == FZ_ERROR_SYNTAX || caught == FZ_ERROR_FORMAT)
 				{
 					fz_report_error(ctx);
 					cookie->errors++;
@@ -1738,7 +1738,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				{
 					fz_rethrow(ctx);
 				}
-				else if (caught == FZ_ERROR_SYNTAX)
+				else if (caught == FZ_ERROR_SYNTAX || caught == FZ_ERROR_FORMAT)
 				{
 					fz_report_error(ctx);
 					if (++syntax_errors >= MAX_SYNTAX_ERRORS)
