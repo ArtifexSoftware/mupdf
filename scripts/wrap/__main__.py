@@ -817,7 +817,11 @@ Usage:
             swig.exe and sets things up to use it subsequently.
 
         --sync-docs <destination>
-            Use rsync to copy contents of docs/generated/ to remote destination.
+            If <destination> contains ':' we use rsync to copy contents of
+            docs/generated/ to remote destination.
+
+            Otherwise we use shutil.copytree() to copy contents of
+            docs/generated/ into director <destination>.
 
         --sync-pretty <destination>
             Use rsync to copy generated C++ and Python files to <destination>. Also
@@ -2753,11 +2757,15 @@ def main2():
                 jlib.system( f'rsync -aiRz {" ".join( files)} {destination}', verbose=1, out='log')
 
             elif arg == '--sync-docs':
-                # We use extra './' so that -R uses remaining path on
-                # destination.
-                #
                 destination = args.next()
-                jlib.system( f'rsync -aiRz {build_dirs.dir_mupdf}/docs/generated/./ {destination}', verbose=1, out='log')
+                if not destination.endswith('/'):
+                    destination += '/'
+                from_ = f'{build_dirs.dir_mupdf}/docs/generated/'
+                if ':' in destination:
+                    jlib.system( f'rsync -aiz {from_} {destination}', verbose=1, out='log')
+                else:
+                    jlib.log(f'Copying {from_=} to {destination=}.')
+                    shutil.copytree(from_, destination, dirs_exist_ok=True)
 
             elif arg == '--test-cpp':
                 testfile = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
