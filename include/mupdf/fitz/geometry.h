@@ -889,23 +889,30 @@ int fz_is_quad_intersecting_quad(fz_quad a, fz_quad b);
 
 #include <stdckdint.h>
 
-#define fz_ckd_mul_i32 ckd_mul
-#define fz_ckd_mul_u32 ckd_mul
-#define fz_ckd_mul_int ckd_mul
-#define fz_ckd_mul_uint ckd_mul
-#define fz_ckd_mul_size ckd_mul
+/* We add explicit casts here to ensure that these match the non-C23 cases below. */
+#define fz_ckd_mul_i32(O,A,B) ckd_mul(O,(int32_t)(A),(int32_t)(B))
+#define fz_ckd_mul_u32(O,A,B) ckd_mul(O,(uint32_t)(A),(uint32_t)(B))
+#define fz_ckd_mul_int(O,A,B) ckd_mul(O,(int)(A),(int)(B))
+#define fz_ckd_mul_uint(O,A,B) ckd_mul(O,(unsigned int)(A),(unsigned int)(B))
+#define fz_ckd_mul_size(O,A,B) ckd_mul(O,(size_t)(A),(size_t)(B))
+#define fz_ckd_mul_i64(O,A,B) ckd_mul(O,(int64_t)(A),(int64_t)(B))
+#define fz_ckd_mul_u64(O,A,B) ckd_mul(O,(uint64_t)(A),(uint64_t)(B))
 
-#define fz_ckd_add_i32 ckd_add
-#define fz_ckd_add_u32 ckd_add
-#define fz_ckd_add_int ckd_add
-#define fz_ckd_add_uint ckd_add
-#define fz_ckd_add_size ckd_add
+#define fz_ckd_add_i32(O,A,B) ckd_add(O,(int32_t)(A),(int32_t)(B))
+#define fz_ckd_add_u32(O,A,B) ckd_add(O,(uint32_t)(A),(uint32_t)(B))
+#define fz_ckd_add_int(O,A,B) ckd_add(O,(int)(A),(int)(B))
+#define fz_ckd_add_uint(O,A,B) ckd_add(O,(unsigned int)(A),(unsigned int)(B))
+#define fz_ckd_add_size(O,A,B) ckd_add(O,(size_t)(A),(size_t)(B))
+#define fz_ckd_add_i64(O,A,B) ckd_add(O,(int64_t)(A),(int64_t)(B))
+#define fz_ckd_add_u64(O,A,B) ckd_add(O,(uint64_t)(A),(uint64_t)(B))
 
-#define fz_ckd_sub_i32 ckd_sub
-#define fz_ckd_sub_u32 ckd_sub
-#define fz_ckd_sub_int ckd_sub
-#define fz_ckd_sub_uint ckd_sub
-#define fz_ckd_sub_size ckd_sub
+#define fz_ckd_sub_i32(O,A,B) ckd_sub(O,(int32_t)(A),(int32_t)(B))
+#define fz_ckd_sub_u32(O,A,B) ckd_sub(O,(uint32_t)(A),(uint32_t)(B))
+#define fz_ckd_sub_int(O,A,B) ckd_sub(O,(int)(A),(int)(B))
+#define fz_ckd_sub_uint(O,A,B) ckd_sub(O,(unsigned int)(A),(unsigned int)(B))
+#define fz_ckd_sub_size(O,A,B) ckd_sub(O,(size_t)(A),(size_t)(B))
+#define fz_ckd_sub_i64(O,A,B) ckd_sub(O,(int64_t)(A),(int64_t)(B))
+#define fz_ckd_sub_u64(O,A,B) ckd_sub(O,(uint64_t)(A),(uint64_t)(B))
 
 #else
 
@@ -928,6 +935,14 @@ int fz_ckd_sub_uint(unsigned int *out, unsigned int a, unsigned int b);
 int fz_ckd_mul_size(size_t *out, size_t a, size_t b);
 int fz_ckd_add_size(size_t *out, size_t a, size_t b);
 int fz_ckd_sub_size(size_t *out, size_t a, size_t b);
+
+int fz_ckd_mul_i64(int64_t *out, int64_t a, int64_t b);
+int fz_ckd_add_i64(int64_t *out, int64_t a, int64_t b);
+int fz_ckd_sub_i64(int64_t *out, int64_t a, int64_t b);
+
+int fz_ckd_mul_u64(uint64_t *out, uint64_t a, uint64_t b);
+int fz_ckd_add_u64(uint64_t *out, uint64_t a, uint64_t b);
+int fz_ckd_sub_u64(uint64_t *out, uint64_t a, uint64_t b);
 
 #endif
 

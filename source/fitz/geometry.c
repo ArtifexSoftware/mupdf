@@ -982,11 +982,18 @@ int fz_ckd_sub_uint(unsigned int *out, unsigned int a, unsigned int b)
 
 int fz_ckd_mul_size(size_t *out, size_t a, size_t b)
 {
-	// TODO: if size_t is 64-bit!
-	if (a <= UINT32_MAX && b <= UINT32_MAX)
+	/* Try and avoid the division if we can. */
+	if (sizeof(size_t) == sizeof(int64_t))
+	{
+		*out = a * b;
+		if (b != 0 && a != *out/b)
+			return 1;
+		return 0;
+	}
+	else if (a <= UINT32_MAX && b <= UINT32_MAX)
 	{
 		uint32_t x;
-		if (fz_ckd_mul_u32(&x, a, b))
+		if (fz_ckd_mul_u32(&x, (uint32_t)a, (uint32_t)b))
 			return 1;
 		*out = x;
 		return 0;
@@ -1001,6 +1008,47 @@ int fz_ckd_add_size(size_t *out, size_t a, size_t b)
 }
 
 int fz_ckd_sub_size(size_t *out, size_t a, size_t b)
+{
+	*out = a - b;
+	return a < b;
+}
+
+int fz_ckd_mul_i64(int64_t *out, int64_t a, int64_t b)
+{
+	*out = a * b;
+	if (b != 0 && a != *out/b)
+		return 1;
+	return 0;
+}
+
+int fz_ckd_add_i64(int64_t *out, int64_t a, int64_t b)
+{
+	*out = a + b;
+	return *out < a;
+}
+
+int fz_ckd_sub_i64(int64_t *out, int64_t a, int64_t b)
+{
+	*out = a - b;
+	return a < b;
+}
+
+
+int fz_ckd_mul_u64(uint64_t *out, uint64_t a, uint64_t b)
+{
+	*out = a * b;
+	if (b != 0 && a != *out/b)
+		return 1;
+	return 0;
+}
+
+int fz_ckd_add_u64(uint64_t *out, uint64_t a, uint64_t b)
+{
+	*out = a + b;
+	return *out < a;
+}
+
+int fz_ckd_sub_u64(uint64_t *out, uint64_t a, uint64_t b)
 {
 	*out = a - b;
 	return a < b;
