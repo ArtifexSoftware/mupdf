@@ -16,5 +16,5 @@ C API
     </style>
 
     <div>
-        <iframe style="width: 100%; height: 90vh; border: none; padding:0; margin:0;" src="/_static/generated/c/html/index.html"></iframe>
+        <iframe style="width: 100%; height: 90vh; border: none; padding:0; margin:0;" src="../../../_static/generated/c/html/index.html"></iframe>
     </div>
