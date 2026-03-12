@@ -393,8 +393,8 @@ typedef struct
 	int skip;
 	int pad;
 	int scale;
-	int src_stride;
-	int dst_stride;
+	size_t src_stride;
+	size_t dst_stride;
 	fz_unpack_line_fn unpack;
 	unsigned char buf[1];
 } unpack_state;
@@ -437,11 +437,23 @@ unpack_drop(fz_context *ctx, void *state)
 fz_stream *
 fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n, int indexed, int pad, int skip)
 {
-	int src_stride = ((int64_t)w*depth*n+7)>>3; // avoid overflow by bumping to 64-bit math
-	int dst_stride;
+	uint64_t u64;
+	size_t src_stride, dst_stride;
 	unpack_state *state;
 	fz_unpack_line_fn unpack_line = NULL;
 	int scale = 1;
+
+	if (n < 1 || n > FZ_MAX_COLORS)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "n out of range in fz_unpack_stream");
+	if (depth < 1 || depth > 32)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "depth out of range in fz_unpack_stream");
+
+	if (fz_ckd_mul_u64(&u64, w, depth*n))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "area out of range in fz_unpack_stream");
+	u64 = (u64+7)>>3;
+	if (u64 > SIZE_MAX)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "area out of range in fz_unpack_stream");
+	src_stride = (size_t)u64;
 
 	if (depth == 1)
 		init_get1_tables();
@@ -454,7 +466,8 @@ fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n
 		case 4: scale = 17; break;
 		}
 
-	dst_stride = w * (n + !!pad);
+	if (fz_ckd_mul_size(&dst_stride, w, n + !!pad))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "dst_stride out of range in fz_unpack_stream");
 
 	if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)
 		unpack_line = fz_unpack_mono_line_unscaled;
