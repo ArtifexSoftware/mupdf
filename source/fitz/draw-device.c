@@ -1608,10 +1608,10 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 			n = dest->n;
 			if (fz_overprint_required(eop))
 			{
-				for (y = scissor.y0; y < scissor.y1; y++)
+				for (y = bbox.y0; y < bbox.y1; y++)
 				{
-					s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
-					for (x = scissor.x0; x < scissor.x1; x++)
+					s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (bbox.x0 - dest->x) * n);
+					for (x = bbox.x0; x < bbox.x1; x++)
 					{
 						for (i = 0; i < n; i++)
 							if (fz_overprint_component(eop, i))
@@ -1621,10 +1621,10 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 			}
 			else
 			{
-				for (y = scissor.y0; y < scissor.y1; y++)
+				for (y = bbox.y0; y < bbox.y1; y++)
 				{
-					s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
-					for (x = scissor.x0; x < scissor.x1; x++)
+					s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (bbox.x0 - dest->x) * n);
+					for (x = bbox.x0; x < bbox.x1; x++)
 					{
 						for (i = 0; i < n; i++)
 							*s++ = colorbv[i];
@@ -1633,10 +1633,10 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 			}
 			if (shape)
 			{
-				for (y = scissor.y0; y < scissor.y1; y++)
+				for (y = bbox.y0; y < bbox.y1; y++)
 				{
-					s = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (scissor.x0 - shape->x));
-					for (x = scissor.x0; x < scissor.x1; x++)
+					s = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (bbox.x0 - shape->x));
+					for (x = bbox.x0; x < bbox.x1; x++)
 					{
 						*s++ = 255;
 					}
@@ -1644,10 +1644,10 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, fz_matrix 
 			}
 			if (group_alpha)
 			{
-				for (y = scissor.y0; y < scissor.y1; y++)
+				for (y = bbox.y0; y < bbox.y1; y++)
 				{
-					s = group_alpha->samples + (unsigned int)((y - group_alpha->y) * group_alpha->stride + (scissor.x0 - group_alpha->x));
-					for (x = scissor.x0; x < scissor.x1; x++)
+					s = group_alpha->samples + (unsigned int)((y - group_alpha->y) * group_alpha->stride + (bbox.x0 - group_alpha->x));
+					for (x = bbox.x0; x < bbox.x1; x++)
 					{
 						*s++ = alpha_byte;
 					}
