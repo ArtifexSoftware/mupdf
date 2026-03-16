@@ -1531,7 +1531,11 @@ end_segment(fz_context *ctx, segmenter_data_t *sd)
 	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE) ? sd->sstate : NULL;
 	r = fz_bound_path(ctx, sd->segment, st, sd->ctm);
 
-	if (sd->p->options->culler && sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
+	if (!fz_is_valid_rect(r))
+	{
+		/* This segment can be skipped */
+	}
+	else if (sd->p->options->culler && sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
 	{
 		/* This segment can be skipped */
 	}
