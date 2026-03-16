@@ -946,4 +946,9 @@ int fz_ckd_sub_u64(uint64_t *out, uint64_t a, uint64_t b);
 
 #endif
 
+#define fz_bytes_from_bits(A)  (((A)>>3) + !!((A) & 7))
+
+int fz_ckd_size_from_i64(size_t *out, int64_t in);
+int fz_ckd_int_from_i64(int *out, int64_t in);
+
 #endif

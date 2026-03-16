@@ -2918,7 +2918,7 @@ pdf_mark_bits *
 pdf_new_mark_bits(fz_context *ctx, pdf_document *doc)
 {
 	int n = pdf_xref_len(ctx, doc);
-	int nb = (n + 7) >> 3;
+	int nb = fz_bytes_from_bits(n);
 	pdf_mark_bits *marks = fz_calloc(ctx, offsetof(pdf_mark_bits, bits) + nb, 1);
 	marks->len = n;
 	return marks;
@@ -2932,7 +2932,7 @@ pdf_drop_mark_bits(fz_context *ctx, pdf_mark_bits *marks)
 
 void pdf_mark_bits_reset(fz_context *ctx, pdf_mark_bits *marks)
 {
-	memset(marks->bits, 0, (marks->len + 7) >> 3);
+	memset(marks->bits, 0, fz_bytes_from_bits(marks->len));
 }
 
 int pdf_mark_bits_set(fz_context *ctx, pdf_mark_bits *marks, pdf_obj *obj)

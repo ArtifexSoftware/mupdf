@@ -407,7 +407,7 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *file_stm, pdf_obj
 }
 
 fz_stream *
-pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, fz_stream *file_stm, fz_compression_params *imparams)
+pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, size_t length, fz_stream *file_stm, fz_compression_params *imparams)
 {
 	pdf_obj *filters = pdf_dict_geta(ctx, stmobj, PDF_NAME(Filter), PDF_NAME(F));
 	pdf_obj *params = pdf_dict_geta(ctx, stmobj, PDF_NAME(DecodeParms), PDF_NAME(DP));
@@ -423,7 +423,7 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 }
 
 void
-pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int length, fz_stream *file_stm, int indexed, fz_compressed_image *image)
+pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict, size_t length, fz_stream *file_stm, int indexed, fz_compressed_image *image)
 {
 	fz_stream *istm = NULL, *leech = NULL, *decomp = NULL;
 	fz_pixmap *pixmap = NULL;

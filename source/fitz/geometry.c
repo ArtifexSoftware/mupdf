@@ -1055,3 +1055,19 @@ int fz_ckd_sub_u64(uint64_t *out, uint64_t a, uint64_t b)
 }
 
 #endif
+
+int fz_ckd_size_from_i64(size_t *out, int64_t in)
+{
+	if (in < 0 || (sizeof(int64_t) > sizeof(size_t) && in > (int64_t)SIZE_MAX))
+		return 1;
+	*out = (size_t)in;
+	return 0;
+}
+
+int fz_ckd_int_from_i64(int *out, int64_t in)
+{
+	if (in < 0 || (sizeof(int64_t) > sizeof(int) && in > (int64_t)INT_MAX))
+		return 1;
+	*out = (int)in;
+	return 0;
+}

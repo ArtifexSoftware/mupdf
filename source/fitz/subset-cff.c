@@ -987,7 +987,7 @@ execute_charstring(fz_context *ctx, cff_t *cff, const uint8_t *pc, const uint8_t
 		case 20: /* cntrmask */
 			if (start == 1)
 				stem_hints += (sp/2);
-			pc += (stem_hints+7)>>3;
+			pc += fz_bytes_from_bits(stem_hints);
 			if (pc > end)
 				goto overflow;
 			start = 2;

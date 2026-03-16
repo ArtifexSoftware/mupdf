@@ -712,7 +712,7 @@ static int is_bitmap_stream(fz_context *ctx, pdf_obj *obj, size_t len, int *w, i
 		return 0;
 	*w = pdf_dict_get_int(ctx, obj, PDF_NAME(Width));
 	*h = pdf_dict_get_int(ctx, obj, PDF_NAME(Height));
-	stride = (*w + 7) >> 3;
+	stride = fz_bytes_from_bits(*w);
 	if ((size_t)stride * (*h) != len)
 		return 0;
 	if (pdf_dict_get_bool(ctx, obj, PDF_NAME(ImageMask)))
@@ -966,7 +966,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		{
 			if (is_bitmap_stream(ctx, obj, len, &w, &h))
 			{
-				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h, (w+7)>>3);
+				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h, fz_bytes_from_bits(w));
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(CCITTFaxDecode));
 				dp = pdf_dict_put_dict(ctx, obj, PDF_NAME(DecodeParms), 1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
@@ -1057,7 +1057,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		{
 			if (is_bitmap_stream(ctx, obj, len, &w, &h))
 			{
-				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h, (w+7)>>3);
+				tmp_comp = fz_compress_ccitt_fax_g4(ctx, data, w, h, fz_bytes_from_bits(w));
 				pdf_dict_put(ctx, obj, PDF_NAME(Filter), PDF_NAME(CCITTFaxDecode));
 				dp = pdf_dict_put_dict(ctx, obj, PDF_NAME(DecodeParms), 1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
