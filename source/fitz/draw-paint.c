@@ -793,10 +793,10 @@ template_span_with_color_3_da_alpha(byte * FZ_RESTRICT dp, const byte * FZ_RESTR
 				}
 				else
 				{
-					ma = FZ_EXPAND(ma);
 					unsigned int RGBA = ((unsigned int*)dp)[-1];
 					unsigned int RB = (RGBA<<8) & mask;
 					unsigned int GA = RGBA & mask;
+					ma = FZ_EXPAND(ma);
 					RB += (rb-(RB>>8))*ma;
 					GA += (ga-(GA>>8))*ma;
 					RB &= mask;
