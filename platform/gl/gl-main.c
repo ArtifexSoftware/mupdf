@@ -2016,7 +2016,7 @@ void reload_document(void)
 	save_history();
 	save_accelerator();
 	fz_set_use_document_css(ctx, layout_use_css & 1);
-	if (layout_use_css & 2)
+	if (layout_css != NULL && layout_use_css & 2)
 		fz_load_user_css(ctx, layout_css);
 	else
 		fz_set_user_css(ctx, NULL);
