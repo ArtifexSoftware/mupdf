@@ -205,7 +205,7 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, fz_matrix ctm, fz_rec
 		y1 = ceilf(area.y1 / ystep);
 
 #ifdef TILE
-		if ((x1 - x0) * (y1 - y0) > 1)
+		if (((x1 - x0) * (y1 - y0) > 1) && !(dev->hints & FZ_NO_TILING))
 #else
 		if (0)
 #endif

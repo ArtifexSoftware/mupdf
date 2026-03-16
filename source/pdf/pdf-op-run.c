@@ -788,7 +788,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, int p
 	 * required in at least one direction. Note, that this allows for
 	 * 'sections' of 4 tiles to be show, but all non-overlapping. */
 	/* If the pattern uses blending, we never use the tile cache. */
-	if ((fx1-fx0 > 1 || fy1-fy0 > 1) && !pat->uses_blending)
+	if ((fx1-fx0 > 1 || fy1-fy0 > 1) && !pat->uses_blending && !(pr->dev->hints & FZ_NO_TILING))
 #else
 	if (0)
 #endif

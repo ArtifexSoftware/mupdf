@@ -1407,6 +1407,8 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 {
 	pdf_device *dev = fz_new_derived_device(ctx, pdf_device);
 
+	dev->super.hints = FZ_NO_TILING;
+
 	dev->super.close_device = pdf_dev_close_device;
 	dev->super.drop_device = pdf_dev_drop_device;
 
