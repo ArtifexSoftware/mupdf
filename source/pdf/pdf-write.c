@@ -341,55 +341,149 @@ static void compactxref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
  * removing duplicate objects and compacting the xref.
  */
 
-static void renumberobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj)
+/*
+	This routine takes a borrowed reference to obj, the object to renumber.
+	It passes recursively through this object, renumbering any references.
+
+	If obj is a "singleton" (i.e. has a refcount of 1), then this can be done
+	in place. This is by far the most common case.
+
+	If obj is NOT a singleton, then multiple parent objects have references to
+	this; we can't afford to rewrite the object in place, because we might well
+	get called again later in the process to rewrite it again - and renumbering
+	is not idempotent.
+
+	So, in that case, we duplicate just the bit of the object that we need to
+	renumber the contents of that duplicate, and return it.
+
+	The return value from this function is the rewritten object. Now for the
+	nasty bit; if we rewrite in place, we return obj (still as the original
+	borrowed reference). If we duplicate to rewrite, we return the new duplicate
+	(as a REAL reference that the caller needs to drop).
+
+	Thus the caller needs to react differently depending on whether the
+	return value is the same as what was passed in or not. In practise this
+	isn't too bad, but it's conceptually strange.
+*/
+static pdf_obj *renumberobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj)
 {
 	int i;
 	int xref_len = pdf_xref_len(ctx, doc);
+	pdf_obj *dup = NULL;
 
 	if (pdf_is_dict(ctx, obj))
 	{
+		/* Pass through the dict checking whether we a) need to modify it
+		 * and b) need to recurse into it to check for subparts. */
+		int modify = 0;
+		int recurse = 0;
 		int n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 		{
-			pdf_obj *key = pdf_dict_get_key(ctx, obj, i);
 			pdf_obj *val = pdf_dict_get_val(ctx, obj, i);
 			if (pdf_is_indirect(ctx, val))
 			{
-				int o = pdf_to_num(ctx, val);
-				if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
-					val = PDF_NULL;
-				else
-					val = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
-				pdf_dict_put_drop(ctx, obj, key, val);
+				modify = 1;
+				break;
 			}
-			else
+			if (pdf_is_dict(ctx, val) || pdf_is_array(ctx, val))
+				recurse = 1;
+		}
+		if (!recurse && i == n)
+			return obj; /* Nothing to do */
+
+		/* Obj is a borrowed reference. */
+		if (modify && !pdf_obj_is_singleton(ctx, obj))
+			dup = obj = pdf_copy_dict(ctx, obj);
+		/* If obj is different to what it was on entry, it's an owned reference, otherwise it's borrowed. */
+
+		fz_try(ctx)
+		{
+			for (i = 0; i < n; i++)
 			{
-				renumberobj(ctx, doc, opts, val);
+				pdf_obj *key = pdf_dict_get_key(ctx, obj, i);
+				pdf_obj *val = pdf_dict_get_val(ctx, obj, i);
+				if (pdf_is_indirect(ctx, val))
+				{
+					int o = pdf_to_num(ctx, val);
+					if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
+						val = PDF_NULL;
+					else
+						val = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
+					pdf_dict_put_drop(ctx, obj, key, val);
+				}
+				else
+				{
+					pdf_obj *nval = renumberobj(ctx, doc, opts, val);
+					/* If nval comes back different, we need to drop it. */
+					if (nval != val)
+						pdf_dict_put_drop(ctx, obj, key, nval);
+				}
 			}
+		}
+		fz_catch(ctx)
+		{
+			pdf_drop_obj(ctx, dup);
+			fz_rethrow(ctx);
 		}
 	}
 
 	else if (pdf_is_array(ctx, obj))
 	{
+		/* Pass through the array checking whether we a) need to modify it
+		 * and b) need to recurse into it to check for subparts. */
+		int modify = 0;
+		int recurse = 0;
 		int n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)
 		{
 			pdf_obj *val = pdf_array_get(ctx, obj, i);
 			if (pdf_is_indirect(ctx, val))
 			{
-				int o = pdf_to_num(ctx, val);
-				if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
-					val = PDF_NULL;
-				else
-					val = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
-				pdf_array_put_drop(ctx, obj, i, val);
+				modify = 1;
+				break;
 			}
-			else
+			if (pdf_is_dict(ctx, val) || pdf_is_array(ctx, val))
+				recurse = 1;
+		}
+		if (!recurse && i == n)
+			return obj; /* Nothing to do */
+
+		/* Obj is a borrowed reference. */
+		if (modify && !pdf_obj_is_singleton(ctx, obj))
+			dup = obj = pdf_copy_array(ctx, obj);
+		/* If obj is different to what it was on entry, it's an owned reference, otherwise it's borrowed. */
+
+		fz_try(ctx)
+		{
+			for (i = 0; i < n; i++)
 			{
-				renumberobj(ctx, doc, opts, val);
+				pdf_obj *val = pdf_array_get(ctx, obj, i);
+				if (pdf_is_indirect(ctx, val))
+				{
+					int o = pdf_to_num(ctx, val);
+					if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
+						val = PDF_NULL;
+					else
+						val = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
+					pdf_array_put_drop(ctx, obj, i, val);
+				}
+				else
+				{
+					pdf_obj *nval = renumberobj(ctx, doc, opts, val);
+					/* If nval comes back different, we need to drop it. */
+					if (nval != val)
+						pdf_array_put_drop(ctx, obj, i, nval);
+				}
 			}
 		}
+		fz_catch(ctx)
+		{
+			pdf_drop_obj(ctx, dup);
+			fz_rethrow(ctx);
+		}
 	}
+	return obj;
 }
 
 static void
@@ -417,16 +511,22 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	int num;
 	int *new_use_list;
 	int xref_len = pdf_xref_len(ctx, doc);
+	pdf_obj *nval = NULL;
 
 	expand_lists(ctx, opts, xref_len);
 	new_use_list = fz_calloc(ctx, opts->list_len, sizeof(int));
 
 	fz_var(newxref);
 	fz_var(newxref_to_free);
+	fz_var(nval);
 	fz_try(ctx)
 	{
 		/* Apply renumber map to indirect references in all objects in xref */
-		renumberobj(ctx, doc, opts, pdf_trailer(ctx, doc));
+		pdf_obj *trailer = pdf_trailer(ctx, doc);
+		nval = renumberobj(ctx, doc, opts, trailer);
+		if (nval != trailer)
+			pdf_set_trailer(ctx, doc, nval);
+		nval = NULL;
 		for (num = 0; num < xref_len; num++)
 		{
 			pdf_obj *obj;
@@ -442,19 +542,18 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			{
 				int o = pdf_to_num(ctx, obj);
 				if (o >= xref_len || o <= 0 || opts->renumber_map[o] == 0)
-					obj = PDF_NULL;
+					nval = PDF_NULL;
 				else
-					obj = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
-				fz_try(ctx)
-					pdf_update_object(ctx, doc, num, obj);
-				fz_always(ctx)
-					pdf_drop_obj(ctx, obj);
-				fz_catch(ctx)
-					fz_rethrow(ctx);
+					nval = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
+				pdf_update_object(ctx, doc, num, nval);
+				nval = NULL;
 			}
 			else
 			{
-				renumberobj(ctx, doc, opts, obj);
+				nval = renumberobj(ctx, doc, opts, obj);
+				if (nval != obj)
+					pdf_update_object(ctx, doc, num, nval);
+				nval = NULL;
 			}
 		}
 
@@ -513,6 +612,8 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		newxref_to_free = NULL;
 		pdf_replace_xref(ctx, doc, newxref, newlen + 1);
 	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, nval);
 	fz_catch(ctx)
 	{
 		if (newxref_to_free)

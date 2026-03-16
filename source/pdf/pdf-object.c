@@ -3169,6 +3169,17 @@ pdf_drop_singleton_obj(fz_context *ctx, pdf_obj *obj)
 	return NULL;
 }
 
+int pdf_obj_is_singleton(fz_context *ctx, pdf_obj *obj)
+{
+	int singleton;
+
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	singleton = (obj->refs == 1);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+
+	return singleton;
+}
+
 /*
 	Recurse through the object structure setting the node's parent_num to num.
 	parent_num is used when a subobject is to be changed during a document edit.

@@ -179,6 +179,20 @@ pdf_obj *pdf_trailer(fz_context *ctx, pdf_document *doc)
 	return xrefs ? xrefs[doc->xref_base].trailer : NULL;
 }
 
+void pdf_set_trailer(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	/* Return the document's trailer (of the appropriate vintage) */
+	pdf_xref *xrefs = doc->xref_sections;
+	pdf_obj *old;
+
+	if (!xrefs)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't set trailer when no xrefs");
+
+	old = xrefs[doc->xref_base].trailer;
+	xrefs[doc->xref_base].trailer = pdf_keep_obj(ctx, obj);
+	pdf_drop_obj(ctx, old);
+}
+
 void pdf_set_populating_xref_trailer(fz_context *ctx, pdf_document *doc, pdf_obj *trailer)
 {
 	/* Update the trailer of the xref section being populated */
