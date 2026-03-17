@@ -493,30 +493,59 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		node->x = x;
 		x += w;
 
-		switch (node->box->style->vertical_align)
-		{
-		default:
-		case VA_BASELINE:
-		case VA_SUB:
-		case VA_SUPER:
-		case VA_MIDDLE:
-			va = node->box->s.layout.baseline;
-			break;
-
-		case VA_TOP:
-		case VA_TEXT_TOP:
-			va = -baseline + node->box->s.layout.em * 0.8f;
-			break;
-		case VA_BOTTOM:
-		case VA_TEXT_BOTTOM:
-			va = -baseline + line_h - node->box->s.layout.em * 0.2f;
-			break;
-		}
-
 		if (node->type == FLOW_IMAGE)
-			node->y = y + baseline - node->h;
+		{
+			switch (node->box->style->vertical_align)
+			{
+			default:
+			case VA_BASELINE:
+				node->y = y + baseline - node->h;
+				break;
+			case VA_SUB:
+				node->y = y + baseline - node->h + node->box->s.layout.em / 5;
+				break;
+			case VA_SUPER:
+				node->y = y + baseline - node->h - node->box->s.layout.em / 3;
+				break;
+			case VA_MIDDLE:
+				// middle of the element with the baseline plus half the x-height of the parent
+				node->y = y + baseline - node->box->s.layout.em * 0.25f - node->h * 0.5f;
+				break;
+			case VA_TOP:
+				node->y = y;
+				break;
+			case VA_TEXT_TOP:
+				node->y = y + baseline - node->box->s.layout.em * 0.8f;
+				break;
+			case VA_BOTTOM:
+				node->y = y + line_h - node->h;
+				break;
+			case VA_TEXT_BOTTOM:
+				node->y = y + baseline + node->box->s.layout.em * 0.2f - node->h;
+				break;
+			}
+		}
 		else
 		{
+			switch (node->box->style->vertical_align)
+			{
+			default:
+			case VA_BASELINE:
+			case VA_SUB:
+			case VA_SUPER:
+			case VA_MIDDLE:
+				va = node->box->s.layout.baseline;
+				break;
+
+			case VA_TOP:
+			case VA_TEXT_TOP:
+				va = -baseline + node->box->s.layout.em * 0.8f;
+				break;
+			case VA_BOTTOM:
+			case VA_TEXT_BOTTOM:
+				va = -baseline + line_h - node->box->s.layout.em * 0.2f;
+				break;
+			}
 			node->y = y + baseline + va;
 			node->h = node->box->s.layout.em;
 		}
