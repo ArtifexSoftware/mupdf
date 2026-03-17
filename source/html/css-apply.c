@@ -1881,6 +1881,16 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "text-top")) style->vertical_align = VA_TEXT_TOP;
 		else if (!strcmp(value->data, "text-bottom")) style->vertical_align = VA_TEXT_BOTTOM;
 		else if (!strcmp(value->data, "middle")) style->vertical_align = VA_MIDDLE;
+		else if (value->type == CSS_PERCENT)
+		{
+			style->vertical_align = VA_PERCENT;
+			style->vertical_align_number = number_from_value(value, 0, N_PERCENT);
+		}
+		else if (value->type == CSS_LENGTH)
+		{
+			style->vertical_align = VA_LENGTH;
+			style->vertical_align_number = number_from_value(value, 0, N_LENGTH);
+		}
 	}
 
 	value = value_from_property(match, PRO_FONT_SIZE);

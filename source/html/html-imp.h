@@ -226,7 +226,7 @@ struct fz_css_match_s
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL, DIS_TABLE_COLGROUP, DIS_TABLE_COL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
-enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM, VA_MIDDLE };
+enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM, VA_MIDDLE, VA_PERCENT, VA_LENGTH };
 enum { BS_NONE, BS_SOLID, BS_DOTTED, BS_DASHED, BS_DOUBLE, BS_GROOVE, BS_RIDGE, BS_INSET, BS_OUTSET };
 enum { V_VISIBLE, V_HIDDEN, V_COLLAPSE };
 enum { PB_AUTO, PB_ALWAYS, PB_AVOID, PB_LEFT, PB_RIGHT };
@@ -293,16 +293,14 @@ struct fz_css_style_s
 	fz_css_color color;
 	fz_css_color text_fill_color;
 	fz_css_color text_stroke_color;
+	fz_css_number vertical_align_number;
 
-	/* First group of 32 */
 	unsigned int rowspan : 10; /* Needs to be able to represent 1-1000 */
 	unsigned int colspan : 10; /* Needs to be able to represent 1-1000 */
 	unsigned int white_space : 3;
-	unsigned int vertical_align : 3;
+	unsigned int vertical_align : 4;
 	unsigned int page_break_before : 3;
 	unsigned int page_break_after : 3;
-
-	/* Second group of 32 */
 	unsigned int visibility : 2;
 	unsigned int text_align : 2;
 	unsigned int direction : 2;
@@ -315,8 +313,6 @@ struct fz_css_style_s
 	unsigned int text_decoration: 2;
 	unsigned int overflow_wrap : 1;
 	unsigned int position : 2;
-
-	/* Third group of 32 */
 	unsigned int border_collapse : 1;
 	unsigned int hyphens : 2;
 };

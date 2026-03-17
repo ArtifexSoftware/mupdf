@@ -523,6 +523,16 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			case VA_TEXT_BOTTOM:
 				node->y = y + baseline + node->box->s.layout.em * 0.2f - node->h;
 				break;
+			case VA_PERCENT:
+			case VA_LENGTH:
+				node->y = y + baseline - node->h -
+					fz_from_css_number(
+						node->box->style->vertical_align_number,
+						node->box->s.layout.em,
+						fz_from_css_number_scale(node->box->style->line_height, node->box->s.layout.em),
+						0
+					);
+				break;
 			}
 		}
 		else
@@ -544,6 +554,15 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			case VA_BOTTOM:
 			case VA_TEXT_BOTTOM:
 				va = -baseline + line_h - node->box->s.layout.em * 0.2f;
+				break;
+			case VA_PERCENT:
+			case VA_LENGTH:
+				va = -fz_from_css_number(
+					node->box->style->vertical_align_number,
+					node->box->s.layout.em,
+					fz_from_css_number_scale(node->box->style->line_height, node->box->s.layout.em),
+					0
+				);
 				break;
 			}
 			node->y = y + baseline + va;
