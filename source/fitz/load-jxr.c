@@ -354,8 +354,7 @@ jxr_read_image(fz_context *ctx, const unsigned char *data, int size, struct info
 			unsigned char alpha_band;
 
 			info->ctx = ctx;
-			info->samples = Memento_label(fz_malloc(ctx, info->stride * info->height), "jxr_samples");
-			memset(info->samples, 0xff, info->stride * info->height);
+			info->samples = fz_calloc(ctx, info->stride, info->height);
 
 			image_offset = jxrc_image_offset(container, 0);
 			image_band = jxrc_image_band_presence(container, 0);
