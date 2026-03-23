@@ -3471,12 +3471,28 @@ export class PDFAnnotation extends Userdata<"pdf_annot"> {
 		libmupdf._wasm_pdf_set_annot_contents(this.pointer, STRING(text))
 	}
 
+	getName() {
+		return fromString(libmupdf._wasm_pdf_annot_name(this.pointer))
+	}
+
+	setName(text: string) {
+		libmupdf._wasm_pdf_set_annot_name(this.pointer, STRING(text))
+	}
+
 	getAuthor() {
 		return fromString(libmupdf._wasm_pdf_annot_author(this.pointer))
 	}
 
 	setAuthor(text: string) {
 		libmupdf._wasm_pdf_set_annot_author(this.pointer, STRING(text))
+	}
+
+	getSubject() {
+		return fromString(libmupdf._wasm_pdf_annot_subject(this.pointer))
+	}
+
+	setSubject(text: string) {
+		libmupdf._wasm_pdf_set_annot_subject(this.pointer, STRING(text))
 	}
 
 	getCreationDate() {
@@ -3532,6 +3548,9 @@ export class PDFAnnotation extends Userdata<"pdf_annot"> {
 	}
 	hasAuthor() {
 		return !!libmupdf._wasm_pdf_annot_has_author(this.pointer)
+	}
+	hasSubject() {
+		return !!libmupdf._wasm_pdf_annot_has_subject(this.pointer)
 	}
 	hasFilespec() {
 		return !!libmupdf._wasm_pdf_annot_has_filespec(this.pointer)
@@ -4065,8 +4084,12 @@ export class PDFWidget extends PDFAnnotation {
 		return fromString(libmupdf._wasm_pdf_annot_field_label(this.pointer))
 	}
 
-	getName() {
+	override getName() {
 		return fromStringFree(libmupdf._wasm_pdf_load_field_name(this.pointer))
+	}
+
+	override setName() {
+		throw new Error("widget field name is read-only")
 	}
 
 	getValue() {

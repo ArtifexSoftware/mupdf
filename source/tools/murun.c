@@ -10359,6 +10359,32 @@ static void ffi_PDFAnnotation_addInkListStrokeVertex(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *name = NULL;
+
+	fz_try(ctx)
+		name = pdf_annot_name(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, name);
+}
+
+static void ffi_PDFAnnotation_setName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *name = js_tostring(J, 1);
+
+	fz_try(ctx)
+		pdf_set_annot_name(ctx, annot, name);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_hasAuthor(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -10393,6 +10419,44 @@ static void ffi_PDFAnnotation_setAuthor(js_State *J)
 
 	fz_try(ctx)
 		pdf_set_annot_author(ctx, annot, author);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_hasSubject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	int has;
+	fz_try(ctx)
+		has = pdf_annot_has_subject(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, has);
+}
+
+static void ffi_PDFAnnotation_getSubject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *subject = NULL;
+
+	fz_try(ctx)
+		subject = pdf_annot_subject(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, subject);
+}
+
+static void ffi_PDFAnnotation_setSubject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = ffi_toannot(J, 0);
+	const char *subject = js_tostring(J, 1);
+
+	fz_try(ctx)
+		pdf_set_annot_subject(ctx, annot, subject);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -12723,9 +12787,14 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setInteriorColor", ffi_PDFAnnotation_setInteriorColor, 1);
 		jsB_propfun(J, "PDFAnnotation.getOpacity", ffi_PDFAnnotation_getOpacity, 0);
 		jsB_propfun(J, "PDFAnnotation.setOpacity", ffi_PDFAnnotation_setOpacity, 1);
+		jsB_propfun(J, "PDFAnnotation.getName", ffi_PDFAnnotation_getName, 0);
+		jsB_propfun(J, "PDFAnnotation.setName", ffi_PDFAnnotation_setName, 1);
 		jsB_propfun(J, "PDFAnnotation.hasAuthor", ffi_PDFAnnotation_hasAuthor, 0);
 		jsB_propfun(J, "PDFAnnotation.getAuthor", ffi_PDFAnnotation_getAuthor, 0);
 		jsB_propfun(J, "PDFAnnotation.setAuthor", ffi_PDFAnnotation_setAuthor, 1);
+		jsB_propfun(J, "PDFAnnotation.hasSubject", ffi_PDFAnnotation_hasSubject, 0);
+		jsB_propfun(J, "PDFAnnotation.getSubject", ffi_PDFAnnotation_getSubject, 0);
+		jsB_propfun(J, "PDFAnnotation.setSubject", ffi_PDFAnnotation_setSubject, 1);
 		jsB_propfun(J, "PDFAnnotation.getCreationDate", ffi_PDFAnnotation_getCreationDate, 0);
 		jsB_propfun(J, "PDFAnnotation.setCreationDate", ffi_PDFAnnotation_setCreationDate, 1);
 		jsB_propfun(J, "PDFAnnotation.getModificationDate", ffi_PDFAnnotation_getModificationDate, 0);
