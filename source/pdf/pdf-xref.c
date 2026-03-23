@@ -373,8 +373,6 @@ pdf_xref_entry *pdf_get_xref_entry_aux(fz_context *ctx, pdf_document *doc, int i
 	 * and j may be an index into a later xref section */
 	if (doc->xref_base > j)
 		j = doc->xref_base;
-	else
-		j = 0;
 
 
 	/* Find the first xref section where the entry is defined. */
