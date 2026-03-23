@@ -85,6 +85,7 @@ typedef struct pdf_xref_subsec
 struct pdf_xref
 {
 	int num_objects;
+	int num_subsecs;
 	pdf_xref_subsec *subsec;
 	pdf_obj *trailer;
 	pdf_obj *pre_repair_trailer;

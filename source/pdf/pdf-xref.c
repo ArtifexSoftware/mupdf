@@ -36,6 +36,8 @@
 #define DEBUGMESS(A) do { } while (0)
 #endif
 
+#define MAX_SUBSEC_FRAGMENTS 128
+
 #define isdigit(c) (c >= '0' && c <= '9')
 
 static inline int iswhite(int ch)
@@ -165,6 +167,7 @@ static void pdf_populate_next_xref_level(fz_context *ctx, pdf_document *doc)
 	xref = &doc->xref_sections[doc->num_xref_sections - 1];
 	xref->subsec = NULL;
 	xref->num_objects = 0;
+	xref->num_subsecs = 0;
 	xref->trailer = NULL;
 	xref->pre_repair_trailer = NULL;
 	xref->unsaved_sigs = NULL;
@@ -266,6 +269,7 @@ ensure_solid_xref(fz_context *ctx, pdf_document *doc, int num, int which)
 	}
 	xref->num_objects = num;
 	xref->subsec = new_sub;
+	xref->num_subsecs = 1;
 	if (doc->max_xref_len < num)
 		extend_xref_index(ctx, doc, num);
 }
@@ -559,6 +563,7 @@ static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 			memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
 			/* xref->num_objects is already correct */
 			xref->subsec = sub;
+			xref->num_subsecs++;
 			sub = NULL;
 			xref->trailer = trailer;
 			xref->pre_repair_trailer = NULL;
@@ -868,6 +873,7 @@ void pdf_replace_xref(fz_context *ctx, pdf_document *doc, pdf_xref_entry *entrie
 	sub->len = n;
 
 	xref->subsec = sub;
+	xref->num_subsecs = 1;
 	xref->num_objects = n;
 	xref->trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
 
@@ -1253,6 +1259,7 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int start, int len)
 			sub->len = len;
 			sub->next = xref->subsec;
 			xref->subsec = sub;
+			xref->num_subsecs++;
 		}
 		fz_catch(ctx)
 		{
@@ -1651,10 +1658,13 @@ pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, int read
 				break;
 		}
 
-		/* For pathological files, such as chinese-example.pdf, where the original
-		 * xref in the file is highly fragmented, we can safely solidify it here
-		 * with no ill effects. */
-		ensure_solid_xref(ctx, doc, 0, doc->num_xref_sections-1);
+		/* For pathological files, such as chinese-example.pdf and MCXNP184M150F70RM.pdf,
+		 * where the xrefs are highly fragmented, we choose to solidify them here
+		 * to avoid linear searching through long linked lists.
+		 */
+		for (i = 0; i < doc->num_xref_sections; ++i)
+			if (doc->xref_sections[i].num_subsecs > MAX_SUBSEC_FRAGMENTS)
+				ensure_solid_xref(ctx, doc, 0, i);
 
 		size = pdf_dict_get_int(ctx, pdf_trailer(ctx, doc), PDF_NAME(Size));
 		xref_len = pdf_xref_len(ctx, doc);
@@ -5157,6 +5167,7 @@ pdf_xref *pdf_new_local_xref(fz_context *ctx, pdf_document *doc)
 	pdf_xref *xref = fz_malloc_struct(ctx, pdf_xref);
 
 	xref->subsec = NULL;
+	xref->num_subsecs = 1;
 	xref->num_objects = n;
 	xref->trailer = NULL;
 	xref->pre_repair_trailer = NULL;
