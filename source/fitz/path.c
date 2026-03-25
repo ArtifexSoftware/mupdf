@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1399,12 +1399,12 @@ fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 				break;
 			}
 		}
-		if (path->cmd_len + extra_cmd < path->cmd_cap)
+		if (path->cmd_len + extra_cmd > path->cmd_cap)
 		{
 			path->cmds = fz_realloc_array(ctx, path->cmds, path->cmd_len + extra_cmd, unsigned char);
 			path->cmd_cap = path->cmd_len + extra_cmd;
 		}
-		if (path->coord_len + extra_coord < path->coord_cap)
+		if (path->coord_len + extra_coord > path->coord_cap)
 		{
 			path->coords = fz_realloc_array(ctx, path->coords, path->coord_len + extra_coord, float);
 			path->coord_cap = path->coord_len + extra_coord;
