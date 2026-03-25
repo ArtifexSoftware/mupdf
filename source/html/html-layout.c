@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2324,15 +2324,6 @@ cell_rowspan(fz_html_box *cell)
 	if (r < 1)
 		return 1;
 	return r;
-}
-
-static inline int
-cell_colspan(fz_html_box *cell)
-{
-	int c = cell->style->colspan;
-	if (c < 1)
-		return 1;
-	return c;
 }
 
 static void
