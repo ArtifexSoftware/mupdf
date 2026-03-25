@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -624,7 +624,7 @@ pdf_add_indexed_colorspace(fz_context *ctx, pdf_document *doc, fz_colorspace *cs
 	fz_try(ctx)
 	{
 		pdf_array_push(ctx, obj, PDF_NAME(Indexed));
-		pdf_array_push(ctx, obj, pdf_add_colorspace(ctx, doc, basecs));
+		pdf_array_push_drop(ctx, obj, pdf_add_colorspace(ctx, doc, basecs));
 		pdf_array_push_int(ctx, obj, high);
 		pdf_array_push_string(ctx, obj, (char *) lookup, (size_t)basen * (high + 1));
 	}
