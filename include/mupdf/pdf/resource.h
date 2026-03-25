@@ -65,10 +65,26 @@ typedef struct
 	int local_xref;
 } pdf_colorspace_resource_key;
 
+typedef struct
+{
+	int w, h;
+	int decode;
+	unsigned int bpc : 3;
+	unsigned int n : 6;
+	unsigned int imagemask : 1;
+	unsigned int use_colorkey : 1;
+	unsigned int use_decode : 1;
+	unsigned int local_xref : 1;
+	unsigned char mask[16];
+	unsigned char digest[16];
+} pdf_image_resource_key;
+
 pdf_obj *pdf_find_font_resource(fz_context *ctx, pdf_document *doc, int type, int encoding, fz_font *item, pdf_font_resource_key *key);
 pdf_obj *pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, pdf_font_resource_key *key, pdf_obj *obj);
 pdf_obj *pdf_find_colorspace_resource(fz_context *ctx, pdf_document *doc, fz_colorspace *item, pdf_colorspace_resource_key *key);
 pdf_obj *pdf_insert_colorspace_resource(fz_context *ctx, pdf_document *doc, pdf_colorspace_resource_key *key, pdf_obj *obj);
+pdf_obj *pdf_find_image_resource(fz_context *ctx, pdf_document *doc, fz_image *item, pdf_image_resource_key *key);
+pdf_obj *pdf_insert_image_resource(fz_context *ctx, pdf_document *doc, pdf_image_resource_key *key, pdf_obj *obj);
 void pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc);
 void pdf_purge_local_resources(fz_context *ctx, pdf_document *doc);
 

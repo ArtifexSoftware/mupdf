@@ -558,6 +558,7 @@ struct pdf_document
 	struct {
 		fz_hash_table *fonts;
 		fz_hash_table *colorspaces;
+		fz_hash_table *images;
 	} resources;
 
 	int orphans_max;
