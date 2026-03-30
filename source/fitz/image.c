@@ -596,8 +596,13 @@ subsample_next(fz_context *ctx, fz_stream *stm, size_t len)
 static fz_stream *
 subsample_stream(fz_context *ctx, fz_stream *src, int w, int h, int n, int l2extra)
 {
-	l2sub_state *state = fz_malloc(ctx, sizeof(l2sub_state) + w*(size_t)(n<<l2extra));
+	int stride;
+	l2sub_state *state;
 
+	if (fz_ckd_mul_int(&stride, w, n << l2extra))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "integer overflow in image");
+
+	state = fz_malloc(ctx, sizeof(l2sub_state) + stride);
 	state->src = src;
 	state->w = w;
 	state->h = h;
@@ -939,13 +944,15 @@ void fz_default_image_decode(void *arg, int w, int h, int l2factor, fz_irect *su
 	else
 	{
 		/* Clip to the edges if they are within 1% */
-		if (subarea->x0 <= w/100)
+		int w_1pc = w / 100;
+		int h_1pc = h / 100;
+		if (subarea->x0 <= w_1pc)
 			subarea->x0 = 0;
-		if (subarea->y0 <= h/100)
+		if (subarea->y0 <= h_1pc)
 			subarea->y0 = 0;
-		if (subarea->x1 >= w*99/100)
+		if (subarea->x1 >= w - w_1pc)
 			subarea->x1 = w;
-		if (subarea->y1 >= h*99/100)
+		if (subarea->y1 >= h - h_1pc)
 			subarea->y1 = h;
 	}
 }
