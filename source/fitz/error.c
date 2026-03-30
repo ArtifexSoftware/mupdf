@@ -359,7 +359,7 @@ FZ_NORETURN void (fz_throw)(fz_context *ctx, int code, const char *fmt, ...)
 	va_list ap;
 	va_start(ap, fmt);
 	fz_vthrow(ctx, code, fmt, ap);
-	va_end(ap);
+	/* va_end(ap); // unreachable */
 }
 
 /* coverity[+kill] */
@@ -485,7 +485,7 @@ FZ_NORETURN void fz_throwFL(fz_context *ctx, const char *file, int line, int cod
 	va_list ap;
 	va_start(ap, fmt);
 	fz_vthrowFL(ctx, file, line, code, fmt, ap);
-	va_end(ap);
+	/* va_end(ap); // unreachable */
 }
 
 /* coverity[+kill] */
