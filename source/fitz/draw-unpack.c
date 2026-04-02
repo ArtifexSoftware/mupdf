@@ -24,6 +24,7 @@
 #include "draw-imp.h"
 
 #include <string.h>
+#include <limits.h>
 
 /* Unpack image samples and optionally pad pixels with opaque alpha */
 
@@ -264,7 +265,12 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char *src, int n, int d
 	{
 		fz_stream *stm;
 		int x, k;
-		size_t skipbits = 8 * stride - (size_t)w * n * depth;
+		size_t skipbits;
+
+		if ((size_t)w * n * depth > 8 * stride)
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid stride (underflow)");
+
+		skipbits = 8 * stride - (size_t)w * n * depth;
 
 		if (skipbits > 32)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Inappropriate stride!");
@@ -437,8 +443,10 @@ unpack_drop(fz_context *ctx, void *state)
 fz_stream *
 fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n, int indexed, int pad, int skip)
 {
-	int src_stride = ((int64_t)w*depth*n+7)>>3; // avoid overflow by bumping to 64-bit math
+	int64_t tmp_stride = ((int64_t)w * depth * n + 7) >> 3;
+	int src_stride;
 	int dst_stride;
+	size_t alloc_size;
 	unpack_state *state;
 	fz_unpack_line_fn unpack_line = NULL;
 	int scale = 1;
@@ -454,6 +462,12 @@ fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n
 		case 4: scale = 17; break;
 		}
 
+	if (tmp_stride <= 0 || tmp_stride > INT_MAX)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "stride overflow");
+	src_stride = (int)tmp_stride;
+
+	if ((int64_t)w * (n + !!pad) <= 0 || (int64_t)w * (n + !!pad) > INT_MAX)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "destination stride overflow");
 	dst_stride = w * (n + !!pad);
 
 	if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)
@@ -473,7 +487,11 @@ fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n
 	else
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Unsupported combination in fz_unpack_stream");
 
-	state = fz_malloc(ctx, sizeof(unpack_state) + dst_stride + src_stride);
+	if ((size_t)dst_stride > SIZE_MAX - (size_t)src_stride - sizeof(unpack_state))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "allocation overflow");
+	alloc_size = sizeof(unpack_state) + (size_t)dst_stride + (size_t)src_stride;
+
+	state = fz_malloc(ctx, alloc_size);
 	state->src = src;
 	state->depth = depth;
 	state->w = w;
