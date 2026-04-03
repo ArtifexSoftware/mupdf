@@ -1740,8 +1740,6 @@ walk(fz_context *ctx, walk_stack_t *ws, int n, obj_info_t *oi, pdf_obj *obj, aud
 					type = AUDIT_COMMENTS;
 				else if (pdf_name_eq(ctx, subtype, PDF_NAME(3D)))
 					type = AUDIT_3DCONTENT;
-				else if (pdf_name_eq(ctx, subtype, PDF_NAME(PieceInfo)))
-					type = AUDIT_PIECE_INFORMATION;
 			}
 			else if (pdf_name_eq(ctx, otype, PDF_NAME(Font)))
 				type = AUDIT_FONTS;
@@ -1812,6 +1810,8 @@ step_next_dict_child:
 				type = AUDIT_EMBEDDED_FILES;
 			else if (pdf_name_eq(ctx, key, PDF_NAME(Metadata)))
 				type = AUDIT_METADATA;
+			else if (pdf_name_eq(ctx, key, PDF_NAME(PieceInfo)))
+				type = AUDIT_PIECE_INFORMATION;
 
 			/* OK. step onto the val. */
 			obj = pdf_dict_get_val(ctx, ws->stack[ws->len-1].obj, ws->stack[ws->len-1].pos-1);
