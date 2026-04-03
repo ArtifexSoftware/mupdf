@@ -1379,8 +1379,8 @@ subset_hmtx(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 static void
 shrink_loca_if_possible(fz_context *ctx, ttf_t *ttf)
 {
-	uint32_t len;
-	uint16_t i, n;
+	uint32_t len, i;
+	uint16_t n;
 	uint8_t *loca;
 
 	if (ttf->index_to_loc_format == 0)
