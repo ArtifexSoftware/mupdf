@@ -132,6 +132,11 @@ ifeq ($(HAVE_OBJCOPY),yes)
 	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement -DHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
   $(OUT)/source/fitz/hyphen.o : source/fitz/hyphen.c
 	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement -DHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
+else
+  $(OUT)/source/fitz/noto.o : source/fitz/noto.c
+	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement -UHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
+  $(OUT)/source/fitz/hyphen.o : source/fitz/hyphen.c
+	$(CC_CMD) $(WARNING_CFLAGS) -Wdeclaration-after-statement -UHAVE_OBJCOPY $(LIB_CFLAGS) $(THIRD_CFLAGS)
 endif
 
 $(OUT)/source/fitz/memento.o : source/fitz/memento.c
