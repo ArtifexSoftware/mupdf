@@ -1452,6 +1452,6 @@ fz_new_text_writer_with_output(fz_context *ctx, const char *format, fz_output *o
 fz_document_writer *
 fz_new_text_writer(fz_context *ctx, const char *format, const char *path, const char *options)
 {
-	fz_output *out = fz_new_output_with_path(ctx, path ? path : "out.txt", 0);
+	fz_output *out = fz_new_output_with_path(ctx, path, 0);
 	return fz_new_text_writer_with_output(ctx, format, out, options);
 }
