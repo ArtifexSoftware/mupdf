@@ -1269,7 +1269,7 @@ g_extra_definitions = textwrap.dedent(f'''
         {{
             int n = pdf_choice_widget_options(ctx, tw, exportval, nullptr);
             std::vector<const char*> opts(n);
-            int n2 = pdf_choice_widget_options(ctx, tw, exportval, &opts[0]);
+            int n2 = pdf_choice_widget_options(ctx, tw, exportval, opts.data());
             assert(n2 == n);
             std::vector<std::string> ret(n);
             for (int i=0; i<n; ++i)
