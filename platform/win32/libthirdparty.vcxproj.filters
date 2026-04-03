@@ -690,6 +690,18 @@
     <ClCompile Include="..\..\thirdparty\brotli\c\common\transform.c">
       <Filter>brotli\common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\brotli\c\enc\static_init.c">
+      <Filter>brotli\enc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\brotli\c\enc\static_dict_lut.c">
+      <Filter>brotli\enc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\brotli\c\dec\prefix.c">
+      <Filter>brotli\dec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\brotli\c\dec\static_init.c">
+      <Filter>brotli\dec</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h">
@@ -1264,6 +1276,12 @@
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\brotli\c\include\brotli\types.h">
       <Filter>brotli\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\brotli\c\enc\static_init.h">
+      <Filter>brotli\enc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\brotli\c\dec\static_init.h">
+      <Filter>brotli\dec</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

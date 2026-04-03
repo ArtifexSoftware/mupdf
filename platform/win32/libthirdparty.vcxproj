@@ -320,7 +320,9 @@
     <ClCompile Include="..\..\thirdparty\brotli\c\dec\bit_reader.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\dec\decode.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\dec\huffman.c" />
+    <ClCompile Include="..\..\thirdparty\brotli\c\dec\prefix.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\dec\state.c" />
+    <ClCompile Include="..\..\thirdparty\brotli\c\dec\static_init.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\backward_references.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\backward_references_hq.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\bit_cost.c" />
@@ -341,6 +343,18 @@
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\memory.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\metablock.c" />
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\static_dict.c" />
+    <ClCompile Include="..\..\thirdparty\brotli\c\enc\static_dict_lut.c" />
+    <ClCompile Include="..\..\thirdparty\brotli\c\enc\static_init.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Memento|ARM64'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)enc\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">$(IntDir)enc\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\utf8_util.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftbase.c" />
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftbbox.c" />
@@ -591,6 +605,7 @@
     <ClInclude Include="..\..\thirdparty\brotli\c\dec\huffman.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\dec\prefix.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\dec\state.h" />
+    <ClInclude Include="..\..\thirdparty\brotli\c\dec\static_init.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\backward_references.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\backward_references_hq.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\backward_references_inc.h" />
@@ -633,6 +648,7 @@
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\state.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\static_dict.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\static_dict_lut.h" />
+    <ClInclude Include="..\..\thirdparty\brotli\c\enc\static_init.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\utf8_util.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\enc\write_bits.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\include\brotli\decode.h" />

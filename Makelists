@@ -333,7 +333,9 @@ BROTLI_SRC += thirdparty/brotli/c/common/transform.c
 BROTLI_SRC += thirdparty/brotli/c/dec/bit_reader.c
 BROTLI_SRC += thirdparty/brotli/c/dec/decode.c
 BROTLI_SRC += thirdparty/brotli/c/dec/huffman.c
+BROTLI_SRC += thirdparty/brotli/c/dec/prefix.c
 BROTLI_SRC += thirdparty/brotli/c/dec/state.c
+BROTLI_SRC += thirdparty/brotli/c/dec/static_init.c
 BROTLI_SRC += thirdparty/brotli/c/enc/backward_references.c
 BROTLI_SRC += thirdparty/brotli/c/enc/backward_references_hq.c
 BROTLI_SRC += thirdparty/brotli/c/enc/bit_cost.c
@@ -354,6 +356,8 @@ BROTLI_SRC += thirdparty/brotli/c/enc/literal_cost.c
 BROTLI_SRC += thirdparty/brotli/c/enc/memory.c
 BROTLI_SRC += thirdparty/brotli/c/enc/metablock.c
 BROTLI_SRC += thirdparty/brotli/c/enc/static_dict.c
+BROTLI_SRC += thirdparty/brotli/c/enc/static_dict_lut.c
+BROTLI_SRC += thirdparty/brotli/c/enc/static_init.c
 BROTLI_SRC += thirdparty/brotli/c/enc/utf8_util.c
 
 # --- FREEGLUT ---
