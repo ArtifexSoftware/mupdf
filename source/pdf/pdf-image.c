@@ -24,6 +24,7 @@
 #include "mupdf/pdf.h"
 
 #include <string.h>
+#include <limits.h>
 
 static fz_image *pdf_load_jpx_as_compressed_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict);
 static fz_image *pdf_load_jpx_as_compressed_image_mask(fz_context *ctx, pdf_document *doc, pdf_obj *dict);
@@ -82,6 +83,10 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, 
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "image depth is zero (or less)");
 	if (bpc > 16)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "image depth is too large: %d", bpc);
+	if ((int64_t)w * h > INT_MAX)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "image dimensions too large");
+	if ((int64_t)w * h * ((bpc + 7) / 8) > INT_MAX)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "image size too large");
 	if (SIZE_MAX / w < (size_t)(bpc+7)/8)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "image is too large");
 	if (SIZE_MAX / h < w * (size_t)((bpc+7)/8))

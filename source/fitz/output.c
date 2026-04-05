@@ -209,7 +209,8 @@ static void file_truncate(fz_context *ctx, void *opaque)
 	{
 		off_t pos = ftello(file);
 		if (pos >= 0)
-			(void)ftruncate(fileno(file), pos);
+                   if (ftruncate(fileno(file), pos) != 0)
+                         fz_warn(ctx, "cannot ftruncate: %s", strerror(errno));
 	}
 #endif
 }
