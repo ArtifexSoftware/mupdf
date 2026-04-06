@@ -998,22 +998,10 @@ void fz_apply_search_options(fz_context *ctx, fz_search_options *options, fz_opt
 
 /**
 	Create a new search.
+
+	If the needle is invalid (in the case of regexps, it fails to compile) it will throw an error.
 */
-fz_search *fz_new_search(fz_context *ctx);
-
-/**
-	Change the options/needle to be used for a search.
-
-	If the needle is invalid (in the case of regexps, it fails to compile)
-	it will throw an error.
-
-	If the needle changes, the current position of the search within the
-	text is kept.
-
-	If the options change, the search position may revert to the beginning
-	of the current page.
-*/
-void fz_search_set_options(fz_context *ctx, fz_search *search, fz_search_options options, const char *needle);
+fz_search *fz_new_search(fz_context *ctx, const char *needle, fz_search_options options);
 
 typedef enum
 {
@@ -1029,11 +1017,9 @@ typedef enum
 
 typedef struct
 {
-	fz_quad quad;
 	int seq;
-	int chapter_num;
-	int page_num;
-} fz_match_quad;
+	fz_quad quad;
+} fz_search_quad;
 
 typedef struct
 {
@@ -1047,11 +1033,10 @@ typedef struct
 typedef struct
 {
 	int num_quads;
-	fz_match_quad *quads;
-	fz_stext_position begin;
-	fz_stext_position end;
-}
-fz_search_result_details;
+	fz_search_quad *quads;
+	fz_stext_position begin, end;
+	int begin_seq, end_seq;
+} fz_search_match;
 
 /**
 	Structure used to represent the 'result' of a search.
@@ -1061,14 +1046,8 @@ typedef struct
 	fz_search_reason reason;
 	union
 	{
-		struct
-		{
-			int seq_needed;
-		} more_input;
-		struct
-		{
-			fz_search_result_details *result;
-		} match;
+		int seq_needed;
+		fz_search_match *match;
 	} u;
 } fz_search_result;
 

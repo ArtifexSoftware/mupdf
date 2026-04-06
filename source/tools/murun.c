@@ -6719,6 +6719,165 @@ static void ffi_StructuredText_classifyRect(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_gc_fz_search(js_State *J, void *search)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_search(ctx, search);
+}
+
+static void ffi_new_Search(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *needle = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
+	const char *options = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	fz_search_options opts;
+	fz_search *search = NULL;
+
+	fz_var(search);
+
+	fz_try(ctx)
+	{
+		(void) fz_parse_search_options(ctx, &opts, options);
+		search = fz_new_search(ctx, needle, opts);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_search(ctx, search);
+		rethrow(J);
+	}
+
+	js_getregistry(J, "fz_search");
+	js_newuserdata(J, "fz_search", search, ffi_gc_fz_search);
+}
+
+static void ffi_Search_feedPage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_search *search = js_touserdata(J, 0, "fz_search");
+	fz_stext_page *page = js_iscoercible(J, 1) ? js_touserdata(J, 1, "fz_stext_page") : NULL;
+	int seq = js_tointeger(J, 2);
+
+	fz_try(ctx)
+		fz_feed_search(ctx, search, fz_keep_stext_page(ctx, page), seq);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_pushstextposition(js_State *J, fz_stext_position *pos, int seq)
+{
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+	int i;
+
+	js_newobject(J);
+	{
+		js_pushnumber(J, seq);
+		js_setproperty(J, -2, "page");
+
+		block = pos->block;
+		if (block)
+		{
+			for (i = 0; block->prev; block = block->prev)
+				++i;
+			js_pushnumber(J, i);
+			js_setproperty(J, -2, "block");
+		}
+
+		line = pos->line;
+		if (line)
+		{
+			ch = line->first_char;
+
+			for (i = 0; line->prev; line = line->prev)
+				++i;
+			js_pushnumber(J, i);
+			js_setproperty(J, -2, "line");
+
+			if (ch)
+			{
+				for (i = 0; ch != pos->ch; ch = ch->next)
+					++i;
+				js_pushnumber(J, i);
+				js_setproperty(J, -2, "char");
+			}
+		}
+	}
+}
+
+static void ffi_pushsearchresult(js_State *J, fz_search_result *result)
+{
+	int i;
+
+	js_newobject(J);
+	{
+		js_pushnumber(J, result->reason);
+		js_setproperty(J, -2, "reason");
+
+		switch (result->reason)
+		{
+		default:
+		case FZ_SEARCH_COMPLETE:
+			break;
+
+		case FZ_SEARCH_MORE_INPUT:
+			js_pushnumber(J, result->u.seq_needed);
+			js_setproperty(J, -2, "needPage");
+			break;
+
+		case FZ_SEARCH_MATCH:
+			js_newarray(J);
+			{
+				for (i = 0; i < result->u.match->num_quads; ++i)
+				{
+					js_newobject(J);
+					js_pushnumber(J, result->u.match->quads[i].seq);
+					js_setproperty(J, -2, "page");
+					ffi_pushquad(J, result->u.match->quads[i].quad);
+					js_setproperty(J, -2, "quad");
+					js_setindex(J, -2, i);
+				}
+			}
+			js_setproperty(J, -2, "quads");
+
+			ffi_pushstextposition(J, &result->u.match->begin, result->u.match->begin_seq);
+			js_setproperty(J, -2, "begin");
+
+			ffi_pushstextposition(J, &result->u.match->end, result->u.match->end_seq);
+			js_setproperty(J, -2, "end");
+			break;
+		}
+	}
+}
+
+static void ffi_Search_searchForwards(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_search *search = js_touserdata(J, 0, "fz_search");
+	fz_search_result result;
+
+	fz_try(ctx)
+		result = fz_search_forwards(ctx, search);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushsearchresult(J, &result);
+}
+
+static void ffi_Search_searchBackwards(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_search *search = js_touserdata(J, 0, "fz_search");
+	fz_search_result result;
+
+	fz_try(ctx)
+		result = fz_search_backwards(ctx, search);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushsearchresult(J, &result);
+}
+
 static void ffi_new_DisplayListDevice(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12571,6 +12730,15 @@ int murun_main(int argc, char **argv)
 	js_getregistry(J, "Userdata");
 	js_newobjectx(J);
 	{
+		jsB_propfun(J, "Search.feedPage", ffi_Search_feedPage, 2);
+		jsB_propfun(J, "Search.searchForwards", ffi_Search_searchForwards, 0);
+		jsB_propfun(J, "Search.searchBackwards", ffi_Search_searchBackwards, 0);
+	}
+	js_setregistry(J, "fz_search");
+
+	js_getregistry(J, "Userdata");
+	js_newobjectx(J);
+	{
 		jsB_propfun(J, "Pixmap.getBounds", ffi_Pixmap_getBounds, 0);
 		jsB_propfun(J, "Pixmap.clear", ffi_Pixmap_clear, 1);
 
@@ -13045,6 +13213,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 2);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
+		jsB_propcon(J, "fz_search", "Search", ffi_new_Search, 2);
 #if FZ_ENABLE_HTML_ENGINE
 		jsB_propcon(J, "fz_story", "Story", ffi_new_Story, 4);
 #endif
@@ -13207,6 +13376,10 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_FULL", FZ_STEXT_TEXT_JUSTIFY_FULL);
 
 		jsB_enum(J, "StructuredText", "VECTOR_CONTINUES", FZ_STEXT_VECTOR_CONTINUES);
+
+		jsB_enum(J, "Search", "MORE_INPUT", FZ_SEARCH_MORE_INPUT);
+		jsB_enum(J, "Search", "MATCH", FZ_SEARCH_MATCH);
+		jsB_enum(J, "Search", "COMPLETE", FZ_SEARCH_COMPLETE);
 	}
 
 #if FZ_ENABLE_PDF

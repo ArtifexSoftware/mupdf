@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -660,27 +660,32 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_position **map, fz_stext_pa
 				join_line = 0;
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
-					/* Last character of a line where we aren't keeping hyphens; check for dehyphenation. */
-					if (ch == line->last_char && (flatten & FZ_TEXT_FLATTEN_KEEP_HYPHENS) == 0)
+					if ((flatten & FZ_TEXT_FLATTEN_KEEP_HYPHENS) == 0)
 					{
-						/* Soft hyphens are always removed. */
-						if (ch->c == 0xad)
+						/* Last character of a line... */
+						if (ch->next == NULL)
 						{
-							join_line = 1;
-							continue;
+							/* Soft hyphens are always removed. */
+							if (ch->c == 0xad)
+							{
+								join_line = 1;
+								continue;
+							}
+							/* Non-soft hyphens are only broken if we extracted with dehyphenation. */
+							if ((line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0)
+							{
+								join_line = 1;
+								continue;
+							}
 						}
-						/* Non-soft hyphens are only broken if we extracted with dehyphenation. */
-						if ((line->flags & FZ_STEXT_LINE_FLAGS_JOINED) != 0 && fz_is_unicode_hyphen(ch->c))
+						else
 						{
-							join_line = 1;
-							continue;
+							/* Soft hyphens at the beginning or in the middle of a line are always removed. */
+							if (ch->c == 0xad)
+							{
+								continue;
+							}
 						}
-					}
-
-					/* Soft hyphens at the beginning or in the middle of a line are always removed. */
-					if (ch != line->last_char && ch->c == 0xad)
-					{
-						continue;
 					}
 
 					EMIT(ch, ch->c);

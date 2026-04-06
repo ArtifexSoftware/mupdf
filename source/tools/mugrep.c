@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Artifex Software, Inc.
+// Copyright (C) 2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -152,8 +152,7 @@ mugrep_run(char *filename, fz_document *doc, char *pattern, fz_search_options op
 
 	fz_try(ctx)
 	{
-		search = fz_new_search(ctx);
-		fz_search_set_options(ctx, search, options, pattern);
+		search = fz_new_search(ctx, pattern, options);
 
 		if (search_backwards)
 		{
@@ -174,7 +173,7 @@ mugrep_run(char *filename, fz_document *doc, char *pattern, fz_search_options op
 				res = fz_search_forwards(ctx, search);
 			if (res.reason == FZ_SEARCH_MATCH)
 			{
-				fz_search_result_details *details = res.u.match.result;
+				fz_search_match *details = res.u.match;
 
 				found++;
 
@@ -183,19 +182,19 @@ mugrep_run(char *filename, fz_document *doc, char *pattern, fz_search_options op
 					printf("MATCH: %d quads (starting on page %d)\n", details->num_quads, details->quads[0].seq+1);
 				}
 
-				show_match_snippet(filename, details->quads[0].seq + 1, details->begin, details->end);
+				show_match_snippet(filename, details->num_quads > 0 ? (details->quads[0].seq + 1) : 0, details->begin, details->end);
 			}
 			else if (res.reason == FZ_SEARCH_MORE_INPUT)
 			{
-				if (res.u.more_input.seq_needed < 0 || res.u.more_input.seq_needed == page_count)
+				if (res.u.seq_needed < 0 || res.u.seq_needed >= page_count)
 				{
 					if (verbose)
 						printf("FEEDING END\n");
-					fz_feed_search(ctx, search, NULL, res.u.more_input.seq_needed);
+					fz_feed_search(ctx, search, NULL, res.u.seq_needed);
 				}
 				else
 				{
-					int page_num = res.u.more_input.seq_needed;
+					int page_num = res.u.seq_needed;
 					if (verbose)
 						printf("FEEDING page %d\n", page_num);
 					fz_stext_page *page = fz_new_stext_page_from_page_number(ctx, doc, page_num, stext_options);

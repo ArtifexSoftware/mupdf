@@ -2988,7 +2988,7 @@ static void do_canvas(void)
 		if (search_ignore_diacritics)
 			search_options |= FZ_SEARCH_IGNORE_DIACRITICS;
 		if (search_regexp)
-			search_options |= FZ_SEARCH_REGEXP;
+			search_options |= FZ_SEARCH_REGEXP | FZ_SEARCH_KEEP_PARAGRAPHS;
 
 		ui_panel_end();
 	}
