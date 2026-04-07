@@ -224,7 +224,7 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 
 	for (i = 0, ch = doc->spine; ch; ++i, ch = ch->next)
 	{
-		if (!strncmp(ch->path, dest, n) && ch->path[n] == 0)
+		if (!fz_strncasecmp(ch->path, dest, n) && ch->path[n] == 0)
 		{
 			if (s)
 			{
@@ -240,7 +240,6 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 					int page = y / ph;
 					return fz_make_link_dest_xyz(i, page, 0, y - page * ph, 0);
 				}
-				return fz_make_link_dest_none();
 			}
 			return fz_make_link_dest_xyz(i, 0, 0, 0, 0);
 		}
