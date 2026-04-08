@@ -265,9 +265,11 @@ fz_pack_path(fz_context *ctx, uint8_t *pack_, const fz_path *path)
 			pack->rectilinear_bounds = path->rectilinear_bounds;
 
 			ptr = (uint8_t *)&pack[1];
-			memcpy(ptr, path->coords, sizeof(float) * path->coord_len);
+			if (path->coord_len > 0)
+				memcpy(ptr, path->coords, sizeof(float) * path->coord_len);
 			ptr += sizeof(float) * path->coord_len;
-			memcpy(ptr, path->cmds, sizeof(uint8_t) * path->cmd_len);
+			if (path->cmd_len > 0)
+				memcpy(ptr, path->cmds, sizeof(uint8_t) * path->cmd_len);
 		}
 
 		return size;

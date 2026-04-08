@@ -4047,7 +4047,8 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 #ifdef DEBUG_TABLE_SCORES
 		list_tables(ctx, list, "pre sort");
 #endif
-		qsort(&list->tables[0], list->len, sizeof(list->tables[0]), table_size_cmp);
+		if (list->len > 0)
+			qsort(&list->tables[0], list->len, sizeof(list->tables[0]), table_size_cmp);
 #ifdef DEBUG_TABLE_SCORES
 		list_tables(ctx, list, "pre cull");
 #endif
