@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -116,7 +116,8 @@ pdf_keep_function(fz_context *ctx, pdf_function *func)
 void
 pdf_drop_function(fz_context *ctx, pdf_function *func)
 {
-	fz_drop_function(ctx, &func->super);
+	if (func)
+		fz_drop_function(ctx, &func->super);
 }
 
 size_t
