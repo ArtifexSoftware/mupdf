@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1310,15 +1310,15 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 {
 	float *s = csi->stack;
 	char csname[40];
-	int key;
+	uint32_t key;
 
 	key = word[0];
 	if (word[1])
 	{
-		key |= word[1] << 8;
+		key |= (uint32_t)word[1] << 8;
 		if (word[2])
 		{
-			key |= word[2] << 16;
+			key |= (uint32_t)word[2] << 16;
 			if (word[3])
 				key = 0;
 		}
