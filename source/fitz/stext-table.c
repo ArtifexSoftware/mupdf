@@ -2520,7 +2520,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 					 * not the vextent of individual chars, less we cut through a line and lose
 					 * half the chars. */
 					/* prev_ch is the previous character left behind in the original line. */
-					for (ch = line->first_char; ch != NULL; ch = ch->next)
+					for (ch = line->first_char; ch != NULL; )
 					{
 						fz_rect crect = fz_rect_from_quad(ch->quad);
 						float vmin = crect.y0;
@@ -2578,8 +2578,6 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 							newline->last_char = ch;
 							newline->bbox = fz_union_rect(newline->bbox, crect);
 						}
-						if (ch == NULL)
-							break;
 					}
 					if (line->first_char == NULL)
 					{
