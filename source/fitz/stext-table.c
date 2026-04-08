@@ -2519,6 +2519,7 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 					/* We need to be careful to use the vextent from chars that share a baseline,
 					 * not the vextent of individual chars, less we cut through a line and lose
 					 * half the chars. */
+					/* prev_ch is the previous character left behind in the original line. */
 					for (ch = line->first_char; ch != NULL; ch = ch->next)
 					{
 						fz_rect crect = fz_rect_from_quad(ch->quad);
@@ -2541,13 +2542,15 @@ move_contained_content(fz_context *ctx, fz_stext_page *page, fz_stext_struct *de
 						/* So ch to ch2 (not inclusive) all have the same baseline. */
 						y = (vmin + vmax)/2;
 
-						for (ch = line->first_char; ch != ch2; ch = next_ch)
+						for (; ch != ch2; ch = next_ch)
 						{
 							crect = fz_rect_from_quad(ch->quad);
 							x = (crect.x0 + crect.x1)/2;
 							next_ch = ch->next;
 							if (r.x0 > x || r.x1 < x || r.y0 > y || r.y1 < y)
 							{
+								/* This character is outside the region
+								 * we are keeping, so it is left behind. */
 								prev_ch = ch;
 								continue;
 							}
