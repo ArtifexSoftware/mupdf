@@ -181,6 +181,8 @@ const char *fz_stext_options_usage =
 	"\tclip-rect=x0:y0:x1:y1 specify clipping rectangle within which to collect content\n"
 	"\tstructured: collect structure markup\n"
 	"\tvectors: include vector bboxes in output\n"
+	"\tlazy-vectors: delay vectors that would otherwise split a text line\n"
+	"\tfuzzy-vectors: merge abutting horizontal/vertical vectors\n"
 	"\tsegment: attempt to segment the page\n"
 	"\ttable-hunt: hunt for tables within a (segmented) page\n"
 	"\tresolution: resolution to render at\n"

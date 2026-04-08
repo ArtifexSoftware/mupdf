@@ -943,6 +943,16 @@ Collect structure markup.
 Include vector bboxes in output.
 .in
 .IP
+.B lazy-vectors
+.in +4n
+Delay vectors in the extraction that would otherwise split a text line.
+.in
+.IP
+.B fuzzy-vectors
+.in +4n
+Merge abutting horizontal and vertical vectors.
+.in
+.IP
 .B segment
 .in +4n
 Attempt to segment the page.
@@ -951,11 +961,6 @@ Attempt to segment the page.
 .B table-hunt
 .in +4n
 Hunt for tables within a (segmented) page.
-.in
-.IP
-.B lazy-vectors
-.in +4n
-Delay vectors in the extraction that would otherwise split a text line.
 .in
 
 .TP
@@ -1217,4 +1222,4 @@ The exit status is 0 upon successful execution and non-zero upon error.
 .BR mupdf (1),
 
 .SH AUTHOR
-MuPDF is Copyright 2004-2025 Artifex Software, Inc.
+MuPDF is Copyright 2004-2026 Artifex Software, Inc.
