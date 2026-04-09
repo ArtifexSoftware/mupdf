@@ -756,9 +756,9 @@ make_table_positions(fz_context *ctx, div_list *xs, float min, float max)
 	}
 	assert(i < len || wind == 0);
 	pos->list[edges].pos = max;
-	pos->list[edges].min = fz_min(xs->list[i-1].pos, max);
+	pos->list[edges].min = i == 0 ? max : fz_min(xs->list[i-1].pos, max);
 	pos->list[edges].max = max;
-	assert(max >= xs->list[i-1].pos);
+	assert(i == 0 || max >= xs->list[i-1].pos);
 	pos->list[edges].uncertainty = 0;
 	pos->list[edges].reinforcement = 0;
 	pos->max_uncertainty = hi;
@@ -3676,6 +3676,8 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 
 		gd->xpos = make_table_positions(ctx, &xs, gd->bounds.x0, gd->bounds.x1);
 		gd->ypos = make_table_positions(ctx, &ys, gd->bounds.y0, gd->bounds.y1);
+		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
+			break;
 		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
 
 #ifdef DEBUG_TABLE_STRUCTURE
