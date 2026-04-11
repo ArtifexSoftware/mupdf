@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF WASM Library.
 //
@@ -317,6 +317,7 @@ GETP(stext_char, fz_quad, quad)
 GET(stext_char, float, size)
 GET(stext_char, fz_font*, font)
 GET(stext_char, int, argb)
+GET(stext_char, int, bidi)
 
 GET_ALIAS(link_dest, int, chapter, loc.chapter)
 GET_ALIAS(link_dest, int, page, loc.page)

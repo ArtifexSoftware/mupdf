@@ -1521,7 +1521,7 @@ static int find_fids(JNIEnv *env)
 	mid_StructuredTextWalker_endTextBlock = get_method(&err, env, "endTextBlock", "()V");
 	mid_StructuredTextWalker_beginLine = get_method(&err, env, "beginLine", "(L"PKG"Rect;IL"PKG"Point;)V");
 	mid_StructuredTextWalker_endLine = get_method(&err, env, "endLine", "()V");
-	mid_StructuredTextWalker_onChar = get_method(&err, env, "onChar", "(IL"PKG"Point;L"PKG"Font;FL"PKG"Quad;II)V");
+	mid_StructuredTextWalker_onChar = get_method(&err, env, "onChar", "(IL"PKG"Point;L"PKG"Font;FL"PKG"Quad;III)V");
 	mid_StructuredTextWalker_onVector = get_method(&err, env, "onVector", "(L"PKG"Rect;L"PKG"StructuredTextWalker$VectorInfo;I)V");
 
 	cls_StructuredTextWalker_VectorInfo = get_class(&err, env, PKG"StructuredTextWalker$VectorInfo");

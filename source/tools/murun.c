@@ -6448,7 +6448,8 @@ stext_walk(js_State *J, fz_stext_block *block)
 						ffi_pushquad(J, ch->quad);
 						ffi_pushrgb(J, ch->argb);
 						js_pushnumber(J, ch->flags);
-						js_call(J, 7);
+						js_pushnumber(J, ch->bidi);
+						js_call(J, 8);
 						js_pop(J, 1);
 					}
 				}

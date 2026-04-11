@@ -148,7 +148,7 @@ public class StructuredText
 			lines.add(line);
 		}
 
-		public void onChar(int c, Point origin, Font font, float size, Quad quad, int argb, int flags) {
+		public void onChar(int c, Point origin, Font font, float size, Quad quad, int argb, int flags, int bidi) {
 			TextChar chr = new TextChar();
 			chr.c = c;
 			chr.quad = quad;
@@ -156,6 +156,7 @@ public class StructuredText
 			chrs.add(chr);
 			chr.argb = argb;
 			chr.flags = flags;
+			chr.bidi = bidi;
 		}
 
 		public void beginStruct(String standard, String raw, int index) {
@@ -193,6 +194,7 @@ public class StructuredText
 		}
 		public int argb;
 		public int flags;
+		public int bidi;
 	}
 
 }
