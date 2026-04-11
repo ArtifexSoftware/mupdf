@@ -2567,7 +2567,7 @@ split_line(fz_context *ctx, void *arg, float x, float y)
 	if (sp->count >= 0)
 	{
 		/* Check for lines to the same point. */
-		if (feq(sp->p[sp->count-1].x, p.x) && feq(sp->p[sp->count-1].y, p.y))
+		if (sp->count > 0 && feq(sp->p[sp->count-1].x, p.x) && feq(sp->p[sp->count-1].y, p.y))
 			return;
 		/* If we're still maybe a rect, just record the point. */
 		if (sp->count < 4)
