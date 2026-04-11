@@ -175,7 +175,7 @@ java_stext_walk(JNIEnv *env, fz_context *ctx, jobject walker, fz_stext_block *bl
 			jbbox = to_Rect_safe(ctx, env, block->bbox);
 			if (!jbbox) return;
 
-			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_beginTextBlock, jbbox);
+			(*env)->CallVoidMethod(env, walker, mid_StructuredTextWalker_beginTextBlock, jbbox, block->u.t.flags);
 			if ((*env)->ExceptionCheck(env)) return;
 
 			(*env)->DeleteLocalRef(env, jbbox);

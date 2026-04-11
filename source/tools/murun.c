@@ -6417,7 +6417,8 @@ stext_walk(js_State *J, fz_stext_block *block)
 			{
 				js_pushnull(J);
 				ffi_pushrect(J, block->bbox);
-				js_call(J, 1);
+				js_pushnumber(J, block->u.t.flags);
+				js_call(J, 2);
 				js_pop(J, 1);
 			}
 
@@ -13192,6 +13193,12 @@ int murun_main(int argc, char **argv)
 
 		jsB_enum(J, "StructuredText", "VECTOR_IS_STROKED", FZ_STEXT_VECTOR_IS_STROKED);
 		jsB_enum(J, "StructuredText", "VECTOR_IS_RECTANGLE", FZ_STEXT_VECTOR_IS_RECTANGLE);
+
+		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_UNKNOWN", FZ_STEXT_TEXT_JUSTIFY_UNKNOWN);
+		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_LEFT", FZ_STEXT_TEXT_JUSTIFY_LEFT);
+		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_CENTER", FZ_STEXT_TEXT_JUSTIFY_CENTER);
+		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_RIGHT", FZ_STEXT_TEXT_JUSTIFY_RIGHT);
+		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_FULL", FZ_STEXT_TEXT_JUSTIFY_FULL);
 	}
 
 #if FZ_ENABLE_PDF

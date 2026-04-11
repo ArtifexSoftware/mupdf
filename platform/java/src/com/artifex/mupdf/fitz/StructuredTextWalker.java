@@ -25,7 +25,7 @@ package com.artifex.mupdf.fitz;
 public interface StructuredTextWalker
 {
 	void onImageBlock(Rect bbox, Matrix transform, Image image);
-	void beginTextBlock(Rect bbox);
+	void beginTextBlock(Rect bbox, int flags);
 	void endTextBlock();
 	void beginLine(Rect bbox, int wmode, Point dir);
 	void endLine();

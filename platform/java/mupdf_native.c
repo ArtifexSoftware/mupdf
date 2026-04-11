@@ -776,6 +776,12 @@ static int check_enums()
 	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_UNICODE_IS_GID == FZ_STEXT_UNICODE_IS_GID;
 	valid &= com_artifex_mupdf_fitz_StructuredText_CHAR_FLAGS_SYNTHETIC_LARGE == FZ_STEXT_SYNTHETIC_LARGE;
 
+	valid &= com_artifex_mupdf_fitz_StructuredText_TEXT_JUSTIFY_UNKNOWN == FZ_STEXT_TEXT_JUSTIFY_UNKNOWN;
+	valid &= com_artifex_mupdf_fitz_StructuredText_TEXT_JUSTIFY_LEFT == FZ_STEXT_TEXT_JUSTIFY_LEFT;
+	valid &= com_artifex_mupdf_fitz_StructuredText_TEXT_JUSTIFY_CENTER == FZ_STEXT_TEXT_JUSTIFY_CENTER;
+	valid &= com_artifex_mupdf_fitz_StructuredText_TEXT_JUSTIFY_RIGHT == FZ_STEXT_TEXT_JUSTIFY_RIGHT;
+	valid &= com_artifex_mupdf_fitz_StructuredText_TEXT_JUSTIFY_FULL == FZ_STEXT_TEXT_JUSTIFY_FULL;
+
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_UNKNOWN == PDF_WIDGET_TYPE_UNKNOWN;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_BUTTON == PDF_WIDGET_TYPE_BUTTON;
 	valid &= com_artifex_mupdf_fitz_PDFWidget_TYPE_CHECKBOX == PDF_WIDGET_TYPE_CHECKBOX;
@@ -1508,7 +1514,7 @@ static int find_fids(JNIEnv *env)
 	cls_StructuredTextWalker = get_class(&err, env, PKG"StructuredTextWalker");
 	mid_StructuredTextWalker_onImageBlock = get_method(&err, env, "onImageBlock", "(L"PKG"Rect;L"PKG"Matrix;L"PKG"Image;)V");
 	mid_StructuredTextWalker_beginStruct = get_method(&err, env, "beginStruct", "(Ljava/lang/String;Ljava/lang/String;I)V");
-	mid_StructuredTextWalker_beginTextBlock = get_method(&err, env, "beginTextBlock", "(L"PKG"Rect;)V");
+	mid_StructuredTextWalker_beginTextBlock = get_method(&err, env, "beginTextBlock", "(L"PKG"Rect;I)V");
 	mid_StructuredTextWalker_endStruct = get_method(&err, env, "endStruct", "()V");
 	mid_StructuredTextWalker_endTextBlock = get_method(&err, env, "endTextBlock", "()V");
 	mid_StructuredTextWalker_beginLine = get_method(&err, env, "beginLine", "(L"PKG"Rect;IL"PKG"Point;)V");
