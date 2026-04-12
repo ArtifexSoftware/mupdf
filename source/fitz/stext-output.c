@@ -1200,8 +1200,8 @@ as_json(fz_context *ctx, fz_stext_block *block, fz_output *out, float scale)
 			break;
 
 		case FZ_STEXT_BLOCK_STRUCT:
-			fz_write_printf(ctx, out, "{%q:%q,", "type", "structure");
-			fz_write_printf(ctx, out, "%q:%d", "index", block->u.s.index);
+			fz_write_printf(ctx, out, "{%q:%q", "type", "structure");
+			fz_write_printf(ctx, out, ",%q:%d", "index", block->u.s.index);
 			if (block->u.s.down)
 			{
 				fz_write_printf(ctx, out, ",%q:%q", "raw", block->u.s.down->raw);
@@ -1209,6 +1209,67 @@ as_json(fz_context *ctx, fz_stext_block *block, fz_output *out, float scale)
 				fz_write_printf(ctx, out, ",%q:[", "contents");
 				as_json(ctx, block->u.s.down->first_block, out, scale);
 				fz_write_printf(ctx, out, "]");
+			}
+			fz_write_printf(ctx, out, "}");
+			break;
+
+		case FZ_STEXT_BLOCK_VECTOR:
+			fz_write_printf(ctx, out, "{%q:%q", "type", "vector");
+			fz_write_printf(ctx, out, ",%q:%d", "argb", block->u.v.argb);
+			fz_write_printf(ctx, out, ",%q:%d", "stroked", !!(block->u.v.flags & FZ_STEXT_VECTOR_IS_STROKED));
+			fz_write_printf(ctx, out, ",%q:%d", "rectangle", !!(block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE));
+			fz_write_printf(ctx, out, ",%q:%d", "continues", !!(block->u.v.flags & FZ_STEXT_VECTOR_CONTINUES));
+			fz_write_printf(ctx, out, "}");
+			break;
+
+		case FZ_STEXT_BLOCK_GRID:
+			fz_write_printf(ctx, out, "{%q:%q", "type", "grid");
+			if (block->u.b.xs)
+			{
+				int x;
+				fz_write_printf(ctx, out, ",\"xpos\":[");
+				for (x = 0; x < block->u.b.xs->len; x++)
+				{
+					if (x != 0)
+						fz_write_printf(ctx, out, ",");
+					fz_write_printf(ctx, out, "%g", block->u.b.xs->list[x].pos);
+				}
+				fz_write_printf(ctx, out, "]\n");
+			}
+			if (block->u.b.ys)
+			{
+				int x;
+				fz_write_printf(ctx, out, ",\"ypos\":[");
+				for (x = 0; x < block->u.b.ys->len; x++)
+				{
+					if (x != 0)
+						fz_write_printf(ctx, out, ",");
+					fz_write_printf(ctx, out, "%g", block->u.b.ys->list[x].pos);
+				}
+				fz_write_printf(ctx, out, "]\n");
+			}
+			if (block->u.b.info)
+			{
+				int i, x, y;
+				fz_write_printf(ctx, out, ",%q:%d", "w", block->u.b.info->w-1);
+				fz_write_printf(ctx, out, ",%q:%d", "h", block->u.b.info->h-1);
+				fz_write_printf(ctx, out, ",\"flags\":[");
+				i = 0;
+				for (y = 0; y < block->u.b.info->h; y++)
+				{
+					if (y != 0)
+						fz_write_printf(ctx, out, ",");
+					fz_write_printf(ctx, out, "[");
+					for (x = 0; x < block->u.b.info->w; x++)
+					{
+						if (x != 0)
+							fz_write_printf(ctx, out, ",");
+						fz_write_printf(ctx, out, "%d", block->u.b.info->info[i++]);
+					}
+					fz_write_printf(ctx, out, "]\n");
+				}
+				fz_write_printf(ctx, out, "]\n");
+
 			}
 			fz_write_printf(ctx, out, "}");
 			break;
