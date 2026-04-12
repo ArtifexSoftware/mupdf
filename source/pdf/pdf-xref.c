@@ -3916,14 +3916,37 @@ pdf_select_version(fz_context *ctx, pdf_document *doc, int version)
 	if (version < 0 || version >= n)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "version %d out of range (valid range: 0 to %d)", version, n - 1);
 
-	doc->xref_base = version;
+	/*
+		Version 0 always maps to xref_base 0 (the latest state,
+		including any unsaved incremental changes).
+
+		For version >= 1, we need to skip past any unsaved
+		incremental sections to reach the saved versions.
+		Saved versions start at xref_sections[num_incremental_sections].
+		When there are no incremental sections, saved versions
+		start at xref_sections[1] (section 0 is the latest).
+	*/
+	if (version == 0)
+		doc->xref_base = 0;
+	else
+	{
+		int inc = doc->num_incremental_sections;
+		doc->xref_base = (inc > 0 ? inc : 1) + version - 1;
+	}
 	pdf_drop_page_tree_internal(ctx, doc);
 }
 
 int
 pdf_selected_version(fz_context *ctx, pdf_document *doc)
 {
-	return doc->xref_base;
+	int base = doc->xref_base;
+	int inc;
+
+	if (base == 0)
+		return 0;
+
+	inc = doc->num_incremental_sections;
+	return base - (inc > 0 ? inc : 1) + 1;
 }
 
 static int pdf_obj_exists(fz_context *ctx, pdf_document *doc, int i)

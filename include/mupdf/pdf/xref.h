@@ -263,6 +263,11 @@ int pdf_doc_was_linearized(fz_context *ctx, pdf_document *doc);
 	page-level operations (counting, loading, rendering) will
 	reflect the selected version.
 
+	While a historical version is selected (version != 0),
+	modifications and saves are prohibited. Call
+	pdf_select_version(ctx, doc, 0) to return to the latest
+	version before modifying or saving the document.
+
 	Throws FZ_ERROR_ARGUMENT if version is out of range.
 */
 void pdf_select_version(fz_context *ctx, pdf_document *doc, int version);

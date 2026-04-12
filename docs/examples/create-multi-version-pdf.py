@@ -3,18 +3,18 @@
 Generate a small multi-version PDF for testing pdf_select_version().
 
 Creates a PDF with 3 versions via incremental updates:
-  - Version 2 (oldest): 1 page  ("Page 1 - Version 1")
-  - Version 1:          2 pages ("Page 1 - Version 1", "Page 2 - Version 2")
-  - Version 0 (latest): 3 pages (adds "Page 3 - Version 3")
+  - Version 2 (oldest): 1 page  ("Page 1 - added in version 2")
+  - Version 1:          2 pages ("Page 1 - added in version 2", "Page 2 - added in version 1")
+  - Version 0 (latest): 3 pages (adds "Page 3 - added in version 0")
 
 Usage: python3 create-multi-version-pdf.py [output.pdf]
 """
 
 import sys
 
-def make_page_stream(page_num, version_num):
+def make_page_stream(page_num, api_version):
     """Create a simple content stream that draws text on a page."""
-    text = f"Page {page_num} - Version {version_num}"
+    text = f"Page {page_num} - added in version {api_version}"
     return (
         f"BT\n"
         f"/F1 24 Tf\n"
@@ -48,8 +48,13 @@ def write_xref_and_trailer(f, offsets, size, root_num, prev=None):
     xref_offset = f.tell()
     f.write(b"xref\n")
 
+    # Build full entry list; include object 0 free entry in initial xref
+    all_entries = dict(offsets)
+    if prev is None:
+        all_entries[0] = None  # sentinel for free entry
+
     # Group consecutive object numbers into subsections
-    nums = sorted(offsets.keys())
+    nums = sorted(all_entries.keys())
     groups = []
     for n in nums:
         if groups and n == groups[-1][-1] + 1:
@@ -60,7 +65,10 @@ def write_xref_and_trailer(f, offsets, size, root_num, prev=None):
     for group in groups:
         f.write(f"{group[0]} {len(group)}\n".encode())
         for n in group:
-            f.write(f"{offsets[n]:010d} 00000 n \n".encode())
+            if all_entries[n] is None:
+                f.write(b"0000000000 65535 f \n")
+            else:
+                f.write(f"{all_entries[n]:010d} 00000 n \n".encode())
 
     f.write(b"trailer\n")
     trailer = f"<< /Size {size} /Root {root_num} 0 R"
@@ -96,7 +104,7 @@ def main():
             b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
 
         # Obj 4: Page 1 content stream
-        stream1 = make_page_stream(1, 1)
+        stream1 = make_page_stream(1, 2)
         offsets[4] = write_stream_obj(f, 4, 0, "", stream1)
 
         # Obj 3: Page 1
@@ -124,7 +132,7 @@ def main():
         #   2 = Pages (now 2 kids, count=2)
         offsets2 = {}
 
-        stream2 = make_page_stream(2, 2)
+        stream2 = make_page_stream(2, 1)
         offsets2[7] = write_stream_obj(f, 7, 0, "", stream2)
 
         offsets2[6] = write_obj(f, 6, 0,
@@ -147,7 +155,7 @@ def main():
         #   2 = Pages (now 3 kids, count=3)
         offsets3 = {}
 
-        stream3 = make_page_stream(3, 3)
+        stream3 = make_page_stream(3, 0)
         offsets3[9] = write_stream_obj(f, 9, 0, "", stream3)
 
         offsets3[8] = write_obj(f, 8, 0,

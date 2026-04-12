@@ -80,13 +80,37 @@ int main(int argc, char **argv)
 		{
 			pdf_select_version(ctx, pdoc, i);
 			page_count = fz_count_pages(ctx, doc);
-			printf("Version %d: %d page(s)\n", i, page_count);
+			printf("Version %d: %d page(s) (selectedVersion=%d)\n",
+				i, page_count, pdf_selected_version(ctx, pdoc));
 		}
 
 		/* Reset to latest version. */
 		pdf_select_version(ctx, pdoc, 0);
 		printf("\nReset to version 0 (latest): %d page(s)\n",
 			fz_count_pages(ctx, doc));
+
+		/* Demonstrate error handling for out-of-range version. */
+		printf("\n");
+		fz_try(ctx)
+		{
+			pdf_select_version(ctx, pdoc, num_versions);
+			printf("ERROR: out-of-range pdf_select_version did not throw\n");
+		}
+		fz_catch(ctx)
+			printf("Out-of-range version correctly rejected\n");
+
+		/* Demonstrate that modifications are rejected during historical view. */
+		pdf_select_version(ctx, pdoc, 1);
+		fz_try(ctx)
+		{
+			pdf_create_object(ctx, pdoc);
+			printf("ERROR: pdf_create_object during historical view did not throw\n");
+		}
+		fz_catch(ctx)
+			printf("Modification during historical view correctly rejected\n");
+
+		pdf_select_version(ctx, pdoc, 0);
+		printf("Restored to version 0 after error handling demos\n");
 	}
 	fz_catch(ctx)
 	{
