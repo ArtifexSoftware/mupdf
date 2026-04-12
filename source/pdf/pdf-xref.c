@@ -536,6 +536,9 @@ void pdf_xref_entry_map(fz_context *ctx, pdf_document *doc, void (*fn)(fz_contex
 */
 static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 {
+	if (doc->xref_base != 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot modify document while viewing historical version %d", doc->xref_base);
+
 	/* If there are as yet no incremental sections, or if the most recent
 	 * one has been used to sign a signature field, then we need a new one.
 	 * After a signing, any further document changes require a new increment */
