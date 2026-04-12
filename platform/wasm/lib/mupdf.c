@@ -1318,6 +1318,18 @@ int wasm_pdf_count_versions(pdf_document *doc)
 }
 
 EXPORT
+void wasm_pdf_select_version(pdf_document *doc, int version)
+{
+	VOID(pdf_select_version, doc, version)
+}
+
+EXPORT
+int wasm_pdf_selected_version(pdf_document *doc)
+{
+	INTEGER(pdf_selected_version, doc)
+}
+
+EXPORT
 int wasm_pdf_count_unsaved_versions(pdf_document *doc)
 {
 	INTEGER(pdf_count_unsaved_versions, doc)

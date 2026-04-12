@@ -8204,6 +8204,29 @@ static void ffi_PDFDocument_countVersions(js_State *J)
 	js_pushnumber(J, val);
 }
 
+static void ffi_PDFDocument_selectVersion(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int version = js_tonumber(J, 1);
+	fz_try(ctx)
+		pdf_select_version(ctx, pdf, version);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_selectedVersion(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int val = 0;
+	fz_try(ctx)
+		val = pdf_selected_version(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, val);
+}
+
 static void ffi_PDFDocument_countUnsavedVersions(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -12690,6 +12713,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.setJSEventListener", ffi_PDFDocument_setJSEventListener, 1);
 
 		jsB_propfun(J, "PDFDocument.countVersions", ffi_PDFDocument_countVersions, 0);
+		jsB_propfun(J, "PDFDocument.selectVersion", ffi_PDFDocument_selectVersion, 1);
+		jsB_propfun(J, "PDFDocument.selectedVersion", ffi_PDFDocument_selectedVersion, 0);
 		jsB_propfun(J, "PDFDocument.countUnsavedVersions", ffi_PDFDocument_countUnsavedVersions, 0);
 		jsB_propfun(J, "PDFDocument.validateChangeHistory", ffi_PDFDocument_validateChangeHistory, 0);
 		jsB_propfun(J, "PDFDocument.wasPureXFA", ffi_PDFDocument_wasPureXFA, 0);
