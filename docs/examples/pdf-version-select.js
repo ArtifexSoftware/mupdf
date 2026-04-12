@@ -3,7 +3,7 @@
 // Usage: mutool run pdf-version-select.js input.pdf
 
 var doc = Document.openDocument(scriptArgs[0]);
-var pdoc = doc.toPDFDocument();
+var pdoc = doc.asPDF();
 if (!pdoc)
 	throw new Error("not a PDF document");
 
