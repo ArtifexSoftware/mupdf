@@ -197,6 +197,8 @@ public class PDFDocument extends Document
 	}
 
 	public native int countVersions();
+	public native void selectVersion(int version);
+	public native int selectedVersion();
 	public native int countUnsavedVersions();
 	public native int validateChangeHistory();
 	public native boolean wasPureXFA();

@@ -1139,6 +1139,33 @@ Saving
 
 		var versionNum = pdfDocument.countVersions()
 
+.. method:: PDFDocument.prototype.selectVersion(version)
+
+	Select a historical version of the document for all subsequent
+	operations. Version 0 is the latest (default), version 1 is the
+	previous save, etc. The valid range is 0 to ``countVersions()-1``.
+
+	Selecting a version invalidates the page tree cache, as different
+	versions may have different page counts. All page-level operations
+	(counting, loading, rendering) will reflect the selected version.
+
+	:param version: number
+
+	.. code-block::
+
+		pdfDocument.selectVersion(1)
+
+.. method:: PDFDocument.prototype.selectedVersion()
+
+	Return the currently selected version. Returns 0 if no historical
+	version has been selected (the default).
+
+	:returns: number
+
+	.. code-block::
+
+		var currentVersion = pdfDocument.selectedVersion()
+
 .. method:: PDFDocument.prototype.hasUnsavedChanges()
 
 	Returns true if the document has been changed since it was last

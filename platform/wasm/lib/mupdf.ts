@@ -2800,6 +2800,14 @@ export class PDFDocument extends Document {
 		return libmupdf._wasm_pdf_count_versions(this.pointer)
 	}
 
+	selectVersion(version: number) {
+		libmupdf._wasm_pdf_select_version(this.pointer, version)
+	}
+
+	selectedVersion(): number {
+		return libmupdf._wasm_pdf_selected_version(this.pointer)
+	}
+
 	countUnsavedVersions() {
 		return libmupdf._wasm_pdf_count_unsaved_versions(this.pointer)
 	}
