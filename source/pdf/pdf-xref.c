@@ -3905,6 +3905,24 @@ pdf_doc_was_linearized(fz_context *ctx, pdf_document *doc)
 	return doc->has_linearization_object;
 }
 
+void
+pdf_select_version(fz_context *ctx, pdf_document *doc, int version)
+{
+	int n = pdf_count_versions(ctx, doc);
+
+	if (version < 0 || version >= n)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "version %d out of range (document has %d versions)", version, n);
+
+	doc->xref_base = version;
+	pdf_drop_page_tree_internal(ctx, doc);
+}
+
+int
+pdf_selected_version(fz_context *ctx, pdf_document *doc)
+{
+	return doc->xref_base;
+}
+
 static int pdf_obj_exists(fz_context *ctx, pdf_document *doc, int i)
 {
 	pdf_xref_subsec *sub;
