@@ -3914,7 +3914,7 @@ pdf_select_version(fz_context *ctx, pdf_document *doc, int version)
 	int n = pdf_count_versions(ctx, doc);
 
 	if (version < 0 || version >= n)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "version %d out of range (document has %d versions)", version, n);
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "version %d out of range (valid range: 0 to %d)", version, n - 1);
 
 	doc->xref_base = version;
 	pdf_drop_page_tree_internal(ctx, doc);
