@@ -23,6 +23,8 @@
 
 #include "glyphbox.h"
 
+#include "mupdf/ucdn.h"
+
 #include <float.h>
 #include <string.h>
 
@@ -1055,6 +1057,17 @@ fz_add_stext_char(fz_context *ctx,
 		case 0xFB06: /* st */
 			fz_add_stext_char_imp(ctx, dev, font, 's', glyph, trm, adv, wmode, bidi, force_new_line, flags);
 			fz_add_stext_char_imp(ctx, dev, font, 't', -1, trm, 0, wmode, bidi, 0, flags);
+			return;
+		}
+
+		/* alphabetic and arabic presentation forms */
+		if ((c >= 0xfb00 && c <= 0xfdff) || (c >= 0xfe70 && c <= 0xfefc))
+		{
+			uint32_t lig[18];
+			int i, n = ucdn_compat_decompose(c, lig);
+			fz_add_stext_char_imp(ctx, dev, font, lig[0], glyph, trm, adv, wmode, bidi, force_new_line, flags);
+			for (i = 1; i < n; ++i)
+				fz_add_stext_char_imp(ctx, dev, font, lig[i], -1, trm, 0, wmode, bidi, 0, flags);
 			return;
 		}
 	}
