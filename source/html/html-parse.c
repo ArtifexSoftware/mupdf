@@ -1393,7 +1393,7 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 
 	case DIS_LIST_ITEM:
 		this_box = gen2_block(ctx, g, root_box, node, style);
-		this_box->list_item = ++g->list_counter;
+		this_box->list_item = g->list_counter++;
 		break;
 
 	// TODO: https://www.w3.org/TR/CSS2/tables.html#anonymous-boxes
@@ -1444,7 +1444,11 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 	if (tag && (!strcmp(tag, "ol") || !strcmp(tag, "ul") || !strcmp(tag, "dl")))
 	{
 		int save_list_counter = g->list_counter;
-		g->list_counter = 0;
+		const char *start_att = fz_xml_att(node, "start");
+		if (start_att)
+			g->list_counter = fz_atoi(start_att);
+		else
+			g->list_counter = 1;
 		gen2_children(ctx, g, this_box, node, match);
 		g->list_counter = save_list_counter;
 	}
@@ -1937,7 +1941,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	g.at_bol = 0;
 	g.emit_white = 0;
 	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
-	g.list_counter = 0;
+	g.list_counter = 1;
 	g.section_depth = 0;
 	g.markup_dir = FZ_BIDI_LTR;
 	g.markup_lang = FZ_LANG_UNSET;
