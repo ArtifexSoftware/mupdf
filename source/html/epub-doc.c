@@ -50,8 +50,8 @@ typedef struct
 	fz_document super;
 	fz_archive *zip;
 	fz_html_font_set *set;
-	int count;
-	epub_chapter *spine;
+	int spine_len;
+	epub_chapter **spine;
 	fz_outline *outline;
 	char *dc_title, *dc_creator;
 	float layout_w, layout_h, layout_em;
@@ -74,7 +74,6 @@ struct epub_chapter
 	epub_document *doc;
 	char *path;
 	int number;
-	epub_chapter *next;
 };
 
 struct epub_page
@@ -222,8 +221,9 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 	if (s && s[1] == 0)
 		s = NULL;
 
-	for (i = 0, ch = doc->spine; ch; ++i, ch = ch->next)
+	for (i = 0; i < doc->spine_len; ++i)
 	{
+		ch = doc->spine[i];
 		if (!fz_strncasecmp(ch->path, dest, n) && ch->path[n] == 0)
 		{
 			if (s)
@@ -288,27 +288,16 @@ static int
 epub_count_chapters(fz_context *ctx, fz_document *doc_)
 {
 	epub_document *doc = (epub_document*)doc_;
-	epub_chapter *ch;
-	int count = 0;
-	for (ch = doc->spine; ch; ch = ch->next)
-		++count;
-	return count;
+	return doc->spine_len;
 }
 
 static int
 epub_count_pages(fz_context *ctx, fz_document *doc_, int chapter)
 {
 	epub_document *doc = (epub_document*)doc_;
-	epub_chapter *ch;
-	int i;
-	for (i = 0, ch = doc->spine; ch; ++i, ch = ch->next)
-	{
-		if (i == chapter)
-		{
-			return count_chapter_pages(ctx, doc, ch);
-		}
-	}
-	return 0;
+	if (chapter < 0 || chapter >= doc->spine_len)
+		return 0;
+	return count_chapter_pages(ctx, doc, doc->spine[chapter]);
 }
 
 #define MAGIC_ACCELERATOR 0xacce1e7a
@@ -553,17 +542,16 @@ epub_make_bookmark(fz_context *ctx, fz_document *doc_, fz_location loc)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
-	int i;
+	fz_html *html;
+	fz_bookmark mark;
 
-	for (i = 0, ch = doc->spine; ch; ++i, ch = ch->next)
+	if (loc.chapter >= 0 && loc.chapter < doc->spine_len)
 	{
-		if (i == loc.chapter)
-		{
-			fz_html *html = epub_get_laid_out_html(ctx, doc, ch);
-			fz_bookmark mark = fz_make_html_bookmark(ctx, html, loc.page);
-			fz_drop_html(ctx, html);
-			return mark;
-		}
+		ch = doc->spine[loc.chapter];
+		html = epub_get_laid_out_html(ctx, doc, ch);
+		mark = fz_make_html_bookmark(ctx, html, loc.page);
+		fz_drop_html(ctx, html);
+		return mark;
 	}
 
 	return 0;
@@ -574,12 +562,14 @@ epub_lookup_bookmark(fz_context *ctx, fz_document *doc_, fz_bookmark mark)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
-	int i;
+	fz_html *html;
+	int i, p;
 
-	for (i = 0, ch = doc->spine; ch; ++i, ch = ch->next)
+	for (i = 0; i < doc->spine_len; ++i)
 	{
-		fz_html *html = epub_get_laid_out_html(ctx, doc, ch);
-		int p = fz_lookup_html_bookmark(ctx, html, mark);
+		ch = doc->spine[i];
+		html = epub_get_laid_out_html(ctx, doc, ch);
+		p = fz_lookup_html_bookmark(ctx, html, mark);
 		fz_drop_html(ctx, html);
 		if (p != -1)
 			return fz_make_location(i, p);
@@ -592,29 +582,33 @@ epub_load_page(fz_context *ctx, fz_document *doc_, int chapter, int number)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
-	int i;
+	epub_page *page;
 
-	if (chapter < 0)
+	if (chapter < 0 || chapter >= doc->spine_len)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid chapter number: %d", chapter);
 	if (number < 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "invalid page number: %d", number);
 
-	for (i = 0, ch = doc->spine; ch; ++i, ch = ch->next)
+	ch = doc->spine[chapter];
+
+	page = fz_new_derived_page(ctx, epub_page, doc_);
+	fz_try(ctx)
 	{
-		if (i == chapter)
-		{
-			epub_page *page = fz_new_derived_page(ctx, epub_page, doc_);
-			page->super.bound_page = epub_bound_page;
-			page->super.run_page_contents = epub_run_page;
-			page->super.load_links = epub_load_links;
-			page->super.drop_page = epub_drop_page;
-			page->ch = ch;
-			page->number = number;
-			page->html = epub_get_laid_out_html(ctx, doc, ch);
-			return (fz_page*)page;
-		}
+		page->super.bound_page = epub_bound_page;
+		page->super.run_page_contents = epub_run_page;
+		page->super.load_links = epub_load_links;
+		page->super.drop_page = epub_drop_page;
+		page->ch = ch;
+		page->number = number;
+		page->html = epub_get_laid_out_html(ctx, doc, ch);
 	}
-	return NULL;
+	fz_catch(ctx)
+	{
+		fz_drop_page(ctx, &page->super);
+		fz_rethrow(ctx);
+	}
+
+	return (fz_page*)page;
 }
 
 static void
@@ -637,15 +631,15 @@ static void
 epub_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	epub_document *doc = (epub_document*)doc_;
-	epub_chapter *ch, *next;
-	ch = doc->spine;
-	while (ch)
+	epub_chapter *ch;
+	int i;
+	for (i = 0; i < doc->spine_len; ++i)
 	{
-		next = ch->next;
+		ch = doc->spine[i];
 		fz_free(ctx, ch->path);
 		fz_free(ctx, ch);
-		ch = next;
 	}
+	fz_free(ctx, doc->spine);
 	epub_drop_accelerator(ctx, doc->accel);
 	fz_drop_archive(ctx, doc->zip);
 	fz_drop_html_font_set(ctx, doc->set);
@@ -958,7 +952,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	char ncx[2048], s[2048];
 	char *prefixed_full_path = NULL;
 	size_t prefix_len;
-	epub_chapter **tailp;
 	int i;
 
 	fz_var(buf);
@@ -1045,8 +1038,19 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 			epub_parse_nav(ctx, doc, ncx);
 		}
 
-		doc->spine = NULL;
-		tailp = &doc->spine;
+		// count number of chapters
+		itemref = fz_xml_find_down(spine, "itemref");
+		i = 0;
+		while (itemref)
+		{
+			if (path_from_idref(s, manifest, base_uri, fz_xml_att(itemref, "idref"), sizeof s))
+				++i;
+			itemref = fz_xml_find_next(itemref, "itemref");
+		}
+		doc->spine_len = i;
+
+		// load chapters
+		doc->spine = fz_malloc_array(ctx, doc->spine_len, epub_chapter*);
 		itemref = fz_xml_find_down(spine, "itemref");
 		i = 0;
 		while (itemref)
@@ -1055,8 +1059,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 			{
 				fz_try(ctx)
 				{
-					*tailp = epub_load_chapter(ctx, doc, s, i);
-					tailp = &(*tailp)->next;
+					doc->spine[i] = epub_load_chapter(ctx, doc, s, i);
 					i++;
 				}
 				fz_catch(ctx)
@@ -1069,6 +1072,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 			}
 			itemref = fz_xml_find_next(itemref, "itemref");
 		}
+		doc->spine_len = i;
 	}
 	fz_always(ctx)
 	{
