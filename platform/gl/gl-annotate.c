@@ -299,9 +299,9 @@ static void slow_operation_dialog(void)
 	if (ui_slow_operation_state.display == 0)
 	{
 		/* Run steps for 200ms or until we're done. */
-		start_time = glutGet(GLUT_ELAPSED_TIME);
+		start_time = (int)ui_get_time_ms();
 		while (!errored && ui_slow_operation_state.i >= 0 &&
-			glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
+			(int)ui_get_time_ms() < start_time + 200)
 		{
 			errored = run_slow_operation_step(0);
 		}
@@ -311,7 +311,7 @@ static void slow_operation_dialog(void)
 		ui.dialog = NULL;
 
 	/* ... and trigger a redisplay */
-	glutPostRedisplay();
+	ui_invalidate();
 }
 
 static void
@@ -1996,7 +1996,7 @@ static void do_edit_polygon(fz_irect canvas_area, int close)
 	{
 		ui.hot = ui.selected_annot;
 		if (!ui.active || ui.active == ui.selected_annot)
-			ui.cursor = GLUT_CURSOR_CROSSHAIR;
+			ui.cursor = UI_CURSOR_CROSSHAIR;
 		if (!ui.active && ui.down)
 		{
 			ui.active = ui.selected_annot;
@@ -2057,7 +2057,7 @@ static void do_edit_ink(fz_irect canvas_area)
 	{
 		ui.hot = ui.selected_annot;
 		if (!ui.active || ui.active == ui.selected_annot)
-			ui.cursor = GLUT_CURSOR_CROSSHAIR;
+			ui.cursor = UI_CURSOR_CROSSHAIR;
 		if (!ui.active && ui.down)
 		{
 			ui.active = ui.selected_annot;
@@ -2128,7 +2128,7 @@ static void do_edit_quad_points(void)
 	{
 		ui.hot = ui.selected_annot;
 		if (!ui.active || ui.active == ui.selected_annot)
-			ui.cursor = GLUT_CURSOR_TEXT;
+			ui.cursor = UI_CURSOR_TEXT;
 		if (!ui.active && ui.down)
 		{
 			ui.active = ui.selected_annot;
@@ -2146,12 +2146,12 @@ static void do_edit_quad_points(void)
 		page_a = fz_transform_point(page_a, view_page_inv_ctm);
 		page_b = fz_transform_point(page_b, view_page_inv_ctm);
 
-		if (ui.mod == GLUT_ACTIVE_CTRL)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_WORDS);
-		else if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL + GLFW_MOD_ACTIVE_SHIFT)
 			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_LINES);
 
-		if (ui.mod == GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 		{
 			rect = fz_make_rect(
 					fz_min(page_a.x, page_b.x),
@@ -2205,7 +2205,7 @@ static void do_edit_quad_points(void)
 					pdf_add_annot_quad_point(ctx, ui.selected_annot, hits[i]);
 				}
 
-				if (ui.mod == GLUT_ACTIVE_SHIFT)
+				if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 					text = fz_copy_rectangle(ctx, page_text, rect, 0);
 				else
 					text = fz_copy_selection(ctx, page_text, page_a, page_b, 0);

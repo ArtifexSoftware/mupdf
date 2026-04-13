@@ -32,11 +32,22 @@ void win_install(void);
 #include "mupdf/ucdn.h"
 #include "mupdf/pdf.h" /* for pdf specifics and forms */
 
-#ifndef __APPLE__
-#include <GL/freeglut.h>
-#else
-#include <GLUT/glut.h>
-#endif
+#include <GLFW/glfw3.h>
+
+/* GLFW modifier key mappings */
+#define GLFW_MOD_ACTIVE_SHIFT GLFW_MOD_SHIFT
+#define GLFW_MOD_ACTIVE_CTRL  GLFW_MOD_CONTROL
+#define GLFW_MOD_ACTIVE_ALT   GLFW_MOD_ALT
+
+/* Cursor constants */
+enum
+{
+	UI_CURSOR_INHERIT = 0,
+	UI_CURSOR_TEXT,
+	UI_CURSOR_LEFT_RIGHT,
+	UI_CURSOR_UP_DOWN,
+	UI_CURSOR_CROSSHAIR,
+};
 
 /* UI */
 
@@ -130,10 +141,16 @@ struct ui
 
 extern struct ui ui;
 
+extern GLFWwindow *ui_window;
+double ui_get_time_ms(void);
+void ui_request_close(void);
+
 void ui_init_dpi(float override_ui_scale);
 void ui_init(int w, int h, const char *title);
 void ui_quit(void);
 void ui_invalidate(void);
+int ui_needs_redisplay(void);
+void check_timer(void);
 void ui_finish(void);
 
 void ui_set_clipboard(const char *buf);

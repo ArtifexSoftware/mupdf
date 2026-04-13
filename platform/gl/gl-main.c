@@ -48,15 +48,6 @@ extern char **environ; /* see environ (7) */
 #include <direct.h> /* for getcwd */
 #endif
 
-#ifdef __APPLE__
-static void cleanup(void);
-void glutLeaveMainLoop(void)
-{
-	cleanup();
-	exit(0);
-}
-#endif
-
 fz_context *ctx = NULL;
 fz_colorspace *profile = NULL;
 pdf_document *pdf = NULL;
@@ -66,6 +57,7 @@ fz_matrix draw_page_ctm, view_page_ctm, view_page_inv_ctm;
 fz_rect page_bounds, draw_page_bounds, view_page_bounds;
 fz_irect view_page_area;
 char filename[PATH_MAX];
+char window_title[256] = "MuPDF";
 
 enum
 {
@@ -728,7 +720,7 @@ static void error_dialog(void)
 	ui_label("%C %s", 0x1f4a3, error_message); /* BOMB */
 	ui_layout(B, NONE, S, ui.padsize, ui.padsize);
 	if (ui_button("Quit") || ui.key == KEY_ENTER || ui.key == KEY_ESCAPE || ui.key == 'q')
-		glutLeaveMainLoop();
+		ui_request_close();
 	ui_dialog_end();
 }
 void ui_show_error_dialog(const char *fmt, ...)
@@ -773,7 +765,7 @@ static void quit_dialog(void)
 			do_save_pdf_file();
 		ui_spacer();
 		if (ui_button("Discard") || ui.key == 'q')
-			glutLeaveMainLoop();
+			ui_request_close();
 		ui_layout(L, NONE, S, 0, 0);
 		if (ui_button("Cancel") || ui.key == KEY_ESCAPE)
 			ui.dialog = NULL;
@@ -787,7 +779,7 @@ static void quit(void)
 	if (pdf && pdf_has_unsaved_changes(ctx, pdf))
 		ui.dialog = quit_dialog;
 	else
-		glutLeaveMainLoop();
+		ui_request_close();
 }
 
 static void reload_dialog(void)
@@ -887,8 +879,8 @@ void update_title(void)
 				currentpage.chapter + 1, nc,
 				currentpage.page + 1, fz_count_chapter_pages(ctx, doc, currentpage.chapter));
 	}
-	glutSetWindowTitle(buf);
-	glutSetIconTitle(buf);
+	glfwSetWindowTitle(ui_window, buf);
+	fz_strlcpy(window_title, buf, sizeof window_title);
 }
 
 void transform_page(void)
@@ -905,11 +897,14 @@ static void clear_selected_annot(void)
 	ui_select_annot(NULL);
 }
 
+static void clear_page_selection(void);
+
 void load_page(void)
 {
 	fz_irect area;
 
 	clear_selected_annot();
+	clear_page_selection();
 
 	if (trace_file)
 		trace_action("page = doc.loadPage(%d);\n", fz_page_number_from_location(ctx, doc, currentpage));
@@ -1555,12 +1550,77 @@ static void do_links(fz_link *link)
 	glDisable(GL_BLEND);
 }
 
+/* Persistent selection state for copy/paste support */
+static struct {
+	int active;          /* whether a persistent selection exists */
+	int is_rect;         /* rectangle vs text-flow selection */
+	fz_point page_a;     /* selection start in page coordinates */
+	fz_point page_b;     /* selection end in page coordinates */
+	fz_rect rect;        /* rectangle selection bounds */
+	fz_quad hits[1000];
+	int hit_count;
+} sel;
+
+static void clear_page_selection(void)
+{
+	sel.active = 0;
+	sel.hit_count = 0;
+}
+
+static void copy_page_selection(void)
+{
+	char *s;
+	if (!sel.active || !page_text)
+		return;
+#ifdef _WIN32
+	if (sel.is_rect)
+		s = fz_copy_rectangle(ctx, page_text, sel.rect, 1);
+	else
+		s = fz_copy_selection(ctx, page_text, sel.page_a, sel.page_b, 1);
+#else
+	if (sel.is_rect)
+		s = fz_copy_rectangle(ctx, page_text, sel.rect, 0);
+	else
+		s = fz_copy_selection(ctx, page_text, sel.page_a, sel.page_b, 0);
+#endif
+	ui_set_clipboard(s);
+	fz_free(ctx, s);
+}
+
+static void draw_selection_highlights(fz_quad *hits, int n)
+{
+	int i;
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glColor4f(0.0, 0.1, 0.4, 0.3f);
+
+	glBegin(GL_QUADS);
+	for (i = 0; i < n; ++i)
+	{
+		fz_quad thit = fz_transform_quad(hits[i], view_page_ctm);
+		glVertex2f(thit.ul.x, thit.ul.y);
+		glVertex2f(thit.ur.x, thit.ur.y);
+		glVertex2f(thit.lr.x, thit.lr.y);
+		glVertex2f(thit.ll.x, thit.ll.y);
+	}
+	glEnd();
+
+	glDisable(GL_BLEND);
+}
+
 static void do_page_selection(void)
 {
 	static fz_point pt = { 0, 0 };
 	static fz_quad hits[1000];
-	fz_rect rect;
-	int i, n;
+	int n;
+
+	/* Ctrl+C copies the persistent selection */
+	if (!ui.focus && ui.key == KEY_CTL_C && sel.active)
+	{
+		copy_page_selection();
+		ui.key = 0;
+		return;
+	}
 
 	if (ui_mouse_inside(view_page_area))
 	{
@@ -1571,70 +1631,66 @@ static void do_page_selection(void)
 			pt.x = ui.x;
 			pt.y = ui.y;
 		}
+		/* Left-click in page area clears the persistent selection */
+		if (!ui.active && ui.down)
+		{
+			clear_page_selection();
+		}
 	}
 
 	if (ui.active == &pt)
 	{
 		fz_point page_a = { pt.x, pt.y };
 		fz_point page_b = { ui.x, ui.y };
+		int is_rect = 0;
 
 		page_a = fz_transform_point(page_a, view_page_inv_ctm);
 		page_b = fz_transform_point(page_b, view_page_inv_ctm);
 
-		if (ui.mod == GLUT_ACTIVE_CTRL)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_WORDS);
-		else if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL + GLFW_MOD_ACTIVE_SHIFT)
 			fz_snap_selection(ctx, page_text, &page_a, &page_b, FZ_SELECT_LINES);
 
-		if (ui.mod == GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 		{
-			rect = fz_make_rect(
+			fz_rect rect = fz_make_rect(
 					fz_min(page_a.x, page_b.x),
 					fz_min(page_a.y, page_b.y),
 					fz_max(page_a.x, page_b.x),
 					fz_max(page_a.y, page_b.y));
 			n = 1;
 			hits[0] = fz_quad_from_rect(rect);
+			is_rect = 1;
+
+			/* Save for persistent state */
+			sel.rect = rect;
 		}
 		else
 		{
 			n = fz_highlight_selection(ctx, page_text, page_a, page_b, hits, nelem(hits));
+			is_rect = 0;
 		}
 
-		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		glEnable(GL_BLEND);
-		glColor4f(0.0, 0.1, 0.4, 0.3f);
-
-		glBegin(GL_QUADS);
-		for (i = 0; i < n; ++i)
-		{
-			fz_quad thit = fz_transform_quad(hits[i], view_page_ctm);
-			glVertex2f(thit.ul.x, thit.ul.y);
-			glVertex2f(thit.ur.x, thit.ur.y);
-			glVertex2f(thit.lr.x, thit.lr.y);
-			glVertex2f(thit.ll.x, thit.ll.y);
-		}
-		glEnd();
-
-		glDisable(GL_BLEND);
+		draw_selection_highlights(hits, n);
 
 		if (!ui.right)
 		{
-			char *s;
-#ifdef _WIN32
-			if (ui.mod == GLUT_ACTIVE_SHIFT)
-				s = fz_copy_rectangle(ctx, page_text, rect, 1);
-			else
-				s = fz_copy_selection(ctx, page_text, page_a, page_b, 1);
-#else
-			if (ui.mod == GLUT_ACTIVE_SHIFT)
-				s = fz_copy_rectangle(ctx, page_text, rect, 0);
-			else
-				s = fz_copy_selection(ctx, page_text, page_a, page_b, 0);
-#endif
-			ui_set_clipboard(s);
-			fz_free(ctx, s);
+			/* Right mouse button released: persist the selection and copy */
+			sel.active = 1;
+			sel.is_rect = is_rect;
+			sel.page_a = page_a;
+			sel.page_b = page_b;
+			sel.hit_count = n < (int)nelem(sel.hits) ? n : (int)nelem(sel.hits);
+			memcpy(sel.hits, hits, sel.hit_count * sizeof(fz_quad));
+
+			copy_page_selection();
 		}
+	}
+	else if (sel.active && sel.hit_count > 0)
+	{
+		/* Draw persistent selection highlight */
+		draw_selection_highlights(sel.hits, sel.hit_count);
 	}
 }
 
@@ -1666,17 +1722,16 @@ static void toggle_fullscreen(void)
 	static int win_w = 100, win_h = 100;
 	if (!isfullscreen)
 	{
-		win_w = glutGet(GLUT_WINDOW_WIDTH);
-		win_h = glutGet(GLUT_WINDOW_HEIGHT);
-		win_x = glutGet(GLUT_WINDOW_X);
-		win_y = glutGet(GLUT_WINDOW_Y);
-		glutFullScreen();
+		glfwGetWindowSize(ui_window, &win_w, &win_h);
+		glfwGetWindowPos(ui_window, &win_x, &win_y);
+		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+		glfwSetWindowMonitor(ui_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 		isfullscreen = 1;
 	}
 	else
 	{
-		glutPositionWindow(win_x, win_y);
-		glutReshapeWindow(win_w, win_h);
+		glfwSetWindowMonitor(ui_window, NULL, win_x, win_y, win_w, win_h, 0);
 		isfullscreen = 0;
 	}
 }
@@ -1699,7 +1754,7 @@ static void shrinkwrap(void)
 		h = screen_h;
 	if (isfullscreen)
 		toggle_fullscreen();
-	glutReshapeWindow(w, h);
+	glfwSetWindowSize(ui_window, w, h);
 }
 
 static struct input input_password;
@@ -1717,7 +1772,7 @@ static void password_dialog(void)
 		{
 			ui_layout(R, NONE, S, 0, 0);
 			if (ui_button("Cancel") || (!ui.focus && ui.key == KEY_ESCAPE))
-				glutLeaveMainLoop();
+				ui_request_close();
 			ui_spacer();
 			if (ui_button("Okay") || is == UI_INPUT_ACCEPT)
 			{
@@ -2369,7 +2424,7 @@ void do_console(void)
 
 static void do_app(void)
 {
-	if (ui.mod == GLUT_ACTIVE_ALT)
+	if (ui.mod == GLFW_MOD_ACTIVE_ALT)
 	{
 		if (ui.key == KEY_F4)
 			quit();
@@ -2834,6 +2889,61 @@ static void do_coord_tooltip(void)
 	tooltip = coord_tooltip;
 }
 
+void ui_draw_custom_titlebar(GLFWwindow *window)
+{
+	// Define a stable, unique memory address to act as the widget ID
+	static const void *close_btn_id = "close_btn";
+	static const char close_string[] = "🗙";
+
+	// 1. Dock to top, fill horizontally
+	ui_layout(T, X, NW, 0, 0);
+
+	// 2. Allocate the title bar (Height = lineheight + 16px padding)
+	fz_irect bar_area = ui_pack(0, ui.lineheight + 16);
+
+	// 3. Draw Background (Modern Dark Gray)
+	glColorHex(0x2E3440);
+	glRectf(bar_area.x0, bar_area.y0, bar_area.x1, bar_area.y1);
+
+	// 4. Draw Title Text (Force White)
+	int text_y = bar_area.y0 + 8; // Center the text vertically
+	glColorHex(0xFFFFFF);
+	ui_draw_string(bar_area.x0 + 12, text_y, window_title);
+
+	// 5. Draw Modern Flat Close Button
+	int btn_w = 46;
+	fz_irect close_area = fz_make_irect(bar_area.x1 - btn_w, bar_area.y0, bar_area.x1, bar_area.y1);
+
+	int hovered = ui_mouse_inside(close_area);
+	if (hovered)
+	{
+		ui.hot = close_btn_id;
+		if (!ui.active && ui.down)
+			ui.active = close_btn_id;
+	}
+
+	int pressed = (ui.hot == close_btn_id && ui.active == close_btn_id && ui.down);
+
+	// Flat Color Logic
+	if (pressed)
+		glColorHex(0x8B0000); // Dark Red when clicked
+	else if (hovered)
+		glColorHex(0xE81123); // Standard Bright Red when hovered
+	else
+		glColorHex(0x2E3440); // Match title bar when idle
+
+	glRectf(close_area.x0, close_area.y0, close_area.x1, close_area.y1);
+
+	// Draw the '🗙 ' perfectly centered inside the button
+	glColorHex(0xFFFFFF);
+	int x_width = ui_measure_string(close_string);
+	ui_draw_string(close_area.x0 + (btn_w - x_width) / 2, text_y, close_string);
+
+	// Trigger close on click release
+	if (ui.hot == close_btn_id && ui.active == close_btn_id && !ui.down)
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
 static void do_canvas(void)
 {
 	static int saved_scroll_x = 0;
@@ -2875,7 +2985,7 @@ static void do_canvas(void)
 			scroll_x -= ui.scroll_x * ui.lineheight * 3;
 			scroll_y -= ui.scroll_y * ui.lineheight * 3;
 		}
-		else if (ui.mod == GLUT_ACTIVE_CTRL)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 		{
 			if (ui.scroll_y > 0) set_zoom(zoom_in(currentzoom), ui.x, ui.y);
 			if (ui.scroll_y < 0) set_zoom(zoom_out(currentzoom), ui.x, ui.y);
@@ -3020,7 +3130,7 @@ void do_main(void)
 {
 	if (search_active)
 	{
-		int start_time = glutGet(GLUT_ELAPSED_TIME);
+		int start_time = (int)ui_get_time_ms();
 
 		if (ui.key == KEY_ESCAPE)
 			search_active = 0;
@@ -3029,7 +3139,7 @@ void do_main(void)
 		ui.key = ui.mod = ui.plain = 0;
 		ui.down = ui.middle = ui.right = 0;
 
-		while (search_active && glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
+		while (search_active && (int)ui_get_time_ms() < start_time + 200)
 		{
 			fz_try(ctx)
 			{
@@ -3076,7 +3186,7 @@ void do_main(void)
 
 		/* keep searching later */
 		if (search_active)
-			glutPostRedisplay();
+			ui_invalidate();
 	}
 
 	do_app();
@@ -3131,6 +3241,7 @@ void run_main_loop(void)
 	else
 		glClearColor(0.3f, 0.3f, 0.3f, 1);
 	ui_begin();
+	ui_draw_custom_titlebar(ui_window);
 	fz_try(ctx)
 	{
 		if (ui.dialog)
@@ -3187,7 +3298,7 @@ static void do_open_document_dialog(void)
 	{
 		ui.dialog = NULL;
 		if (filename[0] == 0)
-			glutLeaveMainLoop();
+			ui_request_close();
 		else
 		{
 			load_document();
@@ -3271,7 +3382,12 @@ int main(int argc, char **argv)
 	signal(SIGHUP, signal_handler);
 #endif
 
-	glutInit(&argc, argv);
+	glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
+	if (glfwInit() != GLFW_TRUE)
+	{
+		fprintf(stderr, "Failed to initialize GLFW\n");
+		exit(1);
+	}
 
 	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJb:A:B:C:T:Y:R:c:v")) != -1)
 	{
@@ -3299,8 +3415,15 @@ int main(int argc, char **argv)
 		}
 	}
 
-	screen_w = glutGet(GLUT_SCREEN_WIDTH) - SCREEN_FURNITURE_W;
-	screen_h = glutGet(GLUT_SCREEN_HEIGHT) - SCREEN_FURNITURE_H;
+	{
+		GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+		if (monitor)
+		{
+			const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+			screen_w = mode->width - SCREEN_FURNITURE_W;
+			screen_h = mode->height - SCREEN_FURNITURE_H;
+		}
+	}
 
 	ui_init_dpi(scale);
 
@@ -3428,7 +3551,23 @@ int main(int argc, char **argv)
 	console_h *= ui.lineheight;
 #endif
 
-	glutMainLoop();
+	ui_invalidate(); /* trigger first frame */
+
+	/* GLFW main loop */
+	while (!glfwWindowShouldClose(ui_window))
+	{
+		check_timer();
+
+		if (ui_needs_redisplay())
+		{
+			void (*old_dialog)(void) = ui.dialog;
+			run_main_loop();
+			if (ui.dialog != old_dialog)
+				ui_invalidate();
+		}
+
+		glfwWaitEventsTimeout(0.1);
+	}
 
 	cleanup();
 
