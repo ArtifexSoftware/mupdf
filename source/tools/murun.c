@@ -13183,6 +13183,9 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "StructuredText", "SEARCH_IGNORE_CASE", FZ_SEARCH_IGNORE_CASE);
 		jsB_enum(J, "StructuredText", "SEARCH_IGNORE_DIACRITICS", FZ_SEARCH_IGNORE_DIACRITICS);
 		jsB_enum(J, "StructuredText", "SEARCH_REGEXP", FZ_SEARCH_REGEXP);
+		jsB_enum(J, "StructuredText", "SEARCH_KEEP_LINES", FZ_SEARCH_KEEP_LINES);
+		jsB_enum(J, "StructuredText", "SEARCH_KEEP_PARAGRAPHS", FZ_SEARCH_KEEP_PARAGRAPHS);
+		jsB_enum(J, "StructuredText", "SEARCH_KEEP_HYPHENS", FZ_SEARCH_KEEP_HYPHENS);
 
 		jsB_enum(J, "StructuredText", "FLAGS_STRIKEOUT", FZ_STEXT_STRIKEOUT);
 		jsB_enum(J, "StructuredText", "FLAGS_UNDERLINE", FZ_STEXT_UNDERLINE);
