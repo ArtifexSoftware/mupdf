@@ -13148,9 +13148,9 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "LinkDestination", "LINK_DEST_FIT_R", FZ_LINK_DEST_FIT_R);
 		jsB_enum(J, "LinkDestination", "LINK_DEST_XYZ", FZ_LINK_DEST_XYZ);
 
-		jsB_enum(J, "OutlineIterator", "ITERATOR_DID_NOT_MOVE", -1);
-		jsB_enum(J, "OutlineIterator", "ITERATOR_AT_ITEM", 0);
-		jsB_enum(J, "OutlineIterator", "ITERATOR_AT_EMPTY", 1);
+		jsB_enum(J, "OutlineIterator", "ITERATOR_DID_NOT_MOVE", FZ_OUTLINE_ITERATOR_DID_NOT_MOVE);
+		jsB_enum(J, "OutlineIterator", "ITERATOR_AT_ITEM", FZ_OUTLINE_ITERATOR_AT_ITEM);
+		jsB_enum(J, "OutlineIterator", "ITERATOR_AT_EMPTY", FZ_OUTLINE_ITERATOR_AT_EMPTY);
 
 		jsB_enum(J, "OutlineIterator", "FLAG_BOLD", FZ_OUTLINE_FLAG_BOLD);
 		jsB_enum(J, "OutlineIterator", "FLAG_ITALIC", FZ_OUTLINE_FLAG_ITALIC);
