@@ -6500,6 +6500,8 @@ stext_walk(js_State *J, fz_stext_block *block)
 				js_setproperty(J, -2, "isStroked");
 				js_pushboolean(J, block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE);
 				js_setproperty(J, -2, "isRectangle");
+				js_pushboolean(J, block->u.v.flags & FZ_STEXT_VECTOR_CONTINUES);
+				js_setproperty(J, -2, "continues");
 				ffi_pushrgb(J, block->u.v.argb);
 				js_call(J, 4);
 				js_pop(J, 1);
@@ -13199,6 +13201,8 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_CENTER", FZ_STEXT_TEXT_JUSTIFY_CENTER);
 		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_RIGHT", FZ_STEXT_TEXT_JUSTIFY_RIGHT);
 		jsB_enum(J, "StructuredText", "TEXT_JUSTIFY_FULL", FZ_STEXT_TEXT_JUSTIFY_FULL);
+
+		jsB_enum(J, "StructuredText", "VECTOR_CONTINUES", FZ_STEXT_VECTOR_CONTINUES);
 	}
 
 #if FZ_ENABLE_PDF

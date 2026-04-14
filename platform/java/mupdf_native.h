@@ -7180,6 +7180,8 @@ extern "C" {
 #define com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED 1L
 #undef com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE
 #define com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE 2L
+#undef com_artifex_mupdf_fitz_StructuredText_VECTOR_CONTINUES
+#define com_artifex_mupdf_fitz_StructuredText_VECTOR_CONTINUES 4L
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    finalize

@@ -82,6 +82,7 @@ public class StructuredText
 
 	public final static int VECTOR_IS_STROKED = 1;
 	public final static int VECTOR_IS_RECTANGLE = 2;
+	public final static int VECTOR_CONTINUES = 4;
 
 	public native void walk(StructuredTextWalker walker);
 

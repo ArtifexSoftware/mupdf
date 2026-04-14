@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -269,6 +269,7 @@ static jfieldID fid_Rect_y1;
 static jfieldID fid_Shade_pointer;
 static jfieldID fid_StrokeState_pointer;
 static jfieldID fid_StructuredText_pointer;
+static jfieldID fid_StructuredTextWalker_VectorInfo_continues;
 static jfieldID fid_StructuredTextWalker_VectorInfo_isRectangle;
 static jfieldID fid_StructuredTextWalker_VectorInfo_isStroked;
 static jfieldID fid_TextBlock_bbox;
@@ -854,6 +855,7 @@ static int check_enums()
 
 	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_STROKED == FZ_STEXT_VECTOR_IS_STROKED;
 	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_IS_RECTANGLE == FZ_STEXT_VECTOR_IS_RECTANGLE;
+	valid &= com_artifex_mupdf_fitz_StructuredText_VECTOR_CONTINUES == FZ_STEXT_VECTOR_CONTINUES;
 
 	valid &= com_artifex_mupdf_fitz_ColorSpace_NONE == FZ_COLORSPACE_NONE;
 	valid &= com_artifex_mupdf_fitz_ColorSpace_GRAY == FZ_COLORSPACE_GRAY;
@@ -1523,6 +1525,7 @@ static int find_fids(JNIEnv *env)
 	mid_StructuredTextWalker_onVector = get_method(&err, env, "onVector", "(L"PKG"Rect;L"PKG"StructuredTextWalker$VectorInfo;I)V");
 
 	cls_StructuredTextWalker_VectorInfo = get_class(&err, env, PKG"StructuredTextWalker$VectorInfo");
+	fid_StructuredTextWalker_VectorInfo_continues = get_field(&err, env, "continues", "Z");
 	fid_StructuredTextWalker_VectorInfo_isRectangle = get_field(&err, env, "isRectangle", "Z");
 	fid_StructuredTextWalker_VectorInfo_isStroked = get_field(&err, env, "isStroked", "Z");
 	mid_StructuredTextWalker_VectorInfo_init = get_method(&err, env, "<init>", "()V");
