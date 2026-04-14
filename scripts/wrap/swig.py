@@ -1822,6 +1822,7 @@ def build_swig(
                         {"-D_WIN32" if state_.windows else ""}
                         -c++
                         {"-doxygen" if swig_major >= 4 else ""}
+                        {'-nogil' if build_dirs.nogil else ''}
                         -python
                         -Wextra
                         {disable_swig_warnings}

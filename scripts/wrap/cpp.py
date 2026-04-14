@@ -701,17 +701,22 @@ def make_python_class_method_outparam_override(
             continue
         if arg.alt:
             name = util.clip( arg.alt.type.spelling, ('struct ', 'const '))
+            # Assert that name starts with fz_ or pdf_.
             for prefix in ( 'fz_', 'pdf_'):
                 if name.startswith( prefix):
                     break
             else:
                 assert 0, f'Unexpected arg type: {name}'
-            if function_name_implies_kept_references( fnname):
-                out.write( f'{sep}{rename.class_(name)}( {arg.name_python})')
+            if parse.has_refs(tu, arg.alt.type):
+                if function_name_implies_kept_references( fnname):
+                    out.write( f'{sep}{rename.class_(name)}( {arg.name_python})')
+                else:
+                    keepfn = f'{prefix}keep_{name[ len(prefix):]}'
+                    keepfn = rename.ll_fn( keepfn)
+                    out.write( f'{sep}{rename.class_(name)}({keepfn}( {arg.name_python}))')
             else:
-                keepfn = f'{prefix}keep_{name[ len(prefix):]}'
-                keepfn = rename.ll_fn( keepfn)
-                out.write( f'{sep}{rename.class_(name)}({keepfn}( {arg.name_python}))')
+                # Non ref-counted out param.
+                out.write(f'{sep}{rename.class_(name)}( {arg.name_python})')
         else:
             out.write( f'{sep}{arg.name_python}')
         sep = ', '
@@ -1293,10 +1298,15 @@ g_extra_definitions = textwrap.dedent(f'''
         FZ_FUNCTION std::vector<std::string> pdf_choice_widget_options2(fz_context* ctx, pdf_annot* tw, int exportval)
         {{
             int n = pdf_choice_widget_options(ctx, tw, exportval, nullptr);
+            std::vector<std::string> ret(n);
+            if (n==0)
+            {{
+                /* Evaluating &opts[0] causes assert failure on linx in debug builds. */
+                return ret;
+            }}
             std::vector<const char*> opts(n);
             int n2 = pdf_choice_widget_options(ctx, tw, exportval, &opts[0]);
             assert(n2 == n);
-            std::vector<std::string> ret(n);
             for (int i=0; i<n; ++i)
             {{
                 ret[i] = opts[i];
@@ -3102,6 +3112,9 @@ def function_wrapper_class_aware_body(
                     out_cpp.write( f'    /* Out-param {arg.name}.m_internal will be overwritten. */\n')
                     out_cpp.write( f'    {drop_fn}({arg.name}.m_internal);\n')
                     out_cpp.write( f'    {arg.name}.m_internal = nullptr;\n')
+                else:
+                    out_cpp.write( f'    /* {arg.name} is not ref-counted so we require it is null to avoid potential leaks. */\n')
+                    out_cpp.write( f'    assert(!{arg.name}.m_internal);\n')
 
         # Write function call.
         if class_constructor:

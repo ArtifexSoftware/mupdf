@@ -1728,7 +1728,29 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                         link_soname_arg = ''
                         if state.state_.linux and so_version:
                             link_soname_arg = f'-Wl,-soname,{os.path.basename(libmupdfcpp)}'
-                        command = ( textwrap.dedent(
+                        o_files = list()
+                        for cpp_file in cpp_files:
+                            o_file = f'{os.path.relpath(cpp_file)}.o'
+                            o_files.append(o_file)
+                            command = textwrap.dedent(
+                                    f'''
+                                    {compiler}
+                                        -c
+                                        -o {o_file}
+                                        {build_dirs.cpp_flags}
+                                        -fPIC
+                                        {cflags}
+                                        -I {include1}
+                                        -I {include2}
+                                        {cpp_file}
+                                    ''')
+                            jlib.build(
+                                    [include1, include2, cpp_file],
+                                    o_file,
+                                    command,
+                                    force_rebuild,
+                                    )
+                        command = textwrap.dedent(
                                 f'''
                                 {compiler}
                                     -o {os.path.relpath(libmupdfcpp)}
@@ -1738,12 +1760,11 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
                                     {cflags}
                                     -I {include1}
                                     -I {include2}
-                                    {cpp_files_text}
+                                    {' '.join(o_files)}
                                     {link_l_flags(libmupdf)}
                                 ''')
-                                )
                         command_was_run = jlib.build(
-                                [include1, include2] + cpp_files,
+                                o_files,
                                 libmupdfcpp,
                                 command,
                                 force_rebuild,
