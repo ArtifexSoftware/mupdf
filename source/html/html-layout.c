@@ -1073,6 +1073,10 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 				break_w = desperate_w;
 			}
 
+			/* text-indent on right side is already baked into break_w */
+			if (box->markup_dir == FZ_BIDI_RTL)
+				indent = 0;
+
 			if (flush_line(ctx, box, ld, break_w, line_align, indent, line, break_at, restart))
 				return;
 
