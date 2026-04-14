@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -926,8 +926,8 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out, fz_stext_xml_flag
 				fz_write_printf(ctx, out, " justify=\"unknown\"");
 			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_LEFT)
 				fz_write_printf(ctx, out, " justify=\"left\"");
-			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_CENTRE)
-				fz_write_printf(ctx, out, " justify=\"centre\"");
+			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_CENTER)
+				fz_write_printf(ctx, out, " justify=\"center\"");
 			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_RIGHT)
 				fz_write_printf(ctx, out, " justify=\"right\"");
 			if (block->u.t.flags == FZ_STEXT_TEXT_JUSTIFY_FULL)

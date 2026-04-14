@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -381,7 +381,7 @@ enum
 {
 	FZ_STEXT_TEXT_JUSTIFY_UNKNOWN = 0,
 	FZ_STEXT_TEXT_JUSTIFY_LEFT = 1,
-	FZ_STEXT_TEXT_JUSTIFY_CENTRE = 2,
+	FZ_STEXT_TEXT_JUSTIFY_CENTER = 2,
 	FZ_STEXT_TEXT_JUSTIFY_RIGHT = 3,
 	FZ_STEXT_TEXT_JUSTIFY_FULL = 4,
 };
