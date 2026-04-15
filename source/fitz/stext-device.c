@@ -2663,11 +2663,12 @@ fz_path_walker split_path_rects =
 };
 
 static void
-add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, int stroke, float exp)
+add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, const fz_stroke_state *stroke, float exp)
 {
 	int have_leftovers;
 	split_path_data sp;
 	int id = tdev->id;
+	int trailing_moves_acceptable = (stroke == NULL || stroke->end_cap != FZ_LINECAP_ROUND);
 
 	sp.dev = tdev;
 	sp.ctm = ctm;
@@ -2684,9 +2685,10 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 
 	have_leftovers = fz_is_valid_rect(sp.leftovers);
 
-	maybe_rect(ctx, &sp);
+	if (!trailing_moves_acceptable || sp.count != 1)
+		maybe_rect(ctx, &sp);
 
-	if (fz_is_valid_rect(sp.pending))
+	if ((!trailing_moves_acceptable || sp.count != 1) && fz_is_valid_rect(sp.pending))
 		add_vector(ctx, page, sp.dev, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb, id, exp);
 	if (have_leftovers)
 		add_vector(ctx, page, sp.dev, sp.leftovers, sp.flags, sp.argb, id, exp);
@@ -2708,7 +2710,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, 0, 0);
+		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, NULL, 0);
 }
 
 static void
@@ -2728,7 +2730,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 		check_for_strikeout(ctx, tdev, page, path, ctm);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
-		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, 1, exp);
+		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, ss, exp);
 }
 
 static void
