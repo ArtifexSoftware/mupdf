@@ -1181,7 +1181,7 @@ get_cell(cells_t *cells, int x, int y)
 	return &cells->cell[x + y * cells->w];
 }
 
-#ifdef DEBUG_TABLE_STRUCTURE
+#if defined(DEBUG_TABLE_STRUCTURE) || defined(DEBUG_TABLE_SPLITS)
 static void
 asciiart_table(grid_walker_data *gd);
 #endif
@@ -2088,7 +2088,7 @@ static cells_t *new_cells(fz_context *ctx, int w, int h)
 	return cells;
 }
 
-#ifdef DEBUG_TABLE_STRUCTURE
+#if defined(DEBUG_TABLE_STRUCTURE) || defined(DEBUG_TABLE_SPLITS)
 static void
 asciiart_table(grid_walker_data *gd)
 {
