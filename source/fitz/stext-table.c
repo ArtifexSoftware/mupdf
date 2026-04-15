@@ -3964,7 +3964,7 @@ table_size_cmp(const void *a_, const void *b_)
 
 /* Takes ownership of list, and frees before return. */
 static fz_stext_block *
-hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list)
+hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, float limit)
 {
 	int i, j, k, n;
 	fz_stext_block *last = NULL;
@@ -4147,7 +4147,7 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 		n = list->len;
 		for (j = 0, i = 0; i < n; i++)
 		{
-			if (list->tables[i].data.score > 0.3f) /* Nasty heuristic constant! */
+			if (list->tables[i].data.score > limit)
 			{
 				fz_drop_potential_table(ctx, &list->tables[i]);
 				continue;
@@ -4357,7 +4357,7 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	hunt_potential_tables(ctx, page, list);
+	hunt_potential_tables(ctx, page, list, 0.3f/* Nasty heuristic constant! */);
 }
 
 fz_stext_block *
@@ -4379,5 +4379,5 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list);
+	return hunt_potential_tables(ctx, page, list, 9999999.0f);
 }
