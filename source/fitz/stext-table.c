@@ -3803,23 +3803,31 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		if (all_blocks_are_justified_or_headers(ctx, content, gd->bounds))
 			break;
 
-		walk_to_find_content(ctx, &xs, &ys, content, gd->bounds);
+		if (gd->xpos == NULL)
+		{
+#ifdef DEBUG_TABLE_STRUCTURE
+			printf("Looking for grid\n");
+#endif
+			assert(gd->ypos == NULL);
+			walk_to_find_content(ctx, &xs, &ys, content, gd->bounds);
 
-		sanitize_positions(ctx, &xs);
-		sanitize_positions(ctx, &ys);
+			sanitize_positions(ctx, &xs);
+			sanitize_positions(ctx, &ys);
 
-		/* Run across the line, counting 'winding' */
-		/* If we don't have at least 1 row and 1 column, give up. We'll
-		 * want at least 2 each later on, but we might have a table
-		 * where vectors will split the rows and columns later. */
-		if (xs.len < 2 || ys.len < 2)
-			break;
+			/* Run across the line, counting 'winding' */
+			/* If we don't have at least 1 row and 1 column, give up. We'll
+			 * want at least 2 each later on, but we might have a table
+			 * where vectors will split the rows and columns later. */
+			if (xs.len < 2 || ys.len < 2)
+				break;
 
-		gd->xpos = make_table_positions(ctx, &xs, gd->bounds.x0, gd->bounds.x1);
-		gd->ypos = make_table_positions(ctx, &ys, gd->bounds.y0, gd->bounds.y1);
-		if (gd->xpos->len < 2 || gd->ypos->len < 2)
-			break;
-
+			gd->xpos = make_table_positions(ctx, &xs, gd->bounds.x0, gd->bounds.x1);
+			gd->ypos = make_table_positions(ctx, &ys, gd->bounds.y0, gd->bounds.y1);
+		}
+		else
+		{
+			assert(gd->ypos != NULL);
+		}
 		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
 
 #ifdef DEBUG_TABLE_STRUCTURE
@@ -4531,4 +4539,52 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 	}
 
 	return hunt_potential_tables(ctx, page, list, 9999999.0f);
+}
+
+fz_stext_grid_positions *
+fz_clone_stext_grid_positions(fz_context *ctx, fz_stext_grid_positions *src)
+{
+	fz_stext_grid_positions *dst;
+
+	if (src == NULL)
+		return NULL;
+
+	dst = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, src->len);
+	memcpy(dst, src, fz_sizeof_flexible(fz_stext_grid_positions, list, src->len));
+
+	return dst;
+}
+
+fz_stext_block *
+fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit)
+{
+	fz_potential_table_list *list;
+	fz_rect bounds;
+	int w, h;
+
+	if (page == NULL || xpos == NULL || ypos == NULL || xpos->len < 2 || ypos->len < 2)
+		return NULL;
+
+	/* Make a list, even though we're only going to push one entry in. */
+	list = fz_new_potential_table_list(ctx);
+
+	w = xpos->len;
+	h = ypos->len;
+	bounds.x0 = xpos->list[0].min;
+	bounds.x1 = xpos->list[w-1].max;
+	bounds.y0 = ypos->list[0].min;
+	bounds.y1 = ypos->list[h-1].max;
+	fz_try(ctx)
+	{
+		fz_push_potential_table(ctx, list, bounds, 0);
+		list->tables[0].data.xpos = fz_clone_stext_grid_positions(ctx, xpos);
+		list->tables[0].data.ypos = fz_clone_stext_grid_positions(ctx, ypos);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_potential_table_list(ctx, list);
+		fz_rethrow(ctx);
+	}
+
+	return hunt_potential_tables(ctx, page, list, limit);
 }
