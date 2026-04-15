@@ -818,6 +818,36 @@ fz_stext_block *
 fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
 
 /**
+	Interpret the contents of a given stext page that fall within
+	a given grid as a table.
+
+	The page contents will be rewritten to contain a Table
+	structure with the identified content in it.
+
+	This uses the same logic as for fz_table_hunt, without the
+	actual hunting, and the grid detection phase. fz_table_hunt
+	hunts to find possible bounds for multiple tables on the
+	page; this routine just finds a single table contained within
+	the given rectangle. The grid detection phase is skipped, and
+	we just use the grid as given to us. We still perform the
+	cell analysis stage though, so the grid can be refined.
+
+	xs is expected to be an array 2*w long, representing the
+	minimum/maximum permitted positions of the column division
+	positions.
+
+	ys is expected to be an array 2*h long, representing the
+	minimum/maximum expected positions of the row division
+	positions.
+
+	Returns the stext_block list that contains the content of
+	the table, or NULL if no table is found that scores below
+	limit.
+*/
+fz_stext_block *
+fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, int w, int h, const float *xs, const float *ys, float limit);
+
+/**
 	Create a device to extract the text on a page.
 
 	Gather the text on a page into blocks and lines.
