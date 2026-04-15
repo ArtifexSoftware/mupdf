@@ -813,6 +813,8 @@ void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect b
 
 	Returns the stext_block list that contains the content of
 	the table.
+
+	EXPERIMENTAL API; SUBJECT TO CHANGE OR REMOVAL WITHOUT NOTICE.
 */
 fz_stext_block *
 fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
@@ -843,9 +845,30 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 	Returns the stext_block list that contains the content of
 	the table, or NULL if no table is found that scores below
 	limit.
+
+	EXPERIMENTAL API; SUBJECT TO CHANGE OR REMOVAL WITHOUT NOTICE.
 */
 fz_stext_block *
 fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, int w, int h, const float *xs, const float *ys, float limit);
+
+/*
+	Call fz_find_table_within_grid, with a grid derived from
+	the given probability vectors.
+
+	Vectors xv and yv (of size w and h respectively) contain
+	values between 0 and 1.
+
+	Grid divisions are detected where the probability values
+	rise above 0.5.
+
+	The entire grid is assumed to fit within the given bounds
+	on the page.
+
+	EXPERIMENTAL API; SUBJECT TO CHANGE OR REMOVAL WITHOUT NOTICE.
+*/
+fz_stext_block *
+fz_find_table_within_grid_vectors(fz_context *ctx, fz_stext_page *page, fz_rect bounds, int w, int h, const float *xv, const float *yv, float limit);
+
 
 /**
 	Create a device to extract the text on a page.

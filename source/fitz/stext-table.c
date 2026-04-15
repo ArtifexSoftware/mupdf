@@ -4462,3 +4462,90 @@ fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, int w, int h, co
 
 	return hunt_potential_tables(ctx, page, list, limit);
 }
+
+static int
+vector_to_grid(fz_context *ctx, float x0, float x1, int w, const float *xv, float **xsp)
+{
+	int tw;
+	int i, j;
+	float *xs;
+	const float THRESHOLD = 0.5f;
+
+	/* Count the number of regions */
+	tw = 0;
+	if (xv[0] < THRESHOLD)
+		tw++;
+	for (i = 0; i < w; i++)
+	{
+		while (i < w && xv[i] < THRESHOLD)
+			i++;
+		if (i == w)
+			break;
+		tw++;
+		while (i < w && xv[i] >= THRESHOLD)
+			i++;
+		if (i == w)
+			break;
+	}
+	if (xv[w-1] < THRESHOLD)
+		tw++;
+
+	*xsp = xs = fz_malloc_array(ctx, 2*tw, float);
+
+	/* Extract the regions */
+	j = 0;
+	if (xv[0] < THRESHOLD)
+	{
+		xs[j++] = x0;
+		xs[j++] = x0;
+	}
+	for (i = 0; i < w; i++)
+	{
+		while (i < w && xv[i] < THRESHOLD)
+			i++;
+		if (i == w)
+			break;
+		xs[j++] = x0 + (x1 - x0) / (w-1) * i;
+		while (i < w && xv[i] >= THRESHOLD)
+			i++;
+		xs[j++] = x0 + (x1 - x0) / (w-1) * i;
+		if (i == w)
+			break;
+	}
+	if (xv[w-1] < THRESHOLD)
+	{
+		xs[j++] = x1;
+		xs[j++] = x1;
+	}
+	assert(j == tw * 2);
+
+	return tw;
+}
+
+fz_stext_block *
+fz_find_table_within_grid_vectors(fz_context *ctx, fz_stext_page *page, fz_rect bounds, int w, int h, const float *xv, const float *yv, float limit)
+{
+	int tw, th;
+	float *xs = NULL;
+	float *ys = NULL;
+	fz_stext_block *ret;
+
+	fz_var(xs);
+	fz_var(ys);
+
+	fz_try(ctx)
+	{
+		tw = vector_to_grid(ctx, bounds.x0, bounds.x1, w, xv, &xs);
+		th = vector_to_grid(ctx, bounds.y0, bounds.y1, h, yv, &ys);
+		ret = fz_find_table_within_grid(ctx, page, tw, th, xs, ys, limit);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, xs);
+		fz_free(ctx, ys);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return ret;
+}
