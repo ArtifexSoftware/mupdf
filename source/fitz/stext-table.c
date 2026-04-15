@@ -854,6 +854,20 @@ sanitize_positions(fz_context *ctx, div_list *xs)
 		}
 		xs->len = j;
 
+#ifdef DEBUG_TABLE_HUNT
+		printf("Remove 0s:\n");
+		for (i = 0; i < xs->len; i++)
+		{
+			if (xs->list[i].left)
+				printf("[");
+			printf("%g(%d%s)", xs->list[i].pos, xs->list[i].freq, xs->list[i].weak ? "weak" : "");
+			if (!xs->list[i].left)
+				printf("]");
+			printf(" ");
+		}
+		printf("\n");
+#endif
+
 		/* Now run across looking for local minima where at least one
 		 * edge is 'weak'. If the wind at that point is non-zero, then
 		 * remove the weak edges from consideration and retry. */
@@ -3670,14 +3684,17 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		sanitize_positions(ctx, &ys);
 
 		/* Run across the line, counting 'winding' */
-		/* If we don't have at least 2 rows and 2 columns, give up. */
-		if (xs.len <= 2 || ys.len <= 2)
+		/* If we don't have at least 1 row and 1 column, give up. We'll
+		 * want at least 2 each later on, but we might have a table
+		 * where vectors will split the rows and columns later. */
+		if (xs.len < 2 || ys.len < 2)
 			break;
 
 		gd->xpos = make_table_positions(ctx, &xs, gd->bounds.x0, gd->bounds.x1);
 		gd->ypos = make_table_positions(ctx, &ys, gd->bounds.y0, gd->bounds.y1);
-		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
+		if (gd->xpos->len < 2 || gd->ypos->len < 2)
 			break;
+
 		gd->cells = new_cells(ctx, gd->xpos->len, gd->ypos->len);
 
 #ifdef DEBUG_TABLE_STRUCTURE
@@ -3695,6 +3712,12 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		 * pass then marks them. */
 		walk_grid_lines(ctx, gd, content);
 		walk_grid_lines2(ctx, gd, content);
+
+		/* At this point our grid isn't going to get any larger.
+		 * If we don't have at least 2 columns and 2 rows, we
+		 * don't recognise it as being a table. */
+		if (gd->xpos->len <= 2 || gd->ypos->len <= 2)
+			break;
 
 #ifdef DEBUG_TABLE_STRUCTURE
 		printf("Grid after considering vectors:\n");
