@@ -347,9 +347,15 @@ int fz_mkdir(char *path);
 #endif
 #endif
 
-#ifdef __SANITIZE_ADDRESS__
-/* The undefined behavior sanitizer complains about misaligned loads even though they should be okay. */
-/* Note: we can't detect sanitize=undefined, but we always set it together with sanitize=address which we can detect. */
+/*
+ * The undefined behavior sanitizer complains about unaligned loads even on
+ * platforms where unaligned loads are allowed.
+ *
+ * Older compilers don't set __SANITIZE_UNDEFINED__, but we can also
+ * check for __SANITIZE_ADDRESS__ since our sanitize build target enables
+ * both ASAN and UBSAN.
+ */
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_UNDEFINED__)
 #undef FZ_POINTER_ALIGN_MOD
 #define FZ_POINTER_ALIGN_MOD FZ_MEMORY_BLOCK_ALIGN_MOD
 #endif
