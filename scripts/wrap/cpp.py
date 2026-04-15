@@ -1128,6 +1128,12 @@ g_extra_declarations = textwrap.dedent(f'''
         /** SWIG-friendly wrapper for fz_decode_barcode_from_page(), avoiding
         leak of the returned string. */
         std::string fz_decode_barcode_from_page2(fz_context *ctx, fz_barcode_type *type, fz_page *page, fz_rect subarea, int rotate);
+
+        /** Swig-friendly wrapper for fz_find_table_within_grid(). */
+        fz_stext_block *fz_find_table_within_grid2(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit);
+
+        /** Swig-friendly wrapper for fz_find_table_within_grid_vectors(). */
+        fz_stext_block *fz_find_table_within_grid_vectors2(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const std::vector<float>& xv, const std::vector<float>& yv, float limit);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1391,6 +1397,17 @@ g_extra_definitions = textwrap.dedent(f'''
             std::string ret2 = ret;
             fz_free(ctx, ret);
             return ret2;
+        }}
+
+        fz_stext_block *fz_find_table_within_grid2(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit)
+        {{
+            return fz_find_table_within_grid(ctx, page, xs.size(), ys.size(), &xs[0], &ys[0], limit);
+        }}
+
+        /** Swig-friendly wrapper for fz_find_table_within_grid_vectors(). */
+        fz_stext_block *fz_find_table_within_grid_vectors2(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const std::vector<float>& xv, const std::vector<float>& yv, float limit)
+        {{
+            return fz_find_table_within_grid_vectors(ctx, page, bounds, xv.size(), yv.size(), &xv[0], &yv[0], limit);
         }}
         ''')
 
