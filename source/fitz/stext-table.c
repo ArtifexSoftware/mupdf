@@ -1998,7 +1998,7 @@ classify_vector(fz_context *ctx, grid_walker_data *gd, fz_rect r, int is_rect)
  * Return a count of vector graphics that are found that don't
  * look plausibly like cell contents. */
 static int
-calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
+calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block, int bb_sure)
 {
 	int duff = 0;
 	fz_rect bounds = {
@@ -2012,7 +2012,7 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
 			if (block->u.s.down)
-				duff += calculate_spanned_content(ctx, gd, block->u.s.down->first_block);
+				duff += calculate_spanned_content(ctx, gd, block->u.s.down->first_block, bb_sure);
 			continue;
 		}
 		else if (block->type == FZ_STEXT_BLOCK_VECTOR)
@@ -2020,7 +2020,16 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 			switch (classify_vector(ctx, gd, block->bbox, !!(block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE)))
 			{
 			case VECTOR_IS_CONTENT:
-				mark_cells_for_content(ctx, gd, block->bbox, 0, 0);
+				if (bb_sure &&
+					(block->u.v.flags & (FZ_STEXT_VECTOR_IS_STROKED | FZ_STEXT_VECTOR_IS_RECTANGLE)) ==
+								FZ_STEXT_VECTOR_IS_STROKED)
+				{
+					/* If we're confident in the bbox of the table (i.e. it's been handed to
+					 * us from outside) then don't risk invalidating the whole box because of a
+					 * (for example) rounded rectangle around the edge of the area. */
+				}
+				else
+					mark_cells_for_content(ctx, gd, block->bbox, 0, 0);
 				break;
 			case VECTOR_IS_BORDER:
 			case VECTOR_IS_IGNORABLE:
@@ -3797,7 +3806,7 @@ init_cell_regions(fz_context *ctx, cells_t *cells)
 
 
 static int
-find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
+find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content, int bb_sure)
 {
 	div_list xs = { 0 };
 	div_list ys = { 0 };
@@ -3871,8 +3880,11 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		init_cell_regions(ctx, gd->cells);
 		/* Now, we walk the content looking for content that crosses
 		 * these grid lines. This allows us to spot spanned cells. */
-		if (calculate_spanned_content(ctx, gd, content))
-			break; /* Unlikely to be a table. */
+		if (calculate_spanned_content(ctx, gd, content, bb_sure))
+		{
+			if (!bb_sure)
+				break; /* Unlikely to be a table. */
+		}
 
 #ifdef DEBUG_TABLE_STRUCTURE
 		printf("Grid after patterning content:\n");
@@ -4134,7 +4146,7 @@ table_size_cmp(const void *a_, const void *b_)
 
 /* Takes ownership of list, and frees before return. */
 static fz_stext_block *
-hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, float limit, float *scorep)
+hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, float limit, float *scorep, int bb_sure)
 {
 	int i, j, k, n;
 	fz_stext_block *last = NULL;
@@ -4153,7 +4165,7 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 		/* Look for tables in all the possible positions */
 		n = list->len;
 		for (i = 0; i < n; i++)
-			list->tables[i].found = find_table(ctx, &list->tables[i].data, page->first_block);
+			list->tables[i].found = find_table(ctx, &list->tables[i].data, page->first_block, bb_sure);
 
 		/* Cull the tables that weren't found. */
 		n = list->len;
@@ -4538,7 +4550,7 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	hunt_potential_tables(ctx, page, list, 0.3f/* Nasty heuristic constant! */, NULL);
+	hunt_potential_tables(ctx, page, list, 0.3f/* Nasty heuristic constant! */, NULL, 0);
 }
 
 static fz_stext_block *
@@ -4560,7 +4572,7 @@ find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, f
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list, 9999999.0f, score);
+	return hunt_potential_tables(ctx, page, list, 9999999.0f, score, 1);
 }
 
 fz_stext_block *
@@ -4626,7 +4638,7 @@ fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, int w, int h, co
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list, limit, NULL);
+	return hunt_potential_tables(ctx, page, list, limit, NULL, 1);
 }
 
 static int
