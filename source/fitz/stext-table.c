@@ -3741,6 +3741,24 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 			cell_t *cell = get_cell(gd->cells, x, y);
 			cell_t *right = get_cell(gd->cells, x+1, y);
 			cell_t *below = get_cell(gd->cells, x, y+1);
+#if 1
+			/* Experiment: make the score harsher, so it's less forgiving
+			 * of non-perfect results. */
+			score += cell->h_crossed + cell->v_crossed;
+			if (cell->h_line && cell->v_line && right->v_line && below->h_line)
+			{
+				/* Trivially bordered cell. Scores 0. */
+			}
+			//else if (cell->h_line && below->h_line)
+			//{
+			//	/* Bordered above and below. Scores 1. */
+			//	score += 1;
+			//}
+			else
+			{
+				score += 2;
+			}
+#else
 			score += cell->h_crossed + cell->v_crossed;
 			if (cell->full)
 			{
@@ -3765,6 +3783,7 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 			}
 			else
 				score += 2;
+#endif
 		}
 	}
 
