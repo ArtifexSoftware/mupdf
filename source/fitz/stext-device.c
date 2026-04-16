@@ -2495,12 +2495,35 @@ maybe_rect(fz_context *ctx, split_path_data *sp)
 	int i;
 	fz_rect leftovers;
 
+	if (sp->count >= 3)
+	{
+		/* Allow for multiple monotonic points in a horizontal or vertical line  */
+		if (feq(sp->p[sp->count-1].x, sp->p[sp->count-2].x) &&
+			feq(sp->p[sp->count-1].x, sp->p[sp->count-3].x) &&
+			((sp->p[sp->count-1].y <= sp->p[sp->count-2].y && sp->p[sp->count-2].y <= sp->p[sp->count-3].y) ||
+			(sp->p[sp->count-1].y >= sp->p[sp->count-2].y && sp->p[sp->count-2].y >= sp->p[sp->count-3].y)))
+		{
+			/*  y---->y---->y - Remove the central y */
+			sp->p[sp->count-2].y = sp->p[sp->count-1].y;
+			sp->count--;
+		}
+		else if (feq(sp->p[sp->count-1].y, sp->p[sp->count-2].y) &&
+			feq(sp->p[sp->count-1].y, sp->p[sp->count-3].y) &&
+			((sp->p[sp->count-1].x <= sp->p[sp->count-2].x && sp->p[sp->count-2].x <= sp->p[sp->count-3].x) ||
+			(sp->p[sp->count-1].x >= sp->p[sp->count-2].x && sp->p[sp->count-2].x >= sp->p[sp->count-3].x)))
+		{
+			/*  x---->x---->x - Remove the central x */
+			sp->p[sp->count-2].x = sp->p[sp->count-1].x;
+			sp->count--;
+		}
+	}
+
 	if (sp->count >= 0)
 	{
 		if (sp->count == 3)
 		{
 			/* Allow for "moveto A, lineto B, lineto A, close" */
-			if (feq(sp->p[0].x, sp->p[2].x) || feq(sp->p[0].y, sp->p[2].y))
+			if (feq(sp->p[0].x, sp->p[2].x) && feq(sp->p[0].y, sp->p[2].y))
 				sp->count = 2;
 		}
 		if (sp->count == 2)
