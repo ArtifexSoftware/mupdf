@@ -1874,6 +1874,8 @@ static int
 where_is(fz_stext_grid_positions *pos, float x, int *in)
 {
 	int i;
+	int best;
+	float best_dist;
 
 	*in = IN_UNKNOWN;
 
@@ -1885,37 +1887,29 @@ where_is(fz_stext_grid_positions *pos, float x, int *in)
 	if (x <= pos->list[0].pos - SPLIT_MARGIN || x >= pos->list[pos->len-1].max + SPLIT_MARGIN)
 		return -1;
 
+	best = -1;
 	for (i = 0; i < pos->len; i++)
 	{
-		/* Calculate the region (below..above) that counts as being
-		 * on the border of position i. */
-		float prev = i > 0 ? pos->list[i-1].max : pos->list[0].min;
-		float next = i < pos->len-1 ? pos->list[i+1].min : pos->list[i].max;
-		float below = pos->list[i].pos - SPLIT_MARGIN;
-		float above = pos->list[i].pos + SPLIT_MARGIN;
-		/* Find the distance half way back to the previous pos as
-		 * a limit to our margin. */
-		prev = (prev + pos->list[i].pos)/2;
-		next = (next + pos->list[i].pos)/2;
-		if (below < prev)
-			below = prev;
-		if (above > next)
-			above = next;
+		float dist = pos->list[i].pos - x;
 
-		if (x < below)
-		{
-			*in = IN_CELL;
-			return i-1;
-		}
-		else if (x <= above)
-		{
-			*in = IN_BORDER;
-			return i;
-		}
+		if (dist < 0)
+			dist = -dist;
+		if (best == -1 || dist < best_dist)
+			best_dist = dist, best = i;
 	}
 
-	*in = IN_BORDER;
-	return i-1;
+	if (best_dist < SPLIT_MARGIN)
+	{
+		*in = IN_BORDER;
+	}
+	else
+	{
+		*in = IN_CELL;
+		if (best > 0 && pos->list[best].pos > x)
+			best--;
+	}
+
+	return best;
 }
 
 enum
