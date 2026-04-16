@@ -3256,6 +3256,131 @@ merge_column:
 }
 
 static void
+remove_empty_column(grid_walker_data *gd, int x)
+{
+	int y;
+	for (y = 0; y < gd->cells->h; y++)
+	{
+		cell_t *d = &gd->cells->cell[x + y * (gd->cells->w-1)];
+		cell_t *s = &gd->cells->cell[x + y * gd->cells->w];
+
+		if (x > 0)
+			memmove(d-x, s-x, sizeof(*d) * x);
+		if (x < gd->cells->w - 1)
+			memmove(d, s+1, sizeof(*d) * (gd->cells->w - 1 - x));
+	}
+	gd->cells->w--;
+
+	if (x < gd->xpos->len - 1)
+		memmove(&gd->xpos->list[x], &gd->xpos->list[x+1], sizeof(gd->xpos->list[0]) * (gd->xpos->len - 1 - x));
+	gd->xpos->len--;
+}
+
+static void
+remove_empty_row(grid_walker_data *gd, int y)
+{
+	cell_t *d = &gd->cells->cell[y * gd->cells->w];
+	cell_t *s = &gd->cells->cell[(y+1) * gd->cells->w];
+
+	memmove(d, s, sizeof(*d) * gd->cells->w * (gd->cells->h - y - 1));
+	gd->cells->h--;
+
+	if (y < gd->ypos->len - 1)
+		memmove(&gd->ypos->list[y], &gd->ypos->list[y+1], sizeof(gd->ypos->list[0]) * (gd->ypos->len - 1 - y));
+	gd->ypos->len--;
+}
+
+static int
+trim_empty_margins(grid_walker_data *gd)
+{
+	int x, y;
+
+	/* Left column */
+	while (1)
+	{
+		for (y = gd->cells->h-2; y >= 0; y--)
+		{
+			cell_t *a = get_cell(gd->cells, 0, y);
+			if (a->h_line || a->v_line || a->full)
+				break;
+		}
+		if (y >= 0)
+			break;
+		/* Remove the column */
+		remove_empty_column(gd, 0);
+#ifdef DEBUG_TABLE_STRUCTURE
+		asciiart_table(gd);
+#endif
+		if (gd->cells->w <= 2)
+			return 1;
+	}
+
+	/* Right column */
+	while (1)
+	{
+		for (y = gd->cells->h-2; y >= 0; y--)
+		{
+			cell_t *a = get_cell(gd->cells, gd->cells->w-2, y);
+			cell_t *b = get_cell(gd->cells, gd->cells->w-1, y);
+			if (a->full || b->v_line || b->h_line)
+				break;
+		}
+		if (y >= 0)
+			break;
+		/* Remove the column */
+		remove_empty_column(gd, gd->cells->w-1);
+#ifdef DEBUG_TABLE_STRUCTURE
+		asciiart_table(gd);
+#endif
+		if (gd->cells->w <= 2)
+			return 1;
+	}
+
+	/* Top row */
+	while (1)
+	{
+		for (x = gd->cells->w-2; x >= 0; x--)
+		{
+			cell_t *a = get_cell(gd->cells, x, 0);
+			if (a->h_line || a->v_line || a->full)
+				break;
+		}
+		if (x >= 0)
+			break;
+		/* Remove the row */
+		remove_empty_row(gd, 0);
+#ifdef DEBUG_TABLE_STRUCTURE
+		asciiart_table(gd);
+#endif
+		if (gd->cells->h <= 2)
+			return 1;
+	}
+
+	/* Bottom row */
+	while (1)
+	{
+		for (x = gd->cells->w-2; x >= 0; x--)
+		{
+			cell_t *a = get_cell(gd->cells, x, gd->cells->h-2);
+			cell_t *b = get_cell(gd->cells, x, gd->cells->h-1);
+			if (a->full || b->v_line || b->h_line)
+				break;
+		}
+		if (y >= 0)
+			break;
+		/* Remove the column */
+		remove_empty_row(gd, gd->cells->h-1);
+#ifdef DEBUG_TABLE_STRUCTURE
+		asciiart_table(gd);
+#endif
+		if (gd->cells->w <= 2)
+			return 1;
+	}
+
+	return 0;
+}
+
+static void
 merge_row(grid_walker_data *gd, int y)
 {
 	int x;
@@ -3740,6 +3865,9 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		printf("Grid after patterning content:\n");
 		asciiart_table(gd);
 #endif
+		if (trim_empty_margins(gd))
+			break; /* Trimmed away to nothing */
+
 		/* Now, can we remove some columns or rows? i.e. have we oversegmented? */
 		do
 		{
