@@ -3993,7 +3993,7 @@ table_size_cmp(const void *a_, const void *b_)
 
 /* Takes ownership of list, and frees before return. */
 static fz_stext_block *
-hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, float limit)
+hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, float limit, float *scorep)
 {
 	int i, j, k, n;
 	fz_stext_block *last = NULL;
@@ -4205,7 +4205,18 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 #endif
 	}
 	fz_always(ctx)
+	{
+		if (scorep)
+		{
+			*scorep = 99999;
+			if (list->len > 0)
+			{
+				*scorep = list->tables[0].data.score;
+			}
+		}
+
 		fz_drop_potential_table_list(ctx, list);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
@@ -4386,11 +4397,11 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	hunt_potential_tables(ctx, page, list, 0.3f/* Nasty heuristic constant! */);
+	hunt_potential_tables(ctx, page, list, 0.3f/* Nasty heuristic constant! */, NULL);
 }
 
-fz_stext_block *
-fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+static fz_stext_block *
+find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, float *score)
 {
 	fz_potential_table_list *list;
 
@@ -4408,7 +4419,21 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list, 9999999.0f);
+	return hunt_potential_tables(ctx, page, list, 9999999.0f, score);
+}
+
+fz_stext_block *
+fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+{
+	return find_table_within_bounds(ctx, page, bounds, NULL);
+}
+
+float
+fz_find_table_within_bounds_score(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+{
+	float score;
+	find_table_within_bounds(ctx, page, bounds, &score);
+	return score;
 }
 
 fz_stext_block *
@@ -4460,7 +4485,7 @@ fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, int w, int h, co
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list, limit);
+	return hunt_potential_tables(ctx, page, list, limit, NULL);
 }
 
 static int

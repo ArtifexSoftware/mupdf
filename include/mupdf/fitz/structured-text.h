@@ -819,6 +819,9 @@ void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect b
 fz_stext_block *
 fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
 
+float fz_find_table_within_bounds_score(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
+
+
 /**
 	Interpret the contents of a given stext page that fall within
 	a given grid as a table.
