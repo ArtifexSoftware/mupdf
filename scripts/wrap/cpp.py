@@ -1139,7 +1139,7 @@ g_extra_declarations = textwrap.dedent(f'''
         fz_device *fz_new_elide_device_with_rects2(fz_context *ctx, fz_device *passthrough, const std::vector<fz_rect>& rects);
 
         /** Swig-friendly wrapper for fz_draw_page_eliding_text(). */
-        fz_pixmap *fz_draw_page_eliding_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects);
+        fz_pixmap *fz_draw_page_eliding_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<float>& rects);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1423,9 +1423,9 @@ g_extra_definitions = textwrap.dedent(f'''
         }}
 
         /** Swig-friendly wrapper for fz_draw_page_eliding_text(). */
-        fz_pixmap *fz_draw_page_eliding_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects)
+        fz_pixmap *fz_draw_page_eliding_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<float>& rects)
         {{
-            return fz_draw_page_eliding_text(ctx, page, ctm, rects.size(), &rects[0]);
+            return fz_draw_page_eliding_text(ctx, page, ctm, rects.size()/4, (fz_rect *)(void*)&rects[0]);
         }}
         ''')
 
