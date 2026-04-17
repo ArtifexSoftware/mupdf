@@ -51,18 +51,130 @@ fz_elide_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, cons
 		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, color, alpha, color_params);
 }
 
+static fz_text *
+fz_new_text_from_span(fz_context *ctx, fz_text_span *span)
+{
+	fz_text *text = fz_new_text(ctx);
+	fz_text_span *ns;
+
+	ns = text->head = fz_malloc_struct(ctx, fz_text_span);
+	text->tail = ns;
+	*ns = *span;
+	/* Rejig the copied span so it's safe for dropping. */
+	ns->len = ns->cap = 0;
+	ns->next = NULL;
+	ns->items = NULL;
+	ns->font = fz_keep_font(ctx, ns->font); /* Cannot fail */
+	/* Now allocate and copy the items. */
+	ns->items = fz_malloc_array(ctx, span->len, fz_text_item);
+	memcpy(ns->items, span->items, sizeof(fz_text_item) * span->len);
+	ns->len = ns->cap = span->len;
+
+	return text;
+}
+
+/* Break an fz_text down into subspans. Consider each subspan for eliding. If not elided,
+ * pass them into the callback function. */
+static void
+text_as_spans(fz_context *ctx, fz_elide_device *dev, const fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke,
+		void (*callback)(fz_context *ctx, fz_device *thru_dev, fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke, void *args), void *args)
+{
+	fz_text_span *span;
+	fz_matrix tm, trm;
+	fz_rect gbox;
+	fz_rect bbox;
+	int i;
+	fz_text *new_text = NULL;
+
+	fz_var(new_text);
+
+	fz_try(ctx)
+	{
+		for (span = text->head; span; span = span->next)
+		{
+			if (span->len <= 0)
+				continue;
+
+			bbox = fz_empty_rect;
+
+			tm = span->trm;
+			for (i = 0; i < span->len; i++)
+			{
+				if (span->items[i].gid >= 0)
+				{
+					tm.e = span->items[i].x;
+					tm.f = span->items[i].y;
+					trm = fz_concat(tm, ctm);
+					gbox = fz_bound_glyph(ctx, span->font, span->items[i].gid, trm);
+					bbox = fz_union_rect(bbox, gbox);
+				}
+			}
+
+			if (fz_is_empty_rect(bbox))
+				continue;
+
+			if (stroke)
+				bbox = fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
+
+			/* Compensate for the glyph cache limited positioning precision */
+			bbox.x0 -= 1;
+			bbox.y0 -= 1;
+			bbox.x1 += 1;
+			bbox.y1 += 1;
+
+			if (dev->opts.elide_text(ctx, dev->opts.opaque, bbox))
+				continue;
+
+			/* We need to send stuff through. */
+			new_text = fz_new_text_from_span(ctx, span);
+			callback(ctx, dev->passthrough, new_text, ctm, stroke, args);
+			fz_drop_text(ctx, new_text);
+			new_text = NULL;
+		}
+
+	}
+	fz_always(ctx)
+		fz_drop_text(ctx, new_text);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+typedef struct
+{
+	fz_colorspace *colorspace;
+	const float *color;
+	float alpha;
+	fz_color_params params;
+	fz_rect scissor;
+} cb_args;
+
+static void
+fill_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke, void *args)
+{
+	cb_args *fa = (cb_args *)args;
+
+	if (dev->fill_text)
+		dev->fill_text(ctx, dev, text, ctm, fa->colorspace, fa->color, fa->alpha, fa->params);
+}
+
 static void
 fz_elide_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_elide_device *dev = (fz_elide_device*)dev_;
-	fz_rect bounds = fz_bound_text(ctx, text, NULL, ctm);
-
-	if (dev->opts.elide_text(ctx, dev->opts.opaque, bounds))
-		return;
+	cb_args fa = { colorspace, color, alpha, color_params };
 
 	if (dev->passthrough)
-		fz_fill_text(ctx, dev->passthrough, text, ctm, colorspace, color, alpha, color_params);
+		text_as_spans(ctx, dev, text, ctm, NULL, fill_text_cb, &fa);
+}
+
+static void
+stroke_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke, void *args)
+{
+	cb_args *fa = (cb_args *)args;
+
+	if (dev->stroke_text)
+		dev->stroke_text(ctx, dev, text, stroke, ctm, fa->colorspace, fa->color, fa->alpha, fa->params);
 }
 
 static void
@@ -70,13 +182,61 @@ fz_elide_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, cons
 	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
 	fz_elide_device *dev = (fz_elide_device*)dev_;
-	fz_rect bounds = fz_bound_text(ctx, text, stroke, ctm);
-
-	if (dev->opts.elide_text(ctx, dev->opts.opaque, bounds))
-		return;
+	cb_args fa = { colorspace, color, alpha, color_params };
 
 	if (dev->passthrough)
-		fz_stroke_text(ctx, dev->passthrough, text, stroke, ctm, colorspace, color, alpha, color_params);
+		text_as_spans(ctx, dev, text, ctm, stroke, stroke_text_cb, &fa);
+}
+
+static void
+clip_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke, void *args)
+{
+	cb_args *fa = (cb_args *)args;
+
+	if (dev->clip_text)
+		dev->clip_text(ctx, dev, text, ctm, fa->scissor);
+}
+
+static void
+fz_elide_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm, fz_rect scissor)
+{
+	fz_elide_device *dev = (fz_elide_device*)dev_;
+	cb_args fa = { 0 };
+
+	fa.scissor = scissor;
+
+	if (dev->passthrough)
+		text_as_spans(ctx, dev, text, ctm, NULL, clip_text_cb, &fa);
+}
+
+static void
+clip_stroke_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke, void *args)
+{
+	cb_args *fa = (cb_args *)args;
+
+	if (dev->clip_stroke_text)
+		dev->clip_stroke_text(ctx, dev, text, stroke, ctm, fa->scissor);
+}
+
+static void
+fz_elide_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
+{
+	fz_elide_device *dev = (fz_elide_device*)dev_;
+	cb_args fa = { 0 };
+
+	fa.scissor = scissor;
+
+	if (dev->passthrough)
+		text_as_spans(ctx, dev, text, ctm, NULL, clip_stroke_text_cb, &fa);
+}
+
+static void
+fz_elide_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm)
+{
+	fz_elide_device *dev = (fz_elide_device*)dev_;
+
+	if (dev->passthrough)
+		fz_ignore_text(ctx, dev->passthrough, text, ctm);
 }
 
 static void
@@ -123,41 +283,6 @@ fz_elide_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path,
 
 	if (dev->passthrough)
 		fz_clip_stroke_path(ctx, dev->passthrough, path, stroke, ctm, scissor);
-}
-
-static void
-fz_elide_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm, fz_rect scissor)
-{
-	fz_elide_device *dev = (fz_elide_device*)dev_;
-	fz_rect bounds = fz_bound_text(ctx, text, NULL, ctm);
-
-	if (dev->opts.elide_text(ctx, dev->opts.opaque, bounds))
-		return;
-
-	if (dev->passthrough)
-		fz_clip_text(ctx, dev->passthrough, text, ctm, scissor);
-}
-
-static void
-fz_elide_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
-{
-	fz_elide_device *dev = (fz_elide_device*)dev_;
-	fz_rect bounds = fz_bound_text(ctx, text, stroke, ctm);
-
-	if (dev->opts.elide_text(ctx, dev->opts.opaque, bounds))
-		return;
-
-	if (dev->passthrough)
-		fz_clip_stroke_text(ctx, dev->passthrough, text, stroke, ctm, scissor);
-}
-
-static void
-fz_elide_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm)
-{
-	fz_elide_device *dev = (fz_elide_device*)dev_;
-
-	if (dev->passthrough)
-		fz_ignore_text(ctx, dev->passthrough, text, ctm);
 }
 
 static void
@@ -372,18 +497,30 @@ drop_elide_rects(fz_context *ctx, void *opaque)
 	fz_free(ctx, er);
 }
 
+static float
+rect_area(fz_rect r)
+{
+	if (fz_is_empty_rect(r))
+		return 0;
+
+	return (r.x1 - r.x0) * (r.y1 - r.y0);
+}
+
 static int
 elide_rect(fz_context *ctx, void *opaque, fz_rect rect)
 {
 	int i;
 	elide_rects *er = (elide_rects *)opaque;
+	float area = rect_area(rect)/2;
+	float overlapped = 0;
 
 	for (i = 0; i < er->n; i++)
 	{
 		fz_rect ov = fz_intersect_rect(rect, er->rects[i]);
-		if (fz_is_empty_rect(ov))
-			continue;
-		return 1; /* FIXME: Maybe too harsh? */
+		overlapped += rect_area(ov);
+		/* If more than half of the text box is overlapped, elide it. */
+		if (overlapped > area)
+			return 1;
 	}
 
 	return 0;
