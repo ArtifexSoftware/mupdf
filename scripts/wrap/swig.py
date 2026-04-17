@@ -988,6 +988,7 @@ def build_swig(
                 %template(vector_search_page2_hit) vector<fz_search_page2_hit>;
                 %template(vector_fz_font_ucs_gid) vector<fz_font_ucs_gid>;
                 %template(vector_fz_point) vector<fz_point>;
+                %template(vector_fz_rect) vector<fz_rect>;
             }};
 
             // Make sure that operator++() gets converted to __next__().

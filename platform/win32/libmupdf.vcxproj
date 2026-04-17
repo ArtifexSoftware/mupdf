@@ -1084,6 +1084,7 @@
     <ClCompile Include="..\..\source\fitz\crypt-arc4.c" />
     <ClCompile Include="..\..\source\fitz\crypt-md5.c" />
     <ClCompile Include="..\..\source\fitz\crypt-sha2.c" />
+    <ClCompile Include="..\..\source\fitz\cull-device.c" />
     <ClCompile Include="..\..\source\fitz\deskew.c" />
     <ClCompile Include="..\..\source\fitz\device.c" />
     <ClCompile Include="..\..\source\fitz\directory.c" />

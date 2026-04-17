@@ -1128,6 +1128,12 @@ g_extra_declarations = textwrap.dedent(f'''
         /** SWIG-friendly wrapper for fz_decode_barcode_from_page(), avoiding
         leak of the returned string. */
         std::string fz_decode_barcode_from_page2(fz_context *ctx, fz_barcode_type *type, fz_page *page, fz_rect subarea, int rotate);
+
+        /** Swig-friendly wrapper for fz_new_culling_device_with_rects(). */
+        fz_device *fz_new_culling_device_with_rects2(fz_context *ctx, fz_device *passthrough, const std::vector<fz_rect>& rects);
+
+        /** Swig-friendly wrapper for fz_draw_page_culling_text(). */
+        fz_pixmap *fz_draw_page_culling_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1391,6 +1397,18 @@ g_extra_definitions = textwrap.dedent(f'''
             std::string ret2 = ret;
             fz_free(ctx, ret);
             return ret2;
+        }}
+
+        /** Swig-friendly wrapper for fz_new_culling_device_with_rects(). */
+        fz_device *fz_new_culling_device_with_rects2(fz_context *ctx, fz_device *passthrough, const std::vector<fz_rect>& rects)
+        {{
+            return fz_new_culling_device_with_rects(ctx, passthrough, rects.size(), &rects[0]);
+        }}
+
+        /** Swig-friendly wrapper for fz_draw_page_culling_text(). */
+        fz_pixmap *fz_draw_page_culling_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects)
+        {{
+            return fz_draw_page_culling_text(ctx, page, ctm, rects.size(), &rects[0]);
         }}
         ''')
 
