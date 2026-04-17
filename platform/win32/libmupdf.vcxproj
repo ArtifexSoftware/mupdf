@@ -1101,6 +1101,7 @@
     <ClCompile Include="..\..\source\fitz\draw-rasterize.c" />
     <ClCompile Include="..\..\source\fitz\draw-scale-simple.c" />
     <ClCompile Include="..\..\source\fitz\draw-unpack.c" />
+    <ClCompile Include="..\..\source\fitz\elide-device.c" />
     <ClCompile Include="..\..\source\fitz\encode-basic.c" />
     <ClCompile Include="..\..\source\fitz\encode-fax.c" />
     <ClCompile Include="..\..\source\fitz\encode-jpx.c" />

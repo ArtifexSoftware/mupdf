@@ -545,6 +545,18 @@ enum
 	FZ_TEST_OPT_SHADINGS = 2
 };
 
+typedef struct
+{
+	void *opaque;
+	int (*elide_text)(fz_context *ctx, void *opaque, fz_rect rect);
+
+	void (*drop)(fz_context *ctx, void *opaque);
+} fz_elide_options;
+
+fz_device *fz_new_elide_device(fz_context *ctx, fz_device *passthrough, fz_elide_options *opts);
+
+fz_device *fz_new_elide_device_with_rects(fz_context *ctx, fz_device *passthrough, int n, const fz_rect *rects);
+
 /**
 	Create a device to draw on a pixmap.
 

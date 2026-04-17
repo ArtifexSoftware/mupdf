@@ -1134,6 +1134,12 @@ g_extra_declarations = textwrap.dedent(f'''
 
         /** Swig-friendly wrapper for fz_find_table_within_grid_vectors(). */
         fz_stext_block *fz_find_table_within_grid_vectors2(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const std::vector<float>& xv, const std::vector<float>& yv, float limit);
+
+        /** Swig-friendly wrapper for fz_new_elide_device_with_rects(). */
+        fz_device *fz_new_elide_device_with_rects2(fz_context *ctx, fz_device *passthrough, const std::vector<fz_rect>& rects);
+
+        /** Swig-friendly wrapper for fz_draw_page_eliding_text(). */
+        fz_pixmap *fz_draw_page_eliding_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1408,6 +1414,18 @@ g_extra_definitions = textwrap.dedent(f'''
         fz_stext_block *fz_find_table_within_grid_vectors2(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const std::vector<float>& xv, const std::vector<float>& yv, float limit)
         {{
             return fz_find_table_within_grid_vectors(ctx, page, bounds, xv.size(), yv.size(), &xv[0], &yv[0], limit);
+        }}
+
+        /** Swig-friendly wrapper for fz_new_elide_device_with_rects(). */
+        fz_device *fz_new_elide_device_with_rects2(fz_context *ctx, fz_device *passthrough, const std::vector<fz_rect>& rects)
+        {{
+            return fz_new_elide_device_with_rects(ctx, passthrough, rects.size(), &rects[0]);
+        }}
+
+        /** Swig-friendly wrapper for fz_draw_page_eliding_text(). */
+        fz_pixmap *fz_draw_page_eliding_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects)
+        {{
+            return fz_draw_page_eliding_text(ctx, page, ctm, rects.size(), &rects[0]);
         }}
         ''')
 

@@ -204,4 +204,6 @@ fz_document *fz_new_xhtml_document_from_document(fz_context *ctx, fz_document *o
 */
 fz_buffer *fz_new_buffer_from_page_with_format(fz_context *ctx, fz_page *page, const char *format, const char *options, fz_matrix transform, fz_cookie *cookie);
 
+fz_pixmap *fz_draw_page_eliding_text(fz_context *ctx, fz_page *page, fz_matrix ctm, int n, const fz_rect *rects);
+
 #endif
