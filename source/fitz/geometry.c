@@ -617,6 +617,19 @@ fz_expand_rect(fz_rect a, float expand)
 	return a;
 }
 
+float
+fz_rect_area(fz_rect r)
+{
+	if (fz_is_empty_rect(r))
+		return 0;
+	if (fz_is_infinite_rect(r))
+		return INFINITY;
+
+	return (r.x1 - r.x0) * (r.y1 - r.y0);
+}
+
+
+
 /* Adding a point to an invalid rectangle makes the zero area rectangle
  * that contains just that point. */
 fz_rect fz_include_point_in_rect(fz_rect r, fz_point p)

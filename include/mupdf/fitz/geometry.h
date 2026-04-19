@@ -669,6 +669,13 @@ fz_rect fz_expand_rect(fz_rect b, float expand);
 fz_irect fz_expand_irect(fz_irect a, int expand);
 
 /**
+	Calculate the area of a rectangle.
+
+	Always non-negative. All invalid or empty rects return 0.
+*/
+float fz_rect_area(fz_rect r);
+
+/**
 	Expand a bbox to include a given point.
 	To create a rectangle that encompasses a sequence of points, the
 	rectangle must first be set to be the empty rectangle at one of
