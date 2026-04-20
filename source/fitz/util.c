@@ -712,7 +712,7 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_position **map, fz_stext_pa
 			}
 			else if (!join_line)
 			{
-				EMIT(NULL, '\n');
+				EMIT(NULL, ' ');
 				*ws = 1;
 			}
 		}
