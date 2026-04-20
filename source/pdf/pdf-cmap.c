@@ -29,6 +29,8 @@
 #undef CHECK_SPLAY
 #undef DUMP_SPLAY
 
+#define CMAP_TABLE_LIMIT 65536
+
 /*
  * Allocate, destroy and simple parameters.
  */
@@ -643,6 +645,8 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 	if (cmap->tlen == cmap->tcap)
 	{
 		int new_cap = cmap->tcap ? cmap->tcap * 2 : 256;
+		if (new_cap > CMAP_TABLE_LIMIT)
+			fz_throw(ctx, FZ_ERROR_LIMIT, "too many entries in CMap table");
 		tree = cmap->tree = fz_realloc_array(ctx, cmap->tree, new_cap, cmap_splay);
 		cmap->tcap = new_cap;
 	}
@@ -683,10 +687,14 @@ add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 {
 	int out_pos;
 	int new_len = cmap->dlen + len + 1;
+	int new_cap;
+
+	if (new_len > CMAP_TABLE_LIMIT)
+		fz_throw(ctx, FZ_ERROR_LIMIT, "too many entries in CMap table");
 
 	if (new_len > cmap->dcap)
 	{
-		int new_cap = cmap->dcap > 0 ? cmap->dcap : 256;
+		new_cap = cmap->dcap > 0 ? cmap->dcap : 256;
 		while (new_len > new_cap)
 			new_cap *= 2;
 		cmap->dict = fz_realloc_array(ctx, cmap->dict, new_cap, int);
