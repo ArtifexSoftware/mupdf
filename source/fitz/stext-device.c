@@ -1244,9 +1244,6 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 		if (rune == 0)
 			break;
 
-		dev->last.trm.e = dev->pen.x;
-		dev->last.trm.f = dev->pen.y;
-
 		fz_add_stext_char(ctx, dev, dev->last.font,
 			rune,
 			-2,
@@ -1577,6 +1574,9 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 	/* If we have a 'last' text position, send the content after that. */
 	if (tdev->last.valid)
 	{
+		tdev->last.trm.e = tdev->pen.x;
+		tdev->last.trm.f = tdev->pen.y;
+
 		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1, 0);
 		pop_metatext(ctx, tdev);
 		tdev->last.valid = 0;
