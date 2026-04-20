@@ -719,6 +719,7 @@ plausible_bullet(int c)
 		c == 0x1FBC2 || /* MIDDLE THIRD WHITE RIGHT POINTING INDEX */
 		c == 0x1FBC3 || /* RIGHT THIRD WHITE RIGHT POINTING INDEX */
 		c == 0xFFFD || /* UNICODE_REPLACEMENT_CHARACTER */
+		(c >= '0' && c <= '9') ||
 		0);
 }
 
