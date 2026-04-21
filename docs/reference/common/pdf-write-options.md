@@ -65,10 +65,10 @@ continue-on-error
 : Continue saving the document even if there is an error
 
 decrypt
-: Write unencrypted document
+: This option is deprecated: instead of decrypt use encrypt=none
 
-encrypt=rc4-40|rc4-128|aes-128|aes-256
-: Write encrypted document
+encrypt=none|keep|rc4-40|rc4-128|aes-128|aes-256
+: Write encrypted document (default keep)
 
 permissions=NUMBER
 : Document permissions to grant when encrypting

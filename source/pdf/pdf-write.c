@@ -2073,8 +2073,11 @@ pdf_apply_write_options(fz_context *ctx, pdf_write_options *opts, fz_options *ar
 	if (fz_lookup_option_boolean(ctx, args, "regenerate-id", &bv))
 		opts->dont_regenerate_id = !bv;
 
-	if (fz_lookup_option_boolean(ctx, args, "regenerate-id", &bv))
+	if (fz_lookup_option_boolean(ctx, args, "decrypt", &bv))
+	{
+		fz_warn(ctx, "the decrypt write option is deprecated, use encrypt=none instead");
 		opts->do_encrypt = bv ? PDF_ENCRYPT_NONE : PDF_ENCRYPT_KEEP;
+	}
 
 	if (fz_lookup_option_boolean(ctx, args, "encrypt", &opts->do_encrypt) > 0)
 	{
