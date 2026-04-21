@@ -2076,7 +2076,7 @@ pdf_apply_write_options(fz_context *ctx, pdf_write_options *opts, fz_options *ar
 	if (fz_lookup_option_boolean(ctx, args, "regenerate-id", &bv))
 		opts->do_encrypt = bv ? PDF_ENCRYPT_NONE : PDF_ENCRYPT_KEEP;
 
-	if (fz_lookup_option_boolean(ctx, args, "encrypt", &opts->do_encrypt))
+	if (fz_lookup_option_boolean(ctx, args, "encrypt", &opts->do_encrypt) > 0)
 	{
 		if (opts->do_encrypt == 0)
 			opts->do_encrypt = PDF_ENCRYPT_NONE;
