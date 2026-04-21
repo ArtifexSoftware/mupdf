@@ -89,6 +89,7 @@ enum {
 	OUT_STEXT_XML,
 	OUT_SVG,
 	OUT_TEXT,
+	OUT_TEXT_FLAT,
 	OUT_TRACE,
 	OUT_XHTML,
 	OUT_XMLTEXT,
@@ -144,7 +145,9 @@ static const suffix_t suffix_table[] =
 	{ ".psd", OUT_PSD, 1 },
 	{ ".ps", OUT_PS, 0 },
 
+	{ ".flat.txt", OUT_TEXT_FLAT, 0 },
 	{ ".txt", OUT_TEXT, 0 },
+	{ ".flat.text", OUT_TEXT_FLAT, 0 },
 	{ ".text", OUT_TEXT, 0 },
 	{ ".html", OUT_HTML, 0 },
 	{ ".xhtml", OUT_XHTML, 0 },
@@ -214,6 +217,7 @@ static const format_cs_table_t format_cs_table[] =
 #endif
 
 	{ OUT_TEXT, CS_RGB, { CS_RGB } },
+	{ OUT_TEXT_FLAT, CS_RGB, { CS_RGB } },
 	{ OUT_HTML, CS_RGB, { CS_RGB } },
 	{ OUT_XHTML, CS_RGB, { CS_RGB } },
 	{ OUT_STEXT_XML, CS_RGB, { CS_RGB } },
@@ -828,19 +832,22 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	}
 
 	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_XHTML || output_format == OUT_STEXT_XML || output_format == OUT_STEXT_JSON ||
-		output_format == OUT_OCR_TEXT || output_format == OUT_OCR_HTML || output_format == OUT_OCR_XHTML || output_format == OUT_OCR_STEXT_XML || output_format == OUT_OCR_STEXT_JSON)
+		output_format == OUT_OCR_TEXT || output_format == OUT_OCR_HTML || output_format == OUT_OCR_XHTML || output_format == OUT_OCR_STEXT_XML ||
+		output_format == OUT_OCR_STEXT_JSON || output_format == OUT_TEXT_FLAT)
 	{
 		fz_stext_page *text = NULL;
 		float zoom;
 		fz_matrix ctm;
 		fz_device *pre_ocr_dev = NULL;
 		fz_rect tmediabox;
+		fz_buffer *buf = NULL;
 
 		zoom = resolution / 72;
 		ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
 
 		fz_var(text);
 		fz_var(pre_ocr_dev);
+		fz_var(buf);
 
 		fz_try(ctx)
 		{
@@ -915,9 +922,16 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				fz_print_stext_page_as_text(ctx, out_, text);
 				fz_write_printf(ctx, out_, "\f\n");
 			}
+			else if (output_format == OUT_TEXT_FLAT)
+			{
+				/* FIXME: At some point, we could get the flatten options from options maybe? */
+				buf = fz_new_buffer_from_flattened_stext_page(ctx, text, FZ_TEXT_FLATTEN_ALL, NULL);
+				fz_write_buffer(ctx, out, buf);
+			}
 		}
 		fz_always(ctx)
 		{
+			fz_drop_buffer(ctx, buf);
 			fz_drop_device(ctx, pre_ocr_dev);
 			fz_drop_device(ctx, dev);
 			fz_drop_stext_page(ctx, text);
