@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -441,9 +441,18 @@ static pdf_annot *find_widget(fz_context *ctx, pdf_document *doc, pdf_obj *chk)
 
 static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj *name)
 {
-	if (pdf_dict_get(ctx, chk, PDF_NAME(AS)) != name)
+	pdf_obj *val;
+
+	/* If name is the "On" value of this check
+	* box then use it, otherwise use "Off" */
+	if (pdf_name_eq(ctx, pdf_button_field_on_state(ctx, chk), name))
+		val = name;
+	else
+		val = PDF_NAME(Off);
+
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, chk, PDF_NAME(AS)), val))
 	{
-		pdf_dict_put(ctx, chk, PDF_NAME(AS), name);
+		pdf_dict_put(ctx, chk, PDF_NAME(AS), val);
 		pdf_set_annot_has_changed(ctx, find_widget(ctx, doc, chk));
 	}
 }
