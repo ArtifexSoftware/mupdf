@@ -645,7 +645,7 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_position **map, fz_stext_pa
 
 	#define EMIT(X,Y) \
 	{ \
-		if (map && *map) *(*map)++ = (fz_stext_position){ page, parent, block, line, ch }; \
+		if (map && *map) *(*map)++ = (fz_stext_position){ page, parent, block, line, X }; \
 		if (buf) fz_append_rune(ctx, buf, Y); \
 		++n; \
 	}
