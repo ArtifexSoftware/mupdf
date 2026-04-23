@@ -642,13 +642,14 @@ Verify all signatures, or only the specified signature.
 Clear all signatures, or only the specified signature.
 .TP
 .B \-s certificate-filename
-Read a certificate from the given filename and use it to sign all, or just the specified signature.
+Read a certificate from the given filename and use it to sign all signature fields, or just the specified signature field.
 .TP
 .B \-P certificate-password
 Use the specified password when opening the certificate.
 .TP
 .B \-o filename
 The output filename.
+.TP
 .B signature object numbers
 A list of PDF object number for signatures to verify/clear/sign. If no such object numbers are given, all signatures will be
 processed.
