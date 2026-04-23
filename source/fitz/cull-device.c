@@ -27,29 +27,8 @@
 typedef struct
 {
 	fz_device super;
-	fz_device *passthrough;
 	fz_culling_options opts;
 } fz_culling_device;
-
-static void
-fz_culling_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_fill_path(ctx, dev->passthrough, path, even_odd, ctm, colorspace, color, alpha, color_params);
-}
-
-static void
-fz_culling_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke,
-	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, color, alpha, color_params);
-}
 
 static fz_text *
 fz_new_text_with_span_of_cap(fz_context *ctx, int cap)
@@ -77,6 +56,9 @@ text_as_spans(fz_context *ctx, fz_culling_device *dev, const fz_text *text, fz_m
 	fz_rect bbox;
 	int i, max;
 	fz_text *new_text = NULL;
+
+	if (dev->super.passthrough == NULL)
+		return;
 
 	fz_var(new_text);
 
@@ -132,7 +114,7 @@ text_as_spans(fz_context *ctx, fz_culling_device *dev, const fz_text *text, fz_m
 			new_span->trm = span->trm;
 			new_span->wmode = span->wmode;
 			new_span->font = fz_keep_font(ctx, span->font);
-			callback(ctx, dev->passthrough, new_text, ctm, stroke, args);
+			callback(ctx, dev->super.passthrough, new_text, ctm, stroke, args);
 			fz_drop_font(ctx, new_span->font);
 			new_span->font = NULL;
 		}
@@ -157,8 +139,7 @@ fill_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, cons
 {
 	cb_args *fa = (cb_args *)args;
 
-	if (dev->fill_text)
-		dev->fill_text(ctx, dev, text, ctm, fa->colorspace, fa->color, fa->alpha, fa->params);
+	fz_fill_text(ctx, dev, text, ctm, fa->colorspace, fa->color, fa->alpha, fa->params);
 }
 
 static void
@@ -168,8 +149,7 @@ fz_culling_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_m
 	fz_culling_device *dev = (fz_culling_device*)dev_;
 	cb_args fa = { colorspace, color, alpha, color_params };
 
-	if (dev->passthrough)
-		text_as_spans(ctx, dev, text, ctm, NULL, fill_text_cb, &fa);
+	text_as_spans(ctx, dev, text, ctm, NULL, fill_text_cb, &fa);
 }
 
 static void
@@ -177,8 +157,7 @@ stroke_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, co
 {
 	cb_args *fa = (cb_args *)args;
 
-	if (dev->stroke_text)
-		dev->stroke_text(ctx, dev, text, stroke, ctm, fa->colorspace, fa->color, fa->alpha, fa->params);
+	fz_stroke_text(ctx, dev, text, stroke, ctm, fa->colorspace, fa->color, fa->alpha, fa->params);
 }
 
 static void
@@ -188,8 +167,7 @@ fz_culling_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, co
 	fz_culling_device *dev = (fz_culling_device*)dev_;
 	cb_args fa = { colorspace, color, alpha, color_params };
 
-	if (dev->passthrough)
-		text_as_spans(ctx, dev, text, ctm, stroke, stroke_text_cb, &fa);
+	text_as_spans(ctx, dev, text, ctm, stroke, stroke_text_cb, &fa);
 }
 
 static void
@@ -197,8 +175,7 @@ clip_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ctm, cons
 {
 	cb_args *fa = (cb_args *)args;
 
-	if (dev->clip_text)
-		dev->clip_text(ctx, dev, text, ctm, fa->scissor);
+	fz_clip_text(ctx, dev, text, ctm, fa->scissor);
 }
 
 static void
@@ -209,8 +186,7 @@ fz_culling_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_m
 
 	fa.scissor = scissor;
 
-	if (dev->passthrough)
-		text_as_spans(ctx, dev, text, ctm, NULL, clip_text_cb, &fa);
+	text_as_spans(ctx, dev, text, ctm, NULL, clip_text_cb, &fa);
 }
 
 static void
@@ -218,8 +194,7 @@ clip_stroke_text_cb(fz_context *ctx, fz_device *dev, fz_text *text, fz_matrix ct
 {
 	cb_args *fa = (cb_args *)args;
 
-	if (dev->clip_stroke_text)
-		dev->clip_stroke_text(ctx, dev, text, stroke, ctm, fa->scissor);
+	fz_clip_stroke_text(ctx, dev, text, stroke, ctm, fa->scissor);
 }
 
 static void
@@ -230,209 +205,7 @@ fz_culling_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *tex
 
 	fa.scissor = scissor;
 
-	if (dev->passthrough)
-		text_as_spans(ctx, dev, text, ctm, NULL, clip_stroke_text_cb, &fa);
-}
-
-static void
-fz_culling_ignore_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_matrix ctm)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_ignore_text(ctx, dev->passthrough, text, ctm);
-}
-
-static void
-fz_culling_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, fz_matrix ctm, float alpha, fz_color_params color_params)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_fill_shade(ctx, dev->passthrough, shade, ctm, alpha, color_params);
-}
-
-static void
-fz_culling_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm, float alpha, fz_color_params color_params)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_fill_image(ctx, dev->passthrough, image, ctm, alpha, color_params);
-}
-
-static void
-fz_culling_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, fz_matrix ctm,
-	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_fill_image_mask(ctx, dev->passthrough, image, ctm, colorspace, color, alpha, color_params);
-}
-
-static void
-fz_culling_clip_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_clip_path(ctx, dev->passthrough, path, even_odd, ctm, scissor);
-}
-
-static void
-fz_culling_clip_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_clip_stroke_path(ctx, dev->passthrough, path, stroke, ctm, scissor);
-}
-
-static void
-fz_culling_clip_image_mask(fz_context *ctx, fz_device *dev_, fz_image *img, fz_matrix ctm, fz_rect scissor)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_clip_image_mask(ctx, dev->passthrough, img, ctm, scissor);
-}
-
-static void
-fz_culling_pop_clip(fz_context *ctx, fz_device *dev_)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_pop_clip(ctx, dev->passthrough);
-}
-
-static void
-fz_culling_begin_mask(fz_context *ctx, fz_device *dev_, fz_rect rect, int luminosity, fz_colorspace *cs, const float *bc, fz_color_params color_params)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_begin_mask(ctx, dev->passthrough, rect, luminosity, cs, bc, color_params);
-}
-
-static void
-fz_culling_end_mask(fz_context *ctx, fz_device *dev_, fz_function *tr)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_end_mask_tr(ctx, dev->passthrough, tr);
-}
-
-static void
-fz_culling_begin_group(fz_context *ctx, fz_device *dev_, fz_rect rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_begin_group(ctx, dev->passthrough, rect, cs, isolated, knockout, blendmode, alpha);
-}
-
-static void
-fz_culling_end_group(fz_context *ctx, fz_device *dev_)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_end_group(ctx, dev->passthrough);
-}
-
-static int
-fz_culling_begin_tile(fz_context *ctx, fz_device *dev_, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm, int id, int doc_id)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		return fz_begin_tile_tid(ctx, dev->passthrough, area, view, xstep, ystep, ctm, id, doc_id);
-	else
-		return 0;
-}
-
-static void
-fz_culling_end_tile(fz_context *ctx, fz_device *dev_)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_end_tile(ctx, dev->passthrough);
-}
-
-static void
-fz_culling_render_flags(fz_context *ctx, fz_device *dev_, int set, int clear)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_render_flags(ctx, dev->passthrough, set, clear);
-}
-
-static void
-fz_culling_set_default_colorspaces(fz_context *ctx, fz_device *dev_, fz_default_colorspaces *ds)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_set_default_colorspaces(ctx, dev->passthrough, ds);
-}
-
-static void
-fz_culling_begin_layer(fz_context *ctx, fz_device *dev_, const char *layer_name)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_begin_layer(ctx, dev->passthrough, layer_name);
-}
-
-static void
-fz_culling_end_layer(fz_context *ctx, fz_device *dev_)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_end_layer(ctx, dev->passthrough);
-}
-
-static void
-fz_culling_begin_structure(fz_context *ctx, fz_device *dev_, fz_structure standard, const char *raw, int idx)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_begin_structure(ctx, dev->passthrough, standard, raw, idx);
-}
-
-static void
-fz_culling_end_structure(fz_context *ctx, fz_device *dev_)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_end_structure(ctx, dev->passthrough);
-}
-
-static void
-fz_culling_begin_metatext(fz_context *ctx, fz_device *dev_, fz_metatext meta, const char *text)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_begin_metatext(ctx, dev->passthrough, meta, text);
-}
-
-static void
-fz_culling_end_metatext(fz_context *ctx, fz_device *dev_)
-{
-	fz_culling_device *dev = (fz_culling_device*)dev_;
-
-	if (dev->passthrough)
-		fz_end_metatext(ctx, dev->passthrough);
+	text_as_spans(ctx, dev, text, ctm, NULL, clip_stroke_text_cb, &fa);
 }
 
 static void
@@ -448,49 +221,23 @@ fz_culling_drop_device(fz_context *ctx, fz_device *dev_)
 
 	if (dev->opts.drop)
 		dev->opts.drop(ctx, dev->opts.opaque);
-	fz_drop_device(ctx, dev->passthrough); /* Drop my reference */
+	fz_drop_device(ctx, dev->super.passthrough); /* Drop my reference */
 }
 
 fz_device *
 fz_new_culling_device(fz_context *ctx, fz_device *passthrough, fz_culling_options *opts)
 {
-	fz_culling_device *dev = fz_new_derived_device(ctx, fz_culling_device);
+	fz_culling_device *dev = fz_new_derived_passthrough_device(ctx, passthrough, fz_culling_device);
 
-	dev->super.fill_path = fz_culling_fill_path;
-	dev->super.stroke_path = fz_culling_stroke_path;
-	dev->super.clip_path = fz_culling_clip_path;
-	dev->super.clip_stroke_path = fz_culling_clip_stroke_path;
 	dev->super.fill_text = fz_culling_fill_text;
 	dev->super.stroke_text = fz_culling_stroke_text;
 	dev->super.clip_text = fz_culling_clip_text;
 	dev->super.clip_stroke_text = fz_culling_clip_stroke_text;
-	dev->super.ignore_text = fz_culling_ignore_text;
-	dev->super.fill_shade = fz_culling_fill_shade;
-	dev->super.fill_image = fz_culling_fill_image;
-	dev->super.fill_image_mask = fz_culling_fill_image_mask;
-	dev->super.clip_image_mask = fz_culling_clip_image_mask;
-	dev->super.pop_clip = fz_culling_pop_clip;
-	dev->super.begin_mask = fz_culling_begin_mask;
-	dev->super.end_mask = fz_culling_end_mask;
-	dev->super.begin_group = fz_culling_begin_group;
-	dev->super.end_group = fz_culling_end_group;
-	dev->super.begin_tile = fz_culling_begin_tile;
-	dev->super.end_tile = fz_culling_end_tile;
-	dev->super.render_flags = fz_culling_render_flags;
-	dev->super.set_default_colorspaces = fz_culling_set_default_colorspaces;
-	dev->super.begin_layer = fz_culling_begin_layer;
-	dev->super.end_layer = fz_culling_end_layer;
-	dev->super.begin_structure = fz_culling_begin_structure;
-	dev->super.end_structure = fz_culling_end_structure;
-	dev->super.begin_metatext = fz_culling_begin_metatext;
-	dev->super.end_metatext = fz_culling_end_metatext;
 
 	dev->super.close_device = fz_culling_close_device;
 	dev->super.drop_device = fz_culling_drop_device;
 
 	dev->opts = *opts;
-
-	dev->passthrough = fz_keep_device(ctx, passthrough);
 
 	return (fz_device*)dev;
 }

@@ -338,6 +338,9 @@ struct fz_device
 	int container_len;
 	int container_cap;
 	fz_device_container_stack *container;
+
+	/* For simplicity, every device has a passthrough entry, but not every device uses it. */
+	fz_device *passthrough;
 };
 
 /**
@@ -385,6 +388,20 @@ void fz_end_metatext(fz_context *ctx, fz_device *dev);
 fz_device *fz_new_device_of_size(fz_context *ctx, int size);
 #define fz_new_derived_device(CTX, TYPE) \
 	((TYPE *)Memento_label(fz_new_device_of_size(ctx,sizeof(TYPE)),#TYPE))
+
+/**
+	Create a passthrough device.
+
+	The device is created with stub functions that do nothing except
+	pass calls through to the given sub device. This includes
+	close and drop!
+
+	The caller of this function can then override any functions it
+	wants to handle itself.
+*/
+fz_device *fz_new_passthrough_device_of_size(fz_context *ctx, fz_device *passthrough, int size);
+#define fz_new_derived_passthrough_device(CTX, PASSTHRU, TYPE) \
+	((TYPE *)Memento_label(fz_new_passthrough_device_of_size(ctx,PASSTHRU,sizeof(TYPE)),#TYPE))
 
 /**
 	Signal the end of input, and flush any buffered output.
