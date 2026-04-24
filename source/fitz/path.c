@@ -750,6 +750,9 @@ void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *pr
 	uint8_t *cmds;
 	float *coords;
 
+	if (path == NULL)
+		return;
+
 	switch (path->packed)
 	{
 	case FZ_PATH_UNPACKED:
