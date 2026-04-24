@@ -30,54 +30,33 @@ typedef struct
 	fz_culling_options opts;
 } fz_culling_device;
 
-static fz_text *
-fz_new_text_with_span_of_cap(fz_context *ctx, int cap)
-{
-	fz_text *text = fz_new_text(ctx);
-	fz_text_span *ns;
-
-	ns = text->head = fz_malloc_struct(ctx, fz_text_span);
-	text->tail = ns;
-	/* Now allocate and copy the items. */
-	ns->items = fz_malloc_array(ctx, cap, fz_text_item);
-	ns->cap = cap;
-
-	return text;
-}
-
 /* Break an fz_text down into subspans. Consider each subspan for culling. If not culled,
  * pass them into the callback function. */
-static void
+static int
 text_as_spans(fz_context *ctx, fz_culling_device *dev, const fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke,
 		void (*callback)(fz_context *ctx, fz_device *thru_dev, fz_text *text, fz_matrix ctm, const fz_stroke_state *stroke, void *args), void *args)
 {
 	fz_text_span *span, *new_span;
 	fz_matrix tm, trm;
 	fz_rect bbox;
-	int i, max;
+	int i, sent = 0;
 	fz_text *new_text = NULL;
 
 	if (dev->super.passthrough == NULL)
-		return;
+		return 0;
 
 	fz_var(new_text);
 
-	max = 0;
-	for (span = text->head; span; span = span->next)
-		if (span->len > max)
-			max = span->len;
-
 	fz_try(ctx)
 	{
-		new_text = fz_new_text_with_span_of_cap(ctx, max);
+		new_text = fz_new_text(ctx);
 
 		for (span = text->head; span; span = span->next)
 		{
 			if (span->len <= 0)
 				continue;
 
-			new_span = new_text->head;
-			new_span->len = 0;
+			new_span = NULL;
 
 			tm = span->trm;
 			for (i = 0; i < span->len; i++)
@@ -103,26 +82,38 @@ text_as_spans(fz_context *ctx, fz_culling_device *dev, const fz_text *text, fz_m
 					continue;
 
 				/* We need to send that glyph through. */
+				if (new_span == NULL)
+				{
+					new_span = fz_malloc_struct(ctx, fz_text_span);
+					if (new_text->tail)
+						new_text->tail->next = new_span;
+					else
+						new_text->head = new_span;
+					new_text->tail = new_span;
+					new_span->items = fz_malloc_array(ctx, span->len, fz_text_item);
+					new_span->cap = span->len;
+					new_span->bidi_level = span->bidi_level;
+					new_span->language = span->language;
+					new_span->markup_dir = span->markup_dir;
+					new_span->trm = span->trm;
+					new_span->wmode = span->wmode;
+					new_span->font = fz_keep_font(ctx, span->font);
+				}
 				new_span->items[new_span->len++] = span->items[i];
 			}
-			if (new_span->len == 0)
-				continue;
-
-			new_span->bidi_level = span->bidi_level;
-			new_span->language = span->language;
-			new_span->markup_dir = span->markup_dir;
-			new_span->trm = span->trm;
-			new_span->wmode = span->wmode;
-			new_span->font = fz_keep_font(ctx, span->font);
+		}
+		if (new_text->head)
+		{
 			callback(ctx, dev->super.passthrough, new_text, ctm, stroke, args);
-			fz_drop_font(ctx, new_span->font);
-			new_span->font = NULL;
+			sent = 1;
 		}
 	}
 	fz_always(ctx)
 		fz_drop_text(ctx, new_text);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	return sent;
 }
 
 typedef struct
@@ -186,7 +177,12 @@ fz_culling_clip_text(fz_context *ctx, fz_device *dev_, const fz_text *text, fz_m
 
 	fa.scissor = scissor;
 
-	text_as_spans(ctx, dev, text, ctm, NULL, clip_text_cb, &fa);
+	if (text_as_spans(ctx, dev, text, ctm, NULL, clip_text_cb, &fa) == 0)
+	{
+		/* Nothing was sent at all. This will upset the clip stack.
+		 * Send an emty clip. */
+		fz_clip_path(ctx, dev->super.passthrough, fz_new_path(ctx), 0, ctm, fz_empty_rect);
+	}
 }
 
 static void
@@ -205,7 +201,12 @@ fz_culling_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *tex
 
 	fa.scissor = scissor;
 
-	text_as_spans(ctx, dev, text, ctm, NULL, clip_stroke_text_cb, &fa);
+	if (text_as_spans(ctx, dev, text, ctm, NULL, clip_stroke_text_cb, &fa) == 0)
+	{
+		/* Nothing was sent at all. This will upset the clip stack.
+		 * Send an empty clip. */
+		fz_clip_path(ctx, dev->super.passthrough, fz_new_path(ctx), 0, ctm, fz_empty_rect);
+	}
 }
 
 static void
