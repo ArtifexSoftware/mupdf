@@ -536,6 +536,9 @@ void pdf_xref_entry_map(fz_context *ctx, pdf_document *doc, void (*fn)(fz_contex
 */
 static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 {
+	if (doc->xref_base != 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot modify document while viewing historical version %d", doc->xref_base);
+
 	/* If there are as yet no incremental sections, or if the most recent
 	 * one has been used to sign a signature field, then we need a new one.
 	 * After a signing, any further document changes require a new increment */
@@ -3903,6 +3906,47 @@ int
 pdf_doc_was_linearized(fz_context *ctx, pdf_document *doc)
 {
 	return doc->has_linearization_object;
+}
+
+void
+pdf_select_version(fz_context *ctx, pdf_document *doc, int version)
+{
+	int n = pdf_count_versions(ctx, doc);
+
+	if (version < 0 || version >= n)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "version %d out of range (valid range: 0 to %d)", version, n - 1);
+
+	/*
+		Version 0 always maps to xref_base 0 (the latest state,
+		including any unsaved incremental changes).
+
+		For version >= 1, we need to skip past any unsaved
+		incremental sections to reach the saved versions.
+		Saved versions start at xref_sections[num_incremental_sections].
+		When there are no incremental sections, saved versions
+		start at xref_sections[1] (section 0 is the latest).
+	*/
+	if (version == 0)
+		doc->xref_base = 0;
+	else
+	{
+		int inc = doc->num_incremental_sections;
+		doc->xref_base = (inc > 0 ? inc : 1) + version - 1;
+	}
+	pdf_drop_page_tree_internal(ctx, doc);
+}
+
+int
+pdf_selected_version(fz_context *ctx, pdf_document *doc)
+{
+	int base = doc->xref_base;
+	int inc;
+
+	if (base == 0)
+		return 0;
+
+	inc = doc->num_incremental_sections;
+	return base - (inc > 0 ? inc : 1) + 1;
 }
 
 static int pdf_obj_exists(fz_context *ctx, pdf_document *doc, int i)

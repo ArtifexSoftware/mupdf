@@ -2609,6 +2609,9 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 	int changed;
 	int64_t current_offset;
 
+	if (doc->xref_base != 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot save document while viewing a historical version");
+
 	if (in_opts->do_incremental)
 	{
 		ensure_initial_incremental_contents(ctx, doc->file, opts->out, doc->file_size);
