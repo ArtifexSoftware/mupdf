@@ -392,15 +392,6 @@ fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, fz_ma
 		fz_fill_image_mask(ctx, dev->super.passthrough, image, ctm, colorspace, color, alpha, color_params);
 }
 
-static void
-fz_test_clip_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
-{
-	fz_test_device *dev = (fz_test_device*)dev_;
-
-	if (dev->super.passthrough)
-		fz_clip_path(ctx, dev->super.passthrough, path, even_odd, ctm, scissor);
-}
-
 fz_device *
 fz_new_test_device(fz_context *ctx, int *is_color, float threshold, int options, fz_device *passthrough)
 {
