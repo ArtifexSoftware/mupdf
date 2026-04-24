@@ -130,6 +130,10 @@ pdf_drop_page_tree_internal(fz_context *ctx, pdf_document *doc)
 static void
 pdf_load_page_tree_internal(fz_context *ctx, pdf_document *doc)
 {
+	int in_op = 0;
+
+	fz_var(in_op);
+
 	/* Check we're not already loaded. */
 	if (doc->fwd_page_map != NULL)
 		return;
@@ -151,8 +155,12 @@ pdf_load_page_tree_internal(fz_context *ctx, pdf_document *doc)
 				/* The document claims more pages that it has. Fix that. */
 				fz_warn(ctx, "Document claims to have %d pages, but only has %d.", doc->map_page_count, idx);
 				/* This put drops the page tree! */
+				pdf_begin_implicit_operation(ctx, doc);
+				in_op = 1;
 				pdf_dict_putp_drop(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count", pdf_new_int(ctx, idx));
 				doc->map_page_count = idx;
+				pdf_end_operation(ctx, doc);
+				in_op = 0;
 				continue;
 			}
 			break;
@@ -162,6 +170,8 @@ pdf_load_page_tree_internal(fz_context *ctx, pdf_document *doc)
 	}
 	fz_catch(ctx)
 	{
+		if (in_op)
+			pdf_abandon_operation(ctx, doc);
 		pdf_drop_page_tree_internal(ctx, doc);
 		fz_rethrow(ctx);
 	}
