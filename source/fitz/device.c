@@ -28,6 +28,17 @@ fz_device *
 fz_new_device_of_size(fz_context *ctx, int size)
 {
 	fz_device *dev = Memento_label(fz_calloc(ctx, 1, size), "fz_device");
+
+	if (ctx->locks.create_external_mutex)
+	{
+		dev->external_mutex = ctx->locks.create_external_mutex(ctx->locks.user);
+		if (dev->external_mutex == NULL)
+		{
+			fz_free(ctx, dev);
+			fz_throw(ctx, FZ_ERROR_SYSTEM, "Device lock creation failed");
+		}
+	}
+
 	dev->refs = 1;
 	return dev;
 }
@@ -99,6 +110,8 @@ fz_drop_device(fz_context *ctx, fz_device *dev)
 		if (dev->drop_device)
 			dev->drop_device(ctx, dev);
 		fz_free(ctx, dev->container);
+		if (dev->external_mutex && ctx->locks.destroy_external_mutex)
+			ctx->locks.destroy_external_mutex(ctx->locks.user, dev->external_mutex);
 		fz_free(ctx, dev);
 	}
 }

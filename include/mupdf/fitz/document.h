@@ -1034,6 +1034,28 @@ void fz_delete_link(fz_context *ctx, fz_page *page, fz_link *link);
 */
 void *fz_process_opened_pages(fz_context *ctx, fz_document *doc, fz_process_opened_page_fn *process_openend_page, void *state);
 
+/**
+	By default, MuPDF relies on callers obeying certain rules for
+	multi-threaded safety. These rules seem appropriate for C
+	programmers. They seem less appropriate for programmers in
+	other languages (particular Python programmers using the free-
+	threaded versions). So, to help with this, we introduce the
+	concept of 'document locks'.
+
+	Document locks are only used when specifically enabled, so
+	all existing code remains unchanged, with no additional speed
+	penalties.
+
+	If enabled by the caller (typically language bindings), the
+	caller is then expected to take and drop the lock as
+	appropriate.
+
+	MuPDF's involvement with document locks extends to calling
+	a callback to create one when the document is created, and
+	to destroy it again when the document is destroyed. Actual
+	use of the lock (locking/unlocking) is down to the caller.
+*/
+
 /* Implementation details: subject to change. */
 
 /**
@@ -1122,6 +1144,8 @@ struct fz_document
 	 * Incomplete pages are NOT inserted into this list, but
 	 * do still hold a real document reference. */
 	fz_page *open;
+
+	void *external_mutex;
 };
 
 struct fz_document_handler

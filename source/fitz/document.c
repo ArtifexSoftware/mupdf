@@ -609,6 +609,16 @@ fz_new_document_of_size(fz_context *ctx, int size)
 	doc->refs = 1;
 	doc->id = fz_new_document_id(ctx);
 
+	if (ctx->locks.create_external_mutex)
+	{
+		doc->external_mutex = ctx->locks.create_external_mutex(ctx->locks.user);
+		if (doc->external_mutex == NULL)
+		{
+			fz_free(ctx, doc);
+			fz_throw(ctx, FZ_ERROR_SYSTEM, "Document lock creation failed");
+		}
+	}
+
 	doc->publisher_css = 1;
 	doc->user_css = NULL;
 	doc->did_style = FZ_STYLE_NEEDS_DEFAULT; /* Note: deprecated use of global fz_use_document_css and fz_user_css */
@@ -640,6 +650,8 @@ fz_drop_document(fz_context *ctx, fz_document *doc)
 		if (doc->drop_document)
 			doc->drop_document(ctx, doc);
 		fz_free(ctx, doc->user_css);
+		if (doc->external_mutex && ctx->locks.destroy_external_mutex)
+			ctx->locks.destroy_external_mutex(ctx->locks.user, doc->external_mutex);
 		fz_free(ctx, doc);
 	}
 }

@@ -341,6 +341,8 @@ struct fz_device
 
 	/* For simplicity, every device has a passthrough entry, but not every device uses it. */
 	fz_device *passthrough;
+
+	void *external_mutex;
 };
 
 /**
