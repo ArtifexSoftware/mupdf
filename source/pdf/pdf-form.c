@@ -533,6 +533,7 @@ abandon_annot_op(fz_context *ctx, pdf_annot *annot)
 static void toggle_check_box(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_document *doc = annot->page->doc;
+	int changed = 1;
 
 	begin_annot_op(ctx, annot, "Toggle checkbox");
 
@@ -554,6 +555,7 @@ static void toggle_check_box(fz_context *ctx, pdf_annot *annot)
 		{
 			if (is_radio && is_no_toggle_to_off)
 			{
+				changed = 0;
 				end_annot_op(ctx, annot);
 				break;
 			}
@@ -575,7 +577,8 @@ static void toggle_check_box(fz_context *ctx, pdf_annot *annot)
 		fz_rethrow(ctx);
 	}
 
-	pdf_set_annot_has_changed(ctx, annot);
+	if (changed)
+		pdf_set_annot_has_changed(ctx, annot);
 }
 
 int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc)
