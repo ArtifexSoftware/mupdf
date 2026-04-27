@@ -1590,7 +1590,7 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_o
 
 	if ((fontdesc = pdf_find_item(ctx, pdf_drop_font_imp, dict)) != NULL)
 	{
-		if (fontdesc->t3loading)
+		if (fontdesc->font->t3loading)
 		{
 			pdf_drop_font(ctx, fontdesc);
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive type3 font");
@@ -1645,11 +1645,11 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_o
 		/* Load CharProcs */
 		if (type3)
 		{
-			fontdesc->t3loading = 1;
+			fontdesc->font->t3loading = 1;
 			fz_try(ctx)
 				pdf_load_type3_glyphs(ctx, doc, fontdesc);
 			fz_always(ctx)
-				fontdesc->t3loading = 0;
+				fontdesc->font->t3loading = 0;
 			fz_catch(ctx)
 			{
 				pdf_remove_item(ctx, fontdesc->storable.drop, dict);

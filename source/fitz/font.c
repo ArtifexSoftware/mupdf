@@ -1802,6 +1802,9 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 	if (gid < 0 || gid > 255)
 		return;
 
+	if (font->t3loading)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive type3 font");
+
 	if (font->t3flags[gid] & FZ_DEVFLAG_MASK)
 	{
 		if (font->t3flags[gid] & FZ_DEVFLAG_COLOR)
@@ -1813,7 +1816,14 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 	}
 
 	ctm = fz_concat(font->t3matrix, trm);
-	font->t3run(ctx, font->t3doc, font->t3resources, font->t3procs[gid], dev, ctm, gstate, def_cs, fill_gstate, stroke_gstate);
+
+	font->t3loading = 1;
+	fz_try(ctx)
+		font->t3run(ctx, font->t3doc, font->t3resources, font->t3procs[gid], dev, ctm, gstate, def_cs, fill_gstate, stroke_gstate);
+	fz_always(ctx)
+		font->t3loading = 0;
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 fz_rect
