@@ -636,9 +636,15 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 	{
 		/* regardless of how this is subsampled, a tile is never larger */
 		if (tiff->tilelength >= tiff->ycbcrsubsamp[1])
-			wlen = tiff->tilestride * tiff->tilelength;
+		{
+			if (fz_ckd_mul_uint(&wlen, tiff->tilestride, tiff->tilelength))
+				fz_throw(ctx, FZ_ERROR_LIMIT, "tile buffer too large");
+		}
 		else
-			wlen = tiff->tilestride * tiff->ycbcrsubsamp[1];
+		{
+			if (fz_ckd_mul_uint(&wlen, tiff->tilestride, tiff->ycbcrsubsamp[1]))
+				fz_throw(ctx, FZ_ERROR_LIMIT, "tile buffer too large");
+		}
 
 		data = tiff->data = Memento_label(fz_malloc(ctx, wlen), "tiff_tile_jpg");
 
@@ -667,7 +673,8 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 	}
 	else
 	{
-		wlen = tiff->tilelength * tiff->tilestride;
+		if (fz_ckd_mul_uint(&wlen, tiff->tilelength, tiff->tilestride))
+			fz_throw(ctx, FZ_ERROR_LIMIT, "tile buffer too large");
 		data = tiff->data = Memento_label(fz_malloc(ctx, wlen), "tiff_tile");
 
 		tile = 0;
@@ -1525,8 +1532,13 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			unsigned tilesacross = (tiff->imagewidth + tiff->tilewidth - 1) / tiff->tilewidth;
 			tiff->tilebytecountslen = tilesacross * tilesdown;
 			tiff->tilebytecounts = Memento_label(fz_malloc_array(ctx, tiff->tilebytecountslen, unsigned), "tiff_tilebytecounts");
-			for (i = 0; i < tiff->tilebytecountslen; i++)
-				tiff->tilebytecounts[i] = tiff->tilelength * tiff->tilestride;
+			{
+				unsigned tbc;
+				if (fz_ckd_mul_uint(&tbc, tiff->tilelength, tiff->tilestride))
+					fz_throw(ctx, FZ_ERROR_LIMIT, "tile buffer too large");
+				for (i = 0; i < tiff->tilebytecountslen; i++)
+					tiff->tilebytecounts[i] = tbc;
+			}
 		}
 	}
 
