@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -400,7 +400,7 @@ static void doc_getField(js_State *J)
 
 	fz_try(ctx)
 	{
-		form = pdf_dict_getl(ctx, pdf_trailer(ctx, js->doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields));
+		form = pdf_dict_getl(ctx, pdf_trailer(ctx, js->doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
 		dict = pdf_lookup_field(ctx, form, cName);
 	}
 	fz_catch(ctx)
@@ -525,7 +525,7 @@ static void doc_resetForm(js_State *J)
 	int i, n;
 
 	fz_try(ctx)
-		form = pdf_dict_getl(ctx, pdf_trailer(ctx, js->doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields));
+		form = pdf_dict_getl(ctx, pdf_trailer(ctx, js->doc), PDF_NAME(Root), PDF_NAME(AcroForm), PDF_NAME(Fields), NULL);
 	fz_catch(ctx)
 		rethrow(js);
 
