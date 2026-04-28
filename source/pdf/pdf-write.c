@@ -2097,14 +2097,14 @@ pdf_apply_write_options(fz_context *ctx, pdf_write_options *opts, fz_options *ar
 	opts->permissions = ~0;
 	fz_lookup_option_integer(ctx, args, "permissions", &opts->permissions);
 
-	if (fz_lookup_option_boolean(ctx, args, "garbage", &opts->do_garbage))
+	if (fz_lookup_option_boolean(ctx, args, "garbage", &opts->do_garbage) > 0)
 	{}
-	else if (fz_lookup_option_integer(ctx, args, "garbage", &opts->do_garbage))
+	else if (fz_lookup_option_integer(ctx, args, "garbage", &opts->do_garbage) > 0)
 	{}
 	else if (fz_lookup_option_enum(ctx, args, "garbage", &opts->do_garbage, garbage_opts) < 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "unknown garbage option in options");
 
-	if (fz_lookup_option_boolean(ctx, args, "appearance", &opts->do_appearance))
+	if (fz_lookup_option_boolean(ctx, args, "appearance", &opts->do_appearance) > 0)
 	{}
 	else if (fz_lookup_option_enum(ctx, args, "appearance", &opts->do_appearance, appearance_opts) < 0)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "unknown appearance option in options");
