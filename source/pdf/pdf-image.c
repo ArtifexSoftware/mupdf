@@ -301,6 +301,19 @@ pdf_load_jpx_as_compressed_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME(SMask), PDF_NAME(Mask));
 		if (pdf_is_dict(ctx, obj))
 			img->mask = pdf_load_image_imp(ctx, doc, NULL, obj, NULL, 1);
+		else if (pdf_is_array(ctx, obj))
+		{
+			img->use_colorkey = 1;
+			for (i = 0; i < fz_mini(n, FZ_MAX_COLORS) * 2; i++)
+			{
+				if (!pdf_is_int(ctx, pdf_array_get(ctx, obj, i)))
+				{
+					fz_warn(ctx, "invalid value in color key mask");
+					img->use_colorkey = 0;
+				}
+				img->colorkey[i] = pdf_array_get_int(ctx, obj, i);
+			}
+		}
 	}
 	fz_always(ctx)
 	{

@@ -841,6 +841,40 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 		break;
 	case FZ_IMAGE_JPX:
 		tile = fz_load_jpx(ctx, image->buffer->buffer->data, image->buffer->buffer->len, image->super.colorspace);
+		if (image->super.use_colorkey)
+		{
+			size_t len;
+			fz_pixmap *keyed = NULL;
+			fz_stream *sample_stream = NULL;
+			fz_stream *unpstream = NULL;
+
+			fz_var(keyed);
+			fz_var(sample_stream);
+			fz_var(unpstream);
+
+			fz_try(ctx)
+			{
+				indexed = fz_colorspace_is_indexed(ctx, image->super.colorspace);
+				keyed = fz_new_pixmap(ctx, tile->colorspace, tile->w, tile->h, NULL, 1);
+				sample_stream = fz_open_memory(ctx, tile->samples, tile->stride * tile->h);
+				unpstream = fz_unpack_stream(ctx, sample_stream, 8, tile->w, tile->h, tile->n, indexed, 1, 0);
+
+				len = fz_read(ctx, unpstream, keyed->samples, keyed->stride * keyed->h);
+				assert(len == (size_t) keyed->stride * keyed->h);
+
+				fz_mask_color_key(ctx, keyed, tile->n, 8, image->super.colorkey, indexed);
+			}
+			fz_catch(ctx)
+			{
+				fz_drop_stream(ctx, unpstream);
+				fz_drop_stream(ctx, sample_stream);
+				fz_drop_pixmap(ctx, keyed);
+				fz_rethrow(ctx);
+			}
+
+			fz_drop_pixmap(ctx, tile);
+			tile = keyed;
+		}
 		if (image->super.use_decode &&
 			!fz_colorspace_is_indexed(ctx, image->super.colorspace) &&
 			!fz_colorspace_is_lab(ctx, image->super.colorspace)
