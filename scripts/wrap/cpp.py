@@ -292,7 +292,7 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
     # time from 548.1s to 543.2s.
     #
     use_fz_try = True
-
+    lock_args = list()
     if cursor.spelling in (
             'pdf_specifics',
             ):
@@ -305,7 +305,26 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
         for arg in parse.get_args( tu, cursor, include_fz_context=True):
             if parse.is_pointer_to( arg.cursor.type, 'fz_context'):
                 uses_fz_context = True
-                break
+            if cursor.spelling.startswith((f'fz_keep_', 'fz_drop_', 'pdf_keep_', 'pdf_drop_')):
+                # We never do locking for keep/drop, because it is
+                # unnecessary. Also, after deletion, any attempt to release
+                # locks fails because the lock(s) have been deleted.
+                pass
+            elif arg.alt:
+                for structname in (
+                        'fz_document',
+                        'fz_page',
+                        'pdf_document',
+                        'pdf_page',
+                        'pdf_annot',
+                        'pdf_obj',
+                        ):
+                    if parse.is_pointer_to( arg.cursor.type, structname):
+                        # We need to lock+unlock this arg.
+                        lock_args.append(arg.name)
+                        # We need a fz_context in order to lock/unlock documents/devices.
+                        uses_fz_context = True
+
     if uses_fz_context:
         context_get = rename.internal( 'context_get')
         throw_exception = rename.internal( 'throw_exception')
@@ -382,8 +401,41 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
         out.write( f'        }}\n')
         out.write( f'    #endif\n')
 
+    # Do locking.
+    out.write(f'\n')
+    if lock_args:
+        out.write(f'    /* Locking may be required for {len(lock_args)} args. */\n')
+        out.write(f'    std::mutex* mutexes[{len(lock_args)}];\n')
+        out.write(f'    std::mutex** mutexes_end = mutexes;\n')
+        out.write(f'    \n')
+        out.write(f'    if (!{lock_arg_name()} && internal_use_locking)\n')
+        out.write(f'    {{\n')
+        out.write(f'        /* We need to do locking. */\n')
+        for argname in lock_args:
+            out.write(f'        *mutexes_end++ = internal_get_mutex(auto_ctx, {argname});\n')
+        out.write(f'        /* Sort mutexes by raw address to impose consistent locking order that avoids deadlocks. */\n')
+        out.write(f'        std::sort(mutexes, mutexes_end);\n')
+        out.write(f'        /* Remove null or duplicate mutexes. */\n')
+        out.write(f'        std::mutex** m0 = mutexes;\n')
+        out.write(f'        for (std::mutex** m=mutexes; m!=mutexes_end; ++m)\n')
+        out.write(f'        {{\n')
+        out.write(f'            if (*m && (m == mutexes || m[0] != m[-1]))\n')
+        out.write(f'                *m0++ = *m;\n')
+        out.write(f'        }}\n')
+        out.write(f'        mutexes_end = m0;\n')
+        out.write(f'        /* Lock the mutexes. */\n')
+        out.write(f'        for (std::mutex** m=mutexes; m!=mutexes_end; ++m)\n')
+        out.write(f'        {{\n')
+        out.write(f'            (*m)->lock();\n')
+        out.write(f'        }}\n')
+        out.write(f'    }}\n')
+    else:
+        out.write(f'    /* Locking not required. */\n')
+
     # Now output the function call.
     #
+    out.write(f'\n')
+    out.write(f'    /* Call the underlying mupdf c function. */\n')
     if return_type != 'void':
         out.write(  f'    {return_type} ret;\n')
 
@@ -393,7 +445,7 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
 
     indent = ''
     if uses_fz_context and use_fz_try:
-        out.write(      f'    fz_try(auto_ctx) {{\n')
+        out.write(f'    fz_try(auto_ctx) {{\n')
         indent = '    '
 
     if cursor.spelling == 'fz_warn':
@@ -411,12 +463,24 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
         out.write(      f'    }}\n')
 
     if cursor.spelling == 'fz_warn':
+        assert not lock_args
         if use_fz_try:
             out.write(      f'    fz_always(auto_ctx) {{\n')
             out.write(      f'        va_end(ap);\n')
             out.write(      f'    }}\n')
         else:
             out.write(      f'    va_end(ap);\n')
+
+    if lock_args:
+        if use_fz_try:
+            out.write(f'    fz_always(auto_ctx) {{\n')
+        out.write(f'        /* Unlock the mutexes. */\n')
+        out.write(f'        for (std::mutex** m=mutexes; m!=mutexes_end; ++m)\n')
+        out.write(f'        {{\n')
+        out.write(f'            (*m)->unlock();\n')
+        out.write(f'        }}\n')
+        if use_fz_try:
+            out.write(f'    }}\n')
 
     if uses_fz_context and use_fz_try:
         out.write(      f'    fz_catch(auto_ctx) {{\n')
@@ -487,6 +551,17 @@ class Generated:
         Saves state to .pickle file, to be loaded later via pickle.load().
         '''
         to_pickle( self, f'{dirpath}/generated.pickle')
+
+
+def lock_arg_type():
+    return 'bool'
+
+def lock_arg_name():
+    return 'fzlocked'
+
+def lock_arg_default():
+    return 'false'
+
 
 
 def make_outparam_helper(
@@ -897,6 +972,9 @@ def function_wrapper(
     if cursor.type.is_function_variadic():
         name_args_h += f'{comma}...'
         name_args_cpp += f'{comma}...'
+    else:
+        name_args_h += f'{comma}{lock_arg_type()} {lock_arg_name()}={lock_arg_default()}'
+        name_args_cpp += f'{comma}{lock_arg_type()} {lock_arg_name()}'
 
     name_args_h += ')'
     name_args_cpp += ')'
@@ -1631,6 +1709,21 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                     {rename.internal('check_ndebug0')}(false);
                 #endif
             }}
+
+            /* The following functions return the std::mutex to be locked while
+            using the specified objects. */
+
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_document* document)    {{ return (document) ? (std::mutex*) document->external_mutex : nullptr; }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_device* device)        {{ return (device) ? (std::mutex*) device->external_mutex : nullptr; }}
+
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_page* p)       {{ return internal_get_mutex(ctx, p->doc); }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_document* d)  {{ return internal_get_mutex(ctx, &d->super); }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_page* p)      {{ return internal_get_mutex(ctx, &p->super); }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_annot* a)     {{ return internal_get_mutex(ctx, pdf_annot_page(ctx, a)); }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_obj* o)       {{ return internal_get_mutex(ctx, pdf_get_bound_document(ctx, o)); }}
+
+            FZ_DATA extern bool internal_use_locking;
+
             '''
             ))
 
@@ -1639,6 +1732,8 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
             '''
             #include "mupdf/exceptions.h"
             #include "mupdf/internal.h"
+            #include "mupdf/fitz.h"
+            #include "mupdf/pdf.h"
 
             #include <iostream>
             #include <thread>
@@ -1720,6 +1815,8 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                     m_locks.user = this;
                     m_locks.lock = lock;
                     m_locks.unlock = unlock;
+                    m_locks.create_external_mutex = create_mutex;
+                    m_locks.destroy_external_mutex = destroy_mutex;
                     m_ctx = nullptr;
                     bool multithreaded = true;
                     const char* s = getenv( "MUPDF_mt_ctx");
@@ -1737,6 +1834,7 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                     }}
                     fz_drop_context( m_ctx);
                     m_multithreaded = multithreaded;
+                    internal_use_locking = multithreaded;
                     if (s_trace)
                     {{
                         std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): "
@@ -1767,6 +1865,19 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                     {rename.internal("state")}*    self = ({rename.internal("state")}*) user;
                     internal_assert( self->m_multithreaded);
                     self->m_mutexes[lock].unlock();
+                }}
+                static void* create_mutex(void*)
+                {{
+                    if (!internal_use_locking)
+                        return nullptr;
+                    void* ret = new std::mutex;
+                    //std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): " << " returning " << ret << "\\n";
+                    return ret;
+                }}
+                static void destroy_mutex(void*, void* mutex)
+                {{
+                    //std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): " << " freeing " << mutex << "\\n";
+                    delete (std::mutex*) mutex;
                 }}
                 ~{rename.internal("state")}()
                 {{
@@ -1901,6 +2012,18 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                 }}
                 s_state.reinit( false /*multithreaded*/);
             }}
+
+            bool internal_use_locking;
+
+            FZ_FUNCTION void use_locking(bool yes)
+            {{
+                if (0)
+                {{
+                    std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): Reinitialising as single-threaded.\\n";
+                }}
+                internal_use_locking = yes;
+            }}
+
             ''')
     out_cpp.write( cpp_text)
 
@@ -2789,6 +2912,7 @@ def num_instances(refcheck_if, delta, name):
     to update the class static `s_num_instances` variable.
     '''
     ret = ''
+    return ret
     ret += f'    {refcheck_if}\n'
     if delta == +1:
         ret += '    ++s_num_instances;\n'
@@ -3159,6 +3283,7 @@ def function_wrapper_class_aware_body(
                     state.state_.show_details(fnname),
                     )
             sep = ', '
+        out_cpp.write(f'{sep}{lock_arg_name()}')
         out_cpp.write( f');\n')
 
         if state.state_.show_details(fnname):
@@ -3423,6 +3548,9 @@ def function_wrapper_class_aware(
     if fn_cursor.type.is_function_variadic():
         decl_h += f'{comma}...'
         decl_cpp += f'{comma}...'
+    else:
+        decl_h += f'{comma}{lock_arg_type()} {lock_arg_name()}={lock_arg_default()}'
+        decl_cpp += f'{comma}{lock_arg_type()} {lock_arg_name()}'
 
     decl_h += ')'
     decl_cpp += ')'
@@ -5619,7 +5747,13 @@ def cpp_source(
 
     out_hs.internal.write( textwrap.dedent(
             '''
+            #include <algorithm>
             #include <iostream>
+            #include <map>
+            #include <mutex>
+
+            #include "mupdf/fitz.h"
+            #include "mupdf/pdf.h"
 
             '''))
 
@@ -5977,6 +6111,8 @@ def cpp_source(
             This should be called before any other use of MuPDF.
             */
             FZ_FUNCTION void reinit_singlethreaded();
+
+            FZ_FUNCTION void use_locking(bool yes);
 
             '''))
 
