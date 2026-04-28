@@ -34,7 +34,11 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 		return 0;
 
 	fz_try(ctx)
-		entry = pdf_cache_object(ctx, doc, num);
+	{
+		entry = pdf_get_xref_entry(ctx, doc, num);
+		if (entry && entry->type == 'n')
+			entry = pdf_cache_object(ctx, doc, num);
+	}
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
@@ -44,7 +48,7 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num)
 	}
 
 	if (entry)
-		return entry->stm_ofs != 0 || entry->stm_buf;
+		return entry->type == 'n' && (entry->stm_ofs != 0 || entry->stm_buf);
 	return 0;
 }
 
