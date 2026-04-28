@@ -537,7 +537,7 @@ fz_lookup_option_integer(fz_context *ctx, fz_options *options, const char *key, 
 	{
 		opt->flags &= ~INVALID;
 		*x = v;
-	return 1;
+		return 1;
 	}
 	opt->flags |= INVALID; // not an integer
 	return -1;
