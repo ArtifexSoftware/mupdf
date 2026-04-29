@@ -999,16 +999,7 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out, fz_stext_xml_flag
 								fz_write_printf(ctx, out, "<font name=\"%s\"", name);
 							fz_write_printf(ctx, out, " size=\"%g\">\n", size);
 						}
-						fz_write_printf(ctx, out, "<char quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" alpha=\"#%02x\" flags=\"%d\" c=\"",
-								ch->quad.ul.x, ch->quad.ul.y,
-								ch->quad.ur.x, ch->quad.ur.y,
-								ch->quad.ll.x, ch->quad.ll.y,
-								ch->quad.lr.x, ch->quad.lr.y,
-								ch->origin.x, ch->origin.y,
-								ch->bidi,
-								ch->argb & 0xFFFFFF,
-								ch->argb>>24,
-								ch->flags);
+						fz_write_printf(ctx, out, "<char c=\"");
 						xml_write_char(ctx, out, ch->c);
 						if (!fz_is_valid_xml_char(ch->c))
 						{
@@ -1018,7 +1009,16 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out, fz_stext_xml_flag
 							for (i = 0; i < n; i++)
 								fz_write_printf(ctx, out, "%02x", text[i]);
 						}
-						fz_write_string(ctx, out, "\"/>\n");
+						fz_write_printf(ctx, out, "\" quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" alpha=\"#%02x\" flags=\"%d\"/>\n",
+								ch->quad.ul.x, ch->quad.ul.y,
+								ch->quad.ur.x, ch->quad.ur.y,
+								ch->quad.ll.x, ch->quad.ll.y,
+								ch->quad.lr.x, ch->quad.lr.y,
+								ch->origin.x, ch->origin.y,
+								ch->bidi,
+								ch->argb & 0xFFFFFF,
+								ch->argb>>24,
+								ch->flags);
 					}
 
 					if (font)
