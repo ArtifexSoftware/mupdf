@@ -811,7 +811,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		cur_block = NULL;
 	cur_line = cur_block ? cur_block->u.t.last_line : NULL;
 
-	/* We use glyph == -2 to indicate a no-glyph char from an actualtext. The position
+	/* We use glyph == -2 to indicate the first no-glyph char from an actualtext. The position
 	 * is valid though, so we want to advance the pen for these. */
 	if (cur_line && glyph == -1)
 	{
@@ -1207,6 +1207,8 @@ rune_index(const char *utf8, size_t idx)
 static void
 flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, int i, int end)
 {
+	int glyph = -2;
+
 	if (*actualtext == 0)
 		return;
 
@@ -1227,7 +1229,7 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 
 		fz_add_stext_char(ctx, dev, dev->last.font,
 			rune,
-			-2,
+			glyph,
 			dev->last.trm,
 			0,
 			dev->last.wmode,
@@ -1235,6 +1237,8 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 			(i == 0) && (dev->flags & FZ_STEXT_PRESERVE_SPANS),
 			dev->last.flags);
 		i++;
+
+		glyph = -1; /* -1 for all but first glyph in the actualtext run */
 	}
 }
 
