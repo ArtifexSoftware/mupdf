@@ -1205,7 +1205,7 @@ rune_index(const char *utf8, size_t idx)
 }
 
 static void
-flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, int i, int end, float adv)
+flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, int i, int end)
 {
 	if (*actualtext == 0)
 		return;
@@ -1216,25 +1216,6 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 	if (dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT))
 		if (dev->last.clipped)
 			return;
-
-	if (adv != 0)
-	{
-		const char *at = actualtext;
-		int j = i;
-
-		while (end < 0 || (end >= 0 && i < end))
-		{
-			int rune;
-			at += fz_chartorune(&rune, at);
-
-			if (rune == 0)
-				break;
-			j++;
-		}
-
-		if (j != i)
-			adv /= (j - i);
-	}
 
 	while (end < 0 || (end >= 0 && i < end))
 	{
@@ -1248,7 +1229,7 @@ flush_actualtext(fz_context *ctx, fz_stext_device *dev, const char *actualtext, 
 			rune,
 			-2,
 			dev->last.trm,
-			adv,
+			0,
 			dev->last.wmode,
 			dev->last.bidi_level,
 			(i == 0) && (dev->flags & FZ_STEXT_PRESERVE_SPANS),
@@ -1393,7 +1374,7 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 
 	/* We found a matching postfix. It seems likely that this is going to be the only
 	 * text object we get, so send any remaining actualtext now. */
-	flush_actualtext(ctx, dev, actualtext, i, i + (int)strlen(actualtext) - (span->len - end), 0);
+	flush_actualtext(ctx, dev, actualtext, i, i + (int)strlen(actualtext) - (span->len - end));
 
 	/* Send the postfix */
 	if (end != span->len)
@@ -1512,7 +1493,7 @@ fz_stext_begin_metatext(fz_context *ctx, fz_device *dev, fz_metatext meta, const
 	char *new_text = NULL;
 
 	if (mt != NULL && meta == FZ_METATEXT_ACTUALTEXT)
-		flush_actualtext(ctx, tdev, mt->text, 0, -1, 0);
+		flush_actualtext(ctx, tdev, mt->text, 0, -1);
 
 	if (meta == FZ_METATEXT_ACTUALTEXT)
 		tdev->last.valid = 0;
@@ -1577,7 +1558,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 		tdev->last.trm.e = tdev->pen.x;
 		tdev->last.trm.f = tdev->pen.y;
 
-		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1, 0);
+		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1);
 		pop_metatext(ctx, tdev);
 		tdev->last.valid = 0;
 		return;
@@ -1611,7 +1592,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 			myfont = fz_new_base14_font(ctx, "Helvetica");
 			tdev->last.font = myfont;
 		}
-		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1, 1);
+		flush_actualtext(ctx, tdev, tdev->metatext->text, 0, -1);
 		pop_metatext(ctx, tdev);
 	}
 	fz_always(ctx)
