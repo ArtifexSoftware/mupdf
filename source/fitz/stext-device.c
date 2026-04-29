@@ -792,7 +792,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	if ((dev->opts.flags & FZ_STEXT_COLLECT_STYLES) != 0)
 	{
-		if (glyph == -1)
+		if (glyph < 0)
 		{
 			if (dev->last_was_fake_bold)
 				return;
