@@ -1279,9 +1279,9 @@ do_extract_within_actualtext(fz_context *ctx, fz_stext_device *dev, fz_text_span
 
 	/* Now, we HOPE that the creator of a PDF will minimise the actual text
 	 * differences, so that we'll get:
-	 *   "Politicians <Actualtext="lie">fib</ActualText>, always."
+	 *   "Politicians <ActualText="lie">fib</ActualText>, always."
 	 * rather than:
-	 *   "<Actualtext="Politicians lie, always">Politicians fib, always.</ActualText>
+	 *   "<ActualText="Politicians lie, always">Politicians fib, always.</ActualText>
 	 * but experience with PDF files tells us that this won't always be the case.
 	 *
 	 * We try to minimise the actualtext section here, just in case.
@@ -1588,7 +1588,7 @@ fz_stext_end_metatext(fz_context *ctx, fz_device *dev)
 	if (fz_is_empty_rect(tdev->metatext->bounds))
 	{
 		if ((dev->flags & (FZ_STEXT_CLIP | FZ_STEXT_CLIP_RECT)) == 0 && tdev->metatext->text[0])
-			fz_warn(ctx, "Actualtext with no position. Text may be lost or mispositioned.");
+			fz_warn(ctx, "ActualText with no position. Text may be lost or mispositioned.");
 		pop_metatext(ctx, tdev);
 		return;
 	}
