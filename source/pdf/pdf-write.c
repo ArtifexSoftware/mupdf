@@ -2629,8 +2629,13 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		/* First, we do a prepass across the document to load all the objects
 		 * into memory. We'll end up doing this later on anyway, but by doing
 		 * it here, we force any repairs to happen before writing proper
-		 * starts. */
-		pdf_check_document(ctx, doc);
+		 * starts.
+		 *
+		 * Note that we can skip this step when saving incrementally, because in
+		 * that case we only touch new objects which we know cannot trigger a repair.
+		 */
+		if (!in_opts->do_incremental)
+			pdf_check_document(ctx, doc);
 
 		xref_len = pdf_xref_len(ctx, doc);
 
