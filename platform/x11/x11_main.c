@@ -130,6 +130,7 @@ static int showingpage = 0;
 static int showingmessage = 0;
 
 static int advance_scheduled = 0;
+static int start_fullscreen = 0;
 static struct timeval tmo;
 static struct timeval tmo_advance;
 static struct timeval tmo_at;
@@ -896,6 +897,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-b -\temulate progressive loading (kbps)\n");
 #endif
 	fprintf(stderr, "\t-v\tshow version\n");
+	fprintf(stderr, "\t-f\tstart in fullscreen mode\n");
 	exit(1);
 }
 
@@ -934,7 +936,7 @@ int main(int argc, char **argv)
 
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:Xb:c:v")) != -1)
+	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:Xb:c:vf")) != -1)
 	{
 		switch (c)
 		{
@@ -955,6 +957,7 @@ int main(int argc, char **argv)
 		case 'X': gapp.layout_use_doc_css = 0; break;
 		case 'b': kbps = fz_atoi(fz_optarg); break;
 		case 'v': version(); break;
+		case 'f': start_fullscreen = 1; break;
 		default: usage(argv[0]); break;
 		}
 	}
@@ -994,6 +997,9 @@ int main(int argc, char **argv)
 		pdfapp_open_progressive(&gapp, filename, 0, kbps);
 	else
 		pdfapp_open(&gapp, filename, 0);
+
+	if (start_fullscreen)
+		winfullscreen(&gapp, 1);
 
 	FD_ZERO(&fds);
 
