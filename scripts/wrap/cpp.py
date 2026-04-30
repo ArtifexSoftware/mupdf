@@ -2827,16 +2827,21 @@ def function_name_implies_kept_references( fnname):
     if fnname in (
             'pdf_page_write',
             'fz_decomp_image_from_stream',
-            'fz_get_pixmap_from_image',
+            'fz_draw_page_culling_text',
+            'fz_draw_page_culling_text2',
             ):
         return True
     for i in (
             'add',
+            'clone',
             'convert',
             'copy',
             'create',
             'deep_copy',
+            'deskew',
             'find',
+            'get_pixmap',
+            'get_unscaled_pixmap',
             'graft',
             'keep',
             'load',
@@ -3023,8 +3028,8 @@ def function_wrapper_class_aware_body(
                 jlib.log('{=prefix}')
             if prefix:
                 if function_name_implies_kept_references( fnname):
-                    pass
                     #out_cpp.write( f'    /* We assume that {fnname} returns a kept reference. */\n')
+                    pass
                 else:
                     if state.state_.show_details(fnname):
                         jlib.log('{=classname fnname constructor} Assuming that {fnname=} returns a borrowed reference.')
