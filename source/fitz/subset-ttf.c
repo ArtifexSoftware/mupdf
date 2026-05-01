@@ -1084,7 +1084,12 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 
 	/* If this glyf is composite, then we need to add any dependencies of it. */
 	offset = get_loca(ctx, ttf, i);
-	len = get_loca(ctx, ttf, i+1) - offset;
+	{
+		uint32_t next_offset = get_loca(ctx, ttf, i+1);
+		if (next_offset < offset)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Non-monotonic loca table");
+		len = next_offset - offset;
+	}
 	if (len == 0)
 		return;
 	if (offset+2 > glyf->len)
