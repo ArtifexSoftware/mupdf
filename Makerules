@@ -217,9 +217,9 @@ ifneq "$(CLUSTER)" ""
 endif
 
 ifeq ($(OS),Darwin)
-  HAVE_GLUT := yes
-  SYS_GLUT_CFLAGS := -Wno-deprecated-declarations
-  SYS_GLUT_LIBS := -framework GLUT -framework OpenGL
+  HAVE_GLFW := yes
+  SYS_GLFW_CFLAGS :=
+  SYS_GLFW_LIBS := -lglfw -framework OpenGL
   CC = xcrun cc
   AR = xcrun ar
   LD = xcrun ld
@@ -311,19 +311,14 @@ else
     SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
   endif
 
-  ifeq ($(HAVE_GLUT),)
-    HAVE_GLUT := $(shell pkg-config --exists gl x11 xrandr && echo yes)
+  ifeq ($(HAVE_GLFW),)
+    HAVE_GLFW := $(shell pkg-config --exists glfw3 gl && echo yes)
   endif
-  ifeq ($(HAVE_GLUT),yes)
-    SYS_GL_CFLAGS := $(shell pkg-config --cflags gl x11 xrandr)
-    SYS_GL_LIBS := $(shell pkg-config --libs gl x11 xrandr)
-    ifeq ($(shell pkg-config --exists glut && echo yes),yes)
-      SYS_GLUT_CFLAGS := $(shell pkg-config --cflags glut)
-      SYS_GLUT_LIBS := $(shell pkg-config --libs glut)
-    else
-      SYS_GLUT_CFLAGS :=
-      SYS_GLUT_LIBS := -lglut
-    endif
+  ifeq ($(HAVE_GLFW),yes)
+    SYS_GLFW_CFLAGS := $(shell pkg-config --cflags glfw3)
+    SYS_GLFW_LIBS := $(shell pkg-config --libs glfw3)
+    SYS_GL_CFLAGS := $(shell pkg-config --cflags gl)
+    SYS_GL_LIBS := $(shell pkg-config --libs gl)
   endif
 
   ifeq ($(HAVE_X11),)
@@ -363,7 +358,7 @@ ifeq "$(OS)" "wasm"
   CC = emcc
   CXX = em++
   AR = emar
-  HAVE_GLUT=no
+  HAVE_GLFW=no
   HAVE_X11=no
   HAVE_OBJCOPY=no
   HAVE_LIBCRYPTO=no
@@ -377,7 +372,7 @@ ifeq "$(OS)" "wasm-mt"
   CC = emcc
   CXX = em++
   AR = emar
-  HAVE_GLUT=no
+  HAVE_GLFW=no
   HAVE_X11=no
   HAVE_OBJCOPY=no
   HAVE_LIBCRYPTO=no
@@ -391,7 +386,7 @@ ifeq "$(OS)" "pyodide"
   build_prefix += $(OS)/
   # We use the provided $CC and $CXX.
   AR = emar
-  HAVE_GLUT=no
+  HAVE_GLFW=no
   HAVE_X11=no
   HAVE_OBJCOPY=no
   HAVE_LIBCRYPTO=no

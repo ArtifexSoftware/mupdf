@@ -386,7 +386,7 @@ int ui_open_file(char *filename_, const char *label)
 				}
 				else
 				{
-					int click_time = glutGet(GLUT_ELAPSED_TIME);
+					int click_time = (int)ui_get_time_ms();
 					if (i == last_click_sel && click_time < last_click_time + 250)
 					{
 						fz_snprintf(filename_, PATH_MAX, "%s/%s", fc.curdir, name);

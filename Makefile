@@ -125,7 +125,7 @@ $(OUT)/platform/x11/curl/%.o : platform/x11/%.c
 	$(CC_CMD) $(WARNING_CFLAGS) $(X11_CFLAGS) $(CURL_CFLAGS)
 
 $(OUT)/platform/gl/%.o : platform/gl/%.c
-	$(CC_CMD) $(WARNING_CFLAGS) $(THIRD_CFLAGS) $(THIRD_GLUT_CFLAGS)
+	$(CC_CMD) $(WARNING_CFLAGS) $(THIRD_CFLAGS) $(GLFW_CFLAGS)
 
 ifeq ($(HAVE_OBJCOPY),yes)
   $(OUT)/source/fitz/noto.o : source/fitz/noto.c
@@ -171,8 +171,6 @@ $(OUT)/platform/%.o : platform/%.c
 THIRD_OBJ := $(THIRD_SRC:%.c=$(OUT)/%.o)
 THIRD_OBJ := $(THIRD_OBJ:%.cc=$(OUT)/%.o)
 THIRD_OBJ := $(THIRD_OBJ:%.cpp=$(OUT)/%.o)
-
-THIRD_GLUT_OBJ := $(THIRD_GLUT_SRC:%.c=$(OUT)/%.o)
 
 MUPDF_SRC := $(sort $(wildcard source/fitz/*.c))
 MUPDF_SRC += $(sort $(wildcard source/fitz/*.cpp))
@@ -351,11 +349,6 @@ else
   $(THIRD_LIB) : $(THIRD_OBJ)
 endif
 
-ifneq ($(USE_SYSTEM_GLUT),yes)
-  THIRD_GLUT_LIB = $(OUT)/libmupdf-glut.a
-  $(THIRD_GLUT_LIB) : $(THIRD_GLUT_OBJ)
-endif
-
 THREAD_LIB = $(OUT)/libmupdf-threads.a
 $(THREAD_LIB) : $(THREAD_OBJ)
 
@@ -385,13 +378,13 @@ $(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB) $(THREA
 	$(LINK_CMD) $(THIRD_LIBS) $(THREADING_LIBS) $(LIBCRYPTO_LIBS)
 EXTRA_TOOL_APPS += $(MURASTER_EXE)
 
-ifeq ($(HAVE_GLUT),yes)
-  MUVIEW_GLUT_SRC += $(sort $(wildcard platform/gl/*.c))
-  MUVIEW_GLUT_OBJ := $(MUVIEW_GLUT_SRC:%.c=$(OUT)/%.o)
-  MUVIEW_GLUT_EXE := $(OUT)/mupdf-gl
-  $(MUVIEW_GLUT_EXE) : $(MUVIEW_GLUT_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THIRD_GLUT_LIB) $(PKCS7_LIB)
-	$(LINK_CMD) $(THIRD_LIBS) $(LIBCRYPTO_LIBS) $(THIRD_GLUT_LIBS)
-  VIEW_APPS += $(MUVIEW_GLUT_EXE)
+ifeq ($(HAVE_GLFW),yes)
+  MUVIEW_GLFW_SRC += $(sort $(wildcard platform/gl/*.c))
+  MUVIEW_GLFW_OBJ := $(MUVIEW_GLFW_SRC:%.c=$(OUT)/%.o)
+  MUVIEW_GLFW_EXE := $(OUT)/mupdf-gl
+  $(MUVIEW_GLFW_EXE) : $(MUVIEW_GLFW_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(PKCS7_LIB)
+	$(LINK_CMD) $(EXE_LDFLAGS) $(THIRD_LIBS) $(LIBCRYPTO_LIBS) $(GLFW_LIBS)
+  VIEW_APPS += $(MUVIEW_GLFW_EXE)
 endif
 
 ifeq ($(HAVE_X11),yes)
@@ -426,10 +419,9 @@ endif
 -include $(PKCS7_OBJ:%.o=%.d)
 -include $(THREAD_OBJ:%.o=%.d)
 -include $(THIRD_OBJ:%.o=%.d)
--include $(THIRD_GLUT_OBJ:%.o=%.d)
 
 -include $(MUTOOL_OBJ:%.o=%.d)
--include $(MUVIEW_GLUT_OBJ:%.o=%.d)
+-include $(MUVIEW_GLFW_OBJ:%.o=%.d)
 -include $(MUVIEW_X11_OBJ:%.o=%.d)
 
 -include $(MURASTER_OBJ:%.o=%.d)
@@ -470,7 +462,6 @@ pydir ?= $(shell python3 -c "import sysconfig; print(sysconfig.get_path('platlib
 SO_INSTALL_MODE ?= 644
 
 third: $(THIRD_LIB)
-extra-libs: $(THIRD_GLUT_LIB)
 libs: $(MUPDF_LIB) $(THIRD_LIB) $(COMMERCIAL_LIBS)
 commercial-libs: $(COMMERCIAL_LIBS)
 tools: $(TOOL_APPS)
