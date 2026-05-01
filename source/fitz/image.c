@@ -861,6 +861,7 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 
 				len = fz_read(ctx, unpstream, keyed->samples, keyed->stride * keyed->h);
 				assert(len == (size_t) keyed->stride * keyed->h);
+				(void) len; /* Silence warning in release builds */
 
 				fz_mask_color_key(ctx, keyed, tile->n, 8, image->super.colorkey, indexed);
 			}
