@@ -53,7 +53,7 @@ pdf_obj *pdf_new_string(fz_context *ctx, const char *str, size_t len);
 	In theory, we could also use PDFDocEncoding.
 */
 pdf_obj *pdf_new_text_string(fz_context *ctx, const char *s);
-pdf_obj *pdf_new_indirect(fz_context *ctx, pdf_document *doc, int num, int gen);
+pdf_obj *pdf_new_indirect(fz_context *ctx, pdf_document *doc, int64_t num, int gen);
 pdf_obj *pdf_new_array(fz_context *ctx, pdf_document *doc, int initialcap);
 pdf_obj *pdf_new_dict(fz_context *ctx, pdf_document *doc, int initialcap);
 pdf_obj *pdf_new_point(fz_context *ctx, pdf_document *doc, fz_point point);

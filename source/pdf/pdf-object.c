@@ -241,12 +241,12 @@ pdf_new_name(fz_context *ctx, const char *str)
 }
 
 pdf_obj *
-pdf_new_indirect(fz_context *ctx, pdf_document *doc, int num, int gen)
+pdf_new_indirect(fz_context *ctx, pdf_document *doc, int64_t num, int gen)
 {
 	pdf_obj_ref *obj;
 	if (num < 0 || num > PDF_MAX_OBJECT_NUMBER)
 	{
-		fz_warn(ctx, "invalid object number (%d)", num);
+		fz_warn(ctx, "invalid object number (%ld)", num);
 		return PDF_NULL;
 	}
 	if (gen < 0 || gen > PDF_MAX_GEN_NUMBER)
