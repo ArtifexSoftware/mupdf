@@ -1113,7 +1113,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
  */
 
 static pdf_gstate *
-pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int force_flush)
+pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int flush_clip)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	fz_text *text;
@@ -1124,11 +1124,10 @@ pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int force_flush)
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
 
-	/* Don't flush if we're accumulating text in a clip path. */
-	if (!force_flush && (pr->tos.text_mode & 4))
-		return gstate;
-
-	text = pdf_tos_get_text(ctx, &pr->tos);
+	if (flush_clip)
+		text = pdf_tos_get_clip_text(ctx, &pr->tos);
+	else
+		text = pdf_tos_get_text(ctx, &pr->tos);
 	if (!text)
 		return gstate;
 
@@ -1149,6 +1148,11 @@ pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int force_flush)
 	case 6: dofill = dostroke = doclip = 1; break;
 	case 7: doclip = 1; break;
 	}
+
+	if (flush_clip)
+		dostroke = dofill = 0;
+	else
+		doclip = 0;
 
 	if (pr->super.hidden)
 		dostroke = dofill = 0;
@@ -1278,6 +1282,12 @@ static inline pdf_gstate *
 pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 {
 	return pdf_flush_text_imp(ctx, pr, 0);
+}
+
+static inline pdf_gstate *
+pdf_flush_clip_text(fz_context *ctx, pdf_run_processor *pr)
+{
+	return pdf_flush_text_imp(ctx, pr, 1);
 }
 
 static int
@@ -1427,6 +1437,13 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 
 	/* add glyph to textobject */
 	fz_show_glyph_aux(ctx, pr->tos.text, fontdesc->font, trm, adv, gid, ucsbuf[0], cid, fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
+
+	/* add glyph to clip accumulator */
+	if (pr->tos.text_mode & 4)
+	{
+		pdf_tos_accumulate_clip(ctx, &pr->tos);
+		fz_show_glyph_aux(ctx, pr->tos.clip_text, fontdesc->font, trm, adv, gid, ucsbuf[0], cid, fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
+	}
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
@@ -2751,6 +2768,16 @@ static void pdf_run_cm(fz_context *ctx, pdf_processor *proc, float a, float b, f
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
 	fz_matrix m;
 
+	if (pr->tos.clip_text)
+	{
+		// FIXME: We can't handle changing CTM while accumulating text clips!
+		// To do so we would need to retroactively change the TRM to apply the CTM change
+		// to glyphs in the current clip_text object. Fortunately we have never seen
+		// any files that would require this to happen.
+		fz_warn(ctx, "ignoring CTM change for accumulated glyph clip paths");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "CTM CHANGE IN CLIP TEXT!!!");
+	}
+
 	m.a = a;
 	m.b = b;
 	m.c = c;
@@ -2896,7 +2923,8 @@ static void pdf_run_BT(fz_context *ctx, pdf_processor *proc)
 static void pdf_run_ET(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	pdf_flush_text_imp(ctx, pr, 1);
+	pdf_flush_text(ctx, pr);
+	pdf_flush_clip_text(ctx, pr);
 }
 
 /* text state */
@@ -3284,6 +3312,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 
 	fz_drop_path(ctx, pr->path);
 	fz_drop_text(ctx, pr->tos.text);
+	fz_drop_text(ctx, pr->tos.clip_text);
 
 	fz_drop_default_colorspaces(ctx, pr->default_cs);
 

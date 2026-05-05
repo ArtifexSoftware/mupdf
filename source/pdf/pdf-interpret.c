@@ -1991,12 +1991,27 @@ pdf_tos_get_text(fz_context *ctx, pdf_text_object_state *tos)
 	return text;
 }
 
+fz_text *
+pdf_tos_get_clip_text(fz_context *ctx, pdf_text_object_state *tos)
+{
+	fz_text *text = tos->clip_text;
+	tos->clip_text = NULL;
+	return text;
+}
+
 void
 pdf_tos_reset(fz_context *ctx, pdf_text_object_state *tos, int render)
 {
 	tos->text = fz_new_text(ctx);
 	tos->text_mode = render;
 	tos->text_bbox = fz_empty_rect;
+}
+
+void
+pdf_tos_accumulate_clip(fz_context *ctx, pdf_text_object_state *tos)
+{
+	if (tos->clip_text == NULL)
+		tos->clip_text = fz_new_text(ctx);
 }
 
 int

@@ -2853,6 +2853,9 @@ pdf_drop_sanitize_processor(fz_context *ctx, pdf_processor *proc)
 	while (p->current_tags)
 		pop_tag(ctx, p, &p->current_tags);
 
+	fz_drop_text(ctx, p->tos.text);
+	fz_drop_text(ctx, p->tos.clip_text);
+
 	fz_drop_path(ctx, p->path);
 	pdf_drop_obj(ctx, p->structarray);
 	pdf_drop_document(ctx, p->doc);
