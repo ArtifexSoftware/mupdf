@@ -1347,6 +1347,13 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	if (fontdesc->font->t3procs && pr->tos.text_mode != 3)
 		pr->tos.text_mode = 0;
 
+	/* Colored Type3 glyphs shall not be rendered with pattern fills. */
+	if (fontdesc->font->t3procs && (fontdesc->font->t3flags[gid] & FZ_DEVFLAG_COLOR))
+	{
+		if (gstate->fill.kind != PDF_MAT_COLOR)
+			render_direct = 1;
+	}
+
 	if (render_direct && pr->tos.text_mode != 3 /* or 7, by type3_hitr */)
 	{
 		/* Render the glyph stream direct here (only happens for

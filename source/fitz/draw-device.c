@@ -1354,7 +1354,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 				tm.f = span->items[i].y;
 				trm = fz_concat(tm, ctm);
 
-				glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state[1].dest->alpha, fz_rasterizer_text_aa_level(rast));
+				glyph = fz_render_glyph(ctx, span->font, gid, &trm, NULL, &state->scissor, state[1].dest->alpha, fz_rasterizer_text_aa_level(rast));
 				if (glyph)
 				{
 					int x = (int)trm.e;
