@@ -1132,8 +1132,14 @@ g_extra_declarations = textwrap.dedent(f'''
         /** Swig-friendly wrapper for fz_new_culling_device_with_rects(). */
         fz_device *fz_new_culling_device_with_rects2(fz_context *ctx, fz_device *passthrough, const std::vector<fz_rect>& rects);
 
-        /** Swig-friendly wrapper for fz_draw_page_culling_text(). */
-        fz_pixmap *fz_draw_page_culling_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects);
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_culling_text(). */
+        fz_pixmap *fz_new_pixmap_from_page_culling_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects);
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_number_culling_text(). */
+        fz_pixmap *fz_new_pixmap_from_page_number_culling_text2(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects);
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_display_list_culling_text(). */
+        fz_pixmap *fz_new_pixmap_from_display_list_culling_text2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1405,10 +1411,22 @@ g_extra_definitions = textwrap.dedent(f'''
             return fz_new_culling_device_with_rects(ctx, passthrough, rects.size(), &rects[0]);
         }}
 
-        /** Swig-friendly wrapper for fz_draw_page_culling_text(). */
-        fz_pixmap *fz_draw_page_culling_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, const std::vector<fz_rect>& rects)
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_culling_text(). */
+        fz_pixmap *fz_new_pixmap_from_page_culling_text2(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects)
         {{
-            return fz_draw_page_culling_text(ctx, page, ctm, rects.size(), &rects[0]);
+            return fz_new_pixmap_from_page_culling_text(ctx, page, ctm, cs, alpha, rects.size(), &rects[0]);
+        }}
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_number_culling_text(). */
+        fz_pixmap *fz_new_pixmap_from_page_number_culling_text2(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects)
+        {{
+            return fz_new_pixmap_from_page_number_culling_text(ctx, doc, number, ctm, cs, alpha, rects.size(), &rects[0]);
+        }}
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_display_list_culling_text(). */
+        fz_pixmap *fz_new_pixmap_from_display_list_culling_text2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects)
+        {{
+            return fz_new_pixmap_from_display_list_culling_text(ctx, list, ctm, cs, alpha, rects.size(), &rects[0]);
         }}
         ''')
 
@@ -2827,8 +2845,6 @@ def function_name_implies_kept_references( fnname):
     if fnname in (
             'pdf_page_write',
             'fz_decomp_image_from_stream',
-            'fz_draw_page_culling_text',
-            'fz_draw_page_culling_text2',
             ):
         return True
     for i in (

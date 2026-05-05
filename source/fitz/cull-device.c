@@ -308,15 +308,30 @@ fz_new_culling_device_with_rects(fz_context *ctx, fz_device *passthrough, int n,
 	return dev;
 }
 
+fz_pixmap *fz_new_pixmap_from_page_number_culling_text(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+{
+	fz_page *page;
+	fz_pixmap *pix = NULL;
+
+	page = fz_load_page(ctx, doc, number);
+	fz_try(ctx)
+		pix = fz_new_pixmap_from_page_culling_text(ctx, page, ctm, cs, alpha, n, rects);
+	fz_always(ctx)
+		fz_drop_page(ctx, page);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return pix;
+}
+
 fz_pixmap *
-fz_draw_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, int n, const fz_rect *rects)
+fz_new_pixmap_from_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
 {
 	fz_device *draw_dev = NULL;
 	fz_device *cull_dev = NULL;
 	fz_rect bounds = fz_bound_page(ctx, page);
 	fz_rect tbounds = fz_transform_rect(bounds, ctm);
 	fz_irect itbounds = fz_irect_from_rect(tbounds);
-	fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), itbounds, NULL, 0);
+	fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, cs, itbounds, NULL, alpha);
 
 	fz_var(draw_dev);
 	fz_var(cull_dev);
@@ -328,6 +343,39 @@ fz_draw_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, int n, 
 		cull_dev = fz_new_culling_device_with_rects(ctx, draw_dev, n, rects);
 
 		fz_run_page(ctx, page, cull_dev, fz_identity, NULL);
+		fz_close_device(ctx, cull_dev);
+		fz_close_device(ctx, draw_dev);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, cull_dev);
+		fz_drop_device(ctx, draw_dev);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return pix;
+}
+
+fz_pixmap *fz_new_pixmap_from_display_list_culling_text(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+{
+	fz_device *draw_dev = NULL;
+	fz_device *cull_dev = NULL;
+	fz_rect bounds = fz_bound_display_list(ctx, list);
+	fz_rect tbounds = fz_transform_rect(bounds, ctm);
+	fz_irect itbounds = fz_irect_from_rect(tbounds);
+	fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, cs, itbounds, NULL, alpha);
+
+	fz_var(draw_dev);
+	fz_var(cull_dev);
+
+	fz_try(ctx)
+	{
+		fz_clear_pixmap(ctx, pix);
+		draw_dev = fz_new_draw_device(ctx, ctm, pix);
+		cull_dev = fz_new_culling_device_with_rects(ctx, draw_dev, n, rects);
+
+		fz_run_display_list(ctx, list, cull_dev, fz_identity, fz_infinite_rect, NULL);
 		fz_close_device(ctx, cull_dev);
 		fz_close_device(ctx, draw_dev);
 	}

@@ -207,6 +207,8 @@ fz_buffer *fz_new_buffer_from_page_with_format(fz_context *ctx, fz_page *page, c
 /**
 	Returns a page rendered with text from the given rectangles culled.
 */
-fz_pixmap *fz_draw_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, int n, const fz_rect *rects);
+fz_pixmap *fz_new_pixmap_from_page_number_culling_text(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects);
+fz_pixmap *fz_new_pixmap_from_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects);
+fz_pixmap *fz_new_pixmap_from_display_list_culling_text(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects);
 
 #endif
