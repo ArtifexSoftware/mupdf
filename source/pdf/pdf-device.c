@@ -1166,7 +1166,6 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 
 	fz_try(ctx)
 	{
-		fz_append_string(ctx, gs->buf, "q\n");
 		pdf_dev_alpha(ctx, pdev, alpha, 0);
 		pdf_dev_color(ctx, pdev, colorspace, color, 0, color_params);
 
@@ -1174,7 +1173,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, fz_mat
 		ctm = fz_pre_scale(ctm, 1, -1);
 		ctm = fz_pre_translate(ctm, 0, -1);
 		pdf_dev_ctm(ctx, pdev, ctm);
-		fz_append_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
+		fz_append_printf(ctx, gs->buf, "/Img%d Do\n", pdf_to_num(ctx, im_res));
 
 		/* Possibly add to page resources */
 		pdf_dev_add_image_res(ctx, dev, im_res);
