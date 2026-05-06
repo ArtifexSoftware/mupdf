@@ -606,6 +606,8 @@ file_level_trailers(fz_context *ctx)
 		fz_write_printf(ctx, out, "</document>\n");
 	if (output_format == OUT_STEXT_JSON || output_format == OUT_OCR_STEXT_JSON)
 		fz_write_printf(ctx, out, "]}");
+	if (output_format == OUT_TEXT_FLAT)
+		fz_write_string(ctx, out, "\n");
 
 	if (output_format == OUT_HTML || output_format == OUT_OCR_HTML)
 		fz_print_stext_trailer_as_html(ctx, out);
@@ -920,13 +922,13 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else if (output_format == OUT_TEXT || output_format == OUT_OCR_TEXT)
 			{
 				fz_print_stext_page_as_text(ctx, out_, text);
-				fz_write_printf(ctx, out_, "\f\n");
+				fz_write_string(ctx, out_, "\f\n");
 			}
 			else if (output_format == OUT_TEXT_FLAT)
 			{
 				/* FIXME: At some point, we could get the flatten options from options maybe? */
 				buf = fz_new_buffer_from_flattened_stext_page(ctx, text, FZ_TEXT_FLATTEN_ALL, NULL);
-				fz_write_buffer(ctx, out, buf);
+				fz_write_buffer(ctx, out_, buf);
 			}
 		}
 		fz_always(ctx)
