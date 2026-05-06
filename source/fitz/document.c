@@ -37,10 +37,6 @@ enum
 	FZ_DOCUMENT_HANDLER_MAX = 32
 };
 
-#define DEFW (450)
-#define DEFH (600)
-#define DEFEM (12)
-
 static fz_output *
 fz_new_output_to_tempfile(fz_context *ctx, char **namep)
 {
@@ -643,7 +639,7 @@ fz_ensure_layout(fz_context *ctx, fz_document *doc)
 {
 	if (doc && doc->layout && !doc->did_layout)
 	{
-		doc->layout(ctx, doc, DEFW, DEFH, DEFEM);
+		doc->layout(ctx, doc, FZ_DEFAULT_LAYOUT_W, FZ_DEFAULT_LAYOUT_H, FZ_DEFAULT_LAYOUT_EM);
 		doc->did_layout = 1;
 	}
 }
