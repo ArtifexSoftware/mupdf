@@ -697,22 +697,29 @@ do_flatten(fz_context *ctx, fz_buffer *buf, fz_stext_position **map, fz_stext_pa
 					EMIT(NULL, '\n');
 					*ws = 1;
 				}
-				else
+				else if (line->next)
 				{
+					/* join lines in the same block with a space */
 					if (!*ws)
 						EMIT(NULL, ' ');
 					*ws = 1;
 				}
 			}
 
-			if (flatten & FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS)
+			if (join_line)
+			{
+				/* No whitespace, no linebreak. */
+			}
+			else if (flatten & FZ_TEXT_FLATTEN_KEEP_PARAGRAPHS)
 			{
 				EMIT(NULL, '\n');
 				*ws = 1;
 			}
-			else if (!join_line)
+			else
 			{
-				EMIT(NULL, ' ');
+				/* terminate all paragraphs with a space */
+				if (!*ws)
+					EMIT(NULL, ' ');
 				*ws = 1;
 			}
 		}
