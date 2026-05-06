@@ -210,6 +210,34 @@ fz_culling_clip_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *tex
 }
 
 static void
+fz_culling_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp)
+{
+	fz_culling_device *dev = (fz_culling_device*)dev_;
+
+	if (dev->opts.cull_fill_path &&
+		dev->opts.cull_fill_path(ctx, dev->opts.opaque, path, even_odd, ctm, cs, color, alpha))
+	{
+		/* Cull this one */
+	}
+	else
+		fz_fill_path(ctx, dev->super.passthrough, path, even_odd, ctm, cs, color, alpha, cp);
+}
+
+static void
+fz_culling_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp)
+{
+	fz_culling_device *dev = (fz_culling_device*)dev_;
+
+	if (dev->opts.cull_stroke_path &&
+		dev->opts.cull_stroke_path(ctx, dev->opts.opaque, path, stroke, ctm, cs, color, alpha))
+	{
+		/* Cull this one */
+	}
+	else
+		fz_stroke_path(ctx, dev->super.passthrough, path, stroke, ctm, cs, color, alpha, cp);
+}
+
+static void
 fz_culling_close_device(fz_context *ctx, fz_device *dev_)
 {
 	/* Does not pass through */
@@ -226,7 +254,7 @@ fz_culling_drop_device(fz_context *ctx, fz_device *dev_)
 }
 
 fz_device *
-fz_new_culling_device(fz_context *ctx, fz_device *passthrough, fz_culling_options *opts)
+fz_new_culling_device(fz_context *ctx, fz_device *passthrough, const fz_culling_options *opts)
 {
 	fz_culling_device *dev = fz_new_derived_passthrough_device(ctx, passthrough, fz_culling_device);
 
@@ -234,6 +262,8 @@ fz_new_culling_device(fz_context *ctx, fz_device *passthrough, fz_culling_option
 	dev->super.stroke_text = fz_culling_stroke_text;
 	dev->super.clip_text = fz_culling_clip_text;
 	dev->super.clip_stroke_text = fz_culling_clip_stroke_text;
+	dev->super.fill_path = fz_culling_fill_path;
+	dev->super.stroke_path = fz_culling_stroke_path;
 
 	dev->super.close_device = fz_culling_close_device;
 	dev->super.drop_device = fz_culling_drop_device;
@@ -246,6 +276,7 @@ fz_new_culling_device(fz_context *ctx, fz_device *passthrough, fz_culling_option
 typedef struct
 {
 	int n;
+	float borders;
 	fz_rect rects[FZ_FLEXIBLE_ARRAY];
 } cull_rects;
 
@@ -273,6 +304,52 @@ cull_rect(fz_context *ctx, void *opaque, fz_rect rect)
 		if (overlapped > area)
 			return 1;
 	}
+
+	return 0;
+}
+
+static int
+cull_fill_border(fz_context *ctx, void *opaque, const fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha)
+{
+	cull_rects *er = (cull_rects *)opaque;
+	fz_rect r;
+	float borders = er->borders;
+
+	if (borders <= 0)
+		return 0;
+
+	if (!fz_path_is_rect_with_bounds(ctx, path, ctm, &r))
+		return 0; // We only cull rects.
+
+	if (!fz_is_valid_rect(r))
+		return 0;
+
+	if (r.y1 - r.y0 <= borders || r.x1 - r.x0 <= borders)
+		return 1;
+
+	return 0;
+}
+
+static int
+cull_stroke_border(fz_context *ctx, void *opaque, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha)
+{
+	cull_rects *er = (cull_rects *)opaque;
+	fz_rect r;
+	float borders = er->borders;
+
+	if (borders <= 0)
+		return 0;
+
+	if (!fz_path_is_rect_with_bounds(ctx, path, ctm, &r))
+		return 0; // We only cull rects.
+
+	r = fz_adjust_rect_for_stroke(ctx, r, stroke, ctm);
+
+	if (!fz_is_valid_rect(r))
+		return 0;
+
+	if (r.y1 - r.y0 <= borders || r.x1 - r.x0 <= borders)
+		return 1;
 
 	return 0;
 }
@@ -308,14 +385,46 @@ fz_new_culling_device_with_rects(fz_context *ctx, fz_device *passthrough, int n,
 	return dev;
 }
 
-fz_pixmap *fz_new_pixmap_from_page_number_culling_text(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+fz_pixmap *fz_new_pixmap_from_page_number_culling_text_etc(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects, float borders)
+{
+	fz_pixmap *pix;
+	fz_culling_options opts = { 0 };
+	cull_rects *er;
+
+	er = fz_malloc_flexible(ctx, cull_rects, rects, n);
+	er->borders = borders;
+	er->n = n;
+	if (n)
+		memcpy(er->rects, rects, sizeof(rects[0])*n);
+
+	opts.opaque = er;
+	opts.drop = drop_culling_rects;
+	opts.cull_glyph = cull_rect;
+	if (borders)
+	{
+		opts.cull_fill_path = cull_fill_border;
+		opts.cull_stroke_path = cull_stroke_border;
+	}
+
+	fz_try(ctx)
+		pix = fz_new_pixmap_from_culled_page_number(ctx, doc, number, ctm, cs, alpha, &opts);
+	fz_catch(ctx)
+	{
+		fz_free(ctx, er);
+		fz_rethrow(ctx);
+	}
+
+	return pix;
+}
+
+fz_pixmap *fz_new_pixmap_from_culled_page_number(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, const fz_culling_options *opts)
 {
 	fz_page *page;
 	fz_pixmap *pix = NULL;
 
 	page = fz_load_page(ctx, doc, number);
 	fz_try(ctx)
-		pix = fz_new_pixmap_from_page_culling_text(ctx, page, ctm, cs, alpha, n, rects);
+		pix = fz_new_pixmap_from_culled_page(ctx, page, ctm, cs, alpha, opts);
 	fz_always(ctx)
 		fz_drop_page(ctx, page);
 	fz_catch(ctx)
@@ -324,7 +433,40 @@ fz_pixmap *fz_new_pixmap_from_page_number_culling_text(fz_context *ctx, fz_docum
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+fz_new_pixmap_from_page_culling_text_etc(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects, float borders)
+{
+	fz_culling_options opts;
+	fz_pixmap *pix;
+	cull_rects *er;
+
+	er = fz_malloc_flexible(ctx, cull_rects, rects, n);
+	er->borders = borders;
+	er->n = n;
+	if (n)
+		memcpy(er->rects, rects, sizeof(rects[0])*n);
+
+	opts.opaque = er;
+	opts.drop = drop_culling_rects;
+	opts.cull_glyph = cull_rect;
+	if (borders)
+	{
+		opts.cull_fill_path = cull_fill_border;
+		opts.cull_stroke_path = cull_stroke_border;
+	}
+
+	fz_try(ctx)
+		pix = fz_new_pixmap_from_culled_page(ctx, page, ctm, cs, alpha, &opts);
+	fz_catch(ctx)
+	{
+		fz_free(ctx, er);
+		fz_rethrow(ctx);
+	}
+
+	return pix;
+}
+
+fz_pixmap *
+fz_new_pixmap_from_culled_page(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, const fz_culling_options *opts)
 {
 	fz_device *draw_dev = NULL;
 	fz_device *cull_dev = NULL;
@@ -340,7 +482,7 @@ fz_new_pixmap_from_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix c
 	{
 		fz_clear_pixmap(ctx, pix);
 		draw_dev = fz_new_draw_device(ctx, ctm, pix);
-		cull_dev = fz_new_culling_device_with_rects(ctx, draw_dev, n, rects);
+		cull_dev = fz_new_culling_device(ctx, draw_dev, opts);
 
 		fz_run_page(ctx, page, cull_dev, fz_identity, NULL);
 		fz_close_device(ctx, cull_dev);
@@ -357,7 +499,8 @@ fz_new_pixmap_from_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix c
 	return pix;
 }
 
-fz_pixmap *fz_new_pixmap_from_display_list_culling_text(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+fz_pixmap *
+fz_new_pixmap_from_culled_display_list(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const fz_culling_options *opts)
 {
 	fz_device *draw_dev = NULL;
 	fz_device *cull_dev = NULL;
@@ -373,7 +516,7 @@ fz_pixmap *fz_new_pixmap_from_display_list_culling_text(fz_context *ctx, fz_disp
 	{
 		fz_clear_pixmap(ctx, pix);
 		draw_dev = fz_new_draw_device(ctx, ctm, pix);
-		cull_dev = fz_new_culling_device_with_rects(ctx, draw_dev, n, rects);
+		cull_dev = fz_new_culling_device(ctx, draw_dev, opts);
 
 		fz_run_display_list(ctx, list, cull_dev, fz_identity, fz_infinite_rect, NULL);
 		fz_close_device(ctx, cull_dev);
@@ -388,4 +531,51 @@ fz_pixmap *fz_new_pixmap_from_display_list_culling_text(fz_context *ctx, fz_disp
 		fz_rethrow(ctx);
 
 	return pix;
+}
+
+fz_pixmap *fz_new_pixmap_from_display_list_culling_text_etc(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects, float borders)
+{
+	fz_culling_options opts;
+	fz_pixmap *pix;
+	cull_rects *er;
+
+	er = fz_malloc_flexible(ctx, cull_rects, rects, n);
+	er->borders = borders;
+	er->n = n;
+	if (n)
+		memcpy(er->rects, rects, sizeof(rects[0])*n);
+
+	opts.opaque = er;
+	opts.drop = drop_culling_rects;
+	opts.cull_glyph = cull_rect;
+	if (borders)
+	{
+		opts.cull_fill_path = cull_fill_border;
+		opts.cull_stroke_path = cull_stroke_border;
+	}
+
+	fz_try(ctx)
+		pix = fz_new_pixmap_from_culled_display_list(ctx, list, ctm, cs, alpha, &opts);
+	fz_catch(ctx)
+	{
+		fz_free(ctx, er);
+		fz_rethrow(ctx);
+	}
+
+	return pix;
+}
+
+fz_pixmap *fz_new_pixmap_from_page_number_culling_text(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+{
+	return fz_new_pixmap_from_page_number_culling_text_etc(ctx, doc, number, ctm, cs, alpha, n, rects, 0);
+}
+
+fz_pixmap *fz_new_pixmap_from_page_culling_text(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+{
+	return fz_new_pixmap_from_page_culling_text_etc(ctx, page, ctm, cs, alpha, n, rects, 0);
+}
+
+fz_pixmap *fz_new_pixmap_from_display_list_culling_text(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects)
+{
+	return fz_new_pixmap_from_display_list_culling_text_etc(ctx, list, ctm, cs, alpha, n, rects, 0);
 }

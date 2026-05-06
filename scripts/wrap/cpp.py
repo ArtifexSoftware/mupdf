@@ -1140,6 +1140,15 @@ g_extra_declarations = textwrap.dedent(f'''
 
         /** Swig-friendly wrapper for fz_new_pixmap_from_display_list_culling_text(). */
         fz_pixmap *fz_new_pixmap_from_display_list_culling_text2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects);
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_culling_text_etc(). */
+        fz_pixmap *fz_new_pixmap_from_page_culling_text_etc2(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders);
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_number_culling_text_etc(). */
+        fz_pixmap *fz_new_pixmap_from_page_number_culling_text_etc2(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders);
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_display_list_culling_text_etc(). */
+        fz_pixmap *fz_new_pixmap_from_display_list_culling_text_etc2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1427,6 +1436,24 @@ g_extra_definitions = textwrap.dedent(f'''
         fz_pixmap *fz_new_pixmap_from_display_list_culling_text2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects)
         {{
             return fz_new_pixmap_from_display_list_culling_text(ctx, list, ctm, cs, alpha, rects.size(), &rects[0]);
+        }}
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_culling_text_etc(). */
+        fz_pixmap *fz_new_pixmap_from_page_culling_text_etc2(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders)
+        {{
+            return fz_new_pixmap_from_page_culling_text_etc(ctx, page, ctm, cs, alpha, rects.size(), &rects[0], borders);
+        }}
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_page_number_culling_text_etc(). */
+        fz_pixmap *fz_new_pixmap_from_page_number_culling_text_etc2(fz_context *ctx, fz_document *doc, int number, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders)
+        {{
+            return fz_new_pixmap_from_page_number_culling_text_etc(ctx, doc, number, ctm, cs, alpha, rects.size(), &rects[0], borders);
+        }}
+
+        /** Swig-friendly wrapper for fz_new_pixmap_from_display_list_culling_text_etc(). */
+        fz_pixmap *fz_new_pixmap_from_display_list_culling_text_etc2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders)
+        {{
+            return fz_new_pixmap_from_display_list_culling_text_etc(ctx, list, ctm, cs, alpha, rects.size(), &rects[0], borders);
         }}
         ''')
 

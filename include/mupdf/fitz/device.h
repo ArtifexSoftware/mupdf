@@ -576,6 +576,8 @@ typedef struct
 	void *opaque;
 
 	int (*cull_glyph)(fz_context *ctx, void *opaque, fz_rect rect);
+	int (*cull_fill_path)(fz_context *ctx, void *opaque, const fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha);
+	int (*cull_stroke_path)(fz_context *ctx, void *opaque, const fz_path *path, const fz_stroke_state *state, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha);
 
 	void (*drop)(fz_context *ctx, void *opaque);
 } fz_culling_options;
@@ -591,7 +593,7 @@ typedef struct
 	would be affected. If the function returns 0, the glyph is passed through.
 	if the function returns 1, the glyph is dropped. All other values reserved.
 */
-fz_device *fz_new_culling_device(fz_context *ctx, fz_device *passthrough, fz_culling_options *opts);
+fz_device *fz_new_culling_device(fz_context *ctx, fz_device *passthrough, const fz_culling_options *opts);
 
 /**
 	Create an culling device that will drop any glyphs that significantly
