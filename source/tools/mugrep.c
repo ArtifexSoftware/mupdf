@@ -47,7 +47,7 @@ static int mugrep_usage(void)
 	fprintf(stderr,
 		"usage: mugrep [options] pattern input.pdf [ input2.pdf ... ]\n"
 		"\t-p -\tpassword for encrypted PDF files\n"
-		"\t-G\tpattern is a regexp\n"
+		"\t-F\tpattern is a fixed string\n"
 		"\t-a\tignore accents (diacritics)\n"
 		"\t-i\tignore case\n"
 		"\t-H\tprint filename for each match\n"
@@ -228,6 +228,7 @@ int mugrep_main(int argc, char **argv)
 	fz_search_options options = FZ_SEARCH_EXACT;
 	fz_stext_options stext_options = { 0 };
 	int verbose = 0;
+	int is_fixed_string = 0;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 	if (!ctx)
@@ -248,7 +249,7 @@ int mugrep_main(int argc, char **argv)
 
 	fz_init_search_options(ctx, &options);
 
-	while ((c = fz_getopt(argc, argv, "Gaip:vO:S:nHb[:]:q")) != -1)
+	while ((c = fz_getopt(argc, argv, "Faip:vO:S:nHb[:]:q")) != -1)
 	{
 		switch (c)
 		{
@@ -258,8 +259,8 @@ int mugrep_main(int argc, char **argv)
 		case 'S':
 			fz_parse_search_options(ctx, &options, fz_optarg);
 			break;
-		case 'G':
-			options |= FZ_SEARCH_REGEXP | FZ_SEARCH_KEEP_LINES | FZ_SEARCH_KEEP_PARAGRAPHS;
+		case 'F':
+			is_fixed_string = 1;
 			break;
 		case 'a':
 			options |= FZ_SEARCH_IGNORE_DIACRITICS;
@@ -295,6 +296,9 @@ int mugrep_main(int argc, char **argv)
 			return mugrep_usage();
 		}
 	}
+
+	if (!is_fixed_string)
+		options |= FZ_SEARCH_REGEXP | FZ_SEARCH_KEEP_PARAGRAPHS;
 
 	if (quiet > 0)
 	{

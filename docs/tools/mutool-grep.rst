@@ -18,8 +18,8 @@ The ``grep`` command searches for text in a document and prints each matching li
 
 	``-p`` password
 		Use the specified password if the file is encrypted.
-	``-G``
-		The pattern is a regular expression.
+	``-F``
+		The pattern is a fixed string.
 	``-a``
 		Ignore diacritics and accents (treat ä and a as the same).
 	``-i``
