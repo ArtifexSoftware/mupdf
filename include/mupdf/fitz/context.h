@@ -517,6 +517,37 @@ void fz_tune_image_decode(fz_context *ctx, fz_tune_image_decode_fn *image_decode
 void fz_tune_image_scale(fz_context *ctx, fz_tune_image_scale_fn *image_scale, void *arg);
 
 /**
+	Set the behavior for image rendering and resampling.
+*/
+enum {
+	// We may box filter images down by a power of 2, before scaling
+	// accurately to get the final results. Rendering will be stable.
+	// This may be faster and may use less memory than 'QUALITY'
+	// rendering, for a (probably imperceptible) degradation of quality.
+	FZ_IMAGE_RENDERING_BALANCE = 0,
+
+	// We will never box filter images, and instead will always scale
+	// accurately. Rendering will be stable. This may be slower and
+	// may use more memory than 'HYBRID' rendering, for a (probably
+	// imperceptible) improvement in quality.
+	FZ_IMAGE_RENDERING_QUALITY = 1,
+
+	// We will box filter images down by a power of 2, before scaling
+	// accurately to get the final results. We will accept image
+	// tiles that have previously been box scaled and cached at higher
+	// quality than we need, thus saving us the decode again, at the
+	// cost of "rendering instability". i.e. the exact results of
+	// rendering may differ according to the order of rendering
+	// operations that have happened in the past. The quality
+	// differences here are rarely spotted, and very minor, but
+	// genuinely exist. In an interactive application, these are
+	// well within acceptability, but in an system where results are
+	// being compared pixel-by-pixel, this is probably best avoided.
+	FZ_IMAGE_RENDERING_SPEED = 2,
+};
+void fz_tune_image_rendering(fz_context *ctx, int behavior);
+
+/**
 	Get the number of bits of antialiasing we are
 	using (for graphics). Between 0 and 8.
 */

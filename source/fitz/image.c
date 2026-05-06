@@ -1004,6 +1004,8 @@ fz_find_image_tile(fz_context *ctx, fz_image *image, fz_image_key *key, fz_matri
 			update_ctm_for_subarea(ctm, &key->rect, image->w, image->h);
 			return tile;
 		}
+		if (ctx->tuning->image_rendering != FZ_IMAGE_RENDERING_SPEED)
+			break;
 		key->l2factor--;
 	}
 	while (key->l2factor >= 0);
@@ -1070,7 +1072,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	 * a fudge factor of +2 here to allow for the possibility of
 	 * expansion due to grid fitting. */
 	l2factor = 0;
-	if (w > 0 && h > 0)
+	if (ctx->tuning->image_rendering != FZ_IMAGE_RENDERING_QUALITY && w > 0 && h > 0)
 	{
 		while (image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6)
 			l2factor++;

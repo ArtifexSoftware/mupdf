@@ -115,6 +115,7 @@ static void fz_new_tuning_context(fz_context *ctx)
 		ctx->tuning->refs = 1;
 		ctx->tuning->image_decode = fz_default_image_decode;
 		ctx->tuning->image_scale = fz_default_image_scale;
+		ctx->tuning->image_rendering = FZ_IMAGE_RENDERING_BALANCE;
 	}
 }
 
@@ -145,6 +146,11 @@ void fz_tune_image_scale(fz_context *ctx, fz_tune_image_scale_fn *image_scale, v
 {
 	ctx->tuning->image_scale = image_scale ? image_scale : fz_default_image_scale;
 	ctx->tuning->image_scale_arg = arg;
+}
+
+void fz_tune_image_rendering(fz_context *ctx, int quality)
+{
+	ctx->tuning->image_rendering = quality;
 }
 
 static void fz_init_random_context(fz_context *ctx)
