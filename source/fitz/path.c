@@ -1972,6 +1972,15 @@ fz_path_is_rect(fz_context *ctx, const fz_path *path, fz_matrix ctm)
 	return fz_path_is_rect_with_bounds(ctx, path, ctm, NULL);
 }
 
+static int feq(float x, float y)
+{
+	float f = x-y;
+	if (f < 0)
+		f = -f;
+
+	return f < 0.0001;
+}
+
 int
 fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm, fz_rect *bounds)
 {
@@ -1987,13 +1996,13 @@ fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm,
 		return 0;
 
 	/* 3 entries are bad, unless the last one returns the first. */
-	if (arg.count == 3 && (arg.p[0].x != arg.p[2].x || arg.p[0].y != arg.p[2].y))
+	if (arg.count == 3 && (!feq(arg.p[0].x, arg.p[2].x) || !feq(arg.p[0].y, arg.p[2].y)))
 	{
 		return 0;
 	}
 	if (arg.count == 2 || arg.count == 3)
 	{
-		if (arg.p[0].x == arg.p[1].x || arg.p[0].y == arg.p[1].y)
+		if (feq(arg.p[0].x, arg.p[1].x) || feq(arg.p[0].y, arg.p[1].y))
 		{
 			if (bounds)
 			{
@@ -2009,12 +2018,12 @@ fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm,
 	if (arg.count != 4)
 		return 0;
 
-	if (arg.p[0].x == arg.p[1].x)
+	if (feq(arg.p[0].x, arg.p[1].x))
 	{
 		/* p[0]  p[3]
 		 * p[1]  p[2]
 		 */
-		if (arg.p[1].y == arg.p[2].y && arg.p[0].y == arg.p[3].y && arg.p[2].x == arg.p[3].x)
+		if (feq(arg.p[1].y, arg.p[2].y) && feq(arg.p[0].y, arg.p[3].y) && feq(arg.p[2].x, arg.p[3].x))
 		{
 			if (bounds)
 			{
@@ -2026,12 +2035,12 @@ fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix ctm,
 			return 1;
 		}
 	}
-	if (arg.p[0].y == arg.p[1].y)
+	if (feq(arg.p[0].y, arg.p[1].y))
 	{
 		/* p[0]  p[1]
 		 * p[3]  p[2]
 		 */
-		if (arg.p[1].x == arg.p[2].x && arg.p[0].x == arg.p[3].x && arg.p[2].y == arg.p[3].y)
+		if (feq(arg.p[1].x, arg.p[2].x) && feq(arg.p[0].x, arg.p[3].x) && feq(arg.p[2].y, arg.p[3].y))
 		{
 			if (bounds)
 			{
