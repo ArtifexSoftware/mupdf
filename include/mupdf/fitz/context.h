@@ -712,6 +712,8 @@ void fz_free(fz_context *ctx, void *p);
 	Memento_label(fz_realloc(ctx, p, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T)
 #define fz_pool_alloc_flexible(ctx, pool, T, M, count) \
 	fz_pool_alloc(ctx, pool, offsetof(T, M) + sizeof(*((T*)0)->M) * (count))
+#define fz_sizeof_flexible(T, M, count) \
+	(offsetof(T, M) + sizeof(*((T*)0)->M) * (count))
 
 /**
 	fz_malloc equivalent that returns NULL rather than throwing
