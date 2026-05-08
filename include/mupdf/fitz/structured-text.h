@@ -843,6 +843,21 @@ fz_stext_block *
 fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit);
 
 /**
+	Try to guess at the table structure within given bounds.
+
+	If no table can be found, we return 0. If we find one we
+	return non-zero. (Currently, 1, other values reserved
+	for the future.)
+
+	In the case of a non-zero return. xposp and ypos are returned
+	as pointers to fz_stext_grid_positions records that must be
+	freed.
+*/
+int
+fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp);
+
+
+/**
 	Create a device to extract the text on a page.
 
 	Gather the text on a page into blocks and lines.

@@ -3909,6 +3909,36 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 	return found;
 }
 
+int
+fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp)
+{
+	grid_walker_data gd = { 0 };
+	int ret = 0;
+
+	fz_var(ret);
+
+	gd.bounds = bounds;
+
+	*xposp = NULL;
+	*yposp = NULL;
+
+	fz_try(ctx)
+	{
+		ret = find_table(ctx, &gd, page->first_block);
+
+		*xposp = gd.xpos;
+		*yposp = gd.ypos;
+		gd.xpos = NULL;
+		gd.ypos = NULL;
+	}
+	fz_always(ctx)
+		drop_grid_walker_data(ctx, &gd);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return ret;
+}
+
 /**
 */
 typedef struct
