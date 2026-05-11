@@ -401,6 +401,9 @@ svg_parse_polygon_imp(fz_context *ctx, svg_document *doc, fz_xml *node, int docl
 				nargs = 0;
 			}
 		}
+
+		if (doclose)
+			fz_closepath(ctx, path);
 	}
 	fz_catch(ctx)
 	{
