@@ -360,6 +360,39 @@ BROTLI_SRC += thirdparty/brotli/c/enc/static_dict_lut.c
 BROTLI_SRC += thirdparty/brotli/c/enc/static_init.c
 BROTLI_SRC += thirdparty/brotli/c/enc/utf8_util.c
 
+# --- CMARKGFM ---
+
+CMARKGFM_CFLAGS += -Ithirdparty/cmark-gfm/src -Iscripts/cmark-gfm -Ithirdparty/cmark-gfm/extensions -DCMARK_GFM_STATIC_DEFINE
+
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/arena.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/blocks.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/buffer.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/cmark.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/cmark_ctype.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/footnotes.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/houdini_href_e.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/houdini_html_e.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/houdini_html_u.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/html.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/inlines.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/iterator.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/linked_list.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/map.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/node.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/plugin.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/references.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/registry.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/scanners.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/syntax_extension.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/src/utf8.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/autolink.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/core-extensions.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/ext_scanners.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/strikethrough.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/table.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/tagfilter.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/tasklist.c
+
 # --- FREEGLUT ---
 
 GLUT_CFLAGS += -Ithirdparty/freeglut/include
