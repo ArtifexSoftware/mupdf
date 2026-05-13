@@ -2788,6 +2788,82 @@ def main2():
                     jlib.log(f'Copying {from_=} to {destination=}.')
                     shutil.copytree(from_, destination, dirs_exist_ok=True)
 
+            elif arg in ('--test-cpp-threads', '--test-cpp'):
+                if arg == '--test-cpp-threads':
+                    cpp = os.path.abspath( f'{__file__}/../../../scripts/mupdfwrap_test_threads.cpp')
+                    exe = f'{cpp}.exe'
+                    run_command = exe
+                else:
+                    cpp = f'{build_dirs.dir_mupdf}/scripts/mupdfwrap_test.cpp'
+                    exe = f'{cpp}.exe'
+                    testfile = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
+                    testfile = testfile.replace('\\', '/')
+                    run_command = f'{exe} {testfile}'
+
+                includes = (
+                        f' -I {build_dirs.dir_mupdf}/include'
+                        f' -I {build_dirs.dir_mupdf}/platform/c++/include'
+                        )
+                env_extra = None
+                cpp_flags = build_dirs.cpp_flags
+                if state.state_.windows:
+                    win32_infix = _windows_vs_upgrade( vs_upgrade, build_dirs, devenv=None)
+                    windows_build_type = build_dirs.windows_build_type()
+                    lib = f'{build_dirs.dir_mupdf}/platform/{win32_infix}/{build_dirs.cpu.windows_subdir}{windows_build_type}/mupdfcpp{build_dirs.cpu.windows_suffix}.lib'
+                    vs = wdev.WindowsVS()
+                    command = textwrap.dedent(f'''
+                            "{vs.vcvars}"&&"{vs.cl}"
+                                /Tp{cpp}
+                                {includes}
+                                -D FZ_DLL_CLIENT
+                                {cpp_flags}
+                                /link
+                                {lib}
+                                /out:{exe}
+                            ''')
+                    jlib.system(command, verbose=1)
+                    path = os.environ.get('PATH')
+                    env_extra = dict(PATH = f'{build_dirs.dir_so}{os.pathsep}{path}' if path else build_dirs.dir_so)
+                    #jlib.system(run_command, verbose=1, env_extra=env_extra)
+                else:
+                    dir_so_flags = os.path.basename( build_dirs.dir_so).split( '-')
+                    if 'shared' in dir_so_flags:
+                        libmupdf        = f'{build_dirs.dir_so}/libmupdf.so'
+                        libmupdfthird   = f''
+                        libmupdfcpp     = f'{build_dirs.dir_so}/libmupdfcpp.so'
+                    elif 'fpic' in dir_so_flags:
+                        libmupdf        = f'{build_dirs.dir_so}/libmupdf.a'
+                        libmupdfthird   = f'{build_dirs.dir_so}/libmupdf-third.a'
+                        libmupdfcpp     = f'{build_dirs.dir_so}/libmupdfcpp.a'
+                    else:
+                        assert 0, f'Leaf must start with "shared-" or "fpic-": build_dirs.dir_so={build_dirs.dir_so}'
+                    command = textwrap.dedent(f'''
+                            c++
+                                {'-std=c++14' if state.state_.macos else ''}
+                                -o {exe}
+                                -g
+                                {cpp_flags}
+                                {includes}
+                                {cpp}
+                                {link_l_flags( [libmupdf, libmupdfcpp])}
+                            ''')
+                    jlib.system(command, verbose=1)
+                    jlib.system( 'pwd', verbose=1)
+                    if state.state_.macos:
+                        run_command = f'DYLD_LIBRARY_PATH={build_dirs.dir_so} {run_command}'
+                        #jlib.system(run_command, verbose=1)
+                    else:
+                        run_command = f'LD_LIBRARY_PATH={build_dirs.dir_so} {run_command}'
+
+                e_locks = jlib.system( f'{run_command}', verbose=1, env_extra=env_extra, raise_errors=0)
+                e_nolocks = jlib.system( f'{run_command} -l', verbose=1, env_extra=env_extra, raise_errors=0)
+                e_singlectx_nolocks = jlib.system( f'{run_command} -t -l', verbose=1, env_extra=env_extra, raise_errors=0)
+                e_singlectx_locks = jlib.system( f'{run_command} -t -L', verbose=1, env_extra=env_extra, raise_errors=0)
+                print(f'{e_locks=}')
+                print(f'{e_nolocks=}')
+                print(f'{e_singlectx_nolocks=}')
+                print(f'{e_singlectx_locks=}')
+
             elif arg == '--test-cpp':
                 testfile = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
                 testfile = testfile.replace('\\', '/')
