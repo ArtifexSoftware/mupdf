@@ -59,6 +59,7 @@ static const char *html_default_css =
 "ins{text-decoration:underline}"
 "kbd{font-family:monospace}"
 "li{display:list-item}"
+"mark{background-color:yellow}"
 "menu{display:block;list-style-type:disc;margin:1em 0;padding:0 0 0 30pt}"
 "ol{display:block;list-style-type:decimal;margin:1em 0;padding:0 0 0 30pt}"
 "p{display:block;margin:1em 0}"

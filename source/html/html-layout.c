@@ -3287,6 +3287,8 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 
 /* === DRAW === */
 
+static void draw_rect(fz_context *ctx, fz_device *dev, fz_matrix ctm, float page_top, fz_css_color color, float x0, float y0, float x1, float y1);
+
 typedef struct
 {
 	float rgb[3];
@@ -3308,6 +3310,18 @@ static inline int
 color_eq(fz_css_color a, fz_css_color b)
 {
 	return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+}
+
+static fz_css_color
+find_inline_background_color(fz_context *ctx, fz_html_box *box)
+{
+	while (box && box->type == BOX_INLINE)
+	{
+		if (box->style->background_color.a > 0)
+			return box->style->background_color;
+		box = box->up;
+	}
+	return (fz_css_color){ 0, 0, 0, 0 };
 }
 
 static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart)
@@ -3373,6 +3387,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 			if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 			{
 				string_walker walker;
+				fz_css_color bg;
 				const char *s;
 				float x, y;
 				float em;
@@ -3385,6 +3400,11 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					continue;
 
 				em = node->box->s.layout.em;
+
+				bg = find_inline_background_color(ctx, node->box);
+				if (bg.a > 0)
+					draw_rect(ctx, dev, ctm, page_top, bg,
+						node->x, node->y - 0.8f * node->h, node->x + node->w, node->y + 0.2f * node->h);
 
 				line_width = fz_from_css_number(style->text_stroke_width, em, em, 0);
 				filling = style->text_fill_color.a != 0;
