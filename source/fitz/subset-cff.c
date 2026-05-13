@@ -296,7 +296,7 @@ index_load(fz_context *ctx, index_t *index, const uint8_t *base, uint32_t len, u
 	data_offset = 3 + (index->count+1) * os - 1;
 	index->data_offset = data_offset + offset;
 
-	if (data_offset > len)
+	if (index->data_offset > len)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated index");
 
 	data += 3;
@@ -312,7 +312,7 @@ index_load(fz_context *ctx, index_t *index, const uint8_t *base, uint32_t len, u
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Index not monotonic");
 		prev = v;
 	}
-	if (v > len)
+	if (index->data_offset + v > len)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated index");
 
 	data += prev - 1;
