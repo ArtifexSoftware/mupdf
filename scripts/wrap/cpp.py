@@ -1149,6 +1149,10 @@ g_extra_declarations = textwrap.dedent(f'''
 
         /** Swig-friendly wrapper for fz_new_pixmap_from_display_list_culling_text_etc(). */
         fz_pixmap *fz_new_pixmap_from_display_list_culling_text_etc2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders);
+
+        /** Swig-friendly wrapper for fz_find_table_within_grid(). */
+        fz_stext_block *fz_find_table_within_grid_floats(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit);
+        fz_stext_block *fz_find_table_within_grid_dividers(fz_context *ctx, fz_stext_page *page, const std::vector<fz_stext_grid_divider>& xs, const std::vector<fz_stext_grid_divider>& ys, float limit);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1455,6 +1459,107 @@ g_extra_definitions = textwrap.dedent(f'''
         {{
             return fz_new_pixmap_from_display_list_culling_text_etc(ctx, list, ctm, cs, alpha, rects.size(), &rects[0], borders);
         }}
+
+        /** Swig-friendly wrapper for fz_find_table_within_grid(). */
+        fz_stext_block *fz_find_table_within_grid_floats(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit)
+	{{
+		fz_stext_grid_positions *xpos = NULL;
+		fz_stext_grid_positions *ypos = NULL;
+		fz_stext_block *ret = NULL;
+		size_t i, xn, yn;
+
+		fz_var(ret);
+		fz_var(xpos);
+		fz_var(ypos);
+
+		fz_try(ctx)
+		{{
+			xn = xs.size();
+			xpos = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, xn);
+			xpos->len = xn;
+			for (i = 0; i != xn; i++)
+			{{
+				xpos->list[i].min = xs[i];
+				xpos->list[i].max = xs[i];
+				xpos->list[i].pos = xs[i];
+
+			}}
+			yn = ys.size();
+			ypos = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, yn);
+			ypos->len = yn;
+			for (i = 0; i != yn; i++)
+			{{
+				ypos->list[i].min = ys[i];
+				ypos->list[i].max = ys[i];
+				ypos->list[i].pos = ys[i];
+			}}
+
+			ret = fz_find_table_within_grid(ctx, page, xpos, ypos, limit);
+		}}
+		fz_always(ctx)
+		{{
+			fz_free(ctx, xpos);
+			fz_free(ctx, ypos);
+		}}
+		fz_catch(ctx)
+		{{
+			fz_rethrow(ctx);
+		}}
+
+		return ret;
+	}}
+
+        fz_stext_block *fz_find_table_within_grid_dividers(fz_context *ctx, fz_stext_page *page, const std::vector<fz_stext_grid_divider>& xs, const std::vector<fz_stext_grid_divider>& ys, float limit)
+	{{
+		fz_stext_grid_positions *xpos = NULL;
+		fz_stext_grid_positions *ypos = NULL;
+		fz_stext_block *ret = NULL;
+		size_t i, xn, yn;
+		int max;
+
+		fz_var(ret);
+		fz_var(xpos);
+		fz_var(ypos);
+
+		fz_try(ctx)
+		{{
+			xn = xs.size();
+			xpos = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, xn);
+			xpos->len = xn;
+			max = 0;
+			for (i = 0; i != xn; i++)
+			{{
+				xpos->list[i] = xs[i];
+				if (max < xs[i].uncertainty)
+					max = xs[i].uncertainty;
+			}}
+			xpos->max_uncertainty = max;
+			yn = ys.size();
+			ypos = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, yn);
+			ypos->len = yn;
+			max = 0;
+			for (i = 0; i != yn; i++)
+			{{
+				ypos->list[i] = ys[i];
+				if (max < ys[i].uncertainty)
+					max = ys[i].uncertainty;
+			}}
+			ypos->max_uncertainty = max;
+
+			ret = fz_find_table_within_grid(ctx, page, xpos, ypos, limit);
+		}}
+		fz_always(ctx)
+		{{
+			fz_free(ctx, xpos);
+			fz_free(ctx, ypos);
+		}}
+		fz_catch(ctx)
+		{{
+			fz_rethrow(ctx);
+		}}
+
+		return ret;
+	}}
         ''')
 
 def make_extra( out_extra_h, out_extra_cpp):
