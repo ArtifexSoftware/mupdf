@@ -33,7 +33,7 @@ enum { T, R, B, L };
 static const char *html_default_css =
 "@page{margin:3em 2em}"
 "a:link{color:blue;text-decoration:underline}"
-"address{display:block;font-style:italic}"
+"address{font-style:italic}"
 "b{font-weight:bold}"
 "bdo{direction:rtl;unicode-bidi:bidi-override}"
 "blockquote{display:block;margin:1em 40px}"
@@ -63,6 +63,7 @@ static const char *html_default_css =
 "ol{display:block;list-style-type:decimal;margin:1em 0;padding:0 0 0 30pt}"
 "p{display:block;margin:1em 0}"
 "pre{display:block;font-family:monospace;margin:1em 0;white-space:pre}"
+"s{text-decoration:line-through}"
 "samp{font-family:monospace}"
 "script{display:none}"
 "small{font-size:0.83em}"
@@ -77,6 +78,7 @@ static const char *html_default_css =
 "th{display:table-cell;font-weight:bold;padding:1px;text-align:center;background-color:inherit}"
 "thead{display:table-header-group}"
 "tr{display:table-row}"
+"u{text-decoration:underline}"
 "ul{display:block;list-style-type:disc;margin:1em 0;padding:0 0 0 30pt}"
 "ul ul{list-style-type:circle}"
 "ul ul ul{list-style-type:square}"
@@ -85,6 +87,7 @@ static const char *html_default_css =
 "col{display:table-column}"
 "figcaption,caption{display:block;text-align:center}"
 "address,article,aside,figure,footer,header,hgroup,main,nav,section,search{display:block}"
+"fieldset,legend{display:block}"
 ;
 
 static const char *mobi_default_css =
