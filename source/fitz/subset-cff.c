@@ -1092,14 +1092,14 @@ overflow:
 
 			case 20: /* put */
 				ATLEAST(2);
-				if ((int)stack[sp-1] < 0 || (unsigned int)stack[sp-1] > sizeof(trans)/sizeof(*trans))
+				if ((int)stack[sp-1] < 0 || (unsigned int)stack[sp-1] >= sizeof(trans)/sizeof(*trans))
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Transient array over/underflow");
 				trans[(int)stack[sp-1]] = stack[sp-2];
 				sp -= 2;
 				break;
 			case 21: /* get */
 				ATLEAST(1);
-				if ((int)stack[sp-1] < 0 || (unsigned int)stack[sp-1] > sizeof(trans)/sizeof(*trans))
+				if ((int)stack[sp-1] < 0 || (unsigned int)stack[sp-1] >= sizeof(trans)/sizeof(*trans))
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Transient array over/underflow");
 				stack[sp-1] = trans[(int)stack[sp-1]];
 				break;
