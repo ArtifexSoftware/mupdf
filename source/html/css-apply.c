@@ -610,7 +610,7 @@ match_an_plus_b_microsyntax(fz_xml *node, const char *val, int (*callback)(fz_xm
 }
 
 static int
-match_pseudo_condition(fz_xml *node, const char *key, const char *val)
+match_pseudo_condition(fz_xml *node, const char *key, const char *val, int pseudo)
 {
 	if (!strcmp(key, "link"))
 		return fz_xml_att(node, "href") != NULL;
@@ -642,18 +642,23 @@ match_pseudo_condition(fz_xml *node, const char *key, const char *val)
 	if (!strcmp(key, "nth-last-of-type") && val != NULL)
 		return match_an_plus_b_microsyntax(node, val, match_nth_last_of_type);
 
+	if (pseudo == FZ_CSS_PSEUDO_BEFORE && !strcmp(key, "before"))
+		return 1;
+	if (pseudo == FZ_CSS_PSEUDO_AFTER && !strcmp(key, "after"))
+		return 1;
+
 	return 0;
 }
 
 static int
-match_condition(fz_css_condition *cond, fz_xml *node)
+match_condition(fz_css_condition *cond, fz_xml *node, int pseudo)
 {
 	if (!cond)
 		return 1;
 
 	switch (cond->type) {
 	default: return 0;
-	case ':': if (!match_pseudo_condition(node, cond->key, cond->val)) return 0; break;
+	case ':': if (!match_pseudo_condition(node, cond->key, cond->val, pseudo)) return 0; break;
 	case '#': if (!match_att_is_condition(node, "id", cond->val)) return 0; break;
 	case '.': if (!match_att_has_condition(node, "class", cond->val)) return 0; break;
 	case '[': if (!match_att_exists_condition(node, cond->key)) return 0; break;
@@ -662,11 +667,11 @@ match_condition(fz_css_condition *cond, fz_xml *node)
 	case '|': if (!match_att_is_condition(node, cond->key, cond->val)) return 0; break;
 	}
 
-	return match_condition(cond->next, node);
+	return match_condition(cond->next, node, pseudo);
 }
 
 static int
-match_selector(fz_css_selector *sel, fz_xml *node)
+match_selector(fz_css_selector *sel, fz_xml *node, int pseudo)
 {
 	if (!node)
 		return 0;
@@ -677,12 +682,12 @@ match_selector(fz_css_selector *sel, fz_xml *node)
 		if (sel->combine == ' ')
 		{
 			fz_xml *parent = fz_xml_up(node);
-			if (!parent || !match_selector(sel->right, node))
+			if (!parent || !match_selector(sel->right, node, pseudo))
 				return 0;
 
 			while (parent)
 			{
-				if (match_selector(sel->left, parent))
+				if (match_selector(sel->left, parent, FZ_CSS_PSEUDO_NONE))
 					return 1;
 				parent = fz_xml_up(parent);
 			}
@@ -695,9 +700,9 @@ match_selector(fz_css_selector *sel, fz_xml *node)
 			fz_xml *parent = fz_xml_up(node);
 			if (!parent)
 				return 0;
-			if (!match_selector(sel->left, parent))
+			if (!match_selector(sel->left, parent, FZ_CSS_PSEUDO_NONE))
 				return 0;
-			if (!match_selector(sel->right, node))
+			if (!match_selector(sel->right, node, pseudo))
 				return 0;
 		}
 
@@ -711,9 +716,9 @@ match_selector(fz_css_selector *sel, fz_xml *node)
 				return 0;
 			if (!fz_xml_tag(prev))
 				return 0;
-			if (!match_selector(sel->left, prev))
+			if (!match_selector(sel->left, prev, FZ_CSS_PSEUDO_NONE))
 				return 0;
-			if (!match_selector(sel->right, node))
+			if (!match_selector(sel->right, node, pseudo))
 				return 0;
 		}
 	}
@@ -726,7 +731,7 @@ match_selector(fz_css_selector *sel, fz_xml *node)
 
 	if (sel->cond)
 	{
-		if (!match_condition(sel->cond, node))
+		if (!match_condition(sel->cond, node, pseudo))
 			return 0;
 	}
 
@@ -1060,7 +1065,7 @@ add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 }
 
 void
-fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node)
+fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
@@ -1080,7 +1085,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css
 		sel = rule->selector;
 		while (sel)
 		{
-			if (match_selector(sel, node))
+			if (match_selector(sel, node, pseudo))
 			{
 				for (prop = rule->declaration; prop; prop = prop->next)
 					add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
@@ -2035,6 +2040,12 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		if (!style->font)
 			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic, style->small_caps);
 	}
+}
+
+const char *
+fz_get_css_match_content(fz_css_match *match)
+{
+	return string_from_property(match, PRO_CONTENT, NULL);
 }
 
 void

@@ -386,6 +386,7 @@ static int css_lex_string(struct lexbuf *buf, int q)
 				/* line continuation */ ;
 			else if (css_lex_accept(buf, '\r'))
 				css_lex_accept(buf, '\n');
+			// TODO: unicode escapes
 			else
 			{
 				css_push_char(buf, buf->c);

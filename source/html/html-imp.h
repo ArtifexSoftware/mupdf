@@ -147,6 +147,7 @@ enum
 	PRO_CLEAR,
 	PRO_COLOR,
 	PRO_COLUMNS,
+	PRO_CONTENT,
 	PRO_DIRECTION,
 	PRO_DISPLAY,
 	PRO_FLOAT,
@@ -262,6 +263,12 @@ enum {
 };
 
 enum { N_NUMBER='u', N_LENGTH='p', N_SCALE='m', N_PERCENT='%', N_AUTO='a', N_UNDEFINED='x' };
+
+enum {
+	FZ_CSS_PSEUDO_NONE,
+	FZ_CSS_PSEUDO_BEFORE,
+	FZ_CSS_PSEUDO_AFTER,
+};
 
 struct fz_css_number_s
 {
@@ -568,10 +575,11 @@ void fz_drop_css(fz_context *ctx, fz_css *css);
 void fz_debug_css(fz_context *ctx, fz_css *css);
 const char *fz_css_property_name(int name);
 
-void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node);
+void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo);
 void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
 
 int fz_get_css_match_display(fz_css_match *node);
+const char *fz_get_css_match_content(fz_css_match *match);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
 void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
 fz_css_color fz_css_color_from_string(const char *str);
