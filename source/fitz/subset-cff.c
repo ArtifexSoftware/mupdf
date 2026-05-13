@@ -1472,9 +1472,13 @@ get_charset_len(fz_context *ctx, cff_t *cff)
 
 	fmt = *d++;
 	n = cff->charstrings_index.count;
+	if (n == 0)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 
 	if (fmt == 0)
 	{
+		if (charset_offset + 1 + (uint32_t)(n - 1) * 2 > cff->len)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 		cff->unpacked_charset = fz_malloc(ctx, sizeof(uint16_t) * n);
 		cff->unpacked_charset_len = cff->unpacked_charset_max = n;
 		cff->unpacked_charset[0] = 0;
@@ -1624,7 +1628,7 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 	uint32_t n = cff->charstrings_index.count;
 	uint32_t i;
 
-	if (charset_offset + 1 > cff->len)
+	if (n == 0 || charset_offset + 1 > cff->len)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 
 	fmt = *d++;
@@ -1634,6 +1638,8 @@ load_charset_for_cidfont(fz_context *ctx, cff_t *cff)
 
 	if (fmt == 0)
 	{
+		if (charset_offset + 1 + (uint32_t)(n - 1) * 2 > cff->len)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt charset");
 		for (i = 1; i < n; i++)
 		{
 			cff->gid_to_cid[i] = get16(d);
