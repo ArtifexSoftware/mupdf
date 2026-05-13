@@ -707,11 +707,11 @@ void fz_free(fz_context *ctx, void *p);
 	Flexible array member allocation helpers.
 */
 #define fz_malloc_flexible(ctx, T, M, count) \
-	Memento_label(fz_calloc(ctx, 1, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T)
+	((T*)Memento_label(fz_calloc(ctx, 1, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T))
 #define fz_realloc_flexible(ctx, p, T, M, count) \
-	Memento_label(fz_realloc(ctx, p, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T)
+	((T*)Memento_label(fz_realloc(ctx, p, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T))
 #define fz_pool_alloc_flexible(ctx, pool, T, M, count) \
-	fz_pool_alloc(ctx, pool, offsetof(T, M) + sizeof(*((T*)0)->M) * (count))
+	((T*)fz_pool_alloc(ctx, pool, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)))
 #define fz_sizeof_flexible(T, M, count) \
 	(offsetof(T, M) + sizeof(*((T*)0)->M) * (count))
 
