@@ -528,7 +528,7 @@ load_enc_tab0(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	encoding_t *enc;
 	int i;
 
-	if (data_size < 262)
+	if (data_size < offset + 262)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated cmap 0 format table");
 
 	enc = fz_malloc_struct(ctx, encoding_t);
@@ -620,7 +620,7 @@ load_enc_tab6(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 	uint16_t length;
 	uint32_t i;
 
-	if (data_size < 10)
+	if (data_size < offset + 10)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "cmap6 too small");
 
 	length = get16(d+offset+2);
@@ -629,6 +629,9 @@ load_enc_tab6(fz_context *ctx, uint8_t *d, size_t data_size, uint32_t offset)
 
 	if (length < entry_count*2 + 10)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed cmap6 table");
+
+	if (data_size < offset + 10 + (uint32_t)entry_count * 2)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Truncated cmap6 table data");
 
 	enc = fz_calloc(ctx, 1, sizeof(encoding_t) + sizeof(uint16_t) * (first_code + entry_count - 256));
 	enc->max = first_code + entry_count;
@@ -1081,7 +1084,12 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 
 	/* If this glyf is composite, then we need to add any dependencies of it. */
 	offset = get_loca(ctx, ttf, i);
-	len = get_loca(ctx, ttf, i+1) - offset;
+	{
+		uint32_t next_offset = get_loca(ctx, ttf, i+1);
+		if (next_offset < offset)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "Non-monotonic loca table");
+		len = next_offset - offset;
+	}
 	if (len == 0)
 		return;
 	if (offset+2 > glyf->len)
