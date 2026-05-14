@@ -2088,6 +2088,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	int i;
 	pdf_token tok;
 	pdf_xref_entry *ret_entry = NULL;
+	pdf_xref_entry *object_entry = NULL;
 	int ret_idx;
 	int xref_len;
 	int found;
@@ -2098,19 +2099,38 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	fz_var(objstm);
 	fz_var(stm);
 	fz_var(sub);
+	fz_var(numbuf);
+	fz_var(object_entry);
 
 	fz_try(ctx)
 	{
-		objstm = pdf_load_object(ctx, doc, num);
+		/* Perform the same operations as pdf_load_object, but
+		 * open coded so we can retain object_entry. */
+		if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+			break;
+		object_entry = pdf_cache_object(ctx, doc, num);
+		if (!object_entry)
+			break;
+		/* If object_entry is marked as being free then we've previously
+		 * tried to read the stream, and failed. Don't retry. */
+		if (object_entry->type == 'f')
+			break;
+
+		objstm = pdf_keep_obj(ctx, object_entry->obj);
 
 		if (pdf_obj_marked(ctx, objstm))
 			fz_throw(ctx, FZ_ERROR_FORMAT, "recursive object stream lookup");
 	}
 	fz_catch(ctx)
 	{
+		if (object_entry != NULL && fz_caught(ctx) != FZ_ERROR_TRYLATER && fz_caught(ctx) != FZ_ERROR_SYSTEM)
+			object_entry->type = 'f';
 		pdf_drop_obj(ctx, objstm);
 		fz_rethrow(ctx);
 	}
+
+	if (objstm == NULL)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "corrupt object stream %d", num);
 
 	fz_try(ctx)
 	{
@@ -2225,6 +2245,14 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	}
 	fz_catch(ctx)
 	{
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER && fz_caught(ctx) != FZ_ERROR_SYSTEM)
+		{
+			/* This should never throw. It should also never be NULL, but
+			 * belt and braces. */
+			object_entry = pdf_get_xref_entry(ctx, doc, num);
+			if (object_entry)
+				object_entry->type = 'f';
+		}
 		fz_rethrow(ctx);
 	}
 	return ret_entry;
