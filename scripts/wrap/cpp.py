@@ -1716,9 +1716,9 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
             static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_document* document)    {{ return (document) ? (std::mutex*) document->external_mutex : nullptr; }}
             static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_device* device)        {{ return (device) ? (std::mutex*) device->external_mutex : nullptr; }}
 
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_page* p)       {{ return internal_get_mutex(ctx, p->doc); }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_document* d)  {{ return internal_get_mutex(ctx, &d->super); }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_page* p)      {{ return internal_get_mutex(ctx, &p->super); }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_page* p)       {{ return (p) ? internal_get_mutex(ctx, p->doc) : nullptr; }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_document* d)  {{ return (d) ? internal_get_mutex(ctx, &d->super) : nullptr; }}
+            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_page* p)      {{ return (p) ? internal_get_mutex(ctx, &p->super) : nullptr; }}
             static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_annot* a)     {{ return internal_get_mutex(ctx, pdf_annot_page(ctx, a)); }}
             static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_obj* o)       {{ return internal_get_mutex(ctx, pdf_get_bound_document(ctx, o)); }}
 
