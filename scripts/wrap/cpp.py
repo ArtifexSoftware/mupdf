@@ -405,8 +405,8 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
     out.write(f'\n')
     if lock_args:
         out.write(f'    /* Locking may be required for {len(lock_args)} args. */\n')
-        out.write(f'    std::mutex* mutexes[{len(lock_args)}];\n')
-        out.write(f'    std::mutex** mutexes_end = mutexes;\n')
+        out.write(f'    std::recursive_mutex* mutexes[{len(lock_args)}];\n')
+        out.write(f'    std::recursive_mutex** mutexes_end = mutexes;\n')
         out.write(f'    \n')
         out.write(f'    if (!{lock_arg_name()} && internal_use_locking)\n')
         out.write(f'    {{\n')
@@ -416,15 +416,15 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
         out.write(f'        /* Sort mutexes by raw address to impose consistent locking order that avoids deadlocks. */\n')
         out.write(f'        std::sort(mutexes, mutexes_end);\n')
         out.write(f'        /* Remove null or duplicate mutexes. */\n')
-        out.write(f'        std::mutex** m0 = mutexes;\n')
-        out.write(f'        for (std::mutex** m=mutexes; m!=mutexes_end; ++m)\n')
+        out.write(f'        std::recursive_mutex** m0 = mutexes;\n')
+        out.write(f'        for (std::recursive_mutex** m=mutexes; m!=mutexes_end; ++m)\n')
         out.write(f'        {{\n')
         out.write(f'            if (*m && (m == mutexes || m[0] != m[-1]))\n')
         out.write(f'                *m0++ = *m;\n')
         out.write(f'        }}\n')
         out.write(f'        mutexes_end = m0;\n')
         out.write(f'        /* Lock the mutexes. */\n')
-        out.write(f'        for (std::mutex** m=mutexes; m!=mutexes_end; ++m)\n')
+        out.write(f'        for (std::recursive_mutex** m=mutexes; m!=mutexes_end; ++m)\n')
         out.write(f'        {{\n')
         out.write(f'            (*m)->lock();\n')
         out.write(f'        }}\n')
@@ -475,7 +475,7 @@ def make_fncall( tu, cursor, return_type, fncall, out, refcheck_if, trace_if):
         if use_fz_try:
             out.write(f'    fz_always(auto_ctx) {{\n')
         out.write(f'        /* Unlock the mutexes. */\n')
-        out.write(f'        for (std::mutex** m=mutexes; m!=mutexes_end; ++m)\n')
+        out.write(f'        for (std::recursive_mutex** m=mutexes; m!=mutexes_end; ++m)\n')
         out.write(f'        {{\n')
         out.write(f'            (*m)->unlock();\n')
         out.write(f'        }}\n')
@@ -1710,17 +1710,17 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                 #endif
             }}
 
-            /* The following functions return the std::mutex to be locked while
+            /* The following functions return the std::recursive_mutex to be locked while
             using the specified objects. */
 
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_document* document)    {{ return (document) ? (std::mutex*) document->external_mutex : nullptr; }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_device* device)        {{ return (device) ? (std::mutex*) device->external_mutex : nullptr; }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, fz_document* document)  {{ return (document) ? (std::recursive_mutex*) document->external_mutex : nullptr; }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, fz_device* device)      {{ return (device) ? (std::recursive_mutex*) device->external_mutex : nullptr; }}
 
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, fz_page* p)       {{ return (p) ? internal_get_mutex(ctx, p->doc) : nullptr; }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_document* d)  {{ return (d) ? internal_get_mutex(ctx, &d->super) : nullptr; }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_page* p)      {{ return (p) ? internal_get_mutex(ctx, &p->super) : nullptr; }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_annot* a)     {{ return internal_get_mutex(ctx, pdf_annot_page(ctx, a)); }}
-            static inline std::mutex* internal_get_mutex(fz_context* ctx, pdf_obj* o)       {{ return internal_get_mutex(ctx, pdf_get_bound_document(ctx, o)); }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, fz_page* p)         {{ return (p) ? internal_get_mutex(ctx, p->doc) : nullptr; }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, pdf_document* d)    {{ return (d) ? internal_get_mutex(ctx, &d->super) : nullptr; }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, pdf_page* p)        {{ return (p) ? internal_get_mutex(ctx, &p->super) : nullptr; }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, pdf_annot* a)       {{ return internal_get_mutex(ctx, pdf_annot_page(ctx, a)); }}
+            static inline std::recursive_mutex* internal_get_mutex(fz_context* ctx, pdf_obj* o)         {{ return internal_get_mutex(ctx, pdf_get_bound_document(ctx, o)); }}
 
             FZ_DATA extern bool internal_use_locking;
 
@@ -1870,14 +1870,14 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if):
                 {{
                     if (!internal_use_locking)
                         return nullptr;
-                    void* ret = new std::mutex;
+                    void* ret = new std::recursive_mutex;
                     //std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): " << " returning " << ret << "\\n";
                     return ret;
                 }}
                 static void destroy_mutex(void*, void* mutex)
                 {{
                     //std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): " << " freeing " << mutex << "\\n";
-                    delete (std::mutex*) mutex;
+                    delete (std::recursive_mutex*) mutex;
                 }}
                 ~{rename.internal("state")}()
                 {{
