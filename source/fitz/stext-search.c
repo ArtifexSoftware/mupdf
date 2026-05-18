@@ -393,14 +393,14 @@ struct highlight
 	float hfuzz, vfuzz;
 };
 
-int same_point(fz_point a, fz_point b)
+static int same_point(fz_point a, fz_point b)
 {
 	int dx = fz_abs(a.x - b.x);
 	int dy = fz_abs(a.y - b.y);
 	return (dx < 0.1 && dy < 0.1);
 }
 
-int is_near(float hfuzz, float vfuzz, fz_point hdir, fz_point end, fz_point p1, fz_point p2)
+static int is_near(float hfuzz, float vfuzz, fz_point hdir, fz_point end, fz_point p1, fz_point p2)
 {
 	float v = fz_abs(linedist(end, fz_make_point(-hdir.y, hdir.x), p1));
 	float d1 = fz_abs(linedist(end, hdir, p1));

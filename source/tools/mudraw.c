@@ -343,7 +343,7 @@ static int alphabits_graphics = 8;
 
 static int out_cs = CS_UNSET;
 static const char *proof_filename = NULL;
-fz_colorspace *proof_cs = NULL;
+static fz_colorspace *proof_cs = NULL;
 static const char *icc_filename = NULL;
 static float gamma_value = 1;
 static int invert = 0;

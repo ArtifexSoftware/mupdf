@@ -219,7 +219,7 @@ fz_recognize_document_stream_content(fz_context *ctx, fz_stream *stream, const c
 	return fz_recognize_document_stream_and_dir_content(ctx, stream, NULL, magic);
 }
 
-const fz_document_handler *
+static const fz_document_handler *
 do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **streamp, fz_archive *dir, const char *magic, void **handler_state, fz_document_recognize_state_free_fn **handler_free_state)
 {
 	fz_document_handler_context *dc;

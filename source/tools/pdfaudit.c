@@ -62,7 +62,7 @@ typedef enum
 	AUDIT__MAX
 } audit_type_t;
 
-const char *audit_type[] =
+static const char *audit_type[] =
 {
 	"UNKNOWN",
 	"THUMBNAILS",
@@ -191,7 +191,7 @@ enum
 	OP_END
 };
 
-const char *op_names[] =
+static const char *op_names[] =
 {
 	"w",
 	"j",

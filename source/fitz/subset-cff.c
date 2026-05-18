@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -243,7 +243,7 @@ offsize_for_offset(uint32_t offset)
 	return 4;
 }
 
-uint16_t
+static uint16_t
 subr_bias(fz_context *ctx, cff_t *cff, uint16_t count)
 {
 	if (cff->charstring_type == 1)
@@ -1262,7 +1262,7 @@ atleast_fail:
 }
 
 
-usage_list_t *
+static usage_list_t *
 get_font_locals(fz_context *ctx, cff_t *cff, int gid, int is_pdf_cidfont, uint16_t *subr_bias)
 {
 	usage_t *gids = cff->gids_to_keep.list;

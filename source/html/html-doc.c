@@ -497,7 +497,7 @@ static int recognize_html_content(fz_context *ctx, const fz_document_handler *ha
 	return 0;
 }
 
-int htdoc_recognize_html_content(fz_context *ctx, const fz_document_handler *handler, fz_stream *stream, fz_archive *dir, void **hstate, fz_document_recognize_state_free_fn **free_state)
+static int htdoc_recognize_html_content(fz_context *ctx, const fz_document_handler *handler, fz_stream *stream, fz_archive *dir, void **hstate, fz_document_recognize_state_free_fn **free_state)
 {
 	return recognize_html_content(ctx, handler, stream, dir, hstate, free_state, 0);
 }
@@ -553,7 +553,7 @@ xhtdoc_open_document(fz_context *ctx, const fz_document_handler *handler, fz_str
 	return fz_htdoc_open_document_with_stream_and_dir(ctx, file, dir, &fz_htdoc_xhtml);
 }
 
-int xhtdoc_recognize_xhtml_content(fz_context *ctx, const fz_document_handler *handler, fz_stream *stream, fz_archive *dir, void **hstate, fz_document_recognize_state_free_fn **free_state)
+static int xhtdoc_recognize_xhtml_content(fz_context *ctx, const fz_document_handler *handler, fz_stream *stream, fz_archive *dir, void **hstate, fz_document_recognize_state_free_fn **free_state)
 {
 	return recognize_html_content(ctx, handler, stream, dir, hstate, free_state, 1);
 }

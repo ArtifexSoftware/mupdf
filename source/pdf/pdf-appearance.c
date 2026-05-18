@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -2357,7 +2357,7 @@ escape_text(fz_context *ctx, const char *s)
 	return d2;
 }
 
-int text_needs_rich_layout(fz_context *ctx, const char *s)
+static int text_needs_rich_layout(fz_context *ctx, const char *s)
 {
 	int c, script;
 	while (*s)

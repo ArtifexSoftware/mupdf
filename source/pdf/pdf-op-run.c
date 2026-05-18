@@ -2040,7 +2040,7 @@ get_lineage(fz_context *ctx, pdf_obj *a, int *lenp)
 	return line;
 }
 
-pdf_obj *
+static pdf_obj *
 find_most_recent_common_ancestor(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 {
 	/* First ascend one lineage. */

@@ -307,7 +307,7 @@ static const char *prefix_js =
 	"}\n"
 	;
 
-const char *postfix_js =
+static const char *postfix_js =
 	"var fs = {\n"
 	"	readFileSync: readFile,\n"
 	"	writeFileSync: function (fn, buf) { buf.save(fn) }\n"
@@ -1067,7 +1067,7 @@ static void ffi_pushcolor(js_State *J, fz_colorspace *colorspace, const float *c
 	js_pushnumber(J, alpha);
 }
 
-void ffi_pushrgb(js_State *J, uint32_t argb)
+static void ffi_pushrgb(js_State *J, uint32_t argb)
 {
 	float rgb[3];
 	rgb[0] = ((argb >> 16) & 0xff) / 255.0f;

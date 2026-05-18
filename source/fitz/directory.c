@@ -124,7 +124,7 @@ count_dir_entries(fz_context *ctx, fz_archive *arch)
 	return dir->num_entries;
 }
 
-const char *
+static const char *
 list_dir_entry(fz_context *ctx, fz_archive *arch, int n)
 {
 	fz_directory *dir = (fz_directory *) arch;
