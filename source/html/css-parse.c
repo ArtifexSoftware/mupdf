@@ -270,6 +270,19 @@ static int isnmchar(int c)
 		(c >= '0' && c <= '9') || c == '-' || (c >= 128 && c <= UCS_MAX);
 }
 
+static int ishexchar(int c)
+{
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+static int fromhexchar(int c)
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 0xA;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 0xA;
+	return 0;
+}
+
 static void css_push_char(struct lexbuf *buf, int c)
 {
 	char out[4];
@@ -368,6 +381,19 @@ static int css_lex_hash(struct lexbuf *buf)
 	return CSS_HASH;
 }
 
+static int css_lex_unicode_escape(struct lexbuf *buf)
+{
+	int rune = 0;
+	while (ishexchar(buf->c))
+	{
+		rune = rune * 16 + fromhexchar(buf->c);
+		css_lex_next(buf);
+	}
+	if (buf->c == ' ')
+		css_lex_next(buf);
+	return rune;
+}
+
 static int css_lex_string(struct lexbuf *buf, int q)
 {
 	while (buf->c && buf->c != q)
@@ -386,7 +412,8 @@ static int css_lex_string(struct lexbuf *buf, int q)
 				/* line continuation */ ;
 			else if (css_lex_accept(buf, '\r'))
 				css_lex_accept(buf, '\n');
-			// TODO: unicode escapes
+			else if (ishexchar(buf->c))
+				css_push_char(buf, css_lex_unicode_escape(buf));
 			else
 			{
 				css_push_char(buf, buf->c);
