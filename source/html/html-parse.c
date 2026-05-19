@@ -91,6 +91,10 @@ static const char *html_default_css =
 "figcaption,caption{display:block;text-align:center}"
 "address,article,aside,figure,footer,header,hgroup,main,nav,section,search{display:block}"
 "fieldset,legend{display:block}"
+"input[type=checkbox]:before{content:'\\2610  '}"
+"input[type=checkbox][checked]:before{content:'\\2612  '}"
+"input[type=radio]:before{content:'\\25cb  '}"
+"input[type=radio][checked]:before{content:'\\25c9  '}"
 ;
 
 static const char *mobi_default_css =
