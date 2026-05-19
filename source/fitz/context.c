@@ -68,6 +68,7 @@ static void fz_drop_style_context(fz_context *ctx)
 
 void fz_set_use_document_css(fz_context *ctx, int use)
 {
+	fz_warn(ctx, "fz_set_use_document_css is deprecated; please use fz_style_document instead");
 	ctx->style->use_document_css = use;
 }
 
@@ -78,6 +79,7 @@ int fz_use_document_css(fz_context *ctx)
 
 void fz_set_user_css(fz_context *ctx, const char *user_css)
 {
+	fz_warn(ctx, "fz_set_user_css is deprecated; please use fz_style_document instead");
 	fz_free(ctx, ctx->style->user_css);
 	ctx->style->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
 }

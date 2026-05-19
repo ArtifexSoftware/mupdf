@@ -4,6 +4,9 @@ List of changes in MuPDF 1.28
 		Removed fz_has_option, fz_copy_option, and fz_option_eq.
 		Added fz_options struct with constructors and accessors.
 
+	Per-document control of publisher and user CSS.
+		fz_style_document to replace fz_set_use_document_css and fz_set_user_css.
+
 List of changes in MuPDF 1.27
 
 	New and updated documentation! Build local HTML and Markdown versions from source with sphinx.

@@ -319,8 +319,10 @@ static int page_box = FZ_CROP_BOX;
 static float layout_w = FZ_DEFAULT_LAYOUT_W;
 static float layout_h = FZ_DEFAULT_LAYOUT_H;
 static float layout_em = FZ_DEFAULT_LAYOUT_EM;
-static char *layout_css = NULL;
-static int layout_use_doc_css = 1;
+static char *layout_user_css = NULL;
+static char *layout_user_css_data = NULL;
+static int layout_publisher_css = 1;
+
 static float min_line_width = 0.0f;
 
 static int showfeatures = 0;
@@ -2168,8 +2170,8 @@ int mudraw_main(int argc, char **argv)
 		case 'W': layout_w = fz_atof(fz_optarg); break;
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
-		case 'U': layout_css = fz_optarg; break;
-		case 'X': layout_use_doc_css = 0; break;
+		case 'U': layout_user_css = fz_optarg; break;
+		case 'X': layout_publisher_css = 0; break;
 
 		case 'K': ++s_kill; break;
 
@@ -2379,10 +2381,8 @@ int mudraw_main(int argc, char **argv)
 
 #endif /* DISABLE_MUTHREADS */
 
-		if (layout_css)
-			fz_load_user_css(ctx, layout_css);
-
-		fz_set_use_document_css(ctx, layout_use_doc_css);
+		if (layout_user_css)
+			layout_user_css_data = fz_read_text_file(ctx, layout_user_css);
 
 		/* Determine output type */
 
@@ -2722,6 +2722,7 @@ int mudraw_main(int argc, char **argv)
 					}
 
 					layouttime = gettime();
+					fz_style_document(ctx, doc, layout_publisher_css, layout_user_css_data);
 					fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 					(void) fz_count_pages(ctx, doc);
 					layouttime = gettime() - layouttime;
@@ -2884,6 +2885,8 @@ int mudraw_main(int argc, char **argv)
 			errored = 1;
 		}
 	}
+
+	fz_free(ctx, layout_user_css_data);
 
 	fz_drop_context(ctx);
 

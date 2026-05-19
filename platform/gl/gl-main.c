@@ -213,7 +213,8 @@ static float layout_w = FZ_DEFAULT_LAYOUT_W;
 static float layout_h = FZ_DEFAULT_LAYOUT_H;
 static float layout_em = FZ_DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
-static int layout_use_css = 1;
+static char *layout_css_data = NULL;
+static int layout_use_css = 1; // bitmask: 1=publisher-css, 2=user-css
 static int enable_js = 1;
 static int tint_white = 0xFFFFF0;
 static int tint_black = 0x303030;
@@ -1270,12 +1271,10 @@ static void relayout(void)
 	if (fz_is_document_reflowable(ctx, doc))
 	{
 		fz_bookmark mark = fz_make_bookmark(ctx, doc, currentpage);
-		fz_set_use_document_css(ctx, layout_use_css & 1);
-		if (layout_use_css & 2)
-			fz_load_user_css(ctx, layout_css);
-		else
-			fz_set_user_css(ctx, NULL);
+
+		fz_style_document(ctx, doc, layout_use_css & 1, (layout_use_css & 2) ? layout_css_data : NULL);
 		fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+
 		currentpage = fz_lookup_bookmark(ctx, doc, mark);
 		history_count = 0;
 		future_count = 0;
@@ -1908,6 +1907,7 @@ static void load_document(void)
 		}
 	}
 
+	fz_style_document(ctx, doc, layout_use_css & 1, (layout_use_css & 2) ? layout_css_data : NULL);
 	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 
 	fz_try(ctx)
@@ -2015,11 +2015,6 @@ void reload_document(void)
 {
 	save_history();
 	save_accelerator();
-	fz_set_use_document_css(ctx, layout_use_css & 1);
-	if (layout_css != NULL && layout_use_css & 2)
-		fz_load_user_css(ctx, layout_css);
-	else
-		fz_set_user_css(ctx, NULL);
 	load_document();
 	if (doc)
 	{
@@ -2407,7 +2402,7 @@ static void do_app(void)
 
 		case '>': layout_em = number > 0 ? number : layout_em + 1; relayout(); break;
 		case '<': layout_em = number > 0 ? number : layout_em - 1; relayout(); break;
-		case 'c': layout_use_css = (layout_use_css + 1) % 4; reload_document(); break;
+		case 'c': layout_use_css = (layout_use_css + 1) % 4; relayout(); break;
 
 		case 'C': currenttint = !currenttint; break;
 		case 'I': currentinvert = !currentinvert; break;
@@ -2790,9 +2785,9 @@ static fz_buffer *format_info_text()
 	{
 		fz_append_printf(ctx, out, "Em size: %g\n", layout_em);
 		buf[0] = 0;
-		if (fz_use_document_css(ctx))
+		if (doc->publisher_css)
 			fz_strlcat(buf, "doc, ", sizeof buf);
-		if (fz_user_css(ctx))
+		if (doc->user_css)
 			fz_strlcat(buf, "user, ", sizeof buf);
 		if (strlen(buf) > 2)
 			buf[strlen(buf)-2] = 0;
@@ -3213,6 +3208,8 @@ static void cleanup(void)
 
 	ui_finish();
 
+	fz_free(ctx, layout_css_data);
+
 	fz_drop_pixmap(ctx, page_contents);
 	page_contents = NULL;
 #ifndef NDEBUG
@@ -3343,8 +3340,7 @@ int main(int argc, char **argv)
 	}
 
 	if (layout_css)
-		fz_load_user_css(ctx, layout_css);
-	fz_set_use_document_css(ctx, layout_use_css & 1);
+		layout_css_data = fz_read_text_file(ctx, layout_css);
 
 	if (fz_optind < argc)
 	{

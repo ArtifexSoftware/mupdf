@@ -3636,34 +3636,6 @@ static void ffi_readFile(js_State *J)
 	ffi_pushbuffer_own(J, buf);
 }
 
-static void ffi_setUserCSS(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	int use_doc_css = js_iscoercible(J, 2) ? js_toboolean(J, 2) : 1;
-
-	if (js_isuserdata(J, 1, "fz_buffer"))
-	{
-		fz_buffer *cssbuf = ffi_tonewbuffer(J, 1);
-		const char *user_css = NULL;
-		fz_try(ctx) {
-			user_css = fz_string_from_buffer(ctx, cssbuf);
-			fz_set_user_css(ctx, user_css);
-			fz_set_use_document_css(ctx, use_doc_css);
-		} fz_catch(ctx)
-			rethrow(J);
-	}
-	else
-	{
-		const char *user_css = js_tostring(J, 1);
-		fz_try(ctx) {
-			fz_set_user_css(ctx, user_css);
-			fz_set_use_document_css(ctx, use_doc_css);
-		} fz_catch(ctx)
-			rethrow(J);
-	}
-
-}
-
 static void ffi_new_Archive(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4323,6 +4295,19 @@ static void ffi_Document_isReflowable(js_State *J)
 		rethrow(J);
 
 	js_pushboolean(J, is_reflowable);
+}
+
+static void ffi_Document_style(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = ffi_todocument(J, 0);
+	float publisher_css = js_toboolean(J, 1);
+	const char *user_css = js_tostring(J, 2);
+
+	fz_try(ctx)
+		fz_style_document(ctx, doc, publisher_css, user_css);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_Document_layout(js_State *J)
@@ -12304,6 +12289,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Document.resolveLinkDestination", ffi_Document_resolveLinkDestination, 1);
 		jsB_propfun(J, "Document.formatLinkURI", ffi_Document_formatLinkURI, 1);
 		jsB_propfun(J, "Document.isReflowable", ffi_Document_isReflowable, 0);
+		jsB_propfun(J, "Document.style", ffi_Document_style, 2);
 		jsB_propfun(J, "Document.layout", ffi_Document_layout, 3);
 		jsB_propfun(J, "Document.countPages", ffi_Document_countPages, 0);
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);
@@ -13072,8 +13058,6 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "disableICC", ffi_disableICC, 0);
 		jsB_propfun(J, "emptyStore", ffi_emptyStore, 0);
 		jsB_propfun(J, "shrinkStore", ffi_shrinkStore, 1);
-
-		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 
 		jsB_propfun(J, "installLoadFontFunction", ffi_installLoadFontFunction, 1);
 

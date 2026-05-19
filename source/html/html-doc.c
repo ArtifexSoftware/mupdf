@@ -36,6 +36,7 @@ typedef struct
 	fz_html *html;
 	fz_outline *outline;
 	const fz_htdoc_format_t *format;
+	fz_buffer *buf;
 } html_document;
 
 typedef struct
@@ -53,6 +54,7 @@ htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 	fz_drop_html(ctx, doc->html);
 	fz_drop_html_font_set(ctx, doc->set);
 	fz_drop_outline(ctx, doc->outline);
+	fz_drop_buffer(ctx, doc->buf);
 }
 
 static fz_link_dest
@@ -94,16 +96,6 @@ htdoc_update_outline(fz_context *ctx, fz_document *doc, fz_outline *node)
 		htdoc_update_outline(ctx, doc, node->down);
 		node = node->next;
 	}
-}
-
-static void
-htdoc_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
-{
-	html_document *doc = (html_document*)doc_;
-
-	fz_layout_html(ctx, doc->html, w, h, em);
-
-	htdoc_update_outline(ctx, doc_, doc->outline);
 }
 
 static void
@@ -187,7 +179,7 @@ htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char 
 }
 
 static fz_html *
-generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buffer_in, const char *user_css, const fz_htdoc_format_t *format)
+generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buffer_in, const char *user_css, const fz_htdoc_format_t *format, int publisher_css)
 {
 	fz_buffer *buffer_html = NULL;
 	fz_html *html = NULL;
@@ -200,7 +192,7 @@ generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 			buffer_html = format->convert_to_html(ctx, set, buffer_in, zip, user_css);
 		else
 			buffer_html = fz_keep_buffer(ctx, buffer_in);
-		html = fz_parse_html(ctx, set, zip, base_uri, buffer_html, user_css, format->try_xml, format->try_html5, format->patch_mobi);
+		html = fz_parse_html(ctx, set, zip, base_uri, buffer_html, user_css, format->try_xml, format->try_html5, format->patch_mobi, publisher_css);
 	}
 	fz_always(ctx)
 	{
@@ -212,6 +204,29 @@ generic_parse(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		fz_rethrow(ctx);
 	}
 	return html;
+}
+
+static void
+htdoc_style(fz_context *ctx, fz_document *doc_)
+{
+	html_document *doc = (html_document*)doc_;
+	fz_drop_html(ctx, doc->html);
+	doc->html = NULL;
+	fz_drop_outline(ctx, doc->outline);
+	doc->outline = NULL;
+
+	doc->html = generic_parse(ctx, doc->set, doc->zip, ".", doc->buf, doc->super.user_css, doc->format, doc->super.publisher_css);
+	doc->outline = fz_load_html_outline(ctx, doc->html);
+}
+
+static void
+htdoc_layout(fz_context *ctx, fz_document *doc_)
+{
+	html_document *doc = (html_document*)doc_;
+
+	fz_layout_html(ctx, doc->html, doc->super.layout_w, doc->super.layout_h, doc->super.layout_em);
+
+	htdoc_update_outline(ctx, doc_, doc->outline);
 }
 
 fz_document *
@@ -226,6 +241,7 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *dir, fz_buffer *
 	{
 		doc = fz_new_derived_document(ctx, html_document);
 		doc->super.drop_document = htdoc_drop_document;
+		doc->super.style = htdoc_style;
 		doc->super.layout = htdoc_layout;
 		doc->super.load_outline = htdoc_load_outline;
 		doc->super.resolve_link_dest = htdoc_resolve_link;
@@ -236,11 +252,12 @@ fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *dir, fz_buffer *
 		doc->super.lookup_metadata = htdoc_lookup_metadata;
 		doc->super.is_reflowable = 1;
 
+		doc->buf = fz_keep_buffer(ctx, buf);
 		doc->zip = fz_keep_archive(ctx, dir);
 		doc->format = format;
 		doc->set = fz_new_html_font_set(ctx);
-		doc->html = generic_parse(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx), format);
-		doc->outline = fz_load_html_outline(ctx, doc->html);
+		doc->html = NULL;
+		doc->outline = NULL;
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);

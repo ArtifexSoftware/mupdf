@@ -248,6 +248,8 @@ struct genstate
 	int col_num;
 
 	fz_css_style_splay *styles;
+
+	int publisher_css;
 };
 
 static int iswhite(int c)
@@ -1233,7 +1235,7 @@ static fz_html_box *gen2_table_cell(fz_context *ctx, struct genstate *g, fz_html
 	if (!row_box)
 		return gen2_block(ctx, g, root_box, node, style);
 
-	fz_match_css(ctx, &match, root_match, g->css, node, FZ_CSS_PSEUDO_NONE);
+	fz_match_css(ctx, &match, root_match, g->css, node, FZ_CSS_PSEUDO_NONE, g->publisher_css);
 	fz_apply_css_style(ctx, g->set, style, &match);
 	if (g->col_num < g->tab_styles.ncols)
 	{
@@ -1526,7 +1528,7 @@ static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root
 
 	if (fz_xml_tag(root_node))
 	{
-		fz_match_css(ctx, &match, root_match, g->css, root_node, FZ_CSS_PSEUDO_BEFORE);
+		fz_match_css(ctx, &match, root_match, g->css, root_node, FZ_CSS_PSEUDO_BEFORE, g->publisher_css);
 		content = fz_get_css_match_content(&match);
 		if (content)
 		{
@@ -1540,7 +1542,7 @@ static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root
 		tag = fz_xml_tag(node);
 		if (tag)
 		{
-			fz_match_css(ctx, &match, root_match, g->css, node, FZ_CSS_PSEUDO_NONE);
+			fz_match_css(ctx, &match, root_match, g->css, node, FZ_CSS_PSEUDO_NONE, g->publisher_css);
 			fz_apply_css_style(ctx, g->set, &style, &match);
 			apply_attributes_as_styles(ctx, &style, node);
 			display = fz_get_css_match_display(&match);
@@ -1577,7 +1579,7 @@ static void gen2_children(fz_context *ctx, struct genstate *g, fz_html_box *root
 
 	if (fz_xml_tag(root_node))
 	{
-		fz_match_css(ctx, &match, root_match, g->css, root_node, FZ_CSS_PSEUDO_AFTER);
+		fz_match_css(ctx, &match, root_match, g->css, root_node, FZ_CSS_PSEUDO_AFTER, g->publisher_css);
 		content = fz_get_css_match_content(&match);
 		if (content)
 		{
@@ -1970,7 +1972,7 @@ static void move_background_color_up(fz_context *ctx, struct genstate *g, fz_htm
 
 static void
 xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, const char *user_css,
-	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi)
+	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi, int publisher_css)
 {
 	fz_xml *root, *node;
 	char *title;
@@ -1995,6 +1997,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 	g.markup_lang = FZ_LANG_UNSET;
 	g.href = NULL;
 	g.styles = NULL;
+	g.publisher_css = publisher_css;
 
 	if (rtitle)
 		*rtitle = NULL;
@@ -2013,7 +2016,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		{
 			g.is_fb2 = 1;
 			fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
-			if (fz_use_document_css(ctx))
+			if (publisher_css)
 				fb2_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 			g.images = load_fb2_images(ctx, root);
 		}
@@ -2022,14 +2025,14 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 			g.is_fb2 = 0;
 			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
 			fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
-			if (fz_use_document_css(ctx))
+			if (publisher_css)
 				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 		}
 		else
 		{
 			g.is_fb2 = 0;
 			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
-			if (fz_use_document_css(ctx))
+			if (publisher_css)
 				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 		}
 
@@ -2082,7 +2085,7 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		tree->root->s.layout.b = 0;
 
 		// Create document node (html).
-		fz_match_css(ctx, &match, &root_match, g.css, root, FZ_CSS_PSEUDO_NONE);
+		fz_match_css(ctx, &match, &root_match, g.css, root, FZ_CSS_PSEUDO_NONE, publisher_css);
 		fz_apply_css_style(ctx, g.set, &style, &match);
 		display = fz_get_css_match_display(&match);
 		gen2_tag(ctx, &g, tree->root, root, &match, display, &style);
@@ -2232,7 +2235,7 @@ patch_mobi_html(fz_context *ctx, fz_pool *pool, fz_xml *node)
 static void
 fz_parse_html_tree(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi)
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi, int publisher_css)
 {
 	fz_xml_doc *xml;
 
@@ -2245,7 +2248,7 @@ fz_parse_html_tree(fz_context *ctx,
 		patch_mobi_html(ctx, xml->u.doc.pool, fz_xml_root(xml));
 
 	fz_try(ctx)
-		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi);
+		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi, publisher_css);
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
 	fz_catch(ctx)
@@ -2279,7 +2282,7 @@ fz_new_html_tree_of_size(fz_context *ctx, size_t size, fz_store_drop_fn *drop)
 fz_html *
 fz_parse_html(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, int patch_mobi)
+	int try_xml, int try_html5, int patch_mobi, int publisher_css)
 {
 	fz_html *html = fz_new_derived_html_tree(ctx, fz_html, fz_drop_html_imp);
 
@@ -2288,7 +2291,7 @@ fz_parse_html(fz_context *ctx,
 	html->layout_em = 0;
 
 	fz_try(ctx)
-		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi);
+		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi, publisher_css);
 	fz_catch(ctx)
 	{
 		fz_drop_html(ctx, html);
@@ -2389,10 +2392,10 @@ fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em, fz
 }
 
 fz_html *
-fz_parse_xhtml(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
+fz_parse_xhtml(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css, int publisher_css)
 {
 	/* try as XML first, fall back to HTML5 */
-	return fz_parse_html(ctx, set, zip, base_uri, buf, user_css, 1, 1, 0);
+	return fz_parse_html(ctx, set, zip, base_uri, buf, user_css, 1, 1, 0, publisher_css);
 }
 
 static void indent(int level)
@@ -2722,7 +2725,7 @@ convert_to_boxes(fz_context *ctx, fz_story *story)
 	fz_try(ctx)
 	{
 		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
-		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0);
+		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0, 1);
 	}
 	fz_always(ctx)
 	{

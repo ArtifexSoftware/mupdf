@@ -575,7 +575,7 @@ void fz_drop_css(fz_context *ctx, fz_css *css);
 void fz_debug_css(fz_context *ctx, fz_css *css);
 const char *fz_css_property_name(int name);
 
-void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo);
+void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo, int publisher_css);
 void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
 
 int fz_get_css_match_display(fz_css_match *node);
@@ -630,7 +630,7 @@ fz_structure fz_html_tag_to_structure(const char *tag);
 
 fz_html *fz_parse_html(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *dir, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, int patch_mobi);
+	int try_xml, int try_html5, int patch_mobi, int publisher_css);
 
 fz_buffer *fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in);
 

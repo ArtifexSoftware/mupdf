@@ -512,6 +512,13 @@ Open a document from `filename`. The format is detected automatically.
 
 ### Layout
 
+**`void fz_style_document(fz_context *ctx, fz_document *doc, int publisher_css, const char *user_css)`**
+
+Control use of publisher and user stylesheets.
+
+- `publisher_css` – Enable/disable use of publisher styles.
+- `user_css` – User stylesheet (the contents; not a file name).
+
 **`void fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em)`**
 
 Set the page layout for reflowable documents (EPUB, FB2, etc.).

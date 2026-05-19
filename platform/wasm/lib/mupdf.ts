@@ -2099,6 +2099,10 @@ export class Document extends Userdata<"any_document"> {
 		libmupdf._wasm_is_document_reflowable(this.pointer)
 	}
 
+	style(publisherCSS: boolean, userCSS: string) {
+		libmupdf._wasm_style_document(this.pointer, publisherCSS, STRING(userCSS))
+	}
+
 	layout(w: number, h: number, em: number) {
 		libmupdf._wasm_layout_document(this.pointer, w, h, em)
 	}

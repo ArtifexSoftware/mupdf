@@ -37,11 +37,14 @@ typedef struct
 {
 	int max_chapters;
 	int num_chapters;
+
 	float layout_w;
 	float layout_h;
 	float layout_em;
-	uint32_t css_sum;
-	int use_doc_css;
+
+	uint32_t user_css_sum;
+	int publisher_css;
+
 	int *pages_in_chapter;
 } epub_accelerator;
 
@@ -54,9 +57,8 @@ typedef struct
 	epub_chapter **spine;
 	fz_outline *outline;
 	char *dc_title, *dc_creator;
-	float layout_w, layout_h, layout_em;
 	epub_accelerator *accel;
-	uint32_t css_sum;
+	uint32_t user_css_sum; /* cached checksum of current user_css */
 
 	/* A common pattern of use is for us to open a document,
 	 * load a page, draw it, drop it, load the next page,
@@ -85,10 +87,9 @@ struct epub_page
 };
 
 static uint32_t
-user_css_sum(fz_context *ctx)
+checksum_css(fz_context *ctx, const char *css)
 {
 	uint32_t sum = 0;
-	const char *css = fz_user_css(ctx);
 	sum = crc32(0, NULL, 0);
 	if (css)
 		sum = crc32(sum, (Byte*)css, (int)strlen(css));
@@ -185,22 +186,34 @@ static void
 invalidate_accelerator(fz_context *ctx, epub_accelerator *acc)
 {
 	int i;
-
 	for (i = 0; i < acc->max_chapters; i++)
 		acc->pages_in_chapter[i] = -1;
+}
+
+static void
+ensure_accelerator(fz_context *ctx, epub_document *doc)
+{
+	if (
+		(doc->accel->layout_w != doc->super.layout_w) ||
+		(doc->accel->layout_h != doc->super.layout_h) ||
+		(doc->accel->layout_em != doc->super.layout_em) ||
+		(doc->accel->publisher_css != doc->super.publisher_css) ||
+		(doc->accel->user_css_sum != doc->user_css_sum)
+	) {
+		doc->accel->publisher_css = doc->super.publisher_css;
+		doc->accel->user_css_sum = doc->user_css_sum;
+		doc->accel->layout_w = doc->super.layout_w;
+		doc->accel->layout_h = doc->super.layout_h;
+		doc->accel->layout_em = doc->super.layout_em;
+		invalidate_accelerator(ctx, doc->accel);
+	}
 }
 
 static int count_chapter_pages(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 {
 	epub_accelerator *acc = doc->accel;
-	int use_doc_css = fz_use_document_css(ctx);
 
-	if (use_doc_css != acc->use_doc_css || doc->css_sum != acc->css_sum)
-	{
-		acc->use_doc_css = use_doc_css;
-		acc->css_sum = doc->css_sum;
-		invalidate_accelerator(ctx, acc);
-	}
+	ensure_accelerator(ctx, doc);
 
 	if (ch->number < acc->num_chapters && acc->pages_in_chapter[ch->number] != -1)
 		return acc->pages_in_chapter[ch->number];
@@ -249,39 +262,25 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 }
 
 static void
-epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
+epub_style(fz_context *ctx, fz_document *doc_)
 {
 	epub_document *doc = (epub_document*)doc_;
-	uint32_t css_sum = user_css_sum(ctx);
-	int use_doc_css = fz_use_document_css(ctx);
 
-	if (doc->layout_w == w && doc->layout_h == h && doc->layout_em == em && doc->css_sum == css_sum)
-		return;
-	doc->layout_w = w;
-	doc->layout_h = h;
-	doc->layout_em = em;
+	doc->user_css_sum = checksum_css(ctx, doc->super.user_css);
 
-	if (doc->accel == NULL)
-		return;
+	// new user style sheet applied, we need to reparse the html
+	fz_purge_stored_html(ctx, doc);
+	fz_drop_html(ctx, doc->most_recent_html);
+	doc->most_recent_html = NULL;
 
-	/* When we load the saved accelerator, doc->accel
-	 * can be populated with different values than doc.
-	 * This is really useful as doc starts out with the
-	 * values being 0. If we've got the right values
-	 * already, then don't bin the data! */
-	if (doc->accel->layout_w == w &&
-		doc->accel->layout_h == h &&
-		doc->accel->layout_em == em &&
-		doc->accel->use_doc_css == use_doc_css &&
-		doc->accel->css_sum == css_sum)
-		return;
+	// Note: the accelerator will be checked in the layout call which always happens directly after style
+}
 
-	doc->accel->layout_w = w;
-	doc->accel->layout_h = h;
-	doc->accel->layout_em = em;
-	doc->accel->use_doc_css = use_doc_css;
-	doc->accel->css_sum = css_sum;
-	invalidate_accelerator(ctx, doc->accel);
+static void
+epub_layout(fz_context *ctx, fz_document *doc_)
+{
+	epub_document *doc = (epub_document*)doc_;
+	ensure_accelerator(ctx, doc);
 }
 
 static int
@@ -310,8 +309,8 @@ static void epub_load_accelerator(fz_context *ctx, epub_document *doc, fz_stream
 	float w, h, em;
 	int num_chapters;
 	epub_accelerator *acc = NULL;
-	uint32_t css_sum;
-	int use_doc_css;
+	uint32_t user_css_sum;
+	int publisher_css;
 	int make_new = (accel == NULL);
 
 	fz_var(acc);
@@ -345,8 +344,8 @@ static void epub_load_accelerator(fz_context *ctx, epub_document *doc, fz_stream
 			w = fz_read_float_le(ctx, accel);
 			h = fz_read_float_le(ctx, accel);
 			em = fz_read_float_le(ctx, accel);
-			css_sum = fz_read_uint32_le(ctx, accel);
-			use_doc_css = fz_read_int32_le(ctx, accel);
+			user_css_sum = fz_read_uint32_le(ctx, accel);
+			publisher_css = fz_read_int32_le(ctx, accel);
 
 			num_chapters = fz_read_int32_le(ctx, accel);
 			if (num_chapters <= 0)
@@ -361,8 +360,8 @@ static void epub_load_accelerator(fz_context *ctx, epub_document *doc, fz_stream
 			acc->layout_w = w;
 			acc->layout_h = h;
 			acc->layout_em = em;
-			acc->css_sum = css_sum;
-			acc->use_doc_css = use_doc_css;
+			acc->user_css_sum = user_css_sum;
+			acc->publisher_css = publisher_css;
 
 			for (v = 0; v < num_chapters; v++)
 				acc->pages_in_chapter[v] = fz_read_int32_le(ctx, accel);
@@ -384,8 +383,8 @@ static void epub_load_accelerator(fz_context *ctx, epub_document *doc, fz_stream
 	if (make_new)
 	{
 		acc = fz_malloc_struct(ctx, epub_accelerator);
-		acc->css_sum = doc->css_sum;
-		acc->use_doc_css = fz_use_document_css(ctx);
+		acc->user_css_sum = doc->user_css_sum;
+		acc->publisher_css = doc->super.publisher_css;
 	}
 
 	doc->accel = acc;
@@ -473,7 +472,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 	if (!buf)
 		buf = fz_new_buffer_from_printf(ctx, "<html><body><p><i>ERROR: cannot find chapter %<</i></p></body></html>", ch->path);
 	fz_try(ctx)
-		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx), 1, 1, 0);
+		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, doc->super.user_css, 1, 1, 0, doc->super.publisher_css);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
@@ -488,7 +487,7 @@ epub_get_laid_out_html(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 	fz_html *html = epub_parse_chapter(ctx, doc, ch);
 	fz_try(ctx)
 	{
-		fz_layout_html(ctx, html, doc->layout_w, doc->layout_h, doc->layout_em);
+		fz_layout_html(ctx, html, doc->super.layout_w, doc->super.layout_h, doc->super.layout_em);
 		accelerate_chapter(ctx, doc, ch, html);
 	}
 	fz_catch(ctx)
@@ -1123,8 +1122,8 @@ epub_output_accelerator(fz_context *ctx, fz_document *doc_, fz_output *out)
 		fz_write_float_le(ctx, out, doc->accel->layout_w);
 		fz_write_float_le(ctx, out, doc->accel->layout_h);
 		fz_write_float_le(ctx, out, doc->accel->layout_em);
-		fz_write_uint32_le(ctx, out, doc->accel->css_sum);
-		fz_write_int32_le(ctx, out, doc->accel->use_doc_css);
+		fz_write_uint32_le(ctx, out, doc->accel->user_css_sum);
+		fz_write_int32_le(ctx, out, doc->accel->publisher_css);
 		fz_write_int32_le(ctx, out, doc->accel->num_chapters);
 		for (i = 0; i < doc->accel->num_chapters; i++)
 			fz_write_int32_le(ctx, out, doc->accel->pages_in_chapter[i]);
@@ -1154,6 +1153,7 @@ epub_init(fz_context *ctx, fz_archive *zip, fz_stream *accel)
 		zip = NULL;
 
 		doc->super.drop_document = epub_drop_document;
+		doc->super.style = epub_style;
 		doc->super.layout = epub_layout;
 		doc->super.load_outline = epub_load_outline;
 		doc->super.resolve_link_dest = epub_resolve_link;
@@ -1168,7 +1168,6 @@ epub_init(fz_context *ctx, fz_archive *zip, fz_stream *accel)
 		doc->super.is_reflowable = 1;
 
 		doc->set = fz_new_html_font_set(ctx);
-		doc->css_sum = user_css_sum(ctx);
 		epub_load_accelerator(ctx, doc, accel);
 		epub_parse_header(ctx, doc);
 	}

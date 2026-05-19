@@ -1065,7 +1065,7 @@ add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 }
 
 void
-fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo)
+fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo, int publisher_css)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
@@ -1095,7 +1095,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css
 		}
 	}
 
-	if (fz_use_document_css(ctx))
+	if (publisher_css)
 	{
 		s = fz_xml_att(node, "style");
 		if (s)

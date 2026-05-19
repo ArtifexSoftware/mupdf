@@ -1566,6 +1566,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_isReflowable
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    style
+ * Signature: (ZLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Document_style
+  (JNIEnv *, jobject, jboolean, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    layout
  * Signature: (FFF)V
  */
@@ -1916,7 +1924,7 @@ extern "C" {
 #undef com_artifex_mupdf_fitz_FitzInputStream_MAX_SKIP_BUFFER_SIZE
 #define com_artifex_mupdf_fitz_FitzInputStream_MAX_SKIP_BUFFER_SIZE 2048L
 #undef com_artifex_mupdf_fitz_FitzInputStream_DEFAULT_BUFFER_SIZE
-#define com_artifex_mupdf_fitz_FitzInputStream_DEFAULT_BUFFER_SIZE 8192L
+#define com_artifex_mupdf_fitz_FitzInputStream_DEFAULT_BUFFER_SIZE 16384L
 #undef com_artifex_mupdf_fitz_FitzInputStream_MAX_BUFFER_SIZE
 #define com_artifex_mupdf_fitz_FitzInputStream_MAX_BUFFER_SIZE 2147483639L
 /*
