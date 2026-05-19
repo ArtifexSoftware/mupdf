@@ -229,6 +229,25 @@ fz_read_file(fz_context *ctx, const char *filename)
 	return buf;
 }
 
+char *
+fz_read_text_file(fz_context *ctx, const char *filename)
+{
+	fz_buffer *buf;
+	unsigned char *data;
+
+	buf = fz_read_file(ctx, filename);
+	fz_try(ctx)
+	{
+		fz_terminate_buffer(ctx, buf);
+		(void) fz_buffer_extract(ctx, buf, &data);
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return (char*)data;
+}
+
 fz_buffer *
 fz_try_read_file(fz_context *ctx, const char *filename)
 {

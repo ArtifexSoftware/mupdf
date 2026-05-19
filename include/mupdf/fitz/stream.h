@@ -215,6 +215,12 @@ fz_buffer *fz_read_file(fz_context *ctx, const char *filename);
 fz_buffer *fz_try_read_file(fz_context *ctx, const char *filename);
 
 /**
+	Read all the contents of a file into a string.
+	File should be UTF-8 encoded plain text.
+*/
+char *fz_read_text_file(fz_context *ctx, const char *filename);
+
+/**
 	fz_read_[u]int(16|24|32|64)(_le)?
 
 	Read a 16/32/64 bit signed/unsigned integer from stream,
