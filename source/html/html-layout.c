@@ -3243,6 +3243,10 @@ fz_restartable_layout_html(fz_context *ctx, fz_html_tree *tree, float start_x, f
 void
 fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 {
+	/* Override requested page size if the meta viewport defines a width or height */
+	w = fz_max(w, html->meta_w);
+	h = fz_max(h, html->meta_h);
+
 	/* If we're already laid out to the specifications we need,
 	 * nothing to do. */
 	if (html->layout_w == w && html->layout_h == h && html->layout_em == em)

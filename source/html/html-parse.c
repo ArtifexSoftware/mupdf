@@ -1970,11 +1970,35 @@ static void move_background_color_up(fz_context *ctx, struct genstate *g, fz_htm
 	}
 }
 
-static void
-xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, const char *user_css,
-	fz_xml_doc *xml, fz_html_tree *tree, char **rtitle, int try_fictionbook, int is_mobi, int publisher_css)
+static void parse_meta_viewport(fz_context *ctx, const char *viewport, float *meta_w, float *meta_h)
 {
-	fz_xml *root, *node;
+	const char *p;
+	p = strstr(viewport, "width=");
+	if (p)
+		*meta_w = fz_atoi(p + 6);
+	p = strstr(viewport, "height=");
+	if (p)
+		*meta_h = fz_atoi(p + 7);
+}
+
+static void
+xml_to_boxes(fz_context *ctx,
+	fz_html_font_set *set,
+	fz_archive *zip,
+	const char *base_uri,
+	const char *user_css,
+	fz_xml_doc *xml,
+	fz_html_tree *tree,
+	char **rtitle,
+	int try_fictionbook,
+	int is_mobi,
+	int publisher_css,
+	float *meta_w,
+	float *meta_h
+)
+{
+	fz_xml *root, *node, *head;
+	char *viewport;
 	char *title;
 
 	fz_css_match root_match, match;
@@ -2107,9 +2131,9 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		}
 		else
 		{
-			node = fz_xml_find(root, "html");
-			node = fz_xml_find_down(node, "head");
-			node = fz_xml_find_down(node, "title");
+			head = fz_xml_find(root, "html");
+			head = fz_xml_find_down(head, "head");
+			node = fz_xml_find_down(head, "title");
 			if (rtitle)
 			{
 				title = fz_xml_text(fz_xml_down(node));
@@ -2119,6 +2143,18 @@ xml_to_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 
 			// Move html or body background-color to :root.
 			move_background_color_up(ctx, &g, tree->root);
+
+			// Parse meta viewport size.
+			if (meta_w && meta_h)
+			{
+				node = fz_xml_find_down_match(head, "meta", "name", "viewport");
+				if (node)
+				{
+					viewport = fz_xml_att(node, "content");
+					if (viewport)
+						parse_meta_viewport(ctx, viewport, meta_w, meta_h);
+				}
+			}
 		}
 	}
 	fz_always(ctx)
@@ -2235,7 +2271,11 @@ patch_mobi_html(fz_context *ctx, fz_pool *pool, fz_xml *node)
 static void
 fz_parse_html_tree(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi, int publisher_css)
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi,
+	int publisher_css,
+	float *meta_w,
+	float *meta_h
+)
 {
 	fz_xml_doc *xml;
 
@@ -2248,7 +2288,8 @@ fz_parse_html_tree(fz_context *ctx,
 		patch_mobi_html(ctx, xml->u.doc.pool, fz_xml_root(xml));
 
 	fz_try(ctx)
-		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi, publisher_css);
+		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi, publisher_css,
+			meta_w, meta_h);
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
 	fz_catch(ctx)
@@ -2286,12 +2327,16 @@ fz_parse_html(fz_context *ctx,
 {
 	fz_html *html = fz_new_derived_html_tree(ctx, fz_html, fz_drop_html_imp);
 
+	html->meta_w = 0;
+	html->meta_h = 0;
+
 	html->layout_w = 0;
 	html->layout_h = 0;
 	html->layout_em = 0;
 
 	fz_try(ctx)
-		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi, publisher_css);
+		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi, publisher_css,
+			&html->meta_w, &html->meta_h);
 	fz_catch(ctx)
 	{
 		fz_drop_html(ctx, html);
@@ -2725,7 +2770,7 @@ convert_to_boxes(fz_context *ctx, fz_story *story)
 	fz_try(ctx)
 	{
 		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
-		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0, 1);
+		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0, 1, NULL, NULL);
 	}
 	fz_always(ctx)
 	{

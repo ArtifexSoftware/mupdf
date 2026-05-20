@@ -355,6 +355,7 @@ struct fz_html_s
 	fz_html_tree tree;
 
 	float page_w, page_h;
+	float meta_w, meta_h;
 	float layout_w, layout_h, layout_em;
 	float page_margin[4];
 	char *title;
