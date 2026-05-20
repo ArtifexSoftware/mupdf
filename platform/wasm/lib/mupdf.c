@@ -1097,7 +1097,7 @@ int wasm_outline_get_page(fz_document *doc, fz_outline *outline)
 }
 
 EXPORT
-void wasm_style_document(fz_document *doc, int publisher_css, const char *user_css)
+void wasm_style_document(fz_document *doc, boolean publisher_css, const char *user_css)
 {
 	VOID(fz_style_document, doc, publisher_css, user_css);
 }

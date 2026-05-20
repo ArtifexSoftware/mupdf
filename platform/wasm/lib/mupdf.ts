@@ -2100,6 +2100,8 @@ export class Document extends Userdata<"any_document"> {
 	}
 
 	style(publisherCSS: boolean, userCSS: string) {
+		checkType(publisherCSS, "boolean")
+		checkType(userCSS, "string")
 		libmupdf._wasm_style_document(this.pointer, publisherCSS, STRING(userCSS))
 	}
 
