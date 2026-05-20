@@ -730,6 +730,30 @@ Usage:
                 -d build/shared-debug
                 -d build/shared-release [default]
 
+            <directory> sets various flags based on splitting by '-':
+                x32 set word size (windows only).
+                x64 set word size (windows only).
+                py<version> set python version (windows only).
+                Py_LIMITED_API_0x<MMmmpppp>:
+                    Build for python limited api by predefining Py_LIMITED_API
+                    to 0x<MMmmpppp>. For example `Py_LIMITED_API_0x030b0000`
+                    compiles with '-D Py_LIMITED_API=0x030b0000' which builds
+                    for the python-3.11 limited api.
+                bsymbolic:
+                    Set XLIB_LDFLAGS=-Wl,-Bsymbolic.
+                debug release memento
+                    Sets build flags.
+                locking:
+                    Do a thread-safe build of the C++ wrappers.
+                nogil:
+                    Make the Python bindings claim that they are threadsafe and
+                    do not need Python's GIL.
+                shared:
+                    Build shared library.
+                tesseract:
+                    Build tesseract.
+            Other flags are ignored.
+
             Windows specifics:
 
                 On Windows we support building for specific cpus and python
@@ -1319,6 +1343,7 @@ def build_0(
             refcheck_if,
             trace_if,
             'debug' in build_dirs.dir_so,
+            build_dirs.locking,
             )
 
     generated.save(f'{build_dirs.dir_mupdf}/platform/c++')
