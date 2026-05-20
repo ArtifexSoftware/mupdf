@@ -215,7 +215,7 @@ fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in)
 }
 
 static fz_buffer *
-txt_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *zip, const char *user_css)
+txt_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *zip)
 {
 	return fz_txt_buffer_to_html(ctx, buf);
 }

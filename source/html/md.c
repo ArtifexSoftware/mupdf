@@ -85,7 +85,7 @@ deregister_plugins(fz_context *ctx)
 }
 
 static fz_buffer *
-fz_md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_archive *dir, const char *user_css, fz_md_to_html_opts *opts)
+fz_md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_archive *dir, fz_md_to_html_opts *opts)
 {
 	fz_buffer *buffer_out = NULL;
 	size_t i, len;
@@ -160,11 +160,11 @@ fz_md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_a
 /* MD document handler */
 
 static fz_buffer *
-md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *zip, const char *user_css)
+md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *zip)
 {
 	fz_md_to_html_opts opts = { 0 };
 
-	return fz_md_to_html(ctx, set, buf, zip, user_css, &opts);
+	return fz_md_to_html(ctx, set, buf, zip, &opts);
 }
 
 static const fz_htdoc_format_t fz_htdoc_md =

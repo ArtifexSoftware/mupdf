@@ -39,7 +39,7 @@ typedef struct fz_html_hyph_set_s fz_html_hyph_set;
 typedef struct
 {
 	const char *format_name;
-	fz_buffer *(*convert_to_html)(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *dir, const char *user_css);
+	fz_buffer *(*convert_to_html)(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *dir);
 	int try_xml;
 	int try_html5;
 	int patch_mobi;
