@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1024,7 +1024,7 @@ void fz_delete_link(fz_context *ctx, fz_page *page, fz_link *link);
 	Iterates over all opened pages of the document, calling the
 	provided callback for each page for processing. If the callback
 	returns non-NULL then the iteration stops and that value is returned
-	to the called of fz_process_opened_pages().
+	to the caller of fz_process_opened_pages().
 
 	The state pointer provided to fz_process_opened_pages() is
 	passed on to the callback but is owned by the caller.
