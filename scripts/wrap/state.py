@@ -365,6 +365,7 @@ class BuildDirs:
         # Set self.Py_LIMITED_API and self.nogil.
         self.Py_LIMITED_API = None
         self.nogil = False
+        self.locking = False
         flags = os.path.basename(self.dir_so).split('-')
         for flag in flags:
             if flag in ('Py_LIMITED_API', 'PLA'):
@@ -375,8 +376,10 @@ class BuildDirs:
                 self.Py_LIMITED_API = flag[len('Py_LIMITED_API_'):]
             elif flag.startswith('PLA_'):
                 self.Py_LIMITED_API = flag[len('PLA_'):]
-            if flag == 'nogil':
+            elif flag == 'nogil':
                 self.nogil = True
+            elif flag == 'locking':
+                self.locking = True
 
         jlib.log(f'{self.Py_LIMITED_API=}')
 
