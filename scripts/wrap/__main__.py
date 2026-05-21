@@ -2813,9 +2813,13 @@ def main2():
                     jlib.log(f'Copying {from_=} to {destination=}.')
                     shutil.copytree(from_, destination, dirs_exist_ok=True)
 
-            elif arg in ('--test-cpp-threads', '--test-cpp'):
+            elif arg in ('--test-cpp-threads', '--test-cpp', '--test-cpp-threads-performance'):
                 if arg == '--test-cpp-threads':
                     cpp = os.path.abspath( f'{__file__}/../../../scripts/mupdfwrap_test_threads.cpp')
+                    exe = f'{cpp}.exe'
+                    run_command = exe
+                elif arg == '--test-cpp-threads-performance':
+                    cpp = os.path.abspath( f'{__file__}/../../../scripts/mupdfwrap_test_threads_performance.cpp')
                     exe = f'{cpp}.exe'
                     run_command = exe
                 else:
@@ -2881,13 +2885,14 @@ def main2():
                         run_command = f'LD_LIBRARY_PATH={build_dirs.dir_so} {run_command}'
 
                 e_locks = jlib.system( f'{run_command}', verbose=1, env_extra=env_extra, raise_errors=0)
-                e_nolocks = jlib.system( f'{run_command} -l', verbose=1, env_extra=env_extra, raise_errors=0)
-                e_singlectx_nolocks = jlib.system( f'{run_command} -t -l', verbose=1, env_extra=env_extra, raise_errors=0)
-                e_singlectx_locks = jlib.system( f'{run_command} -t -L', verbose=1, env_extra=env_extra, raise_errors=0)
                 print(f'{e_locks=}')
-                print(f'{e_nolocks=}')
-                print(f'{e_singlectx_nolocks=}')
-                print(f'{e_singlectx_locks=}')
+                if arg != '--test-cpp-threads-performance':
+                    e_nolocks = jlib.system( f'{run_command} -l', verbose=1, env_extra=env_extra, raise_errors=0)
+                    e_singlectx_nolocks = jlib.system( f'{run_command} -t -l', verbose=1, env_extra=env_extra, raise_errors=0)
+                    e_singlectx_locks = jlib.system( f'{run_command} -t -L', verbose=1, env_extra=env_extra, raise_errors=0)
+                    print(f'{e_nolocks=}')
+                    print(f'{e_singlectx_nolocks=}')
+                    print(f'{e_singlectx_locks=}')
 
             elif arg == '--test-cpp':
                 testfile = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
