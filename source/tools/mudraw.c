@@ -403,8 +403,10 @@ static struct {
 	int interptime;
 	fz_separations *seps;
 
+#if FZ_ENABLE_PDF
 	char *pdfout_path;
 	pdf_document *pdfout;
+#endif
 	fz_output *out;
 } bgprint;
 
@@ -698,7 +700,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_m
 static void worker_thread(void *arg);
 #endif
 
-static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps, pdf_document *pdfout_, fz_output *out_)
+static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps, void *pdfout_, fz_output *out_)
 {
 	fz_rect mediabox;
 	fz_device *dev = NULL;
@@ -1557,9 +1559,13 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		else
 		{
+			void *localpdfout = NULL;
+#if FZ_ENABLE_PDF
+			localpdfout = pdfout;
+#endif
 			if (!quiet || showfeatures || showtime || showmd5)
 				fprintf(stderr, "page %s %d%s", filename, pagenum, features);
-			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps, pdfout, out);
+			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps, localpdfout, out);
 		}
 
 		if (output_file_per_page)
@@ -1818,11 +1824,15 @@ static void bgprint_worker(void *arg)
 		DEBUG_THREADS(("BGPrint woken for pagenum %d\n", pagenum));
 		if (pagenum >= 0)
 		{
+			void *localpdfout = NULL;
+#if FZ_ENABLE_PDF
+			localpdfout = bgprint.pdfout;
+#endif
 			int start = gettime();
 			memset(&cookie, 0, sizeof(cookie));
 			fz_try(bgprint.ctx)
 			{
-				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps, bgprint.pdfout, bgprint.out);
+				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps, localpdfout, bgprint.out);
 #if FZ_ENABLE_PDF
 				if (bgprint.pdfout_path && bgprint.pdfout)
 					pdf_save_document(bgprint.ctx, bgprint.pdfout, bgprint.pdfout_path, NULL);
@@ -1837,12 +1847,14 @@ static void bgprint_worker(void *arg)
 				fz_drop_display_list(bgprint.ctx, bgprint.list);
 				fz_drop_separations(bgprint.ctx, bgprint.seps);
 				fz_drop_page(bgprint.ctx, bgprint.page);
-				pdf_drop_document(bgprint.ctx, bgprint.pdfout);
-				fz_free(bgprint.ctx, bgprint.pdfout_path);
 				fz_drop_output(bgprint.ctx, bgprint.out);
-				bgprint.pdfout = NULL;
-				bgprint.pdfout_path = NULL;
 				bgprint.out = NULL;
+#if FZ_ENABLE_PDF
+				pdf_drop_document(bgprint.ctx, bgprint.pdfout);
+				bgprint.pdfout = NULL;
+				fz_free(bgprint.ctx, bgprint.pdfout_path);
+				bgprint.pdfout_path = NULL;
+#endif
 			}
 			fz_catch(bgprint.ctx)
 			{
