@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <chrono>
 
 std::mutex s_mutex;
 
@@ -82,9 +83,10 @@ static void threadfn(int threadnum)
 }
 
 
-int doit(int num_threads, int num_documents)
+std::chrono::steady_clock::duration doit(int num_threads, int num_documents)
 {
-    time_t t = time(nullptr);
+    //time_t t = time(nullptr);
+    auto t = std::chrono::steady_clock::now();
 
     std::string path = "thirdparty/zlib/doc/crc-doc.1.0.pdf";
 
@@ -123,8 +125,9 @@ int doit(int num_threads, int num_documents)
         thread.join();
     }
 
-    t = time(nullptr) - t;
-    return t;
+    //t = time(nullptr) - t;
+    auto dt = std::chrono::steady_clock::now() - t;
+    return dt;
 }
 
 
@@ -137,9 +140,9 @@ int main(int argc, char** argv)
     auto t_2 = doit(2 /*num_threads*/, num_documents);
     auto t_5 = doit(5 /*num_threads*/, num_documents);
     auto t_10 = doit(10 /*num_threads*/, num_documents);
-    std::cout << "t_1=" << t_1 << "\n";
-    std::cout << "t_2=" << t_2 << "\n";
-    std::cout << "t_5=" << t_5 << "\n";
-    std::cout << "t_10=" << t_10 << "\n";
+    std::cout << "t_1=" << std::chrono::duration<double>(t_1).count() << "\n";
+    std::cout << "t_2=" << std::chrono::duration<double>(t_2).count() << "\n";
+    std::cout << "t_5=" << std::chrono::duration<double>(t_5).count() << "\n";
+    std::cout << "t_10=" << std::chrono::duration<double>(t_10).count() << "\n";
     return 0;
 }
