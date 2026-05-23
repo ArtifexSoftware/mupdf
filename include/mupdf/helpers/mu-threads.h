@@ -23,6 +23,8 @@
 #ifndef MUPDF_HELPERS_MU_THREADS_H
 #define MUPDF_HELPERS_MU_THREADS_H
 
+#include "mupdf/fitz.h"
+
 /*
 	Simple threading helper library.
 	Includes implementations for Windows, pthreads,
@@ -191,6 +193,22 @@ void mu_lock_mutex(mu_mutex *mutex);
 void mu_unlock_mutex(mu_mutex *mutex);
 
 /*
+	Called on program init, before context creation
+	to init the tls key.
+*/
+void mu_init_tls(void);
+
+/*
+	Set the context value into thread local storage.
+*/
+void mu_set_tls_context(void *opaque, fz_context *ctx);
+
+/*
+	Get the context value from thread local storage.
+*/
+fz_context *mu_get_tls_context(void *opaque);
+
+/*
 	Everything under this point is implementation specific.
 	Only people looking to extend the capabilities of this
 	helper module should need to look below here.
@@ -236,6 +254,8 @@ struct mu_mutex
 	CRITICAL_SECTION mutex;
 };
 
+#define MU_THREAD_HAS_TLS 1
+
 #elif MU_THREAD_IMPL_TYPE == 2
 
 /*
@@ -268,6 +288,8 @@ struct mu_mutex
 	pthread_mutex_t mutex;
 };
 
+#define MU_THREAD_HAS_TLS 1
+
 /*
 	Add new threading implementations here, with
 	#elif MU_THREAD_IMPL_TYPE == 3... etc.
@@ -275,6 +297,10 @@ struct mu_mutex
 
 #else
 #error Unknown MU_THREAD_IMPL_TYPE setting
+#endif
+
+#ifndef MU_THREAD_HAS_TLS
+#define mu_init_tls() while (0) {}
 #endif
 
 #endif /* MUPDF_HELPERS_MU_THREADS_H */
