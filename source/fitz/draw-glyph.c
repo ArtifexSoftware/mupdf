@@ -345,7 +345,11 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 	{
 		if (is_ft_font)
 		{
+			fz_unlock(ctx, FZ_LOCK_GLYPHCACHE);
+			locked = 0;
 			val = fz_render_ft_glyph(ctx, font, gid, subpix_ctm, aa);
+			fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
+			locked = 1;
 		}
 		else if (fz_font_t3_procs(ctx, font))
 		{

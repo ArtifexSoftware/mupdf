@@ -163,6 +163,25 @@ void mu_unlock_mutex(mu_mutex *mutex)
 	LeaveCriticalSection(&mutex->mutex);
 }
 
+static DWORD tls_index = 0;
+
+void mu_init_tls(void)
+{
+	tls_index = TlsAlloc();
+}
+
+void mu_set_tls_context(void *opaque, void *ctx)
+{
+	(void)opaque;
+	TlsSetValue(tls_index, ctx);
+}
+
+void *mu_get_tls_context(void *opaque)
+{
+	(void)opaque;
+	return TlsGetValue2(tls_index);
+}
+
 #elif MU_THREAD_IMPL_TYPE == 2
 
 /*
@@ -295,6 +314,26 @@ void mu_unlock_mutex(mu_mutex *mutex)
 {
 	(void)pthread_mutex_unlock(&mutex->mutex);
 }
+
+static pthread_key_t tls_key;
+
+void mu_init_tls(void)
+{
+	(void)pthread_key_create(&tls_key, NULL);
+}
+
+void mu_set_tls_context(void *opaque, void *ctx)
+{
+	(void)opaque;
+	(void)pthread_setspecific(tls_key, ctx);
+}
+
+void *mu_get_tls_context(void *opaque)
+{
+	(void)opaque;
+	return pthread_getspecific(tls_key);
+}
+
 
 #else
 #error Unknown MU_THREAD_IMPL_TYPE setting

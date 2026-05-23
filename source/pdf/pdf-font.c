@@ -174,13 +174,13 @@ enum { UNKNOWN, TYPE1, TRUETYPE };
 static int ft_kind(fz_context *ctx, FT_Face face)
 {
 	const char *kind;
-	fz_ft_lock(ctx);
+	fz_ft_call_lock(ctx);
 #ifdef FT_FONT_FORMATS_H
 	kind = FT_Get_Font_Format(face);
 #else
 	kind = FT_Get_X11_Font_Format(face);
 #endif
-	fz_ft_unlock(ctx);
+	fz_ft_call_unlock(ctx);
 	if (!strcmp(kind, "TrueType")) return TRUETYPE;
 	if (!strcmp(kind, "Type 1")) return TYPE1;
 	if (!strcmp(kind, "CFF")) return TYPE1;
@@ -252,10 +252,10 @@ static int ft_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 		}
 
 		if (ctx)
-			fz_ft_lock(ctx);
+			fz_ft_call_lock(ctx);
 		cid = ft_char_index(fontdesc->font->ft_face, cid);
 		if (ctx)
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 		return cid;
 	}
 
@@ -726,7 +726,7 @@ select_truetype_cmap(fz_context *ctx, FT_Face face, int symbolic)
 				return face->charmaps[i];
 	}
 
-	fz_ft_lock(ctx);
+	fz_ft_call_lock(ctx);
 
 	/* Then look for a Microsoft Unicode cmap */
 	for (i = 0; i < face->num_charmaps; i++)
@@ -753,7 +753,7 @@ select_truetype_cmap(fz_context *ctx, FT_Face face, int symbolic)
 			return face->charmaps[0];
 		}
 
-	fz_ft_unlock(ctx);
+	fz_ft_call_unlock(ctx);
 	return NULL;
 }
 
@@ -865,9 +865,9 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 
 		if (cmap)
 		{
-			fz_ft_lock(ctx);
+			fz_ft_call_lock(ctx);
 			fterr = FT_Set_Charmap(face, cmap);
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 			if (fterr)
 				fz_warn(ctx, "freetype could not set cmap: %s", ft_error_string(fterr));
 		}
@@ -918,7 +918,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 		else if (!fontdesc->is_embedded && !symbolic)
 			pdf_load_encoding(estrings, "StandardEncoding");
 
-		fz_ft_lock(ctx);
+		fz_ft_call_lock(ctx);
 		has_lock = 1;
 
 		/* start with the builtin encoding */
@@ -1031,7 +1031,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 					estrings[i] = (char*) fz_glyph_name_from_adobe_standard[i];
 		}
 
-		fz_ft_unlock(ctx);
+		fz_ft_call_unlock(ctx);
 		has_lock = 0;
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
@@ -1076,11 +1076,11 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 		}
 		else
 		{
-			fz_ft_lock(ctx);
+			fz_ft_call_lock(ctx);
 			has_lock = 1;
 			for (i = 0; i < 256; i++)
 				pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 			has_lock = 0;
 		}
 
@@ -1089,7 +1089,7 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj 
 	fz_catch(ctx)
 	{
 		if (has_lock)
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 		if (fontdesc && etable != fontdesc->cid_to_gid)
 			fz_free(ctx, etable);
 		pdf_drop_font(ctx, fontdesc);
@@ -1265,9 +1265,9 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		/* unicode cmap to get a glyph id */
 		else if (fontdesc->font->flags.ft_substitute)
 		{
-			fz_ft_lock(ctx);
+			fz_ft_call_lock(ctx);
 			fterr = FT_Select_Charmap(face, ft_encoding_unicode);
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 			if (fterr)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "no unicode cmap when emulating CID font: %s", ft_error_string(fterr));
 

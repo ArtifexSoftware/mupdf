@@ -826,13 +826,50 @@ struct fz_font
 	int subfont;
 };
 
+/*
+*	The freetype lock is special; it both protects atomicity of
+*	data, and it's a workaround for the use of custom allocators
+*	with freetype.
+*
+*	In 'old' builds (one without the fz_locks_context providing
+*	tls accessors), both of these tasks are performed by taking
+*	the FZ_FREETYPE_LOCK.
+*
+*	In 'new' builds (one with the fz_locks_context providing
+*	tls accessors), only the first task is performed with the
+*	real lock. Calls are protected differently.
+*
+*	Accordingly, we have 2 sets of lock/unlock functions.
+*/
+
+/*
+	Lock the actual FZ_FREETYPE_LOCK.
+*/
 void fz_ft_lock(fz_context *ctx);
 
+/*
+	Unlock the actual FZ_FREETYPE_LOCK.
+*/
 void fz_ft_unlock(fz_context *ctx);
+
+/*
+	Prepare for a freetype call that might allocate
+	memory.
+
+	This may or may not take the FREETYPE_LOCK.
+*/
+void fz_ft_call_lock(fz_context *ctx);
+
+/*
+	Tidy up after an fz_ft_call_lock.
+*/
+void fz_ft_call_unlock(fz_context *ctx);
 
 /* Internal function. Must be called with FT_ALLOC_LOCK
  * held. Returns 1 if this thread (context!) already holds
- * the freeetype lock. */
+ * the freeetype lock.
+ * This tests for whether either of the two locks above is in
+ * force! */
 int fz_ft_lock_held(fz_context *ctx);
 
 /* Internal function: Extract a ttf from the ttc that underlies

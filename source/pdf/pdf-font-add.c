@@ -39,13 +39,13 @@
 static int ft_font_file_kind(fz_context *ctx, FT_Face face)
 {
 	const char *kind;
-	fz_ft_lock(ctx);
+	fz_ft_call_lock(ctx);
 #ifdef FT_FONT_FORMATS_H
 	kind = FT_Get_Font_Format(face);
 #else
 	kind = FT_Get_X11_Font_Format(face);
 #endif
-	fz_ft_unlock(ctx);
+	fz_ft_call_unlock(ctx);
 	if (!strcmp(kind, "TrueType")) return 2;
 	if (!strcmp(kind, "Type 1")) return 1;
 	if (!strcmp(kind, "CFF")) return 3;
@@ -119,9 +119,9 @@ pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 		case 2:
 			break;
 		case 3:
-			fz_ft_lock(ctx);
+			fz_ft_call_lock(ctx);
 			is_opentype = !!FT_Get_Sfnt_Table(font->ft_face, FT_SFNT_HEAD);
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 			if (is_opentype)
 				pdf_dict_put(ctx, obj, PDF_NAME(Subtype), PDF_NAME(OpenType));
 			else
@@ -388,9 +388,9 @@ pdf_add_descendant_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 
 		pdf_add_cid_system_info(ctx, doc, fobj, "Adobe", "Identity", 0);
 
-		fz_ft_lock(ctx);
+		fz_ft_call_lock(ctx);
 		ps_name = FT_Get_Postscript_Name(face);
-		fz_ft_unlock(ctx);
+		fz_ft_call_unlock(ctx);
 		if (ps_name)
 			pdf_dict_put_name(ctx, fobj, PDF_NAME(BaseFont), ps_name);
 		else
@@ -441,7 +441,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *f
 		FT_UInt gid;
 
 		table = fz_calloc(ctx, face->num_glyphs, sizeof *table);
-		fz_ft_lock(ctx);
+		fz_ft_call_lock(ctx);
 		ucs = FT_Get_First_Char(face, &gid);
 		while (gid > 0)
 		{
@@ -449,7 +449,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, pdf_obj *fobj, fz_font *f
 				table[gid] = ucs;
 			ucs = FT_Get_Next_Char(face, ucs, &gid);
 		}
-		fz_ft_unlock(ctx);
+		fz_ft_call_unlock(ctx);
 	}
 
 	for (k = 0; k < face->num_glyphs; k += n)
@@ -687,9 +687,9 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font, int encod
 		if (!is_builtin_font(ctx, font))
 		{
 			const char *ps_name;
-			fz_ft_lock(ctx);
+			fz_ft_call_lock(ctx);
 			ps_name = FT_Get_Postscript_Name(face);
-			fz_ft_unlock(ctx);
+			fz_ft_call_unlock(ctx);
 			if (!ps_name)
 				ps_name = font->name;
 			pdf_dict_put_name(ctx, fobj, PDF_NAME(BaseFont), ps_name);
