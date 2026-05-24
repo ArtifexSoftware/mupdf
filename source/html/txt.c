@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 Artifex Software, Inc.
+// Copyright (C) 2023-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -243,7 +243,7 @@ static const char *txt_extensions[] =
 
 static const char *txt_mimetypes[] =
 {
-	"text.plain",
+	"text/plain",
 	NULL
 };
 
