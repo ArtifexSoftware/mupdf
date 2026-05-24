@@ -2813,12 +2813,17 @@ def main2():
                     jlib.log(f'Copying {from_=} to {destination=}.')
                     shutil.copytree(from_, destination, dirs_exist_ok=True)
 
-            elif arg in ('--test-cpp-threads', '--test-cpp', '--test-cpp-threads-performance'):
+            elif arg in (
+                    '--test-cpp-threads',
+                    '--test-cpp',
+                    '--test-cpp-threads-performance',
+                    '--test-cpp-threads-hotspot',
+                    ):
                 if arg == '--test-cpp-threads':
                     cpp = os.path.abspath( f'{__file__}/../../../scripts/mupdfwrap_test_threads.cpp')
                     exe = f'{cpp}.exe'
                     run_command = exe
-                elif arg == '--test-cpp-threads-performance':
+                elif arg in ('--test-cpp-threads-performance', '--test-cpp-threads-hotspot'):
                     cpp = os.path.abspath( f'{__file__}/../../../scripts/mupdfwrap_test_threads_performance.cpp')
                     exe = f'{cpp}.exe'
                     run_command = exe
@@ -2884,15 +2889,30 @@ def main2():
                     else:
                         run_command = f'LD_LIBRARY_PATH={build_dirs.dir_so} {run_command}'
 
-                e_locks = jlib.system( f'{run_command}', verbose=1, env_extra=env_extra, raise_errors=0)
-                print(f'{e_locks=}')
-                if arg != '--test-cpp-threads-performance':
-                    e_nolocks = jlib.system( f'{run_command} -l', verbose=1, env_extra=env_extra, raise_errors=0)
-                    e_singlectx_nolocks = jlib.system( f'{run_command} -t -l', verbose=1, env_extra=env_extra, raise_errors=0)
-                    e_singlectx_locks = jlib.system( f'{run_command} -t -L', verbose=1, env_extra=env_extra, raise_errors=0)
-                    print(f'{e_nolocks=}')
-                    print(f'{e_singlectx_nolocks=}')
-                    print(f'{e_singlectx_locks=}')
+                if arg == '--test-cpp-threads-hotspot':
+                    assert platform.system() == 'Linux'
+                    env_extra = f'LD_LIBRARY_PATH={build_dirs.dir_so}'
+                    if 0:
+                        jlib.system(f'sudo {env_extra} perf record -e cycles -e sched:sched_switch --switch-events --sample-cpu -m 8M --aio --call-graph dwarf {exe}', verbose=1)
+                        jlib.log(f'top-left: menu cycles, sched:sched_switch, off-CPU Time.')
+                        jlib.system(f'sudo hotspot', verbose=1)
+                    else:
+                        jlib.log(f'Run:')
+                        jlib.log(f'    sudo {env_extra} perf record -e cycles -e sched:sched_switch --switch-events --sample-cpu -m 8M --aio --call-graph dwarf {exe}')
+                        jlib.log(f'    sudo hotspot')
+                        jlib.log(f'In top-left: menu cycles, sched:sched_switch, off-CPU Time.')
+                        jlib.log(f'Also see: https://github.com/KDAB/hotspot/#off-cpu-profiling')
+
+                else:
+                    e_locks = jlib.system( f'{run_command}', verbose=1, env_extra=env_extra, raise_errors=0)
+                    print(f'{e_locks=}')
+                    if arg != '--test-cpp-threads-performance':
+                        e_nolocks = jlib.system( f'{run_command} -l', verbose=1, env_extra=env_extra, raise_errors=0)
+                        e_singlectx_nolocks = jlib.system( f'{run_command} -t -l', verbose=1, env_extra=env_extra, raise_errors=0)
+                        e_singlectx_locks = jlib.system( f'{run_command} -t -L', verbose=1, env_extra=env_extra, raise_errors=0)
+                        print(f'{e_nolocks=}')
+                        print(f'{e_singlectx_nolocks=}')
+                        print(f'{e_singlectx_locks=}')
 
             elif arg == '--test-cpp':
                 testfile = os.path.abspath( f'{__file__}/../../../thirdparty/zlib/zlib.3.pdf')
