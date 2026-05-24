@@ -67,7 +67,16 @@ static void threadfn(int threadnum)
             break;
         }
         std::cout << "Thread " << threadnum << " opening path " << path << std::endl;
-        auto document = mupdf::FzDocument(path.c_str());
+        mupdf::FzDocument   document;
+        try
+        {
+            document = mupdf::FzDocument(path.c_str());
+        }
+        catch (std::exception& e)
+        {
+            std::cout << "Thread " << threadnum << " failed to open " << path << ": " << e.what() << std::endl;
+            continue;
+        }
         int num_pages = document.fz_count_pages();
         for (int i=0; i<num_pages; ++i)
         {
@@ -133,16 +142,25 @@ std::chrono::steady_clock::duration doit(int num_threads, int num_documents)
 
 int main(int argc, char** argv)
 {
+    system("pwd");
     std::string path = "thirdparty/zlib/doc/crc-doc.1.0.pdf";
 
-    int num_documents = 80;
-    auto t_1 = doit(1 /*num_threads*/, num_documents);
-    auto t_2 = doit(2 /*num_threads*/, num_documents);
+    int num_documents = 20;
     auto t_5 = doit(5 /*num_threads*/, num_documents);
-    auto t_10 = doit(10 /*num_threads*/, num_documents);
-    std::cout << "t_1=" << std::chrono::duration<double>(t_1).count() << "\n";
-    std::cout << "t_2=" << std::chrono::duration<double>(t_2).count() << "\n";
     std::cout << "t_5=" << std::chrono::duration<double>(t_5).count() << "\n";
-    std::cout << "t_10=" << std::chrono::duration<double>(t_10).count() << "\n";
+    if (0)
+    {
+        auto t_10 = doit(10 /*num_threads*/, num_documents);
+        std::cout << "t_10=" << std::chrono::duration<double>(t_10).count() << "\n";
+        auto t_1 = doit(1 /*num_threads*/, num_documents);
+        std::cout << "t_1=" << std::chrono::duration<double>(t_1).count() << "\n";
+        auto t_2 = doit(2 /*num_threads*/, num_documents);
+        std::cout << "t_2=" << std::chrono::duration<double>(t_2).count() << "\n";
+
+        std::cout << "t_1=" << std::chrono::duration<double>(t_1).count() << "\n";
+        std::cout << "t_2=" << std::chrono::duration<double>(t_2).count() << "\n";
+        std::cout << "t_5=" << std::chrono::duration<double>(t_5).count() << "\n";
+        std::cout << "t_10=" << std::chrono::duration<double>(t_10).count() << "\n";
+    }
     return 0;
 }
