@@ -1731,8 +1731,17 @@ fixup_bboxes_and_bidi(fz_context *ctx, fz_stext_block *block)
 	for ( ; block != NULL; block = block->next)
 	{
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
+		{
 			if (block->u.s.down)
+			{
+				fz_stext_block *block2;
 				fixup_bboxes_and_bidi(ctx, block->u.s.down->first_block);
+				for (block2 = block->u.s.down->first_block; block2 != NULL; block2 = block2->next)
+				{
+					block->bbox = fz_union_rect(block->bbox, block2->bbox);
+				}
+			}
+		}
 		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
 		for (line = block->u.t.first_line; line; line = line->next)
