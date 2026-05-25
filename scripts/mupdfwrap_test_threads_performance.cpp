@@ -89,12 +89,16 @@ static void threadfn(int threadnum)
                     );
         }
     }
+    std::cout << "Thread " << threadnum << " finished" << std::endl;
+    mupdf::FzOutput temp(mupdf::FzOutput::Fixed_STDOUT);
+    mupdf::fz_dump_glyph_cache_stats(temp);
+    temp.fz_close_output();
+    fflush(stdout);
 }
 
 
-std::chrono::steady_clock::duration doit(int num_threads, int num_documents)
+float doit(int num_threads, int num_documents, std::map<int, float>& num_threads_to_duration)
 {
-    //time_t t = time(nullptr);
     auto t = std::chrono::steady_clock::now();
 
     std::string path = "thirdparty/zlib/doc/crc-doc.1.0.pdf";
@@ -134,9 +138,10 @@ std::chrono::steady_clock::duration doit(int num_threads, int num_documents)
         thread.join();
     }
 
-    //t = time(nullptr) - t;
     auto dt = std::chrono::steady_clock::now() - t;
-    return dt;
+    float dtf = std::chrono::duration<double>(dt).count();
+    num_threads_to_duration[num_threads] = dtf;
+    return dtf;
 }
 
 
@@ -144,23 +149,29 @@ int main(int argc, char** argv)
 {
     system("pwd");
     std::string path = "thirdparty/zlib/doc/crc-doc.1.0.pdf";
-
     int num_documents = 20;
-    auto t_5 = doit(5 /*num_threads*/, num_documents);
-    std::cout << "t_5=" << std::chrono::duration<double>(t_5).count() << "\n";
-    if (0)
-    {
-        auto t_10 = doit(10 /*num_threads*/, num_documents);
-        std::cout << "t_10=" << std::chrono::duration<double>(t_10).count() << "\n";
-        auto t_1 = doit(1 /*num_threads*/, num_documents);
-        std::cout << "t_1=" << std::chrono::duration<double>(t_1).count() << "\n";
-        auto t_2 = doit(2 /*num_threads*/, num_documents);
-        std::cout << "t_2=" << std::chrono::duration<double>(t_2).count() << "\n";
+    std::map<int, float> num_threads_to_duration;
 
-        std::cout << "t_1=" << std::chrono::duration<double>(t_1).count() << "\n";
-        std::cout << "t_2=" << std::chrono::duration<double>(t_2).count() << "\n";
-        std::cout << "t_5=" << std::chrono::duration<double>(t_5).count() << "\n";
-        std::cout << "t_10=" << std::chrono::duration<double>(t_10).count() << "\n";
+    if (argc == 2 && !strcmp(argv[1], "hotspot"))
+    {
+        doit(5 /*num_threads*/, num_documents, num_threads_to_duration);
     }
+    else
+    {
+        doit( 5 /*num_threads*/, num_documents, num_threads_to_duration);
+        doit(10 /*num_threads*/, num_documents, num_threads_to_duration);
+        doit( 1 /*num_threads*/, num_documents, num_threads_to_duration);
+        doit( 2 /*num_threads*/, num_documents, num_threads_to_duration);
+    }
+
+    for (auto it: num_threads_to_duration)
+    {
+        std::cout << "num_threads=" << it.first << ": time=" << it.second << "\n";
+    }
+
+    mupdf::FzOutput temp(mupdf::FzOutput::Fixed_STDOUT);
+    mupdf::fz_dump_glyph_cache_stats(temp);
+    temp.fz_close_output();
+
     return 0;
 }
