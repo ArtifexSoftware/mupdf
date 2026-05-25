@@ -78,7 +78,7 @@ text_as_spans(fz_context *ctx, fz_culling_device *dev, const fz_text *text, fz_m
 					bbox = fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
 #endif
 
-				if (dev->opts.cull_glyph(ctx, dev->opts.opaque, bbox))
+				if (dev->opts.cull_glyph && dev->opts.cull_glyph(ctx, dev->opts.opaque, bbox))
 					continue;
 
 				/* We need to send that glyph through. */
