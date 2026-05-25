@@ -823,6 +823,16 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		return;
 	}
 
+	/* Don't move pen for marking non-spacing characters */
+	if (ucdn_get_general_category(c) == UCDN_GENERAL_CATEGORY_MN)
+	{
+		add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &dev->pen, &dev->pen, bidi, dev->color, 0, flags, dev->flags);
+		dev->lastbidi = bidi;
+		dev->lastchar = c;
+		dev->lastline = cur_line;
+		return;
+	}
+
 	if (cur_line == NULL || cur_line->wmode != wmode || vec_dot(&ndir, &cur_line->dir) < 0.999f)
 	{
 		/* If the matrix has changed rotation, or the wmode is different (or if we don't have a line at all),
