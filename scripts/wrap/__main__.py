@@ -2892,16 +2892,12 @@ def main2():
                 if arg == '--test-cpp-threads-hotspot':
                     assert platform.system() == 'Linux'
                     env_extra = f'LD_LIBRARY_PATH={build_dirs.dir_so}'
-                    if 0:
-                        jlib.system(f'sudo {env_extra} perf record -e cycles -e sched:sched_switch --switch-events --sample-cpu -m 8M --aio --call-graph dwarf {exe}', verbose=1)
-                        jlib.log(f'top-left: menu cycles, sched:sched_switch, off-CPU Time.')
-                        jlib.system(f'sudo hotspot', verbose=1)
-                    else:
-                        jlib.log(f'Run:')
-                        jlib.log(f'    sudo {env_extra} perf record -e cycles -e sched:sched_switch --switch-events --sample-cpu -m 8M --aio --call-graph dwarf {exe}')
-                        jlib.log(f'    sudo hotspot')
-                        jlib.log(f'In top-left: menu cycles, sched:sched_switch, off-CPU Time.')
-                        jlib.log(f'Also see: https://github.com/KDAB/hotspot/#off-cpu-profiling')
+                    jlib.log(f'Run:')
+                    jlib.log(f'    sudo {env_extra} perf record -e cycles -e sched:sched_switch --switch-events --sample-cpu -m 8M --aio --call-graph dwarf {exe} hotspot')
+                    jlib.log(f'    sudo hotspot')
+                    jlib.log(f'* Click on "Flame Graph".')
+                    jlib.log(f'* In top-left: menu cycles, sched:sched_switch, off-CPU Time.')
+                    jlib.log(f'* Also see: https://github.com/KDAB/hotspot/#off-cpu-profiling')
 
                 else:
                     e_locks = jlib.system( f'{run_command}', verbose=1, env_extra=env_extra, raise_errors=0)
