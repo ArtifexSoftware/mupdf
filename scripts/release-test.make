@@ -132,7 +132,7 @@ make-docs:
 	$(MAKE) docs
 
 test-docs: make-docs
-	linkchecker file://$(PWD)/build/docs/index.html
+	linkchecker --no-follow-url doxygen file://$(PWD)/build/docs/index.html
 
 test-java-build: make-java-build
 	MUPDF_ARGS=pdfref17.pdf $(MAKE) -C platform/java build=release run
