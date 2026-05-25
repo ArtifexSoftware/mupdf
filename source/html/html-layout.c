@@ -3533,6 +3533,10 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 					{
 						n = fz_chartorune(&c, walker.start + k);
 
+						/* render with hyphen-minus glyph, but encode unicode text as soft-hyphen */
+						if (node->type == FLOW_SHYPHEN)
+							c = 0xAD;
+
 						for (i = 0; i < walker.glyph_count; ++i)
 						{
 							if (walker.glyph_info[i].cluster == k)
