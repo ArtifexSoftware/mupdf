@@ -577,7 +577,7 @@ match_an_plus_b_microsyntax(fz_xml *node, const char *val, int (*callback)(fz_xm
 	// - A is -1 for nth-child(-n+B) -- same as nth-child(-1n+B)
 
 	int a, b, n;
-	int m = strlen(val);
+	int m = (int)strlen(val);
 
 	if (sscanf(val, " even %n", &n) == 0 && n == m)
 		return callback(node, 2, 0);
