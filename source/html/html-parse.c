@@ -141,6 +141,26 @@ static const char *fb2_default_css =
 "section>title{page-break-before:always}"
 ;
 
+static const char *markdown_publisher_css =
+"body{font-family:sans-serif}"
+"p,ul,ol,pre,blockquote,table,hr,h1,h2,h3,h4,h5,h6{margin:1em 0}"
+"li>ul,li>ol{margin:0}"
+"h1,h2,h3,h4,h5,h6{page-break-after:avoid}"
+"table,pre{page-break-inside:avoid}"
+"pre{padding:0.5em 1em}"
+"h1,h2{padding-bottom:.2em;border-bottom:1px solid silver}"
+"hr{border-bottom:2px solid silver}"
+"pre,code{background-color:whitesmoke}"
+"blockquote{border-left:3px solid gainsboro;padding-left:.8em;color:#333}"
+"table{border-collapse:collapse}"
+"th,td{border:1px solid silver;padding:0.25em 0.5em}"
+"tr:nth-child(even){background-color:whitesmoke}"
+"section.footnotes{border-top:1px solid silver;padding-top:1em;font-size:0.8em}"
+"a.footnote-backref,sup.footnote-ref a{text-decoration:none}"
+"sup.footnote-ref a:before{content:'['}"
+"sup.footnote-ref a:after{content:']'}"
+;
+
 static const char *known_html_tags[] = {
 	// TODO: add known FB2 tags?
 	// Sorted list of all HTML tags.
@@ -2012,8 +2032,7 @@ xml_to_boxes(fz_context *ctx,
 	fz_xml_doc *xml,
 	fz_html_tree *tree,
 	char **rtitle,
-	int try_fictionbook,
-	int is_mobi,
+	fz_html_flavor flavor,
 	int publisher_css,
 	float *meta_w,
 	float *meta_h
@@ -2059,7 +2078,7 @@ xml_to_boxes(fz_context *ctx,
 
 	fz_try(ctx)
 	{
-		if (try_fictionbook && fz_xml_find(root, "FictionBook"))
+		if (flavor == FZ_HTML_FLAVOR_FICTIONBOOK2 && fz_xml_find(fz_xml_root(xml), "FictionBook"))
 		{
 			g.is_fb2 = 1;
 			fz_parse_css(ctx, g.css, fb2_default_css, "<default:fb2>");
@@ -2067,18 +2086,15 @@ xml_to_boxes(fz_context *ctx,
 				fb2_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 			g.images = load_fb2_images(ctx, root);
 		}
-		else if (is_mobi)
-		{
-			g.is_fb2 = 0;
-			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
-			fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
-			if (publisher_css)
-				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
-		}
 		else
 		{
 			g.is_fb2 = 0;
 			fz_parse_css(ctx, g.css, html_default_css, "<default:html>");
+			if (flavor == FZ_HTML_FLAVOR_MOBI)
+				fz_parse_css(ctx, g.css, mobi_default_css, "<default:mobi>");
+			/* Our markdown overrides count as the publisher_css for md files. */
+			if (flavor == FZ_HTML_FLAVOR_MARKDOWN && publisher_css)
+				fz_parse_css(ctx, g.css, markdown_publisher_css, "<default:markdown>");
 			if (publisher_css)
 				html_load_css(ctx, g.set, g.zip, g.base_uri, g.css, root);
 		}
@@ -2294,7 +2310,7 @@ patch_mobi_html(fz_context *ctx, fz_pool *pool, fz_xml *node)
 static void
 fz_parse_html_tree(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, int try_fictionbook, int patch_mobi,
+	int try_xml, int try_html5, fz_html_tree *tree, char **rtitle, fz_html_flavor flavor,
 	int publisher_css,
 	float *meta_w,
 	float *meta_h
@@ -2307,11 +2323,11 @@ fz_parse_html_tree(fz_context *ctx,
 
 	xml = parse_to_xml(ctx, buf, try_xml, try_html5);
 
-	if (patch_mobi)
+	if (flavor == FZ_HTML_FLAVOR_MOBI)
 		patch_mobi_html(ctx, xml->u.doc.pool, fz_xml_root(xml));
 
 	fz_try(ctx)
-		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, try_fictionbook, patch_mobi, publisher_css,
+		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, rtitle, flavor, publisher_css,
 			meta_w, meta_h);
 	fz_always(ctx)
 		fz_drop_xml(ctx, xml);
@@ -2346,7 +2362,7 @@ fz_new_html_tree_of_size(fz_context *ctx, size_t size, fz_store_drop_fn *drop)
 fz_html *
 fz_parse_html(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, int patch_mobi, int publisher_css)
+	int try_xml, int try_html5, fz_html_flavor flavor, int publisher_css)
 {
 	fz_html *html = fz_new_derived_html_tree(ctx, fz_html, fz_drop_html_imp);
 
@@ -2358,7 +2374,7 @@ fz_parse_html(fz_context *ctx,
 	html->layout_em = 0;
 
 	fz_try(ctx)
-		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, 1, patch_mobi, publisher_css,
+		fz_parse_html_tree(ctx, set, zip, base_uri, buf, user_css, try_xml, try_html5, &html->tree, &html->title, flavor, publisher_css,
 			&html->meta_w, &html->meta_h);
 	fz_catch(ctx)
 	{
@@ -2793,7 +2809,7 @@ convert_to_boxes(fz_context *ctx, fz_story *story)
 	fz_try(ctx)
 	{
 		redirect_warnings_to_buffer(ctx, story->warnings, &saved);
-		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, 0, 0, 1, NULL, NULL);
+		xml_to_boxes(ctx, story->font_set, story->zip, ".", story->user_css, story->dom, &story->tree, NULL, FZ_HTML_FLAVOR_DEFAULT, 1, NULL, NULL);
 	}
 	fz_always(ctx)
 	{

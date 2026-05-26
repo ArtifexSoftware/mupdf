@@ -1245,7 +1245,8 @@ static const fz_htdoc_format_t fz_htdoc_office =
 {
 	"Office document",
 	office_to_html,
-	0, 1, 0
+	0, 1,
+	FZ_HTML_FLAVOR_DEFAULT
 };
 
 static fz_document *

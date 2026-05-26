@@ -187,7 +187,7 @@ htdoc_style(fz_context *ctx, fz_document *doc_)
 	fz_drop_outline(ctx, doc->outline);
 	doc->outline = NULL;
 
-	doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", doc->buf, doc->super.user_css, doc->format->try_xml, doc->format->try_html5, doc->format->patch_mobi, doc->super.publisher_css);
+	doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", doc->buf, doc->super.user_css, doc->format->try_xml, doc->format->try_html5, doc->format->flavor, doc->super.publisher_css);
 	doc->outline = fz_load_html_outline(ctx, doc->html);
 }
 
@@ -506,7 +506,8 @@ static const fz_htdoc_format_t fz_htdoc_html5 =
 {
 	"HTML5",
 	NULL,
-	0, 1, 0
+	0, 1,
+	FZ_HTML_FLAVOR_DEFAULT
 };
 
 static fz_document *
@@ -544,7 +545,8 @@ static const fz_htdoc_format_t fz_htdoc_xhtml =
 {
 	"XHTML",
 	NULL,
-	1, 1, 0
+	1, 1,
+	FZ_HTML_FLAVOR_DEFAULT
 };
 
 static fz_document *
@@ -586,7 +588,8 @@ static const fz_htdoc_format_t fz_htdoc_fb2 =
 {
 	"FictionBook2",
 	NULL,
-	1, 0, 0
+	1, 0,
+	FZ_HTML_FLAVOR_FICTIONBOOK2
 };
 
 static fz_document *
@@ -663,7 +666,8 @@ static const fz_htdoc_format_t fz_htdoc_mobi =
 {
 	"MOBI",
 	NULL,
-	1, 1, 1
+	1, 1,
+	FZ_HTML_FLAVOR_MOBI
 };
 
 static fz_document *

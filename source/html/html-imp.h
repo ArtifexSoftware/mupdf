@@ -631,7 +631,7 @@ fz_structure fz_html_tag_to_structure(const char *tag);
 
 fz_html *fz_parse_html(fz_context *ctx,
 	fz_html_font_set *set, fz_archive *dir, const char *base_uri, fz_buffer *buf, const char *user_css,
-	int try_xml, int try_html5, int patch_mobi, int publisher_css);
+	int try_xml, int try_html5, fz_html_flavor flavor, int publisher_css);
 
 fz_buffer *fz_txt_buffer_to_html(fz_context *ctx, fz_buffer *in);
 

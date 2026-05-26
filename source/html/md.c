@@ -155,7 +155,8 @@ static const fz_htdoc_format_t fz_htdoc_md =
 {
 	"Markdown document",
 	md_to_html,
-	0, 1, 0
+	0, 1,
+	FZ_HTML_FLAVOR_MARKDOWN
 };
 
 static fz_document *

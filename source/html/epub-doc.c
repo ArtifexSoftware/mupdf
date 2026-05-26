@@ -472,7 +472,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, epub_chapter *ch)
 	if (!buf)
 		buf = fz_new_buffer_from_printf(ctx, "<html><body><p><i>ERROR: cannot find chapter %<</i></p></body></html>", ch->path);
 	fz_try(ctx)
-		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, doc->super.user_css, 1, 1, 0, doc->super.publisher_css);
+		html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, doc->super.user_css, 1, 1, FZ_HTML_FLAVOR_DEFAULT, doc->super.publisher_css);
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
