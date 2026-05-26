@@ -31,8 +31,6 @@
 
 #include <ctype.h>
 
-#undef DEBUG_MD_TO_HTML
-
 /* Defaults are all 0's. FIXME: Very subject to change. Possibly might be removed entirely. */
 typedef struct
 {
@@ -145,13 +143,9 @@ fz_md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_a
 		fz_rethrow(ctx);
 	}
 
-#ifdef DEBUG_MD_TO_HTML
-	{
-		unsigned char *storage;
-		size_t len = fz_buffer_storage(ctx, buffer_out, &storage);
-		fz_write_printf(ctx, fz_stddbg(ctx), "fz_md_to_html: Output buffer, len=%zd:\n", len);
-		fz_write_buffer(ctx, fz_stddbg(ctx), buffer_out);
-	}
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_MARKDOWN")))
+		fz_write_buffer(ctx, fz_stdout(ctx), buffer_out);
 #endif
 
 	return buffer_out;
