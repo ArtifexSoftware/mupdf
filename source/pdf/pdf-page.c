@@ -1971,11 +1971,16 @@ pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, size
 	pdf_obj *style = pdf_dict_get(ctx, dict, PDF_NAME(S));
 	const char *prefix = pdf_dict_get_text_string(ctx, dict, PDF_NAME(P));
 	int start = pdf_dict_get_int(ctx, dict, PDF_NAME(St));
+	int v;
 	size_t n;
 
 	// St must be >= 1; default is 1.
 	if (start < 1)
 		start = 1;
+
+	v = start + index;
+	if (v < 1)
+		v = 1;
 
 	// Add prefix (optional; may be empty)
 	fz_strlcpy(buf, prefix, size);
@@ -1985,15 +1990,15 @@ pdf_format_page_label(fz_context *ctx, int index, pdf_obj *dict, char *buf, size
 
 	// Append number using style (optional)
 	if (style == PDF_NAME(D))
-		fz_snprintf(buf, size, "%d", index + start);
+		fz_snprintf(buf, size, "%d", v);
 	else if (style == PDF_NAME(R))
-		pdf_format_roman_page_label(buf, (int)size, index + start, roman_uc, "M");
+		pdf_format_roman_page_label(buf, (int)size, v, roman_uc, "M");
 	else if (style == PDF_NAME(r))
-		pdf_format_roman_page_label(buf, (int)size, index + start, roman_lc, "m");
+		pdf_format_roman_page_label(buf, (int)size, v, roman_lc, "m");
 	else if (style == PDF_NAME(A))
-		pdf_format_alpha_page_label(buf, (int)size, index + start, 'A');
+		pdf_format_alpha_page_label(buf, (int)size, v, 'A');
 	else if (style == PDF_NAME(a))
-		pdf_format_alpha_page_label(buf, (int)size, index + start, 'a');
+		pdf_format_alpha_page_label(buf, (int)size, v, 'a');
 }
 
 void
