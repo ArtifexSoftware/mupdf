@@ -47,39 +47,30 @@ add_extension(fz_context *ctx, cmark_parser *parser, const char *ext)
 	cmark_parser_attach_syntax_extension(parser, syntax_extension);
 }
 
-static int cmark_plugin_registration_count;
-
 static void
 register_plugins(fz_context *ctx)
 {
+	static int cmark_plugin_registration_once = 0;
+
 	// Abuse the freetype lock here.
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	if (cmark_plugin_registration_count != 0)
+	if (cmark_plugin_registration_once)
 	{
-		cmark_plugin_registration_count++;
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
-		return;
 	}
-
-	fz_try(ctx)
+	else
 	{
-		cmark_gfm_core_extensions_ensure_registered();
-		cmark_plugin_registration_count++;
+		fz_try(ctx)
+		{
+			cmark_gfm_core_extensions_ensure_registered();
+			cmark_plugin_registration_once = 1;
+			atexit(cmark_release_plugins);
+		}
+		fz_always(ctx)
+			fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
-	fz_always(ctx)
-		fz_unlock(ctx, FZ_LOCK_FREETYPE);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-}
-
-static void
-deregister_plugins(fz_context *ctx)
-{
-	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	cmark_plugin_registration_count--;
-	if (cmark_plugin_registration_count == 0)
-		cmark_release_plugins();
-	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 }
 
 static fz_buffer *
@@ -135,7 +126,6 @@ fz_md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_a
 			cmark_parser_free(parser);
 		if (document)
 			cmark_node_free(document);
-		deregister_plugins(ctx);
 		mem->free(out);
 	}
 	fz_catch(ctx)
