@@ -53,7 +53,7 @@ static const char *html_default_css =
 "h5{display:block;font-size:0.83em;font-weight:bold;margin:1.67em 0;page-break-after:avoid}"
 "h6{display:block;font-size:0.67em;font-weight:bold;margin:2.33em 0;page-break-after:avoid}"
 "head{display:none}"
-"hr{border-style:solid;border-width:1px;display:block;margin-bottom:0.5em;margin-top:0.5em;text-align:center}"
+"hr{border-bottom:1px solid;display:block;margin-bottom:0.5em;margin-top:0.5em;text-align:center}"
 "html{display:block}"
 "i{font-style:italic}"
 "ins{text-decoration:underline}"
