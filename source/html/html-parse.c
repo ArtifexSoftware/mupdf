@@ -548,7 +548,7 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, i
 	fz_hyphenator *hyph = NULL;
 	int c, n;
 
-	static const char *space = " ";
+	static const char *space = "        "; /* 8 spaces */
 
 	flow = find_flow_encloser(ctx, box);
 	if (flow == NULL)
@@ -589,11 +589,17 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text, i
 			}
 			else
 			{
-				// TODO: tabs
 				if (bsp)
+				{
 					add_flow_space(ctx, pool, flow, box);
+				}
 				else
-					add_flow_word(ctx, pool, flow, box, space, space+1, lang);
+				{
+					if (*text == '\t')
+						add_flow_word(ctx, pool, flow, box, space, space+4, lang);
+					else
+						add_flow_word(ctx, pool, flow, box, space, space+1, lang);
+				}
 				++text;
 			}
 			g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a space */
