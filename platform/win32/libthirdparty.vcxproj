@@ -366,6 +366,7 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">$(IntDir)enc\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\thirdparty\brotli\c\enc\utf8_util.c" />
+    <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\autoheaderid.c" />
     <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\autolink.c" />
     <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\core-extensions.c" />
     <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\ext_scanners.c" />
@@ -704,6 +705,7 @@
     <ClInclude Include="..\..\thirdparty\brotli\c\include\brotli\port.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\include\brotli\shared_dictionary.h" />
     <ClInclude Include="..\..\thirdparty\brotli\c\include\brotli\types.h" />
+    <ClInclude Include="..\..\thirdparty\cmark-gfm\extensions\autoheaderid.h" />
     <ClInclude Include="..\..\thirdparty\cmark-gfm\extensions\autolink.h" />
     <ClInclude Include="..\..\thirdparty\cmark-gfm\extensions\cmark-gfm-core-extensions.h" />
     <ClInclude Include="..\..\thirdparty\cmark-gfm\extensions\ext_scanners.h" />

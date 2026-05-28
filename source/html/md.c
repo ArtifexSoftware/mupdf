@@ -111,6 +111,7 @@ fz_md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, fz_a
 		add_extension(ctx, parser, "autolink");
 		add_extension(ctx, parser, "tagfilter");
 		add_extension(ctx, parser, "tasklist");
+		add_extension(ctx, parser, "autoheaderid");
 
 		cmark_parser_feed(parser, src, len);
 

@@ -792,6 +792,9 @@
     <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\tasklist.c">
       <Filter>cmark-gfm\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\autoheaderid.c">
+      <Filter>cmark-gfm\extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h">
@@ -1452,6 +1455,9 @@
       <Filter>cmark-gfm\extensions</Filter>
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\cmark-gfm\extensions\tasklist.h">
+      <Filter>cmark-gfm\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\cmark-gfm\extensions\autoheaderid.h">
       <Filter>cmark-gfm\extensions</Filter>
     </ClInclude>
   </ItemGroup>

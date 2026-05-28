@@ -392,6 +392,7 @@ CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/strikethrough.c
 CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/table.c
 CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/tagfilter.c
 CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/tasklist.c
+CMARKGFM_SRC += thirdparty/cmark-gfm/extensions/autoheaderid.c
 
 # --- FREEGLUT ---
 
