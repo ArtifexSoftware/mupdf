@@ -934,17 +934,17 @@ parse_uri_named_dest(fz_context *ctx, const char *uri)
 	return fz_decode_uri_component(ctx, strchr(uri, '#') + 1);
 }
 
-static float next_float(const char *str, int eatcomma, char **end)
+static float next_float(const char *str, int eatcomma, const char **end)
 {
 	if (eatcomma && *str == ',')
 		++str;
-	return fz_strtof(str, end);
+	return fz_strtof(str, (char **) end);
 }
 
 static fz_link_dest
 pdf_new_explicit_dest_from_uri(fz_context *ctx, pdf_document *doc, const char *uri)
 {
-	char *page, *rect, *zoom, *view;
+	const char *page, *rect, *zoom, *view;
 	fz_link_dest val = fz_make_link_dest_none();
 
 	uri = uri ? strchr(uri, '#') : NULL;
