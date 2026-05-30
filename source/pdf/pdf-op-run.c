@@ -2057,16 +2057,28 @@ find_most_recent_common_ancestor(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 
 	fz_try(ctx)
 	{
+repaired:
 		line_a = get_lineage(ctx, a, &a_len);
 		line_b = get_lineage(ctx, b, &b_len);
 
 		assert(a_len > 0 && b_len > 0);
 
 		/* Once both lineages are know, traverse top-down to find most recent common ancestor. */
-		if (line_a[a_len-1] != line_b[b_len-1])
-			fz_throw(ctx, FZ_ERROR_FORMAT, "No common ancestor in structure tree");
+		if (pdf_objcmp_resolve(ctx, line_a[a_len-1], line_b[b_len-1]) != 0)
+		{
+			pdf_document *doc = pdf_get_bound_document(ctx, a);
 
-		while (a_len > 0 && b_len > 0 && line_a[a_len-1] == line_b[b_len-1])
+			if (!doc->struct_tree_repaired)
+			{
+				fz_free(ctx, line_a);
+				fz_free(ctx, line_b);
+				(void)pdf_check_structure_tree(ctx, doc);
+				goto repaired;
+			}
+			fz_throw(ctx, FZ_ERROR_FORMAT, "No common ancestor in structure tree");
+		}
+
+		while (a_len > 0 && b_len > 0 && pdf_objcmp_resolve(ctx, line_a[a_len-1], line_b[b_len-1]) == 0)
 			a_len--, b_len--;
 
 		common = line_a[a_len];

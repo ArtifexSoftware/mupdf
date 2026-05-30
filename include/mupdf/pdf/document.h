@@ -501,6 +501,8 @@ struct pdf_document
 	int repair_attempted;
 	int repair_in_progress;
 	int non_structural_change; /* True if we are modifying the document in a way that does not change the (page) structure */
+	int struct_tree_repaired;
+	int struct_tree_result;
 
 	/* State indicating which file parsing method we are using */
 	int file_reading_linearly;
@@ -946,5 +948,40 @@ void pdf_drop_object_labels(fz_context *ctx, pdf_object_labels *g);
 */
 typedef void (pdf_label_object_fn)(fz_context *ctx, void *arg, const char *label);
 void pdf_label_object(fz_context *ctx, pdf_object_labels *g, int num, pdf_label_object_fn *callback, void *arg);
+
+typedef enum
+{
+	PDF_STRUCT_NOT_PRESENT = 0,
+
+	/* A struct tree is present in the file. */
+	PDF_STRUCT_PRESENT = 1,
+
+	/* The struct tree is unrepairably broken. */
+	PDF_STRUCT_BROKEN = 2,
+
+	/* A problem was found, but was fixed. */
+	PDF_STRUCT_FIXED = 4,
+
+	/* The Struct tree contains attributes. */
+	PDF_STRUCT_HAS_ATTRIBUTES = 8,
+
+	/* The Struct tree contains Table attributes. */
+	PDF_STRUCT_HAS_TABLE_ATTRIBUTES = 16,
+
+	/* The Struct tree contains Table cell spanning attributes. */
+	PDF_STRUCT_HAS_TABLE_SPAN_ATTRIBUTES = 32,
+
+	/* The Struct tree contains a cycle. */
+	PDF_STRUCT_HAS_CYCLE = 64
+} pdf_check_structure_result;
+
+/*
+	Run a validation pass over the structure tree, and attempt to repair
+	any problems found. Also returns information about the state of the
+	tree.
+
+	Returns a code with bits set as above.
+*/
+pdf_check_structure_result pdf_check_structure_tree(fz_context *ctx, pdf_document *doc);
 
 #endif

@@ -741,6 +741,9 @@
     <ClCompile Include="..\..\source\html\md.c">
       <Filter>html</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-struct.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
