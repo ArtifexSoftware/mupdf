@@ -43,7 +43,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, 
 	fz_colorspace *colorspace = NULL;
 	float decode[FZ_MAX_COLORS * 2];
 	int colorkey[FZ_MAX_COLORS * 2];
-	int stride;
+	int stride, size;
 	pdf_obj *intent;
 
 	int i;
@@ -189,9 +189,14 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, 
 		else
 		{
 			/* Inline stream */
-			stride = (w * n * bpc + 7) / 8;
+			if (fz_ckd_mul_int(&stride, w, n) || fz_ckd_mul_int(&stride, stride, bpc))
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "integer overflow in inline image size");
+			stride = fz_bytes_from_bits(stride);
+			if (fz_ckd_mul_int(&size, stride, h))
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "integer overflow in inline image size");
+
 			image = fz_new_image_from_compressed_buffer(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, NULL, mask);
-			pdf_load_compressed_inline_image(ctx, doc, dict, stride * h, cstm, indexed, (fz_compressed_image *)image);
+			pdf_load_compressed_inline_image(ctx, doc, dict, size, cstm, indexed, (fz_compressed_image *)image);
 		}
 		if (pdf_name_eq(ctx, intent, PDF_NAME(Perceptual)))
 			image->has_intent = 1, image->intent = FZ_RI_PERCEPTUAL;
