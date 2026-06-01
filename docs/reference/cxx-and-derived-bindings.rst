@@ -1201,6 +1201,33 @@ is constructed. In this particular case there is no need to hold on to a
 can work.
 
 
+Experimental thread-safety in C++ bindings
+---------------------------------------------------------------
+
+As of 2026-06-01 there is experimental support for automatic thread safety in the generated
+C++ bindings.
+
+Caveats:
+
+* This feature is experimental, and may be drastically changed or even removed.
+* As of 2026-06-01, multi-threaded performance does not seem to be significantly better than single-threaded performance,
+  possibly due to limitations in the font code.
+
+Details:
+
+* A build time option.
+* Not enabled by default.
+* Enabled by specifying a build directory containing ``-locking-``.
+* Disabled at runtime if ``mupdf::reinit_singlethreaded()`` is called.
+* Uses per-document and per-device recursive mutexes.
+* The locking is done inside each generated low-level ``ll_`` C++ function.
+* As of 2026-06-01 we add an optional trailing ``bool fzlocked=false`` argument to each low-level ``ll_`` C++ function.
+  If true, we assume that any required locks are already held and do not attempt to acquire any mutexes.
+  The intention is to allow calling code to acquire any relevent locks itself around multiple calls of MuPDF C++ functions,
+  and avoid continually locking/unlocking inside each of these calls.
+  It is not known yet whether this optimisation is actually significant.
+
+
 Extra functions in C++, Python and C#
 ---------------------------------------------------------------
 
