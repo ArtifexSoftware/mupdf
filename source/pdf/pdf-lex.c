@@ -117,7 +117,7 @@ lex_comment(fz_context *ctx, fz_stream *f)
 static float acrobat_compatible_atof(char *s)
 {
 	int neg = 0;
-	int i = 0;
+	unsigned int i = 0;
 
 	while (*s == '-')
 	{
@@ -164,7 +164,7 @@ static float acrobat_compatible_atof(char *s)
 static int64_t fast_atoi(char *s)
 {
 	int neg = 0;
-	int64_t i = 0;
+	uint64_t i = 0;
 
 	while (*s == '-')
 	{
