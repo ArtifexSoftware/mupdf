@@ -515,7 +515,7 @@ static int
 count_siblings_after(fz_xml *node)
 {
 	int count = 0;
-	for (; node; node = fz_xml_next(node))
+	for (node = fz_xml_next(node); node; node = fz_xml_next(node))
 		if (fz_xml_tag(node) != NULL)
 			++count;
 	return count;
@@ -538,7 +538,7 @@ count_siblings_of_type_after(fz_xml *node)
 {
 	const char *tag = fz_xml_tag(node);
 	int count = 0;
-	for (; node; node = fz_xml_next(node))
+	for (node = fz_xml_next(node); node; node = fz_xml_next(node))
 		if (fz_xml_is_tag(node, tag))
 			++count;
 	return count;
