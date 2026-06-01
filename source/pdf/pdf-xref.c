@@ -712,6 +712,9 @@ int pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int n
 	int i;
 	pdf_obj *copy;
 
+	if (num < 0)
+		return 0; /* Invalid object */
+
 	/* Make sure we have created an xref section for incremental updates */
 	ensure_incremental_xref(ctx, doc);
 
@@ -720,7 +723,7 @@ int pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int n
 	{
 		pdf_xref *xref = &doc->xref_sections[i];
 
-		if (num < 0 && num >= xref->num_objects)
+		if (num >= xref->num_objects)
 			break;
 		for (sub = xref->subsec; sub != NULL; sub = sub->next)
 		{
@@ -773,6 +776,9 @@ void pdf_xref_ensure_local_object(fz_context *ctx, pdf_document *doc, int num)
 	pdf_xref *xref;
 	pdf_obj *copy;
 
+	if (num < 0)
+		return; /* Invalid object */
+
 	/* Is it in the local section already? */
 	xref = doc->local_xref;
 	for (sub = xref->subsec; sub != NULL; sub = sub->next)
@@ -789,7 +795,7 @@ void pdf_xref_ensure_local_object(fz_context *ctx, pdf_document *doc, int num)
 	{
 		xref = &doc->xref_sections[i];
 
-		if (num < 0 && num >= xref->num_objects)
+		if (num >= xref->num_objects)
 			break;
 		for (sub = xref->subsec; sub != NULL; sub = sub->next)
 		{
