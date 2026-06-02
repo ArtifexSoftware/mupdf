@@ -30,6 +30,8 @@ run-release-test:
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-docs
 	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make test-manpages
+	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-java-build
 
 make-release-build:
@@ -132,7 +134,19 @@ make-docs:
 	$(MAKE) docs
 
 test-docs: make-docs
-	linkchecker --no-follow-url doxygen file://$(PWD)/build/docs/index.html
+	codespell --ignore-words-list flate,Oce,thirdparty,worl,FitH \
+		docs/bookbook docs/guide docs/other docs/reference docs/tools
+	linkchecker --ignore-url doxygen file://$(PWD)/build/docs/index.html
+
+test-manpages:
+	man --warnings -E UTF-8 -l -Tutf8 -Z docs/man/mupdf.1 1> /dev/null
+	mandoc -T lint -K utf-8 docs/man/mupdf.1
+	grep -Hn '^$$' docs/man/mutool.1 | sed -e 's/^/empty line:/'
+	codespell --ignore-words-list flate,Oce docs/man/mupdf.1
+	man --warnings -E UTF-8 -l -Tutf8 -Z docs/man/mutool.1 1> /dev/null
+	mandoc -T lint -K utf-8 docs/man/mutool.1
+	grep -Hn '^$$' docs/man/mupdf.1 | sed -e 's/^/empty line:/'
+	codespell --ignore-words-list flate,Oce docs/man/mutool.1
 
 test-java-build: make-java-build
 	MUPDF_ARGS=pdfref17.pdf $(MAKE) -C platform/java build=release run
