@@ -3,7 +3,7 @@ mutool draw
 
 The ``draw`` command will render a document to image files, convert to another vector format, or extract the text content.
 
-- The supported input document formats are: ``pdf``, ``xps``, ``cbz``, and ``epub``.
+- The supported input document formats are: ``pdf``, ``xps``, ``cbz``, ``md``, and ``epub``.
 
 - The supported output image formats are: ``pbm``, ``pgm``, ``ppm``, ``pam``, ``png``, ``pwg``, ``pcl`` and ``ps``.
 
@@ -86,7 +86,7 @@ The ``draw`` command will render a document to image files, convert to another v
 		Run interpretation and rendering at the same time.
 	``-N``
 		Disable ICC workflow.
-	``-O`` overprint
+	``-M`` overprint
 		Control spot/overprint rendering: ``0`` for no spot rendering, ``1`` for Overprint simulation (default), or ``2`` for full spot rendering.
 	``-t`` language
 		Specify language/script for OCR (default: eng)

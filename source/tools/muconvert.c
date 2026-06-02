@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -56,14 +56,6 @@ static int usage(void)
 		"Usage: mutool convert [options] file [pages]\n"
 		"\t-p -\tpassword\n"
 		"\n"
-		"\t-b -\tuse named page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox)\n"
-		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
-		"\t-W -\tpage width for EPUB layout\n"
-		"\t-H -\tpage height for EPUB layout\n"
-		"\t-S -\tfont size for EPUB layout\n"
-		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
-		"\t-X\tdisable document styles for EPUB layout\n"
-		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
 		"\t\t\traster: cbz, png, pnm, pgm, ppm, pam, pbm, pkm.\n"
@@ -71,6 +63,14 @@ static int usage(void)
 		"\t\t\tvector: pdf, svg.\n"
 		"\t\t\ttext: html, xhtml, text, stext.\n"
 		"\t-O -\tcomma separated list of options for output format\n"
+		"\n"
+		"\t-b -\tuse named page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox)\n"
+		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
+		"\t-W -\tpage width for EPUB layout\n"
+		"\t-H -\tpage height for EPUB layout\n"
+		"\t-S -\tfont size for EPUB layout\n"
+		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
+		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
 		"\tpages\tcomma separated list of page ranges (N=last page)\n"
 		"\n"
