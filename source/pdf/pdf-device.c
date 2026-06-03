@@ -904,7 +904,7 @@ pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, fz_mat
 
 	for (span = text->head; span; span = span->next)
 	{
-		pdf_dev_begin_text(ctx, pdev, 0);
+		pdf_dev_begin_text(ctx, pdev, 3);
 		pdf_dev_font(ctx, pdev, span->font, span->trm);
 		pdf_dev_text_span(ctx, pdev, span);
 	}
