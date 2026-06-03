@@ -108,6 +108,13 @@ struct pdf_cycle_list {
 	pdf_cycle_list *up;
 	int num;
 };
+/*
+	Check for a cycle (or stack overflow) in PDF structures.
+
+	Returns 1 if a cycle found.
+	Returns -1 if we pass some arbitrary depth (currently 256).
+	Otherwise returns 0.
+*/
 int pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *prev, pdf_obj *obj);
 
 typedef struct

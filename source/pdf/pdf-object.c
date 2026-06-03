@@ -2895,10 +2895,13 @@ pdf_unmark_obj(fz_context *ctx, pdf_obj *obj)
 	obj->flags &= ~PDF_FLAGS_MARKED;
 }
 
+#define MAX_CYCLE_STACK_DEPTH 256
+
 int
 pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *up, pdf_obj *obj)
 {
 	int num = pdf_to_num(ctx, obj);
+	int depth = 0;
 	if (num > 0)
 	{
 		pdf_cycle_list *x = up;
@@ -2907,6 +2910,9 @@ pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *up, pdf_obj *ob
 			if (x->num == num)
 				return 1;
 			x = x->up;
+			depth++;
+			if (depth > MAX_CYCLE_STACK_DEPTH)
+				return -1;
 		}
 	}
 	here->up = up;
