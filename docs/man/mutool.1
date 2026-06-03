@@ -45,7 +45,7 @@ Do not bake in annotations.
 .B \-F
 Do not bake in form field widgets.
 .TP
-.B \-O options
+.B \-O\~ options
 A comma separated list of PDF options. See \fIOUTPUT OPTIONS\fP below.
 .
 .SH CLEAN
@@ -58,7 +58,7 @@ out a range of pages, etc.
 If no output file is specified, it will write the cleaned PDF to "out.pdf"
 in the current directory.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
 .B \-g
@@ -78,19 +78,19 @@ file.
 .B \-D
 Save file without encryption.
 .TP
-.B \-E method
+.B \-E\~ method
 Save file with desired encryption method, one of: \fBrc4-40\fP \fBrc4-128\fP
 \fBaes-128\fP, or \fBaes-256\fP.
 .TP
-.B \-O password
+.B \-O\~ password
 Owner password used when encrypting output file. This is required to edit the
 output file.
 .TP
-.B \-U password
+.B \-U\~ password
 User password used when encrypting output file. This is required to view the
 output file.
 .TP
-.B \-P permissions
+.B \-P\~ permissions
 Permissions used when encrypting output file. These are the permissions that
 apply when the output file is viewed.
 .TP
@@ -108,7 +108,7 @@ Deflate uncompressed streams.
 If combined with -d, any decompressed streams will be recompressed.
 If combined with -a, the streams will also be hex encoded after compression.
 .TP
-.B \-e effort
+.B \-e\~ effort
 Configure how much effort is spent compressing the output file. 0 is default
 amount, otherwise a percentage of the maximum effort, 1 for minimum and 100 for
 maximum effort.
@@ -177,10 +177,10 @@ mutool convert [options] file [pages]
 .PP
 The convert command is used to convert a file from one format to another.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
-.BI \-b box
+.BI \-b\~ box
 Use named page box
 .RB ( MediaBox ,
 .BR CropBox ,
@@ -189,32 +189,32 @@ Use named page box
 or
 .BR ArtBox ).
 .TP
-.B \-A bits
+.B \-A\~ bits
 Specify how many bits of anti-aliasing to use. The default is 8.
 .TP
-.B \-W width
+.B \-W\~ width
 Page width in points for EPUB layout.
 .TP
-.B \-H height
+.B \-H\~ height
 Page height in points for EPUB layout.
 .TP
-.B \-S size
+.B \-S\~ size
 Font size in points for EPUB layout.
 .TP
-.B \-U filename
+.B \-U\~ filename
 User CSS stylesheet for EPUB layout.
 .TP
-.B \-o output
+.B \-o\~ output
 The output format is inferred from the output filename.
 Embed %d in the name to indicate the page number (for example: "page%d.png").
 Printf modifiers are supported, for example "%03d".
 If no output is specified, the output will go to stdout.
 .TP
-.B \-F format
+.B \-F\~ format
 Enforce a specific output format. Only necessary when outputting to stdout
 since normally the output filename is used to infer the output format.
 .TP
-.B \-O options
+.B \-O\~ options
 Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fP
 below.
 .
@@ -224,7 +224,7 @@ mutool create [-o output.pdf] [options] page1.txt [page2.txt ...]
 The create command creates a new PDF file with the contents created
 from one or more input files containing graphics commands.
 .TP
-.B \-o output
+.B \-o\~ output
 If no output file is specified, it will write the created PDF to "out.pdf"
 in the current directory.
 .TP
@@ -243,7 +243,7 @@ define the page dimensions and font and image resources:
 .br
 %%Image Im0 path/to/image.png
 .TP
-.B \-O options
+.B \-O\~ options
 Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fP
 below.
 .
@@ -261,41 +261,41 @@ The supported output vector formats are: svg, pdf, and debug trace (as xml).
 The supported output text formats are: plain text, html, and structured text (as
 xml).
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
-.B \-o output
+.B \-o\~ output
 The output format is inferred from the output filename.
 Embed %d in the name to indicate the page number (for example: "page%d.png").
 Printf modifiers are supported, for example "%03d".
 If no output is specified, the output will go to stdout.
 .TP
-.B \-F format
+.B \-F\~ format
 Enforce a specific output format. Only necessary when outputting to stdout
 since normally the output filename is used to infer the output format.
 .TP
 .B \-q
 Be quiet, do not print progress messages.
 .TP
-.B \-R angle
+.B \-R\~ angle
 Rotate clockwise by given number of degrees.
 .TP
-.B \-r resolution
+.B \-r\~ resolution
 Render the page at the specified resolution.
 The default resolution is 72 dpi.
 .TP
-.B \-w width
+.B \-w\~ width
 Render the page at the specified width (or, if the -r flag is used,
 render with a maximum width).
 .TP
-.B \-h height
+.B \-h\~ height
 Render the page at the specified height (or, if the -r flag is used,
 render with a maximum height).
 .TP
 .B \-f
 Fit exactly; ignore the aspect ratio when matching specified width/heights.
 .TP
-.BI \-b box
+.BI \-b\~ box
 Use named page box
 .RB ( MediaBox ,
 .BR CropBox ,
@@ -304,25 +304,25 @@ Use named page box
 or
 .BR ArtBox ).
 .TP
-.B \-B bandheight
+.B \-B\~ bandheight
 Render in banded mode with each band no taller than the given height. This uses
 less memory during rendering. Only compatible with pam, pgm, ppm, pnm and png
 output formats. Banded rendering and md5 checksumming may not be used at the
 same time.
 .TP
-.B \-T threads
+.B \-T\~ threads
 Number of threads to use for rendering (banded mode only).
 .TP
-.B \-W width
+.B \-W\~ width
 Page width in points for EPUB layout.
 .TP
-.B \-H height
+.B \-H\~ height
 Page height in points for EPUB layout.
 .TP
-.B \-S size
+.B \-S\~ size
 Font size in points for EPUB layout.
 .TP
-.B \-U filename
+.B \-U\~ filename
 User CSS stylesheet for EPUB layout.
 .TP
 .B \-X
@@ -331,7 +331,7 @@ Disable document styles for EPUB layout.
 .B \-a
 Disable usage of accelerator file.
 .TP
-.B \-c colorspace
+.B \-c\~ colorspace
 Render in the specified colorspace.
 Supported colorspaces are: \fBmono\fP, \fBgray\fP, \fBgrayalpha\fP, \fBrgb\fP,
 \fBrgbalpha\fP, \fBcmyk\fP, \fBcmykalpha\fP.
@@ -339,7 +339,7 @@ Some abbreviations are allowed: \fBm\fP, \fBg\fP, \fBga\fP, \fBrgba\fP,
 \fBcmyka\fP.
 The default is chosen based on the output format.
 .TP
-.B \-e filename
+.B \-e\~ filename
 Proof ICC profile filename to use for rendering.
 .TP
 .B -G gamma
@@ -349,7 +349,7 @@ Some typical values are 0.7 or 1.4 to thin or darken text rendering.
 .B -I
 Invert colors.
 .TP
-.B \-s [mft5]
+.B \-s\~ [mft5]
 Show various bits of information:
 .B m
 for glyph cache and total memory usage,
@@ -361,14 +361,14 @@ for per page rendering times as well statistics, and
 for md5 checksums of rendered images that can be used to check if rendering has
 changed.
 .TP
-.B \-A bits
+.B \-A\~ bits
 Specify how many bits of anti-aliasing to use. The default is 8.
 .TP
-.B \-A bits/bits
+.B \-A\~ bits/bits
 Specify how many bits of anti-aliasing to use. The default is 8. Bits for
 graphics is before the slash, bits for text after the slash.
 .TP
-.B \-l width
+.B \-l\~ width
 Minimum stroked line width (in pixels).
 .TP
 .B \-K
@@ -384,7 +384,7 @@ the amount of memory used.
 .B \-i
 Ignore errors.
 .TP
-.B \-m limit
+.B \-m\~ limit
 Limit memory usage in bytes.
 .TP
 .B \-L
@@ -396,40 +396,40 @@ Run interpretation and rendering at the same time.
 .B \-N
 Disable ICC workflow.
 .TP
-.B \-O overprint
+.B \-O\~ overprint
 Control spot/overprint rendering: \fB0\fP for no spot rendering, \fB1\fP for
 Overprint simulation (default), or \fB2f\fP for full spot rendering.
 .TP
-.B \-t language
+.B \-t\~ language
 Specify language/script for OCR (default: eng)
 .TP
-.B \-d ocr-file-path
+.B \-d\~ ocr-file-path
 Specify path for OCR files (default: rely on \fBTESSDATA_PREFIX\fP environment
 variable.
 .TP
-.B \-k correction
+.B \-k\~ correction
 Set the skew correction, either one of \fBauto\fP, \fB0\fP for increase size,
 \fB1\fP for maintain size, or \fB2\fP for decrease size.
 .TP
-.B \-k correction,angle
+.B \-k\~ correction,angle
 Set the skew correction as well as the angle.
 .TP
-.B \-y l
+.B \-y\~ l
 Print the layer configs to stderr.
 .TP
-.B \-y layer-number
+.B \-y\~ layer-number
 Select layer config (by number from \fB-y l\fP).
 .TP
-.B \-y layer-number,item1,item2,...
+.B \-y\~ layer-number,item1,item2,...
 Select layer config (by number from \fB-y l\fP) and toggle the listed items.
 .TP
 .B \-Y
 Print the individual layers to stderr.
 .TP
-.B \-z layer-number
+.B \-z\~ layer-number
 Hide individual layer.
 .TP
-.B \-Z layer-number
+.B \-Z\~ layer-number
 Show individual layer.
 .
 .TP
@@ -445,7 +445,7 @@ The extract command can be used to extract images and font files from a PDF.
 If no object numbers are given on the command line, all images and fonts
 will be extracted.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
 .B \-r
@@ -464,7 +464,7 @@ The info command lists the resources used on each page in a PDF file.
 The default is to list all resource types, but if one
 or more flags are given, only the flagged types will be shown.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
 .B -F
@@ -499,10 +499,10 @@ mutool merge [options] file1 [pages] file2 [pages] ...
 The merge command is used to pick out pages from two or more files and merge
 them in order into a new PDF output file.
 .TP
-.B \-o output
+.B \-o\~ output
 The output filename.
 .TP
-.B \-O options
+.B \-O\~ options
 Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fP
 below.
 .
@@ -512,7 +512,7 @@ mutool pages [options] input.pdf [pages ...]
 The pages command dumps information about the size and orientation
 of pages within the document.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
 .B pages
@@ -527,16 +527,16 @@ The poster command splits each page into tiles, and puts each tile on
 a page of its own. It's useful for printing a large page onto smaller
 pieces of paper that can then be glued together to create a large poster.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
-.B \-m margin
+.B \-m\~ margin
 Margin (overlap) between pages in points or percent.
 .TP
-.B \-x factor
+.B \-x\~ factor
 Split the page into this many horizontal pieces.
 .TP
-.B \-y factor
+.B \-y\~ factor
 Split the page into this many vertical pieces.
 .TP
 .B \-r
@@ -550,14 +550,14 @@ mutool recolor [options] input.pdf
 Change the color space used in a PDF to a desired one. This command can,
 for example, change a color PDF to be grayscale.
 .TP
-.B \-c colorspace
+.B \-c\~ colorspace
 Desired output colorspace, choose one of \fBgray\fP (default), \fBrgb\fP, or
 \fBcmyk\fP.
 .TP
 .B \-r
 Remove any output intents.
 .TP
-.B \-o filename
+.B \-o\~ filename
 The output filename.
 .
 .SH RUN
@@ -581,10 +581,10 @@ The show command will print the specified objects and streams to stdout.
 Streams are decoded and non-printable characters are represented
 with a period by default.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
-.B \-o file
+.B \-o\~ file
 Write output to file instead of stdout.
 .TP
 .B \-b
@@ -626,7 +626,7 @@ mutool sign [options] input.pdf [signature object number]
 Reads a PDF file and prints information about each signature field object. With
 suitable options all or specified signatures can be verified, cleared or signed.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
 .B \-v
@@ -635,14 +635,14 @@ Verify all signatures, or only the specified signature.
 .B \-c
 Clear all signatures, or only the specified signature.
 .TP
-.B \-s certificate-filename
+.B \-s\~ certificate-filename
 Read a certificate from the given filename and use it to sign all, or just the
 specified signature.
 .TP
-.B \-P certificate-password
+.B \-P\~ certificate-password
 Use the specified password when opening the certificate.
 .TP
-.B \-o filename
+.B \-o\~ filename
 The output filename.
 .B signature object numbers
 A list of PDF object number for signatures to verify/clear/sign. If no such
@@ -654,19 +654,19 @@ mutool trace [options] file1 [pages] file2 [pages] ...
 Prints a trace of device calls needed to render the desired pages from the given
 document.
 .TP
-.B \-p password
+.B \-p\~ password
 Use the specified password if the file is encrypted.
 .TP
-.B \-W width
+.B \-W\~ width
 Page width in points for EPUB layout.
 .TP
-.B \-H height
+.B \-H\~ height
 Page height in points for EPUB layout.
 .TP
-.B \-S size
+.B \-S\~ size
 Font size in points for EPUB layout.
 .TP
-.B \-U filename
+.B \-U\~ filename
 User CSS stylesheet for EPUB layout.
 .TP
 .B \-X
@@ -685,7 +685,7 @@ mutool trim [options] input.pdf
 Makes a modified version of a PDF with content that falls inside (or outside) of
 the given box removed.
 .TP
-.BI \-b box
+.BI \-b\~ box
 Use named page box
 .RB ( MediaBox ,
 .BR CropBox ,
@@ -697,16 +697,16 @@ or
 .B \-f
 Fallback to mediabox if specified box not available.
 .TP
-.B \-m all
+.B \-m\~ all
 Add same margins to all sides of the box, where \fBall\fP is positive for
 inwards, negative for outwards.
 .TP
-.B \-m vertical,horizontal
+.B \-m\~ vertical,horizontal
 Add specific margins for vertical and horizontal sides of the box, where
 \fBvertical\fP and \fBhorizonal\fP are positive for inwards, negative for
 outwards.
 .TP
-.B \-m top,right,bottom,left
+.B \-m\~ top,right,bottom,left
 Add specific margins for top, right, bottom and left sides of the box, where
 \fBtop\fP, \fBright\fP, \fBbottom\fP, and \fBleft\fP each are positive for
 inwards, negative for outwards.
@@ -714,7 +714,7 @@ inwards, negative for outwards.
 .B \-e
 Exclude contents of box rather than include them.
 .TP
-.B \-o filename
+.B \-o\~ filename
 The output filename.
 .
 .SH OUTPUT OPTIONS
