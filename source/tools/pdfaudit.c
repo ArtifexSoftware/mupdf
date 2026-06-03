@@ -2099,7 +2099,7 @@ static int usage(void)
 
 int pdfaudit_main(int argc, char **argv)
 {
-	char *outfile = "-";
+	char *outfile = "/dev/stdout";
 	int c;
 	int errors = 0;
 	int append = 0;
