@@ -109,6 +109,6 @@ The ``clean`` command pretty prints and rewrites the syntax of a PDF file. It ca
 	If no output file is specified, it will write the cleaned PDF to "out.pdf" in the current directory.
 
 ``[pages]``
-	Comma separated list of page numbers and ranges (for example:
+	Comma-separated list of page numbers and ranges (for example:
 	1,5,10-15,20-N), where the character N denotes the last page. If no
 	pages are specified, then all pages will be included.

@@ -18,9 +18,9 @@ Boolean values can be represented in several equivalent ways:
 
 An option with an empty value counts as true.
 
-## Comma separated values
+## Comma-separated values
 
-Classic syntax with comma separated key-value pairs.
+Classic syntax with comma-separated key-value pairs.
 
 Values may be enclosed in double quotes to allow embedding commas
 and equal signs. To represent a double quote within a quoted value,

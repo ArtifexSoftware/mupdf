@@ -57,7 +57,7 @@ vectors
 : Include vector bboxes in output
 
 lazy-vectors
-: Delay vectors in the extration slightly if they would otherwise split an extracted text line
+: Delay vectors in the extraction slightly if they would otherwise split an extracted text line
 
 fuzzy-vectors
 : Merge abutting horizontal and vertical vectors

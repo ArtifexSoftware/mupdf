@@ -29,7 +29,7 @@ The ``grep`` command searches for text in a document and prints each matching li
 	``-n``
 		Print page number for each patch.
 
-	Avanced options:
+	Advanced options:
 
 	``-S``
 		See :doc:`/reference/common/search-options`.

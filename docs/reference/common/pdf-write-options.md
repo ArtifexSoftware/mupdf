@@ -47,7 +47,7 @@ garbage
 : Garbage collect unused objects
 
 garbage=compact
-: Garbage collect unsued objects, and compact cross reference table
+: Garbage collect unused objects, and compact cross reference table
 
 garbage=deduplicate
 : Garbage collect unused objects, compact cross reference tables, and remove duplicate objects

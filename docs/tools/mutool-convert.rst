@@ -38,7 +38,7 @@ The ``convert`` command converts an input file into another format.
 	``-X``
 		Disable document styles for EPUB layout.
 
-	``-O`` comma separated list of options for output format.
+	``-O`` comma-separated list of options for output format.
 		See
 		:doc:`/reference/common/pdf-write-options`
 		and
@@ -48,5 +48,5 @@ The ``convert`` command converts an input file into another format.
 	Input file name. The file can be any of the supported input formats.
 
 ``[pages]``
-	Comma separated list of page ranges. The first page is "1", and the
+	Comma-separated list of page ranges. The first page is "1", and the
 	last page is "N". The default is "1-N".
