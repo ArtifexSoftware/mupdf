@@ -1378,6 +1378,7 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid subsampling factor");
 	}
 
+recalculate:
 	if (
 		fz_ckd_mul_uint(&tiff->stride, tiff->imagewidth, tiff->samplesperpixel) ||
 		fz_ckd_mul_uint(&tiff->stride, tiff->stride, tiff->bitspersample) ||
@@ -1441,18 +1442,22 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
 		if (tiff->samplesperpixel - !!tiff->extrasamples < 1)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid samples per pixel for l tiff");
-		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		if (tiff->bitspersample != 8)
+		{
 			tiff->bitspersample = 8;
-		tiff->stride >>= 1;
+			goto recalculate;
+		}
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		break;
 	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
 		if (tiff->samplesperpixel - !!tiff->extrasamples < 3)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "invalid samples per pixel for luv tiff");
-		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		if (tiff->bitspersample != 8)
+		{
 			tiff->bitspersample = 8;
-		tiff->stride >>= 1;
+			goto recalculate;
+		}
+		tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_FORMAT, "unknown photometric: %d", tiff->photometric);
