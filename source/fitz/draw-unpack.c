@@ -447,10 +447,20 @@ fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "n out of range in fz_unpack_stream");
 	if (depth < 1 || depth > 32)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "depth out of range in fz_unpack_stream");
+	if (w < 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "width cannot be negative");
+	if (h < 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "height cannot be negative");
+	if (pad < 0 || pad > 1)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "pad can either be 0 or 1");
+	if (skip < 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "skip cannot be negative");
 
-	if (fz_ckd_mul_u64(&u64, w, depth*n))
+	if (fz_ckd_mul_u64(&u64, depth, n) ||
+		fz_ckd_mul_u64(&u64, u64, w) ||
+		fz_ckd_add_u64(&u64, u64, 7))
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "area out of range in fz_unpack_stream");
-	u64 = (u64+7)>>3;
+	u64 >>= 3;
 	if (u64 > SIZE_MAX)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "area out of range in fz_unpack_stream");
 	src_stride = (size_t)u64;
@@ -466,7 +476,8 @@ fz_unpack_stream(fz_context *ctx, fz_stream *src, int depth, int w, int h, int n
 		case 4: scale = 17; break;
 		}
 
-	if (fz_ckd_mul_size(&dst_stride, w, n + !!pad))
+	if (fz_ckd_add_size(&dst_stride, n, !!pad) ||
+		fz_ckd_mul_size(&dst_stride, dst_stride, w))
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "dst_stride out of range in fz_unpack_stream");
 
 	if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)

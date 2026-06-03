@@ -45,6 +45,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, 
 	int colorkey[FZ_MAX_COLORS * 2];
 	int stride, size;
 	pdf_obj *intent;
+	size_t z;
 
 	int i;
 	fz_compressed_buffer *buffer;
@@ -82,9 +83,9 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, 
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "image depth is zero (or less)");
 	if (bpc > 16)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "image depth is too large: %d", bpc);
-	if (SIZE_MAX / w < (size_t)(bpc+7)/8)
-		fz_throw(ctx, FZ_ERROR_SYNTAX, "image is too large");
-	if (SIZE_MAX / h < w * (size_t)((bpc+7)/8))
+	if (fz_ckd_add_size(&z, bpc, 7) ||
+		fz_ckd_mul_size(&z, z/8, w) ||
+		fz_ckd_mul_size(&z, z, h))
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "image is too large");
 
 	fz_var(mask);
@@ -114,7 +115,10 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, 
 			n = 1;
 		}
 
-		if (SIZE_MAX / n < h * ((size_t)w) * ((bpc+7)/8))
+		if (fz_ckd_add_size(&z, bpc, 7) ||
+			fz_ckd_mul_size(&z, z/8, w) ||
+			fz_ckd_mul_size(&z, z, h) ||
+			fz_ckd_mul_size(&z, z, n))
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "image is too large");
 
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME(Decode), PDF_NAME(D));
