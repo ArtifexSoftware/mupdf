@@ -180,9 +180,14 @@ The convert command is used to convert a file from one format to another.
 .B \-p password
 Use the specified password if the file is encrypted.
 .TP
-.B \-b  box
-Use name page box (`MediaBox`, `CropBox`, `BleedBox`, `TrimBox`, or `ArtBox`),
-see :ref:`defined boxes<mutool_trim_defined_boxes>`.
+.BI \-b box
+Use named page box
+.RB ( MediaBox ,
+.BR CropBox ,
+.BR BleedBox ,
+.BR TrimBox ,
+or
+.BR ArtBox ).
 .TP
 .B \-A bits
 Specify how many bits of anti-aliasing to use. The default is 8.
@@ -290,9 +295,14 @@ render with a maximum height).
 .B \-f
 Fit exactly; ignore the aspect ratio when matching specified width/heights.
 .TP
-.B \-b  box
-Use name page box (`MediaBox`, `CropBox`, `BleedBox`, `TrimBox`, or `ArtBox`),
-see :ref:`defined boxes<mutool_trim_defined_boxes>`.
+.BI \-b box
+Use named page box
+.RB ( MediaBox ,
+.BR CropBox ,
+.BR BleedBox ,
+.BR TrimBox ,
+or
+.BR ArtBox ).
 .TP
 .B \-B bandheight
 Render in banded mode with each band no taller than the given height. This uses
@@ -675,9 +685,14 @@ mutool trim [options] input.pdf
 Makes a modified version of a PDF with content that falls inside (or outside) of
 the given box removed.
 .TP
-.B \-b box
-Which box to trim to, either one of: \fBMediaBox\fP (default) \fBCropBox\fP
-\fBBleedBox\fP \fBTrimBox\fP, or \fBArtBox\fP.
+.BI \-b box
+Use named page box
+.RB ( MediaBox ,
+.BR CropBox ,
+.BR BleedBox ,
+.BR TrimBox ,
+or
+.BR ArtBox ).
 .TP
 .B \-f
 Fallback to mediabox if specified box not available.
