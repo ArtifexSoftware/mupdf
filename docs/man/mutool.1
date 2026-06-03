@@ -46,7 +46,7 @@ Do not bake in annotations.
 Do not bake in form field widgets.
 .TP
 .B \-O options
-A comma separated list of PDF options. See \fIOUTPUT OPTIONS\fR below.
+A comma separated list of PDF options. See \fIOUTPUT OPTIONS\fP below.
 .
 .SH CLEAN
 mutool clean [options] input.pdf [output.pdf] [pages]
@@ -79,8 +79,8 @@ file.
 Save file without encryption.
 .TP
 .B \-E method
-Save file with desired encryption method, one of: \fBrc4-40\fR \fBrc4-128\fR
-\fBaes-128\fR, or \fBaes-256\fR.
+Save file with desired encryption method, one of: \fBrc4-40\fP \fBrc4-128\fP
+\fBaes-128\fP, or \fBaes-256\fP.
 .TP
 .B \-O password
 Owner password used when encrypting output file. This is required to edit the
@@ -153,18 +153,18 @@ Subset fonts if possible. (EXPERIMENTAL!)
 .B \-Z
 Use object streams cross reference streams for extra compressoin.
 .TP
-.B \-\-\fR(\fBcolor\fR,\fBgray\fR,\fBbitonal\fR)\fB-\fR(,\fBlossy-\fR,\fBlossless-\fR)\fBimage-subsample-method method
-Set the subsampling method (\fBaverage\fR, or \fBbicubic\fR) for the
+.B \-\-\fP(\fBcolor\fP,\fBgray\fP,\fBbitonal\fP)\fB-\fP(,\fBlossy-\fP,\fBlossless-\fP)\fBimage-subsample-method method
+Set the subsampling method (\fBaverage\fP, or \fBbicubic\fP) for the
 desired image types, for example color-lossy and bitonal-loessless.
 .TP
-.B \-\-\fR(\fBcolor\fR,\fBgray\fR,\fBbitonal\fR)\fB-\fR(,\fBlossy-\fR,\fBlossless-\fR)\fBimage-subsample-dpi dpi
+.B \-\-\fP(\fBcolor\fP,\fBgray\fP,\fBbitonal\fP)\fB-\fP(,\fBlossy-\fP,\fBlossless-\fP)\fBimage-subsample-dpi dpi
 Set the resolution at which to subsample.
 .TP
-.B \-\-\fR(\fBcolor\fR,\fBgray\fR,\fBbitonal\fR)\fB-\fR(,\fBlossy-\fR,\fBlossless-\fR)\fBimage-recompress-method quality
-Set the recompression quality to either of \fBnever\fR, \fBsame\fR,
-\fBlossless\fR, \fBjpeg\fR, \fBj2k\fR, \fBfax\fR, or \fBjbig2\fR.
+.B \-\-\fP(\fBcolor\fP,\fBgray\fP,\fBbitonal\fP)\fB-\fP(,\fBlossy-\fP,\fBlossless-\fP)\fBimage-recompress-method quality
+Set the recompression quality to either of \fBnever\fP, \fBsame\fP,
+\fBlossless\fP, \fBjpeg\fP, \fBj2k\fP, \fBfax\fP, or \fBjbig2\fP.
 .TP
-.B \-\-structure=\fR(\fBkeep\fR|\fBdrop\fR)
+.B \-\-structure=\fP(\fBkeep\fP|\fBdrop\fP)
 Keep or drop the structure tree.
 .TP
 .B pages
@@ -210,7 +210,7 @@ Enforce a specific output format. Only necessary when outputting to stdout
 since normally the output filename is used to infer the output format.
 .TP
 .B \-O options
-Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fR
+Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fP
 below.
 .
 .SH CREATE
@@ -239,7 +239,7 @@ define the page dimensions and font and image resources:
 %%Image Im0 path/to/image.png
 .TP
 .B \-O options
-Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fR
+Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fP
 below.
 .
 .SH DRAW
@@ -323,10 +323,10 @@ Disable usage of accelerator file.
 .TP
 .B \-c colorspace
 Render in the specified colorspace.
-Supported colorspaces are: \fBmono\fR, \fBgray\fR, \fBgrayalpha\fR, \fBrgb\fR,
-\fBrgbalpha\fR, \fBcmyk\fR, \fBcmykalpha\fR.
-Some abbreviations are allowed: \fBm\fR, \fBg\fR, \fBga\fR, \fBrgba\fR,
-\fBcmyka\fR.
+Supported colorspaces are: \fBmono\fP, \fBgray\fP, \fBgrayalpha\fP, \fBrgb\fP,
+\fBrgbalpha\fP, \fBcmyk\fP, \fBcmykalpha\fP.
+Some abbreviations are allowed: \fBm\fP, \fBg\fP, \fBga\fP, \fBrgba\fP,
+\fBcmyka\fP.
 The default is chosen based on the output format.
 .TP
 .B \-e filename
@@ -387,19 +387,19 @@ Run interpretation and rendering at the same time.
 Disable ICC workflow.
 .TP
 .B \-O overprint
-Control spot/overprint rendering: \fB0\fR for no spot rendering, \fB1\fR for
-Overprint simulation (default), or \fB2f\fR for full spot rendering.
+Control spot/overprint rendering: \fB0\fP for no spot rendering, \fB1\fP for
+Overprint simulation (default), or \fB2f\fP for full spot rendering.
 .TP
 .B \-t language
 Specify language/script for OCR (default: eng)
 .TP
 .B \-d ocr-file-path
-Specify path for OCR files (default: rely on \fBTESSDATA_PREFIX\fR environment
+Specify path for OCR files (default: rely on \fBTESSDATA_PREFIX\fP environment
 variable.
 .TP
 .B \-k correction
-Set the skew correction, either one of \fBauto\fR, \fB0\fR for increase size,
-\fB1\fR for maintain size, or \fB2\fR for decrease size.
+Set the skew correction, either one of \fBauto\fP, \fB0\fP for increase size,
+\fB1\fP for maintain size, or \fB2\fP for decrease size.
 .TP
 .B \-k correction,angle
 Set the skew correction as well as the angle.
@@ -408,10 +408,10 @@ Set the skew correction as well as the angle.
 Print the layer configs to stderr.
 .TP
 .B \-y layer-number
-Select layer config (by number from \fB-y l\fR).
+Select layer config (by number from \fB-y l\fP).
 .TP
 .B \-y layer-number,item1,item2,...
-Select layer config (by number from \fB-y l\fR) and toggle the listed items.
+Select layer config (by number from \fB-y l\fP) and toggle the listed items.
 .TP
 .B \-Y
 Print the individual layers to stderr.
@@ -493,7 +493,7 @@ them in order into a new PDF output file.
 The output filename.
 .TP
 .B \-O options
-Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fR
+Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fP
 below.
 .
 .SH PAGES
@@ -541,8 +541,8 @@ Change the color space used in a PDF to a desired one. This command can,
 for example, change a color PDF to be grayscale.
 .TP
 .B \-c colorspace
-Desired output colorspace, choose one of \fBgray\fR (default), \fBrgb\fR, or
-\fBcmyk\fR.
+Desired output colorspace, choose one of \fBgray\fP (default), \fBrgb\fP, or
+\fBcmyk\fP.
 .TP
 .B \-r
 Remove any output intents.
@@ -676,24 +676,24 @@ Makes a modified version of a PDF with content that falls inside (or outside) of
 the given box removed.
 .TP
 .B \-b box
-Which box to trim to, either one of: \fBMediaBox\fR (default) \fBCropBox\fR
-\fBBleedBox\fR \fBTrimBox\fR, or \fBArtBox\fR.
+Which box to trim to, either one of: \fBMediaBox\fP (default) \fBCropBox\fP
+\fBBleedBox\fP \fBTrimBox\fP, or \fBArtBox\fP.
 .TP
 .B \-f
 Fallback to mediabox if specified box not available.
 .TP
 .B \-m all
-Add same margins to all sides of the box, where \fBall\fR is positive for
+Add same margins to all sides of the box, where \fBall\fP is positive for
 inwards, negative for outwards.
 .TP
 .B \-m vertical,horizontal
 Add specific margins for vertical and horizontal sides of the box, where
-\fBvertical\fR and \fBhorizonal\fR are positive for inwards, negative for
+\fBvertical\fP and \fBhorizonal\fP are positive for inwards, negative for
 outwards.
 .TP
 .B \-m top,right,bottom,left
 Add specific margins for top, right, bottom and left sides of the box, where
-\fBtop\fR, \fBright\fR, \fBbottom\fR, and \fBleft\fR each are positive for
+\fBtop\fP, \fBright\fP, \fBbottom\fP, and \fBleft\fP each are positive for
 inwards, negative for outwards.
 .TP
 .B \-e
@@ -739,7 +739,7 @@ Render pages to fit N pixels wide (ignore resolution option).
 Render pages to fit N pixels tall (ignore resolution option).
 .in
 .IP
-.B colorspace=\fR(\fBgray\fR|\fBrgb\fR|\fBcmyk\fR)
+.B colorspace=\fP(\fBgray\fP|\fBrgb\fP|\fBcmyk\fP)
 .in +4n
 Render pages using the specified colorspace.
 .in
@@ -748,9 +748,9 @@ Render pages using the specified colorspace.
 Render pages with alpha channel and transparent background.
 .in
 .IP
-.B graphics=\fR(\fBaaN\fR|\fBcop\fR|\fBapp\fR)
+.B graphics=\fP(\fBaaN\fP|\fBcop\fP|\fBapp\fP)
 .br
-.B text=\fR(\fBaaN\fR|\fBcop\fR|\fBapp\fR)
+.B text=\fP(\fBaaN\fP|\fBcop\fP|\fBapp\fP)
 .in +4n
 Set the rasterizer to use for graphics or text respectively:
 .in +4n
@@ -775,9 +775,9 @@ Any part of pixel.
 Decompress all streams (except compress-fonts/images).
 .in
 .IP
-.B compress=\fR(\fByes\fR|\fBflate\fR|\fBbrotli\fR)
+.B compress=\fP(\fByes\fP|\fBflate\fP|\fBbrotli\fP)
 .in +4n
-Compress all streams, if no value is given, or the value is \fByesf\fR the
+Compress all streams, if no value is given, or the value is \fByesf\fP the
 default is to use flate.
 .in
 .IP
@@ -791,7 +791,7 @@ Compress object stream for embedded fonts.
 Compress object streams for images.
 .in
 .IP
-.B compress-effort=\fR(\fB0\fR|\fBPERCENTAGE\fR)
+.B compress-effort=\fP(\fB0\fP|\fBPERCENTAGE\fP)
 .in +4n
 Effort spent compressing, 0 is default, otherwise percentage of max effort.
 .in
@@ -852,7 +852,7 @@ Write changes as incremental update.
 Use object streams and cross reference streams.
 .in
 .IP
-.B appearance=\fR(\fByes\fR|\fBall\fR)
+.B appearance=\fP(\fByes\fP|\fBall\fP)
 .in +4n
 Synthesize just missing, or all, annotation/widget appearance streams.
 .in
@@ -867,7 +867,7 @@ Continue saving the document even if there is an error.
 This option is deprecated: instead of decrypt use encrypt=none.
 .in
 .IP
-.B encrypt=\fR(\fBnone\fR|\fBkeep\fR|\fBrc4-40\fR|\fBrc4-128\fR|\fBaes-128\fR|\fBaes-256\fR)
+.B encrypt=\fP(\fBnone\fP|\fBkeep\fP|\fBrc4-40\fP|\fBrc4-128\fP|\fBaes-128\fP|\fBaes-256\fP)
 .in +4n
 Write encrypted document using specified encryption method. The default value is
 keep.
@@ -1010,17 +1010,17 @@ Hunt for tables within a (segmented) page.
 .TP
 .B PCL options
 .IP
-.B colorspace=\fR(\fBmono\fR|\fBrgb\fR)
+.B colorspace=\fP(\fBmono\fP|\fBrgb\fP)
 .in +4n
 Render 1-bit black and white or a full color page.
 .in
 .IP
-.B preset=\fR(\fBgeneric\fR|\fBljet4\fR|\fBdj500\fR|\fBfs600\fR|\fBlj\fR|\fBlj2\fR|\fBlj3\fR|\fBlj4\fR|\fBlj4pl\fR|\fBlj4d\fR|\fBlp2563b\fR|\fBoce9050\fR)
+.B preset=\fP(\fBgeneric\fP|\fBljet4\fP|\fBdj500\fP|\fBfs600\fP|\fBlj\fP|\fBlj2\fP|\fBlj3\fP|\fBlj4\fP|\fBlj4pl\fP|\fBlj4d\fP|\fBlp2563b\fP|\fBoce9050\fP)
 .in +4n
 Render 1-bit black and white or a full color page.
 .in
 .IP
-.B spacing=\fR(\fB0\fR|\fB1\fR|\fB2\fR|\fB3\fR)
+.B spacing=\fP(\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP)
 .in +4n
 Set vertical spacing to none, PCL 3 (<ESC>*p+<n>Y), PCL 5 (<ESC>*b<n>Y), or PCL
 6 (<ESC>*b<n>Y and clear seed row).
@@ -1069,7 +1069,7 @@ Disable/enable Oce 9050 models-specific output.
 .TP
 .B PCLm options
 .IP
-.B compression=\fR(\fBnone\fR|\fBflate\fR)
+.B compression=\fP(\fBnone\fP|\fBflate\fP)
 .in +4n
 No compression (default), or enable flate compression.
 .in
