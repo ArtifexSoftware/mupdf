@@ -4,23 +4,23 @@
 .nh
 .\" adjust left
 .ad l
-
+.
 .SH NAME
 mutool \- all purpose tool for dealing with PDF files
-
+.
 .SH SYNOPSIS
 mutool <sub-command> [options]
-
+.
 .SH VERSION
 mutool -v
 .PP
 Shows the MuPDF version used to build mutool.
-
+.
 .SH DESCRIPTION
 mutool is a tool based on MuPDF for dealing with document files in various
 manners.
 There are several sub commands available, as described below.
-
+.
 .SH DRAW
 mutool draw [options] file [pages]
 .PP
@@ -200,13 +200,13 @@ Hide individual layer.
 .TP
 .B \-Z layer-number
 Show individual layer.
-
+.
 .TP
 .B pages
 Comma separated list of page numbers and ranges (for example: 1,5,10-15,20-N),
 where the character N denotes the last page. If no pages are specified, then all
 pages will be rendered.
-
+.
 .SH CLEAN
 mutool clean [options] input.pdf [output.pdf] [pages]
 .PP
@@ -330,7 +330,7 @@ Keep or drop the structure tree.
 Comma separated list of page numbers and ranges (for example: 1,5,10-15,20-N),
 where the character N denotes the last page. If no pages are specified, then all
 pages will be included.
-
+.
 .SH EXTRACT
 mutool extract [options] file.pdf [object numbers]
 .PP
@@ -349,7 +349,7 @@ Embed SMasks as alpha channel..
 .TP
 .B \-N
 Do not use ICC color conversions.
-
+.
 .SH INFO
 mutool info [options] file.pdf [pages]
 .PP
@@ -385,7 +385,7 @@ List ZUGFeRD info.
 Comma separated list of page numbers and ranges (for example: 1,5,10-15,20-N),
 where the character N denotes the last page. If no pages are specified, then all
 pages will be included.
-
+.
 .SH CREATE
 mutool create [-o output.pdf] [options] page1.txt [page2.txt ...]
 .PP
@@ -414,7 +414,7 @@ define the page dimensions and font and image resources:
 .B \-O options
 Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fR
 below.
-
+.
 .SH PAGES
 mutool pages [options] input.pdf [pages ...]
 .PP
@@ -428,7 +428,7 @@ Use the specified password if the file is encrypted.
 Comma separated list of page numbers and ranges (for example: 1,5,10-15,20-N),
 where the character N denotes the last page. If no pages are specified, then all
 pages will be included.
-
+.
 .SH POSTER
 mutool poster [options] input.pdf [output.pdf]
 .PP
@@ -452,7 +452,7 @@ Split the page into this many vertical pieces.
 Splits hoirzontally from right to left (default splits from left to right).
 .PP
 The output will have x times y number of pages for each input page.
-
+.
 .SH SHOW
 mutool show [options] file.pdf [object numbers ...]
 .PP
@@ -498,7 +498,7 @@ piping to grep.
 .TP
 .B 'outline'
 Print the outline (table of contents).
-
+.
 .SH RUN
 mutool run script.js [arguments]
 .PP
@@ -512,7 +512,7 @@ If invoke without any arguments, it will drop you into an interactive REPL
 equal character it will automatically print the results of the line.
 .PP
 See the MuPDF documentation for details about the Javascript interfaces.
-
+.
 .SH CONVERT
 mutool convert [options] file [pages]
 .PP
@@ -553,7 +553,7 @@ since normally the output filename is used to infer the output format.
 .B \-O options
 Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fR
 below.
-
+.
 .SH MERGE
 mutool merge [options] file1 [pages] file2 [pages] ...
 .PP
@@ -566,7 +566,7 @@ The output filename.
 .B \-O options
 Comma separated list of format specific output options, see \fIOUTPUT OPTIONS\fR
 below.
-
+.
 .SH BAKE
 mutool bake [options] input.pdf [output.pdf]
 .PP
@@ -585,7 +585,7 @@ Do not bake in form field widgets.
 .TP
 .B \-O options
 A comma separated list of PDF options. See \fIOUTPUT OPTIONS\fR below.
-
+.
 .SH RECOLOR
 mutool recolor [options] input.pdf
 .PP
@@ -601,7 +601,7 @@ Remove any output intents.
 .TP
 .B \-o filename
 The output filename.
-
+.
 .SH TRACE
 mutool trace [options] file1 [pages] file2 [pages] ...
 .PP
@@ -632,7 +632,7 @@ Enable use of display lists.
 Comma separated list of page numbers and ranges (for example: 1,5,10-15,20-N),
 where the character N denotes the last page. If no pages are specified, then all
 pages will be rendered.
-
+.
 .SH TRIM
 mutool trim [options] input.pdf
 .PP
@@ -665,7 +665,7 @@ Exclude contents of box rather than include them.
 .TP
 .B \-o filename
 The output filename.
-
+.
 .SH SIGN
 mutool sign [options] input.pdf [signature object number]
 .PP
@@ -693,7 +693,7 @@ The output filename.
 .B signature object numbers
 A list of PDF object number for signatures to verify/clear/sign. If no such
 object numbers are given, all signatures will be processed.
-
+.
 .SH AUDIT
 mutool audit [options] file1.pdf file2.pdf ...
 .PP
@@ -701,10 +701,10 @@ Outputs a report of operator and space usage for each given PDF file.
 .TP
 .B -o filename
 The output filename for the report.
-
+.
 .SH OUTPUT OPTIONS
 Configuring output is done by a comma separated list of output options.
-
+.
 .TP
 .B Raster format options
 These apply to output formats: cbz, png, pnm, pgm, ppm, pam, pbm, pkm.
@@ -766,7 +766,7 @@ Center of pixel.
 .in +4n
 Any part of pixel.
 .in -12n
-
+.
 .TP
 .B PDF options
 .IP
@@ -892,7 +892,7 @@ Password required to edit document.
 .in +4n
 Regenerate document id (default yes).
 .in
-
+.
 .TP
 .B Text format options
 These apply to formats: html, xhtml, text stext.
@@ -1006,7 +1006,7 @@ Attempt to segment the page.
 .in +4n
 Hunt for tables within a (segmented) page.
 .in
-
+.
 .TP
 .B PCL options
 .IP
@@ -1065,7 +1065,7 @@ Disable/enable HP 4PJL model-specific output.
 .in +4n
 Disable/enable Oce 9050 models-specific output.
 .in
-
+.
 .TP
 .B PCLm options
 .IP
@@ -1078,7 +1078,7 @@ No compression (default), or enable flate compression.
 .in +4n
 Strip height (default 16).
 .in
-
+.
 .TP
 .B PWG options
 .IP
@@ -1241,7 +1241,7 @@ Set the row_feed field.
 .in +4n
 Set the row_step field.
 .in
-
+.
 .TP
 .B SVG options
 .IP
@@ -1259,12 +1259,12 @@ Emit text as <path> elements (accurate fonts).
 .in +4n
 Do not reuse image using <symbol> definitions.
 .in -4n
-
+.
 .SH EXIT STATUS
 The exit status is 0 upon successful execution and non-zero upon error.
-
+.
 .SH SEE ALSO
 .BR mupdf (1),
-
+.
 .SH AUTHOR
 MuPDF is Copyright 2004-2026 Artifex Software, Inc.
