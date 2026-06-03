@@ -1543,8 +1543,12 @@ classextras = ClassExtras(
                                 return m_internal->list[i];
                             }}
                             '''),
-                        '/* Returns a low-level struct fz_stext_grid_divider from the underlying fz_stext_grid_positions::list[] array.\n'
-                        ' Asserts <i> is in range. */',
+                        comment = textwrap.dedent('''
+		        /*
+			    Returns a low-level struct fz_stext_grid_divider from the underlying fz_stext_grid_positions::list[] array.
+                            Asserts <i> is in range.
+			*/
+			'''),
                         ),
                     ExtraMethod(
                         '',
