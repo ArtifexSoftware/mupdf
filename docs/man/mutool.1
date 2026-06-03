@@ -718,562 +718,373 @@ Exclude contents of box rather than include them.
 The output filename.
 .
 .SH OUTPUT OPTIONS
-Configuring output is done by a comma separated list of output options.
+Configuring output is done by a comma-separated list of output options.
 .
+.SS Raster output options
+These apply to output formats:
+.BR cbz ,\~ png ,\~ pnm ,\~ pgm ,\~ ppm ,\~ pam ,\~ pbm ,\~ pkm .
 .TP
-.B Raster format options
-These apply to output formats: cbz, png, pnm, pgm, ppm, pam, pbm, pkm.
-.IP
-.B rotate=N
-.in +4n
+.BI rotate= N
 Rotate rendered pagess N degrees counterclockwise.
-.in
-.IP
-.B resolution=N
-.in +4n
-Set both X and Y resolution in pixels per inch.
-.in
-.IP
-.B x-resolution=N
-.in +4n
+.TP
+.BI resolution= N
+Set both X and Y resolution to
+.I N
+pixels per inch.
+.TP
+.BI x-resolution= N
 Set X resolution of rendred pages in pixels per inch.
-.in
-.IP
-.B y-resolution=N
-.in +4n
+.TP
+.BI y-resolution= N
 Set Y resolution of rendred pages in pixels per inch.
-.in
-.IP
-.B width=N
-.in +4n
+.TP
+.BI width= N
 Render pages to fit N pixels wide (ignore resolution option).
-.in
-.IP
-.B height=N
-.in +4n
+.TP
+.BI height= N
 Render pages to fit N pixels tall (ignore resolution option).
-.in
-.IP
-.B colorspace=\fP(\fBgray\fP|\fBrgb\fP|\fBcmyk\fP)
-.in +4n
+.TP
+.BR colorspace= ( gray | rgb | cmyk )
 Render pages using the specified colorspace.
-.in
-.IP
+.TP
 .B alpha
 Render pages with alpha channel and transparent background.
-.in
-.IP
-.B graphics=\fP(\fBaaN\fP|\fBcop\fP|\fBapp\fP)
-.br
-.B text=\fP(\fBaaN\fP|\fBcop\fP|\fBapp\fP)
-.in +4n
+.TP
+.BR graphics= ( aa\c
+.IR N |\c
+.BR cop | app )\~ \c
+.RB and\~ text= ( aa\c
+.IR N |\c
+.BR cop | app )
 Set the rasterizer to use for graphics or text respectively:
-.in +4n
-.B aaN
-.in +4n
-Antialias with N bits (0 to 8).
-.in
+.RS
+.TP
+.BI aa N
+Antialias with
+.I N
+bits (0 to 8).
+.TP
 .B cop
-.in +4n
 Center of pixel.
-.in
+.TP
 .B app
-.in +4n
 Any part of pixel.
-.in -12n
+.RE
 .
+.SS PCL options
+These apply to print-raster output formats:
+.BR pcl ,\~ pclm ,\~ ps ,\~ pwg .
 .TP
-.B PDF options
-.IP
-.B decompress
-.in +4n
-Decompress all streams (except compress-fonts/images).
-.in
-.IP
-.B compress=\fP(\fByes\fP|\fBflate\fP|\fBbrotli\fP)
-.in +4n
-Compress all streams, if no value is given, or the value is \fByesf\fP the
-default is to use flate.
-.in
-.IP
-.B compress-fonts
-.in +4n
-Compress object stream for embedded fonts.
-.in
-.IP
-.B compress-images
-.in +4n
-Compress object streams for images.
-.in
-.IP
-.B compress-effort=\fP(\fB0\fP|\fBPERCENTAGE\fP)
-.in +4n
-Effort spent compressing, 0 is default, otherwise percentage of max effort.
-.in
-.IP
-.B ascii
-.in +4n
-Encode object streams using ASCII hex encoding.
-.in
-.IP
-.B pretty
-.in +4n
-Pretty-print objects with indentation.
-.in
-.IP
-.B labels
-.in +4n
-Print object labels.
-.in
-.IP
-.B linearize
-.in +4n
-Optimize document for progressive loading in viewers ( no longer supported!).
-.in
-.IP
-.B clean
-.in +4n
-Pretty-print graphics commands in content streams.
-.in
-.IP
-.B sanitize
-.in +4n
-Clean up graphics command in content streams.
-.in
-.IP
-.B garbage
-.in +4n
-Garbage collect unused objects.
-.in
-.IP
-.B garbage=compact
-.in +4n
-Garbage collect unused object, and compact cross reference table.
-.in
-.IP
-.B garbage=deduplicate
-.in +4n
-Garbage collect unused objects, compact cross reference table, and recombine
-duplicate objects.
-.in
-.IP
-.B incremental
-.in +4n
-Write changes as incremental update.
-.in
-.IP
-.B objstms
-.in +4n
-Use object streams and cross reference streams.
-.in
-.IP
-.B appearance=\fP(\fByes\fP|\fBall\fP)
-.in +4n
-Synthesize just missing, or all, annotation/widget appearance streams.
-.in
-.IP
-.B continue-on-error
-.in +4n
-Continue saving the document even if there is an error.
-.in
-.IP
-.B decrypt
-.in +4n
-This option is deprecated: instead of decrypt use encrypt=none.
-.in
-.IP
-.B encrypt=\fP(\fBnone\fP|\fBkeep\fP|\fBrc4-40\fP|\fBrc4-128\fP|\fBaes-128\fP|\fBaes-256\fP)
-.in +4n
-Write encrypted document using specified encryption method. The default value is
-keep.
-.in
-.IP
-.B permissions=NUMBER
-.in +4n
-Document permissions to grant when encrypting.
-.in
-.IP
-.B user-password=PASSWORD
-.in +4n
-Password required to read document.
-.in
-.IP
-.B owner-password=PASSWORD
-.in +4n
-Password required to edit document.
-.in
-.IP
-.B regenerate-id=no
-.in +4n
-Regenerate document id (default yes).
-.in
-.
-.TP
-.B Text format options
-These apply to formats: html, xhtml, text stext.
-.IP
-.B preserve-images
-.in +4n
-Keep imagess in output.
-.in
-.IP
-.B preserve-ligatures
-.in +4n
-Do not expand ligature into constituent characters.
-.in
-.IP
-.B preserve-spans
-.in +4n
-Do not merge spans on the same line.
-.in
-.IP
-.B preserve-whitespace
-.in +4n
-Do not convert all whitespace into space characters.
-.in
-.IP
-.B inhibit-spaces
-.in +4n
-Do not add spaces between gaps in the text.
-.in
-.IP
-.B paragraph-break
-.in +4n
-Break blocks at paragraph boundaries.
-.in
-.IP
-.B dehyphenate
-.in +4n
-Attempts to join up hyphenated words.
-.in
-.IP
-.B ignore-actualtext
-.in +4n
-Do not apply ActualText replacements.
-.in
-.IP
-.B use-cid-for-unknown-unicode
-.in +4n
-Use character code if unicode mapping fails.
-.in
-.IP
-.B use-gid-for-unknown-unicode
-.in +4n
-Use glyph index if unicode mapping fails.
-.in
-.IP
-.B accurate-bboxes
-.in +4n
-Calculate bboxes from the outlines.
-.in
-.IP
-.B accurate-ascenders
-.in +4n
-Calculate ascender/descender from font glyphs.
-.in
-.IP
-.B accurate-side-bearings
-.in +4n
-Expand character bboxes to completely include width of glyphs.
-.in
-.IP
-.B collect-styles
-.in +4n
-Attempt to detect text features (fake bold, strikeout, underlined, etc.)
-.in
-.IP
-.B clip
-.in +4n
-Do not include text that is completely clipped.
-.in
-.IP
-.B clip-rect=x0:y0:x1:y1
-.in +4n
-Specify clipping rectangle within which to collect content.
-.in
-.IP
-.B structured
-.in +4n
-Collect structure markup.
-.in
-.IP
-.B vectors
-.in +4n
-Include vector bboxes in output.
-.in
-.IP
-.B lazy-vectors
-.in +4n
-Delay vectors in the extraction that would otherwise split a text line.
-.in
-.IP
-.B fuzzy-vectors
-.in +4n
-Merge abutting horizontal and vertical vectors.
-.in
-.IP
-.B segment
-.in +4n
-Attempt to segment the page.
-.in
-.IP
-.B table-hunt
-.in +4n
-Hunt for tables within a (segmented) page.
-.in
-.
-.TP
-.B PCL options
-.IP
-.B colorspace=\fP(\fBmono\fP|\fBrgb\fP)
-.in +4n
+.BR colorspace= ( mono | rgb )
 Render 1-bit black and white or a full color page.
-.in
-.IP
-.B preset=\fP(\fBgeneric\fP|\fBljet4\fP|\fBdj500\fP|\fBfs600\fP|\fBlj\fP|\fBlj2\fP|\fBlj3\fP|\fBlj4\fP|\fBlj4pl\fP|\fBlj4d\fP|\fBlp2563b\fP|\fBoce9050\fP)
-.in +4n
+.TP
+.BR preset= ( generic | ljet4 | dj500 | fs600 | lj | lj2 | lj3 | lj4 | lj4pl | lj4d | lp2563b | oce9050 )
 Render 1-bit black and white or a full color page.
-.in
-.IP
-.B spacing=\fP(\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP)
-.in +4n
+.TP
+.BR spacing= ( 0 | 1 | 2 | 3 )
 Set vertical spacing to none, PCL 3 (<ESC>*p+<n>Y), PCL 5 (<ESC>*b<n>Y), or PCL
 6 (<ESC>*b<n>Y and clear seed row).
-.in
-.IP
+.TP
 .B mode2
-.in +4n
 Enable mode 2 graphics compression.
-.in
-.IP
+.TP
 .B mode3
-.in +4n
 Enable mode 3 graphics compression.
-.in
-.IP
+.TP
 .B eog_reset
-.in +4n
 End of graphics (<ESC>+rB) resets all parameters.
-.in
-.IP
+.TP
 .B has_duplex
-.in +4n
 Duplex supported (<ESC>&l<duplex>S).
-.in
-.IP
+.TP
 .B has_papersize
-.in +4n
 Papersize setting supported (<ESC>&l<sizecode>A).
-.in
-.IP
+.TP
 .B has_copies
-.in +4n
 Number of copies supported (<ESC>&l<copies>X).
-.in
-.IP
+.TP
 .B is_ljet4pjl
-.in +4n
 Disable/enable HP 4PJL model-specific output.
-.in
-.IP
+.TP
 .B is_oce9050
-.in +4n
 Disable/enable Oce 9050 models-specific output.
-.in
 .
+.SS PCLm options
+These apply only to:
+.BR pclm .
 .TP
-.B PCLm options
-.IP
-.B compression=\fP(\fBnone\fP|\fBflate\fP)
-.in +4n
+.BR compression= ( none | flate )
 No compression (default), or enable flate compression.
-.in
-.IP
-.B strip-height=N
-.in +4n
+.TP
+.BI strip-height= N
 Strip height (default 16).
-.in
 .
+.SS PWG options
+These apply only to:
+.BR pwg .
 .TP
-.B PWG options
-.IP
-.B media_class=<string>
-.in +4n
+.BI media_class= string
 Set the media_class field.
-.in
-.IP
-.B media_color=<string>
-.in +4n
-Set the media_color field.
-.in
-.IP
-.B media_type=<string>
-.in +4n
-Set the media_type field.
-.in
-.IP
-.B output_type=<string>
-.in +4n
-Set the output_type field.
-.in
-.IP
-.B rendering_intent=<string>
-.in +4n
-Set the rendering_intent field.
-.in
-.IP
-.B page_size_name=<string>
-.in +4n
-Set the page_size_name field.
-.in
-.IP
-.B advance_distance=<int>
-.in +4n
-Set the advance_distance field.
-.in
-.IP
-.B advance_media=<int>
-.in +4n
-Set the advance_media field.
-.in
-.IP
-.B collate=<int>
-.in +4n
-Set the collate field.
-.in
-.IP
-.B cut_media=<int>
-.in +4n
-Set the cut_media field.
-.in
-.IP
-.B duplex=<int>
-.in +4n
-Set the duplex field.
-.in
-.IP
-.B insert_sheet=<int>
-.in +4n
-Set the insert_sheet field.
-.in
-.IP
-.B jog=<int>
-.in +4n
-Set the jog field.
-.in
-.IP
-.B leading_edge=<int>
-.in +4n
-Set the leading_edge field.
-.in
-.IP
-.B manual_feed=<int>
-.in +4n
-Set the manual_feed field.
-.in
-.IP
-.B media_position=<int>
-.in +4n
-Set the media_position field.
-.in
-.IP
-.B media_weight=<int>
-.in +4n
-Set the media_weight field.
-.in
-.IP
-.B mirror_print=<int>
-.in +4n
-Set the mirror_print field.
-.in
-.IP
-.B negative_print=<int>
-.in +4n
-Set the negative_print field.
-.in
-.IP
-.B num_copies=<int>
-.in +4n
-Set the num_copies field.
-.in
-.IP
-.B orientation=<int>
-.in +4n
-Set the orientation field.
-.in
-.IP
-.B output_face_up=<int>
-.in +4n
-Set the output_face_up field.
-.in
-.IP
-.B page_size_x=<int>
-.in +4n
-Set the page_size_x field.
-.in
-.IP
-.B page_size_y=<int>
-.in +4n
-Set the page_size_y field.
-.in
-.IP
-.B separations=<int>
-.in +4n
-Set the separations field.
-.in
-.IP
-.B tray_switch=<int>
-.in +4n
-Set the tray_switch field.
-.in
-.IP
-.B tumble=<int>
-.in +4n
-Set the tumble field.
-.in
-.IP
-.B media_type_num=<int>
-.in +4n
-Set the media_type_num field.
-.in
-.IP
-.B compression=<int>
-.in +4n
-Set the compression field.
-.in
-.IP
-.B row_count=<int>
-.in +4n
-Set the row_count field.
-.in
-.IP
-.B row_feed=<int>
-.in +4n
-Set the row_feed field.
-.in
-.IP
-.B row_step=<int>
-.in +4n
-Set the row_step field.
-.in
-.
 .TP
-.B SVG options
-.IP
-.B text=text
-.in +4n
+.BI media_color= string
+Set the media_color field.
+.TP
+.BI media_type= string
+Set the media_type field.
+.TP
+.BI output_type= string
+Set the output_type field.
+.TP
+.BI rendering_intent= string
+Set the rendering_intent field.
+.TP
+.BI page_size_name= string
+Set the page_size_name field.
+.TP
+.BI advance_distance= int
+Set the advance_distance field.
+.TP
+.BI advance_media= int
+Set the advance_media field.
+.TP
+.BI collate= int
+Set the collate field.
+.TP
+.BI cut_media= int
+Set the cut_media field.
+.TP
+.BI duplex= int
+Set the duplex field.
+.TP
+.BI insert_sheet= int
+Set the insert_sheet field.
+.TP
+.BI jog= int
+Set the jog field.
+.TP
+.BI leading_edge= int
+Set the leading_edge field.
+.TP
+.BI manual_feed= int
+Set the manual_feed field.
+.TP
+.BI media_position= int
+Set the media_position field.
+.TP
+.BI media_weight= int
+Set the media_weight field.
+.TP
+.BI mirror_print= int
+Set the mirror_print field.
+.TP
+.BI negative_print= int
+Set the negative_print field.
+.TP
+.BI num_copies= int
+Set the num_copies field.
+.TP
+.BI orientation= int
+Set the orientation field.
+.TP
+.BI output_face_up= int
+Set the output_face_up field.
+.TP
+.BI page_size_x= int
+Set the page_size_x field.
+.TP
+.BI page_size_y= int
+Set the page_size_y field.
+.TP
+.BI separations= int
+Set the separations field.
+.TP
+.BI tray_switch= int
+Set the tray_switch field.
+.TP
+.BI tumble= int
+Set the tumble field.
+.TP
+.BI media_type_num= int
+Set the media_type_num field.
+.TP
+.BI compression= int
+Set the compression field.
+.TP
+.BI row_count= int
+Set the row_count field.
+.TP
+.BI row_feed= int
+Set the row_feed field.
+.TP
+.BI row_step= int
+Set the row_step field.
+.
+.SS SVG options
+These apply only to:
+.BR svg .
+.TP
+.BI text= text
 Emit text as <text> elements (inaccurate fonts).
-.in
-.IP
-.B text=path
-.in +4n
+.TP
+.BI text= path
 Emit text as <path> elements (accurate fonts).
-.in
-.IP
+.TP
 .B no-reuse-images
-.in +4n
 Do not reuse image using <symbol> definitions.
-.in -4n
+.
+.SS Text options
+These apply to output formats:
+.BR html ,\~ xhtml ,\~ text ,\~ stext .
+.TP
+.B preserve-images
+Keep imagess in output.
+.TP
+.B preserve-ligatures
+Do not expand ligature into constituent characters.
+.TP
+.B preserve-spans
+Do not merge spans on the same line.
+.TP
+.B preserve-whitespace
+Do not convert all whitespace into space characters.
+.TP
+.B inhibit-spaces
+Do not add spaces between gaps in the text.
+.TP
+.B paragraph-break
+Break blocks at paragraph boundaries.
+.TP
+.B dehyphenate
+Attempts to join up hyphenated words.
+.TP
+.B ignore-actualtext
+Do not apply ActualText replacements.
+.TP
+.B use-cid-for-unknown-unicode
+Use character code if unicode mapping fails.
+.TP
+.B use-gid-for-unknown-unicode
+Use glyph index if unicode mapping fails.
+.TP
+.B accurate-bboxes
+Calculate bboxes from the outlines.
+.TP
+.B accurate-ascenders
+Calculate ascender/descender from font glyphs.
+.TP
+.B accurate-side-bearings
+Expand character bboxes to completely include width of glyphs.
+.TP
+.B collect-styles
+Attempt to detect text features (fake bold, strikeout, underlined, etc.)
+.TP
+.B clip
+Do not include text that is completely clipped.
+.TP
+.BI clip-rect= x0 : y0 : x1 : y1
+Specify clipping rectangle within which to collect content.
+.TP
+.B structured
+Collect structure markup.
+.TP
+.B vectors
+Include vector bboxes in output.
+.TP
+.B lazy-vectors
+Delay vectors in the extraction that would otherwise split a text line.
+.TP
+.B fuzzy-vectors
+Merge abutting horizontal and vertical vectors.
+.TP
+.B segment
+Attempt to segment the page.
+.TP
+.B table-hunt
+Hunt for tables within a (segmented) page.
+.
+.
+.SH PDF OUTPUT OPTIONS
+These apply only to:
+.BR PDF .
+.TP
+.B decompress
+Decompress all streams (except compress-fonts/images).
+.TP
+.BR compress=\c
+.RB ( yes | flate | brotli )
+Compress all streams, if no value is given, or the value is
+.B yes
+the default is to use flate.
+.TP
+.B compress-fonts
+Compress object stream for embedded fonts.
+.TP
+.B compress-images
+Compress object streams for images.
+.TP
+.BR compress-effort= ( 0 |\c
+.IR percentage )
+Effort spent compressing, 0 is default, otherwise percentage of max effort.
+.TP
+.B ascii
+Encode object streams using ASCII hex encoding.
+.TP
+.B pretty
+Pretty-print objects with indentation.
+.TP
+.B labels
+Print object labels.
+.TP
+.B linearize
+.B No longer supported!
+Optimize document for progressive loading in viewers.
+.TP
+.B clean
+Pretty-print graphics commands in content streams.
+.TP
+.B sanitize
+Clean up graphics command in content streams.
+.TP
+.B garbage
+Garbage collect unused objects.
+.TP
+.B garbage=compact
+Garbage collect unused object, and compact cross reference table.
+.TP
+.B garbage=deduplicate
+Garbage collect unused objects, compact cross reference table, and recombine
+duplicate objects.
+.TP
+.B incremental
+Write changes as incremental update.
+.TP
+.B objstms
+Use object streams and cross reference streams.
+.TP
+.BR appearance= ( yes | all )
+Synthesize just missing, or all, annotation/widget appearance streams.
+.TP
+.B continue-on-error
+Continue saving the document even if there is an error.
+.TP
+.B decrypt
+This option is deprecated: instead of decrypt use encrypt=none.
+.TP
+.BR encrypt= ( none | keep | rc4-40 | rc4-128 | aes-128 | aes-256 )
+Write encrypted document using specified encryption method. The default value is
+keep.
+.TP
+.BI permissions= number
+Document permissions to grant when encrypting.
+.TP
+.BI user-password= password
+Password required to read document.
+.TP
+.BI owner-password= password
+Password required to edit document.
+.TP
+.BR regenerate-id= ( yes | no )
+Regenerate document id (default yes).
 .
 .SH EXIT STATUS
 The exit status is 0 upon successful execution and non-zero upon error.
