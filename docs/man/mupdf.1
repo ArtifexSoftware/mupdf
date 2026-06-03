@@ -9,56 +9,58 @@
 mupdf \- MuPDF is a lightweight PDF viewer written in portable C
 .
 .SH SYNOPSIS
-.B mupdf
-.RI [ options ] " file" [ page_number ]
+.SY mupdf
+.RI [ options ]
+.I file
+.RI [ page-number ]
 .
 .SH DESCRIPTION
 .B MuPDF
 is a document viewer that can show
-.B PDF,
-.B XPS,
-.B EPUB,
-.B XHTML,
-.B CBZ,
+.BR PDF ,
+.BR XPS ,
+.BR EPUB ,
+.BR XHTML ,
+.BR CBZ ,
 and various image formats such as
-.B PNG,
-.B JPEG,
-.B GIF,
+.BR PNG ,
+.BR JPEG ,
+.BR GIF ,
 and
-.B TIFF.
+.BR TIFF .
 .
 .SH OPTIONS
 A description of each of the supported options is included below.
 .
 .TP
-.B \-b box-name
+.BI \-b\~ box-name
 Use the given page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox)
 .TP
-.B \-c profile-filename
+.BI \-c\~ profile-filename
 Set the display ICC profile to the one in the named file.
 .TP
-.B \-p password
+.BI \-p\~ password
 Uses the given password to open an encrypted PDF file.
 The password is tried both as user and owner password.
 .TP
-.B \-r resolution
+.BI \-r\~ resolution
 Changes the initial zoom level, specified as the resolution in dpi.
 The default value is 72.
 .TP
-.B \-A bits
+.BI \-A\~ bits
 Changes the anti-aliasing quality, specified as a number of bits between 0
 (off) and 8 (best).
 The default value is 8.
 .TP
-.B \-B RRGGBB
+.BI \-B\~ RRGGBB
 Sets the full-page black tint using hexadecimal color syntax.
 The default value is 303030.
 .TP
-.B \-C RRGGBB
+.BI \-C\~ RRGGBB
 Sets the full-page white tint using hexadecimal color syntax.
 The default value is FFFFF0.
 .TP
-.B \-H height
+.BI \-H\~ height
 Page height in points for EPUB layout.
 .TP
 .B \-I
@@ -67,22 +69,22 @@ Invert colors.
 .B \-J
 Disable JavaScripts in PDF forms.
 .TP
-.B \-R extraction-options
+.BI \-R\~ extraction-options
 Enable reflow and set the text extraction options.
 .TP
-.B \-S size
+.BI \-S\~ size
 Font size in points for EPUB layout.
 .TP
-.B \-U CSS-file
+.BI \-U\~ CSS-file
 User style sheet for EPUB layout.
 .TP
-.B \-W width
+.BI \-W\~ width
 Page width in points for EPUB layout.
 .TP
 .B \-X
 Disable document styles for EPUB layout.
 .TP
-.B \-Y factor
+.BI \-Y\~ factor
 Set the UI scaling factor.
 .
 .SH MOUSE BEHAVIOR
@@ -121,8 +123,7 @@ Pan page left or right.
 Zoom in or out.
 .
 .SH KEY BINDINGS
-.
-Page navigation:
+.SS Page navigation
 .TP
 .B . pgdn space
 Go to the next page.
@@ -133,7 +134,7 @@ Go to the previous page.
 .B 123g
 Go to page 123.
 .TP
-.B g, G
+.BR g ,\~ G
 Go to the first or last page.
 .TP
 .B m
@@ -146,19 +147,20 @@ Go backward one step in mark history.
 .B T
 Go forward one step in mark history.
 .TP
-.B [0\(en9]m
+.RI [ 0\(en9 ]\c
+.B m
 Save the current page number in the numbered register.
 .TP
-.B [0\(en9]t
+.RI [ 0\(en9 ]\c
+.B t
 Go to the page saved in the numbered register.
 .
-.PP
-Zooming and rotating:
+.SS Zooming and rotating
 .TP
-.B +, \-
+.BR + ,\~ \-
 Zoom in or out.
 .TP
-.B W, H
+.BR W ,\~ H
 Zoom page to exactly fit width/height of window.
 .TP
 .B Z
@@ -167,7 +169,7 @@ Zoom page to fit either to width or height of window.
 .B z
 Reset zoom level.
 .TP
-.B [, ]
+.BR [ ,\~ ]
 Rotate page left (counter-clockwise) or right (clockwise).
 .TP
 .B w
@@ -176,23 +178,20 @@ Shrinkwrap window to fit the page.
 .B f
 Toggles fullscreen mode.
 .
-.PP
-Panning:
+.SS Panning
 .TP
-.B h, left, j, k, l, right
+.BR h ,\~ left ,\~ j ,\~ k ,\~ l ,\~ right
 Pan page left, down, up, or right.
 .
-.PP
-Searching:
+.SS Searching
 .TP
-.B /, ?
+.BR / ,\~ ?
 Search for text forwards or backwards.
 .TP
-.B n, N
+.BR n ,\~ N
 Find the next/previous search result.
 .
-.PP
-Miscellaneous:
+.SS Miscellaneous
 .TP
 .B F1
 Show key bindings help.
@@ -200,7 +199,7 @@ Show key bindings help.
 .B Escape
 Stop searching and/or remove focus from annotation/widget.
 .TP
-.B <, >
+.BR < ,\~ >
 Increase/decrease EPUB/XHTML font size.
 .TP
 .B r
@@ -261,7 +260,7 @@ Start/stop highlighting links.
 .B F
 Start/stop highlighting form widgets.
 .TP
-.B ` F12
+.BR ` ,\~ F12
 Show JS console.
 .TP
 .B S
@@ -274,8 +273,10 @@ Quit.
 .
 .TP
 .B SIGHUP
-Sending a \fBSIGHUP\fP signal to the mupdf process will also cause the viewed
-file to be reloaded automatically, for use in e.g.\& build scripts.
+Sending a
+.B SIGHUP
+signal to the mupdf process will also cause the viewed file to be reloaded
+automatically, for use in e.g. build scripts.
 .
 .SH SEE ALSO
 .BR mutool (1).
