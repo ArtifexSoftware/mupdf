@@ -249,9 +249,9 @@ png_read_ihdr(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 	filter = p[11];
 	info->interlace = p[12];
 
-	if (info->width <= 0)
+	if ((int)info->width <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image width must be > 0");
-	if (info->height <= 0)
+	if ((int)info->height <= 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "image height must be > 0");
 
 	if (info->depth != 1 && info->depth != 2 && info->depth != 4 &&
