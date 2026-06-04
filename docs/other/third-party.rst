@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
+.. Copyright (C) 2001-2026 Artifex Software, Inc.
 .. All Rights Reserved.
 
 
@@ -41,7 +41,7 @@ These are the third party libraries used by :title:`MuPDF`.
      - Color management
      - MIT-style
    * - openjpeg_
-     - 2.5.4
+     - 2.5.4 with upstream and local patches
      - JPEG 2000 decoding
      - BSD-style
    * - zlib_
