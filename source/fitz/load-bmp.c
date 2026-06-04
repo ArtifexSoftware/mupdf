@@ -603,7 +603,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 	height = info->height;
 
 	sstride = ((width * bitcount + 31) / 32) * 4;
-	if (ssp + sstride * height > end)
+	if (ssp + (size_t) sstride * height > end)
 	{
 		int32_t h = (end - ssp) / sstride;
 		if (h == 0 || h > SHRT_MAX)
@@ -633,7 +633,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, const unsigned char *begin, 
 		dstride = -dstride;
 	}
 
-	if (ssp + sstride * height > end)
+	if (ssp + (size_t) sstride * height > end)
 	{
 		fz_warn(ctx, "premature end in bitmap data in bmp image");
 		height = (end - ssp) / sstride;
