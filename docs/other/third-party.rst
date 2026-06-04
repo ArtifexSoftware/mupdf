@@ -56,6 +56,10 @@ These are the third party libraries used by :title:`MuPDF`.
      - 1.1.0 with upstream and local patches
      - Brotli compression
      - MIT-style
+   * - `cmark-gfm`_
+     - 0.29.0.gfm.13 with patches
+     - Markdown conversion to HTML
+     - MIT-style
    * - **Optional**
      -
      -
@@ -119,3 +123,4 @@ These are the third party libraries used by :title:`MuPDF`.
 .. _MuJS: https://mujs.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link
 .. _Zint: https://www.zint.org.uk/
 .. _Zxing-cpp: https://github.com/zxing-cpp/zxing-cpp
+.. _cmark-gfm: https://github.com/github/cmark-gfm
