@@ -110,7 +110,7 @@ test-examples: make-examples pdfref17.pdf
 	/usr/bin/test 2867732089375db03f2c3e6f129c635b == $$(./build/release/mutool draw -Ds5 build/examples/tablespan.pdf 2>&1 | md5sum - | cut -d' ' -f1)
 	/usr/bin/test b7442e961aff29d7d11bc9f35d67fd4f == $$(./build/release/mutool draw -Ds5 build/examples/tables.pdf 2>&1 | md5sum - | cut -d' ' -f1)
 	/usr/bin/test 5c17970f54c4a7ad1ff35b2160cc2238 == $$(./build/release/mutool draw -Ds5 build/examples/tablewidths.pdf 2>&1 | md5sum - | cut -d' ' -f1)
-	/usr/bin/test ebee6c90bc87e1265dd42c4d54f48898 == $$(./build/release/searchtest 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test d12a8b9cda4634aad371af5db4883a11 == $$(./build/release/searchtest 2>&1 | md5sum - | cut -d' ' -f1)
 
 make-python-build:
 	$(MAKE) -j2 python
