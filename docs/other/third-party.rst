@@ -25,7 +25,7 @@ These are the third party libraries used by :title:`MuPDF`.
      -
      -
    * - freetype_
-     - 2.13.3
+     - 2.14.3
      - Font scaling and rendering
      - BSD-style
    * - harfbuzz_
