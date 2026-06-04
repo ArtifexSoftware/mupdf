@@ -252,6 +252,32 @@ int pdf_count_unsaved_versions(fz_context *ctx, pdf_document *doc);
 int pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version);
 int pdf_doc_was_linearized(fz_context *ctx, pdf_document *doc);
 
+/*
+	Select a historical version of the document for all
+	subsequent operations. Version 0 is the latest (default),
+	version 1 is the previous save, etc. The valid range is
+	0 to pdf_count_versions()-1.
+
+	Selecting a version invalidates the page tree cache, as
+	different versions may have different page counts. All
+	page-level operations (counting, loading, rendering) will
+	reflect the selected version.
+
+	While a historical version is selected (version != 0),
+	modifications and saves are prohibited. Call
+	pdf_select_version(ctx, doc, 0) to return to the latest
+	version before modifying or saving the document.
+
+	Throws FZ_ERROR_ARGUMENT if version is out of range.
+*/
+void pdf_select_version(fz_context *ctx, pdf_document *doc, int version);
+
+/*
+	Return the currently selected version. Returns 0 if no
+	historical version has been selected (the default).
+*/
+int pdf_selected_version(fz_context *ctx, pdf_document *doc);
+
 typedef struct pdf_locked_fields pdf_locked_fields;
 int pdf_is_field_locked(fz_context *ctx, pdf_locked_fields *locked, const char *name);
 void pdf_drop_locked_fields(fz_context *ctx, pdf_locked_fields *locked);

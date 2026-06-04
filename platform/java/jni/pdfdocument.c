@@ -996,6 +996,37 @@ FUN(PDFDocument_countVersions)(JNIEnv *env, jobject self)
 	return val;
 }
 
+JNIEXPORT void JNICALL
+FUN(PDFDocument_selectVersion)(JNIEnv *env, jobject self, jint version)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument_safe(env, self);
+
+	if (!ctx || !pdf) return;
+
+	fz_try(ctx)
+		pdf_select_version(ctx, pdf, version);
+	fz_catch(ctx)
+		jni_rethrow_void(env, ctx);
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFDocument_selectedVersion)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument_safe(env, self);
+	int val = 0;
+
+	if (!ctx || !pdf) return 0;
+
+	fz_try(ctx)
+		val = pdf_selected_version(ctx, pdf);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return val;
+}
+
 JNIEXPORT jint JNICALL
 FUN(PDFDocument_countUnsavedVersions)(JNIEnv *env, jobject self)
 {

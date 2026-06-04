@@ -437,7 +437,7 @@ endif
 
 # --- Examples ---
 
-examples: $(OUT)/example $(OUT)/multi-threaded $(OUT)/storytest $(OUT)/searchtest
+examples: $(OUT)/example $(OUT)/multi-threaded $(OUT)/storytest $(OUT)/searchtest $(OUT)/pdf-version-select
 
 $(OUT)/example: docs/examples/example.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS) $(THIRD_LIBS)
@@ -446,6 +446,8 @@ $(OUT)/multi-threaded: docs/examples/multi-threaded.c $(MUPDF_LIB) $(THIRD_LIB)
 $(OUT)/storytest: docs/examples/storytest.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS) $(THIRD_LIBS)
 $(OUT)/searchtest: docs/examples/searchtest.c $(MUPDF_LIB) $(THIRD_LIB)
+	$(LINK_CMD) $(CFLAGS) $(THIRD_LIBS)
+$(OUT)/pdf-version-select: docs/examples/pdf-version-select.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS) $(THIRD_LIBS)
 
 # --- Format man pages ---
