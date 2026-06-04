@@ -233,7 +233,7 @@ fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals, int
 
 	options = 0;
 	if (embedded)
-		options |= JBIG2_OPTIONS_EMBEDDED;
+		options |= JBIG2_OPTIONS_EMBEDDED_FORGIVING;
 
 	state->ctx = jbig2_ctx_new((Jbig2Allocator *) &state->alloc, options, globals ? globals->gctx : NULL, error_callback, ctx);
 	if (state->ctx == NULL)
