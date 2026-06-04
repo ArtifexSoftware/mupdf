@@ -1305,7 +1305,7 @@ g_extra_definitions = textwrap.dedent(f'''
                 return ret;
             }}
             std::vector<const char*> opts(n);
-            int n2 = pdf_choice_widget_options(ctx, tw, exportval, &opts[0]);
+            int n2 = pdf_choice_widget_options(ctx, tw, exportval, opts.data());
             assert(n2 == n);
             for (int i=0; i<n; ++i)
             {{
