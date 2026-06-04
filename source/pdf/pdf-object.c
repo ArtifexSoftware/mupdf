@@ -591,19 +591,12 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 		return 0;
 
 	case PDF_STRING:
-		if (STRING(a)->len < STRING(b)->len)
-		{
-			if (memcmp(STRING(a)->buf, STRING(b)->buf, STRING(a)->len) <= 0)
-				return -1;
-			return 1;
-		}
-		if (STRING(a)->len > STRING(b)->len)
-		{
-			if (memcmp(STRING(a)->buf, STRING(b)->buf, STRING(b)->len) >= 0)
-				return 1;
+		i = strcmp(pdf_to_text_string(ctx, a), pdf_to_text_string(ctx, b));
+		if (i < 0)
 			return -1;
-		}
-		return memcmp(STRING(a)->buf, STRING(b)->buf, STRING(a)->len);
+		if (i > 0)
+			return 1;
+		return 0
 
 	case PDF_NAME:
 		return strcmp(NAME(a)->n, NAME(b)->n);
