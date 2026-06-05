@@ -77,11 +77,11 @@ These are the third party libraries used by :title:`MuPDF`.
      - JPEG-XR decoding
      - special
    * - Tesseract_
-     - 5.5.0 with patches
+     - 5.5.2 with patches
      - OCR
      - Apache 2.0
    * - Leptonica_
-     - 1.85.0 with patches
+     - 1.87.0 with patches
      - Tesseract dependency
      - BSD-style
    * - Zint_
