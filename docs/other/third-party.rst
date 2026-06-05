@@ -33,7 +33,7 @@ These are the third party libraries used by :title:`MuPDF`.
      - Text shaping
      - MIT-style
    * - libjpeg_
-     - 9.0f with patches
+     - 10.0 with patches
      - JPEG decoding
      - BSD-style
    * - `Incompatible fork of lcms2`_
