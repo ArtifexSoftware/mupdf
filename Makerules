@@ -28,16 +28,19 @@ endif
 ifeq ($(html),no)
   USE_HARFBUZZ := no
   USE_GUMBO := no
+  USE_CMARK_GFM := no
   CFLAGS += -DFZ_ENABLE_HTML_ENGINE=0
   CFLAGS += -DFZ_ENABLE_HTML=0
   CFLAGS += -DFZ_ENABLE_EPUB=0
   CFLAGS += -DFZ_ENABLE_FB2=0
+  CFLAGS += -DFZ_ENABLE_MD=0
   CFLAGS += -DFZ_ENABLE_MOBI=0
   CFLAGS += -DFZ_ENABLE_OFFICE=0
   CFLAGS += -DFZ_ENABLE_TXT=0
 else
   USE_HARFBUZZ := yes
   USE_GUMBO := yes
+  USE_CMARK_GFM := yes
 endif
 
 ifeq ($(xps),no)

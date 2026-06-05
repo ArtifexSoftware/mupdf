@@ -109,6 +109,7 @@ endif
 
 # --- CMARK-GFM ---
 
+ifeq ($(USE_CMARK_GFM),yes)
 ifeq ($(USE_SYSTEM_CMARK_GFM),yes)
   THIRD_CFLAGS += $(SYS_CMARK_GFM_CFLAGS)
   THIRD_LIBS += $(SYS_CMARK_CFM_LIBS)
@@ -120,6 +121,7 @@ $(OUT)/thirdparty/cmark-gfm/src/%.o: thirdparty/cmark-gfm/src/%.c
 	$(CC_CMD) $(LIB_CFLAGS) $(CMARKGFM_CFLAGS) $(CMARKGFM_BUILD_CFLAGS)
 $(OUT)/thirdparty/cmark-gfm/extensions/%.o: thirdparty/cmark-gfm/extensions/%.c
 	$(CC_CMD) $(LIB_CFLAGS) $(CMARKGFM_CFLAGS) $(CMARKGFM_BUILD_CFLAGS)
+endif
 endif
 
 # --- FREETYPE 2 ---
