@@ -45,7 +45,7 @@ These are the third party libraries used by :title:`MuPDF`.
      - JPEG 2000 decoding
      - BSD-style
    * - zlib_
-     - 1.3.1
+     - 1.3.2
      - Deflate compression
      - zlib License
    * - `gumbo-parser`_
