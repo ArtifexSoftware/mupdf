@@ -1209,6 +1209,8 @@ overflow:
 			/* Consumes a lot of operators, leaves n, where n = stack[sp-1]. */
 			ATLEAST(1);
 			sp = stack[sp-1];
+			if (sp < 0 || sp > (int)(sizeof(stack)/sizeof(*stack)))
+				fz_throw(ctx, FZ_ERROR_FORMAT, "Stack overflow in blend");
 			break;
 		case 29: /* callgsubr */
 			ATLEAST(1);
