@@ -1,10 +1,32 @@
 run-release-test:
 	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-tags
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-find-try-return
+	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-release-build
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-no-icc-build
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-no-js-build
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make test-examples
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make test-java-examples
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-apps
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-extra-apps
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make test-docs
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-docs-markdown
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make test-manpages
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-wasm-build
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-python-build
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-disable-threads-build
 	$(MAKE) nuke
@@ -14,11 +36,39 @@ run-release-test:
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-memento-build
 	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make make-all-disabled
+	$(MAKE) -f scripts/release-test.make make-one-disabled-defines
 	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make test-examples
+	$(MAKE) -f scripts/release-test.make make-one-enabled-defines
 	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make make-python-build
+	$(MAKE) -f scripts/release-test.make make-all-disabled-defines
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-all-disabled-config
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-all-disabled-one-enabled-config
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-all-enabled-config
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-shared
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-debug
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-small
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-profile
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-coverage
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-gperf
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-native
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-third
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-libs
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-extra-libs
+	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-gperf
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make make-python-with-tesseract-build
 	$(MAKE) nuke
@@ -26,13 +76,15 @@ run-release-test:
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make make-csharp-build
 	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make test-java-examples
-	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make test-docs
-	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make test-manpages
+	$(MAKE) -f scripts/release-test.make make-wasm-build
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-java-build
+
+make-tags:
+	$(MAKE) -j2 tags
+
+make-find-try-return:
+	$(MAKE) -j2 find-try-return
 
 make-release-build:
 	$(MAKE) -j2 build=release build/release/mutool
@@ -80,8 +132,106 @@ make-memento-build:
 test-memento-build: make-memento-build pdfref17.pdf
 	./build/memento/mutool draw -st pdfref17.pdf N-1
 
-make-all-disabled:
-	$(MAKE) -j2 XCFLAGS='-DFZ_ENABLE_CBZ=0 -DFZ_ENABLE_DOCX_OUTPUT=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_FB2=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_MD=0 -DFZ_ENABLE_HTML_ENGINE=0 -DFZ_ENABLE_ICC=0 -DFZ_ENABLE_IMG=0 -DFZ_ENABLE_JPX=0 -DFZ_ENABLE_JS=0 -DFZ_ENABLE_MOBI=0 -DFZ_ENABLE_OCR_OUTPUT=0 -DFZ_ENABLE_ODT_OUTPUT=0 -DFZ_ENABLE_OFFICE=0 -DFZ_ENABLE_PDF=0 -DFZ_ENABLE_SPOT_RENDERING=0 -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_TXT=0 -DFZ_ENABLE_XPS=0 -DFZ_ENABLE_BROTLI=0'
+make-all-disabled-defines:
+	$(MAKE) -j2 XCFLAGS='-DFZ_ENABLE_CBZ=0 -DFZ_ENABLE_DOCX_OUTPUT=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_FB2=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_MD=0 -DFZ_ENABLE_HTML_ENGINE=0 -DFZ_ENABLE_ICC=0 -DFZ_ENABLE_IMG=0 -DFZ_ENABLE_JPX=0 -DFZ_ENABLE_JS=0 -DFZ_ENABLE_MOBI=0 -DFZ_ENABLE_OCR_OUTPUT=0 -DFZ_ENABLE_ODT_OUTPUT=0 -DFZ_ENABLE_OFFICE=0 -DFZ_ENABLE_PDF=0 -DFZ_ENABLE_SPOT_RENDERING=0 -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_TXT=0 -DFZ_ENABLE_XPS=0 -DFZ_ENABLE_BROTLI=0' build=release
+
+make-all-disabled-config:
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+
+make-all-disabled-one-enabled-config:
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=yes mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=yes html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=yes xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=yes svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=yes extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=yes tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=yes barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=yes archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=yes tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=yes tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=yes tofu_cjk_ext=no tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=yes tofu_cjk_lang=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=yes
+
+make-one-disabled-config:
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release brotli=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release mujs=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release html=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release xps=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release svg=no
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release extract=no
+
+make-one-enabled-config:
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release tesseract=yes
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release barcode=yes
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release tofu=yes
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release tofu_cjk=yes
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release tofu_cjk_ext=yes
+	$(MAKE) nuke
+	$(MAKE) -j2 build=release tofu_cjk_lang=yes
+
+make-all-enabled-config:
+	$(MAKE) -j2 build=release brotli=yes mujs=yes html=yes xps=yes svg=yes extract=yes tesseract=yes barcode=yes archive=yes tofu=yes tofu_cjk=yes tofu_cjk_ext=yes tofu_cjk_lang=yes
+
+make-shared:
+	$(MAKE) -j2 build=release shared
+
+make-debug:
+	$(MAKE) -j2 build=debug
+
+make-small:
+	$(MAKE) -j2 build=small
+
+make-profile:
+	$(MAKE) -j2 build=profile
+
+make-coverage:
+	$(MAKE) -j2 build=coverage
+
+make-gperf:
+	$(MAKE) -j2 build=gperf
+
+make-native:
+	$(MAKE) -j2 build=native
+
+make-third:
+	$(MAKE) -j2 build=release third
+
+make-libs:
+	$(MAKE) -j2 build=release libs
+
+make-extra-libs:
+	$(MAKE) -j2 build=release extra-libs
+
+make-apps:
+	$(MAKE) -j2 build=release apps
+
+make-extra-apps:
+	$(MAKE) -j2 build=release extra-apps
 
 make-examples:
 	$(MAKE) -j2 build=release
@@ -124,6 +274,9 @@ make-cplusplus-build:
 make-csharp-build:
 	$(MAKE) -j2 csharp
 
+make-wasm-build:
+	$(MAKE) -j2 wasm
+
 make-java-build:
 	$(MAKE) -j2 -C platform/java build=release default
 
@@ -138,6 +291,9 @@ test-docs: make-docs
 		docs/bookbook docs/guide docs/other docs/reference docs/tools
 	linkchecker --ignore-url doxygen file://$(PWD)/build/docs/index.html
 
+make-docs-markdown:
+	$(MAKE) docs-markdown
+
 test-manpages:
 	man --warnings -E UTF-8 -l -Tutf8 -Z docs/man/mupdf.1 1> /dev/null
 	mandoc -T lint -K utf-8 docs/man/mupdf.1
@@ -150,5 +306,6 @@ test-manpages:
 
 test-java-build: make-java-build
 	MUPDF_ARGS=pdfref17.pdf $(MAKE) -C platform/java build=release run
+
 nuke:
 	$(MAKE) nuke
