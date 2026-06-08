@@ -570,6 +570,8 @@ struct pdf_document
 	fz_xml_doc *xfa;
 
 	pdf_journal *journal;
+
+	int throw_on_repair;
 };
 
 pdf_document *pdf_create_document(fz_context *ctx);
@@ -983,5 +985,79 @@ typedef enum
 	Returns a code with bits set as above.
 */
 pdf_check_structure_result pdf_check_structure_tree(fz_context *ctx, pdf_document *doc);
+
+/*
+	Helper functions to modify what happens when a repair is kicked off.
+	Most of the time the transparent repair magic works fine, but if a repair
+	happens this can invalidate some pointers held to internal structures.
+
+	To cope with this, we allow the document to be put into a state whereby
+	any repair will trigger an exception (FZ_ERROR_REPAIRED) after any repair.
+
+	Code can therefore use this mechanism to safely catch and retry complete
+	operations if a repair occurs.
+
+	Because this mechanism is so frequently used when altering xref_base, we
+	build the xref_base store/restore into these functions.
+
+	The pattern of code is therefore as follows:
+
+	void pdf_do_some_operation(fz_context *ctx, pdf_document *doc, ...)
+	{
+		int xref_base; // Variable to store the initial xref_base value
+		int repaired = 0;
+
+	retry_on_repair:
+		pdf_start_throw_on_repair(ctx, doc, &xref_base);
+
+		fz_try(ctx)
+		{
+			// Actual operation goes here. This may involved changing
+			// doc->xref_base. e.g. doc->xref_base = initial
+		}
+		fz_always(ctx)
+			pdf_end_throw_on_repair(ctx, doc, xref_base);
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) == FZ_ERROR_REPAIRED)
+			{
+				fz_report_error(ctx);
+				repaired = 1;
+				// doc->xref_base will always have been reset to be something legal
+				// here, but if you have been passed in an xref level to operate at
+				// you may want to check that that level is still valid here!
+				// e.g. if (initial >= doc->num_xref_sections) return;
+				goto retry_on_repair;
+			}
+			fz_rethrow(ctx);
+		}
+
+		// If we repaired, then we swallowed the exception. There may have been callers above
+		// us that were wanting to be informed. This call takes care of that if required.
+		if (repaired)
+			pdf_maybe_throw_after_repair(ctx, doc);
+	}
+*/
+
+/*
+	Prepare for an operation that can't easily be interrupted by a repair, and should
+	instead be retried.
+
+	See above for example code.
+*/
+void pdf_start_throw_on_repair(fz_context *ctx, pdf_document *doc, int *xref_base);
+
+/*
+	Mark the end of an operation that can't easily be interrupted by a repair, and
+	should instead be retried.
+
+	See above for example code.
+*/
+void pdf_end_throw_on_repair(fz_context *ctx, pdf_document *doc, int xref_base);
+
+/*
+	If a caller of ours is expecting an exception on a repair, give them one.
+*/
+void pdf_maybe_throw_after_repair(fz_context *ctx, pdf_document *doc);
 
 #endif

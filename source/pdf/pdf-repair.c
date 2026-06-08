@@ -794,15 +794,9 @@ pdf_repair_xref_base(fz_context *ctx, pdf_document *doc)
 		pdf_drop_obj(ctx, id);
 		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, info);
-		if (ctx->internal_throw_on_repair)
+		if (doc->throw_on_repair)
 			fz_throw(ctx, FZ_ERROR_REPAIRED, "Error during repair attempt");
 		fz_rethrow(ctx);
-	}
-
-	if (ctx->internal_throw_on_repair)
-	{
-		pdf_drop_root_list(ctx, roots);
-		fz_throw(ctx, FZ_ERROR_REPAIRED, "File repaired");
 	}
 
 	return roots;
@@ -984,6 +978,9 @@ void pdf_repair_xref_aux(fz_context *ctx, pdf_document *doc, void (*mid)(fz_cont
 		pdf_drop_root_list(ctx, roots);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	if (doc->throw_on_repair)
+		fz_throw(ctx, FZ_ERROR_REPAIRED, "File repaired");
 }
 
 static void

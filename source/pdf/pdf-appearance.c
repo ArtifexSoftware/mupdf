@@ -3654,14 +3654,17 @@ static void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 	pdf_obj *subtype;
 	pdf_obj *ft = NULL;
 	pdf_obj *ap_n;
-	int pop_local_xref = 1;
+	int pop_local_xref;
+	int repaired = 0;
+	int xref_base;
 
 retry_after_repair:
+	pop_local_xref = 1;
 	/* Must have any local xref in place in order to check if it's dirty. */
 	pdf_annot_push_local_xref(ctx, annot);
 
 	pdf_begin_implicit_operation(ctx, annot->page->doc);
-	fz_start_throw_on_repair(ctx);
+	pdf_start_throw_on_repair(ctx, annot->page->doc, &xref_base);
 
 	fz_var(pop_local_xref);
 
@@ -3838,7 +3841,7 @@ retry_after_repair:
 	{
 		if (pop_local_xref)
 			pdf_annot_pop_local_xref(ctx, annot);
-		fz_end_throw_on_repair(ctx);
+		pdf_end_throw_on_repair(ctx, annot->page->doc, xref_base);
 	}
 	fz_catch(ctx)
 	{
@@ -3852,10 +3855,14 @@ retry_after_repair:
 		if (fz_caught(ctx) == FZ_ERROR_REPAIRED)
 		{
 			fz_report_error(ctx);
+			repaired = 1;
 			goto retry_after_repair;
 		}
 		fz_rethrow(ctx);
 	}
+
+	if (repaired)
+		pdf_maybe_throw_after_repair(ctx, annot->page->doc);
 }
 
 static void *
