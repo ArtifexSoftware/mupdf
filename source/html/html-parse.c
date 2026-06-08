@@ -1653,7 +1653,7 @@ html_load_css_link(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, cons
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
 		fz_parse_css(ctx, css, fz_string_from_buffer(ctx, buf), path);
-		fz_add_css_font_faces(ctx, set, zip, css_base_uri, css);
+		fz_add_css_font_faces(ctx, set, zip, css_base_uri, css, 1);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -1696,7 +1696,7 @@ html_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 			fz_try(ctx)
 			{
 				fz_parse_css(ctx, css, s, "<style>");
-				fz_add_css_font_faces(ctx, set, zip, base_uri, css);
+				fz_add_css_font_faces(ctx, set, zip, base_uri, css, 1);
 			}
 			fz_always(ctx)
 				fz_free(ctx, s);
@@ -1723,7 +1723,7 @@ fb2_load_css(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char
 		fz_try(ctx)
 		{
 			fz_parse_css(ctx, css, s, "<stylesheet>");
-			fz_add_css_font_faces(ctx, set, zip, base_uri, css);
+			fz_add_css_font_faces(ctx, set, zip, base_uri, css, 1);
 		}
 		fz_catch(ctx)
 		{
@@ -2102,7 +2102,7 @@ xml_to_boxes(fz_context *ctx,
 		if (user_css)
 		{
 			fz_parse_css(ctx, g.css, user_css, "<user>");
-			fz_add_css_font_faces(ctx, g.set, g.zip, ".", g.css);
+			fz_add_css_font_faces(ctx, g.set, g.zip, ".", g.css, 0);
 		}
 	}
 	fz_catch(ctx)
