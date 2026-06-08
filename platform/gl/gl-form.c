@@ -31,6 +31,7 @@ static pdf_annot *sig_widget;
 static char *sig_distinguished_name = NULL;
 static pdf_signature_error sig_cert_error;
 static pdf_signature_error sig_digest_error;
+static int sig_edits;
 static int sig_valid_until;
 static int sig_readonly;
 
@@ -465,14 +466,24 @@ static void sig_verify_dialog(void)
 
 		if (sig_digest_error)
 			ui_label("Digest error: %s", pdf_signature_error_description(sig_digest_error));
-		else if (sig_valid_until == 0)
-			ui_label("The fields signed by this signature are unchanged.");
-		else if (sig_valid_until == 1)
-			ui_label("This signature was invalidated in the last update by the signed fields being changed.");
-		else if (sig_valid_until == 2)
-			ui_label("This signature was invalidated in the penultimate update by the signed fields being changed.");
 		else
-			ui_label("This signature was invalidated %d updates ago by the signed fields being changed.", sig_valid_until);
+		{
+			if (sig_edits)
+				ui_label("The signature is valid, but there have been edits since signing.");
+			else
+				ui_label("The signature is valid, and there have been no edits since signing.");
+
+			if (sig_valid_until < 0)
+				ui_label("The fields signed by this signature have unsaved changes that will invalidate the signature.");
+			else if (sig_valid_until == 0)
+				ui_label("The fields signed by this signature are unchanged.");
+			else if (sig_valid_until == 1)
+				ui_label("This signature was invalidated in the last update by the signed fields being changed.");
+			else if (sig_valid_until == 2)
+				ui_label("This signature was invalidated in the penultimate update by the signed fields being changed.");
+			else
+				ui_label("This signature was invalidated %d updates ago by the signed fields being changed.", sig_valid_until);
+		}
 
 		ui_layout(B, X, NW, ui.padsize, ui.padsize);
 		ui_panel_begin(0, ui.gridsize, 0, 0, 0);
@@ -517,6 +528,7 @@ static void show_sig_dialog(pdf_annot *widget)
 
 			sig_cert_error = pdf_check_widget_certificate(ctx, verifier, widget);
 			sig_digest_error = pdf_check_widget_digest(ctx, verifier, widget);
+			sig_edits = pdf_incremental_change_since_signing_widget(ctx, widget);
 
 			fz_free(ctx, sig_distinguished_name);
 			dn = pdf_signature_get_widget_signatory(ctx, verifier, widget);
