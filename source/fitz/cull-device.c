@@ -359,7 +359,7 @@ fz_new_culling_device_with_rects(fz_context *ctx, fz_device *passthrough, int n,
 {
 	cull_rects *er;
 	fz_device *dev = NULL;
-	fz_culling_options opts;
+	fz_culling_options opts = { 0 };
 
 	er = fz_malloc_flexible(ctx, cull_rects, rects, n);
 	er->n = n;
@@ -435,7 +435,7 @@ fz_pixmap *fz_new_pixmap_from_culled_page_number(fz_context *ctx, fz_document *d
 fz_pixmap *
 fz_new_pixmap_from_page_culling_text_etc(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects, float borders)
 {
-	fz_culling_options opts;
+	fz_culling_options opts = { 0 };
 	fz_pixmap *pix;
 	cull_rects *er;
 
@@ -535,7 +535,7 @@ fz_new_pixmap_from_culled_display_list(fz_context *ctx, fz_display_list *list, f
 
 fz_pixmap *fz_new_pixmap_from_display_list_culling_text_etc(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, int n, const fz_rect *rects, float borders)
 {
-	fz_culling_options opts;
+	fz_culling_options opts = { 0 };
 	fz_pixmap *pix;
 	cull_rects *er;
 
