@@ -832,7 +832,20 @@ pdf_is_ocg_hidden_imp(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rd
 int
 pdf_is_ocg_hidden(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, const char *usage, pdf_obj *ocg)
 {
-	return pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, ocg, NULL);
+	int ret;
+
+	/* OCG is a borrowed reference held for long periods here. If we
+	 * get a repair triggered, we can lose that object. */
+	pdf_keep_obj(ctx, ocg);
+
+	fz_try(ctx)
+		ret = pdf_is_ocg_hidden_imp(ctx, doc, rdb, usage, ocg, NULL);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, ocg);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return ret;
 }
 
 pdf_ocg_descriptor *
