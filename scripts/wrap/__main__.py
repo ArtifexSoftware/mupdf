@@ -1427,6 +1427,7 @@ def build_so_windows(
                 /nologo
                 /permissive-
                 {'/MDd /Od /RTC1 /D _DEBUG' if (debug or memento) else '/MD /D "NDEBUG"'}
+                {'/D Py_GIL_DISABLED' if sysconfig.get_config_var('Py_GIL_DISABLED')==1 else ''}
                 {'/D MEMENTO' if memento else ''}
             ''')
     if sys.maxsize != 2**31 - 1:
