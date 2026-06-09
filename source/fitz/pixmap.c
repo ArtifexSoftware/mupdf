@@ -1713,12 +1713,12 @@ fz_subsample_pixblock_bresenham(unsigned char *s2, int w, int h, int n, int fact
 
 	/* In ((w+subx)/f) - 1 blocks, we want to repeat a line subx times. */
 	int bxd = ((w+subx)/f) - 1;
-	int bxf = bxd>>1;
+	int bxf = (bxd+1)>>1; /* Round up here, because we invert below. */
 	int byd = ((h+suby)/f) - 1;
-	int byf = byd>>1;
+	int byf = (byd+1)>>1; /* Round up here, because we invert below. */
 
-	assert(0 <= bxf && bxf < bxd);
-	assert(0 <= byf && byf < byd);
+	assert(0 <= bxf && bxf <= bxd);
+	assert(0 <= byf && byf <= byd);
 	/* And invert to make tests be against 0 */
 	bxf = bxd - bxf;
 	byf = byd - byf;
