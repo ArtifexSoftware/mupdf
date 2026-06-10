@@ -81,6 +81,12 @@ int pdf_is_dict(fz_context *ctx, pdf_obj *obj);
 int pdf_is_indirect(fz_context *ctx, pdf_obj *obj);
 
 /*
+	If obj is an indirect object, return it. If not,
+	throw an error.
+*/
+pdf_obj *pdf_ensure_indirect(fz_context *ctx, pdf_obj *obj);
+
+/*
 	Check if an object is a stream or not.
 */
 int pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num);

@@ -40,20 +40,6 @@ check_attributes(fz_context *ctx, pdf_obj *a)
 	return 0;
 }
 
-static pdf_obj *
-pdf_as_indirect(fz_context *ctx, pdf_obj *obj)
-{
-	pdf_document *doc;
-	if (pdf_is_indirect(ctx, obj))
-		return obj;
-
-	doc = pdf_get_bound_document(ctx, obj);
-	if (doc)
-		pdf_new_indirect(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
-
-	fz_throw(ctx, FZ_ERROR_ARGUMENT, "Cannot make indirect reference to non-container object");
-}
-
 static pdf_check_structure_result
 ste(fz_context *ctx, pdf_obj *parent, pdf_obj *obj, pdf_cycle_list *cycle_up)
 {
@@ -93,7 +79,7 @@ ste(fz_context *ctx, pdf_obj *parent, pdf_obj *obj, pdf_cycle_list *cycle_up)
 	if (o == NULL)
 	{
 		fz_warn(ctx, "Repairing missing parent (P)");
-		pdf_dict_put(ctx, obj, PDF_NAME(P), pdf_as_indirect(ctx, parent));
+		pdf_dict_put(ctx, obj, PDF_NAME(P), pdf_ensure_indirect(ctx, parent));
 		ret |= PDF_STRUCT_FIXED;
 	}
 	else if (pdf_objcmp_resolve(ctx, o, parent) != 0)

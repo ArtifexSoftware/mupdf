@@ -345,6 +345,15 @@ int pdf_is_dict(fz_context *ctx, pdf_obj *obj)
 	return OBJ_IS_DICT(obj);
 }
 
+pdf_obj *
+pdf_ensure_indirect(fz_context *ctx, pdf_obj *obj)
+{
+	if (!pdf_is_indirect(ctx, obj))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Indirect object required");
+
+	return obj;
+}
+
 /* safe, silent failure, no error reporting on type mismatches */
 int pdf_to_bool(fz_context *ctx, pdf_obj *obj)
 {
