@@ -67,6 +67,7 @@ struct info
 	int depth, alpha;
 	int tupletype;
 	int endian;
+	int bitmap;
 	float scale;
 };
 
@@ -351,6 +352,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, 
 	p = pnm_read_int(ctx, p, e, &pnm->width);
 	p = pnm_read_whites_and_eols(ctx, p, e, 1);
 
+	pnm->bitmap = !!bitmap;
 	if (bitmap)
 	{
 		pnm->height = 0;
@@ -486,6 +488,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 	p = pnm_read_int(ctx, p, e, &pnm->width);
 	p = pnm_read_whites_and_eols(ctx, p, e, 1);
 
+	pnm->bitmap = !!bitmap;
 	if (bitmap)
 	{
 		pnm->height = 0;
@@ -616,6 +619,7 @@ pam_binary_read_header(fz_context *ctx, struct info *pnm, const unsigned char *p
 	pnm->depth = 0;
 	pnm->maxval = 0;
 	pnm->tupletype = 0;
+	pnm->bitmap = 0;
 
 	while (p < e && token != TOKEN_ENDHDR)
 	{
@@ -671,8 +675,8 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 	if (pnm->tupletype == PAM_UNKNOWN)
 		switch (pnm->depth)
 		{
-		case 1: pnm->tupletype = pnm->maxval == 1 ? PAM_BW : PAM_GRAY; break;
-		case 2: pnm->tupletype = pnm->maxval == 1 ? PAM_BWA : PAM_GRAYA; break;
+		case 1: pnm->tupletype = pnm->bitmap ? PAM_BW : PAM_GRAY; break;
+		case 2: pnm->tupletype = pnm->bitmap ? PAM_BWA : PAM_GRAYA; break;
 		case 3: pnm->tupletype = PAM_RGB; break;
 		case 4: pnm->tupletype = PAM_CMYK; break;
 		case 5: pnm->tupletype = PAM_CMYKA; break;
@@ -680,13 +684,13 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 			fz_throw(ctx, FZ_ERROR_FORMAT, "cannot guess tuple type based on depth in pnm image");
 		}
 
-	if (pnm->tupletype == PAM_BW && pnm->maxval > 1)
+	if (pnm->tupletype == PAM_BW && !pnm->bitmap)
 		pnm->tupletype = PAM_GRAY;
-	else if (pnm->tupletype == PAM_GRAY && pnm->maxval == 1)
+	else if (pnm->tupletype == PAM_GRAY && pnm->bitmap)
 		pnm->tupletype = PAM_BW;
-	else if (pnm->tupletype == PAM_BWA && pnm->maxval > 1)
+	else if (pnm->tupletype == PAM_BWA && !pnm->bitmap)
 		pnm->tupletype = PAM_GRAYA;
-	else if (pnm->tupletype == PAM_GRAYA && pnm->maxval == 1)
+	else if (pnm->tupletype == PAM_GRAYA && pnm->bitmap)
 		pnm->tupletype = PAM_BWA;
 
 	switch (pnm->tupletype)
@@ -747,7 +751,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 		/* some encoders incorrectly pack bits into bytes and invert the image */
 		packed = 0;
 		size = (size_t)w * h * n;
-		if (pnm->maxval == 1)
+		if (pnm->bitmap)
 		{
 			const unsigned char *e_packed = p + size / 8;
 			if (e_packed < e - 1 && e_packed[0] == 'P' && e_packed[1] >= '0' && e_packed[1] <= '7')
@@ -790,7 +794,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 			/* some encoders incorrectly pack bits into bytes and invert the image */
 			size = (size_t)w * h * n;
 			packed = 0;
-			if (pnm->maxval == 1)
+			if (pnm->bitmap)
 			{
 				const unsigned char *e_packed = p + size / 8;
 				if (e_packed < e - 1 && e_packed[0] == 'P' && e_packed[1] >= '0' && e_packed[1] <= '7')
