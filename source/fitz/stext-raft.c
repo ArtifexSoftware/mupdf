@@ -401,8 +401,8 @@ add_plank_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_rect rect)
 					if (i != f->len)
 					{
 						f->rafts[i] = f->rafts[f->len];
-						i = j;
 					}
+					i = j;
 					changed = 1;
 				}
 			}
