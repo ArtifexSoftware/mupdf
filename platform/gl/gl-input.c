@@ -233,18 +233,18 @@ static int ui_input_key(struct input *input, int multiline)
 	case 0:
 		return UI_INPUT_NONE;
 	case KEY_LEFT:
-		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL + GLFW_MOD_ACTIVE_SHIFT)
 		{
 			input->q = prev_word(input->q, input->text);
 		}
-		else if (ui.mod == GLUT_ACTIVE_CTRL)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else
 				input->p = input->q = prev_word(input->q, input->text);
 		}
-		else if (ui.mod == GLUT_ACTIVE_SHIFT)
+		else if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 		{
 			if (input->q > input->text)
 				input->q = prev_char(input->q, input->text);
@@ -258,18 +258,18 @@ static int ui_input_key(struct input *input, int multiline)
 		}
 		break;
 	case KEY_RIGHT:
-		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL + GLFW_MOD_ACTIVE_SHIFT)
 		{
 			input->q = next_word(input->q, input->end);
 		}
-		else if (ui.mod == GLUT_ACTIVE_CTRL)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p > input->q ? input->p : input->q;
 			else
 				input->p = input->q = next_word(input->q, input->end);
 		}
-		else if (ui.mod == GLUT_ACTIVE_SHIFT)
+		else if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 		{
 			if (input->q < input->end)
 				input->q = next_char(input->q);
@@ -283,39 +283,39 @@ static int ui_input_key(struct input *input, int multiline)
 		}
 		break;
 	case KEY_UP:
-		if (ui.mod & GLUT_ACTIVE_SHIFT)
+		if (ui.mod & GLFW_MOD_ACTIVE_SHIFT)
 			input->q = up_line(input->q, input->text);
 		else
 			input->p = input->q = up_line(input->p, input->text);
 		break;
 	case KEY_DOWN:
-		if (ui.mod & GLUT_ACTIVE_SHIFT)
+		if (ui.mod & GLFW_MOD_ACTIVE_SHIFT)
 			input->q = down_line(input->q, input->end);
 		else
 			input->p = input->q = down_line(input->q, input->end);
 		break;
 	case KEY_HOME:
-		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL + GLFW_MOD_ACTIVE_SHIFT)
 			input->q = input->text;
-		else if (ui.mod == GLUT_ACTIVE_SHIFT)
+		else if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 			input->q = home_line(input->q, input->text);
-		else if (ui.mod == GLUT_ACTIVE_CTRL)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 			input->p = input->q = input->text;
 		else if (ui.mod == 0)
 			input->p = input->q = home_line(input->p, input->text);
 		break;
 	case KEY_END:
-		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL + GLFW_MOD_ACTIVE_SHIFT)
 			input->q = input->end;
-		else if (ui.mod == GLUT_ACTIVE_SHIFT)
+		else if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 			input->q = end_line(input->q, input->end);
-		else if (ui.mod == GLUT_ACTIVE_CTRL)
+		else if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 			input->p = input->q = input->end;
 		else if (ui.mod == 0)
 			input->p = input->q = end_line(input->p, input->end);
 		break;
 	case KEY_DELETE:
-		if (ui.mod == GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 		{
 			ui_do_cut(input);
 		}
@@ -349,7 +349,7 @@ static int ui_input_key(struct input *input, int multiline)
 		else if (input->p > input->text)
 		{
 			char *pp;
-			if (ui.mod == GLUT_ACTIVE_CTRL)
+			if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 				pp = prev_word(input->p, input->text);
 			else
 				pp = prev_char(input->p, input->text);
@@ -388,9 +388,9 @@ static int ui_input_key(struct input *input, int multiline)
 		ui_do_paste(input, multiline);
 		break;
 	case KEY_INSERT:
-		if (ui.mod == GLUT_ACTIVE_CTRL)
+		if (ui.mod == GLFW_MOD_ACTIVE_CTRL)
 			ui_do_copy(input);
-		if (ui.mod == GLUT_ACTIVE_SHIFT)
+		if (ui.mod == GLFW_MOD_ACTIVE_SHIFT)
 			ui_do_paste(input, multiline);
 		break;
 	default:
@@ -457,7 +457,7 @@ int ui_input(struct input *input, int width, int height)
 	{
 		ui.hot = input;
 		if (!ui.active || ui.active == input)
-			ui.cursor = GLUT_CURSOR_TEXT;
+			ui.cursor = UI_CURSOR_TEXT;
 		if (!ui.active && ui.down)
 		{
 			input->p = find_input_location(lines, n, ax, ay-sy, ui.x, ui.y);
