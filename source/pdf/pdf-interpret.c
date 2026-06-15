@@ -2037,7 +2037,7 @@ pdf_tos_make_trm(fz_context *ctx, pdf_text_object_state *tos, pdf_text_state *te
 	{
 		pdf_vmtx v = pdf_lookup_vmtx(ctx, fontdesc, cid);
 		float w1 = *adv = v.w * 0.001f;
-		tsm.e -= v.x * fabsf(text->size) * 0.001f;
+		tsm.e -= v.x * fabsf(text->size) * text->scale * 0.001f;
 		tsm.f -= v.y * text->size * 0.001f;
 		tos->char_tx = 0;
 		tos->char_ty = w1 * text->size + text->char_space;
