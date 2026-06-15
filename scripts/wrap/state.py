@@ -232,7 +232,7 @@ class Cpu:
             self.windows_name = 'x64'
             self.windows_config = 'x64'
             self.windows_suffix = '64'
-        elif name in ('arm64', 'ARM64'):
+        elif name == 'arm64':
             self.bits = 64
             self.windows_subdir = 'ARM64/'
             self.windows_name = 'ARM64'
@@ -256,10 +256,10 @@ def python_version():
 
 def cpu_name():
     '''
-    Returns 'x32', 'x64' or 'ARM64' depending on Python build.
+    Returns 'x32', 'x64' or 'arm64' depending on Python build.
     '''
     machine = platform.machine().lower()
-    if machine in ('arm64', 'aarch64'):
+    if machine == 'arm64':
         ret = 'arm64'
     else:
         #log(f'sys.maxsize={hex(sys.maxsize)}')
@@ -357,7 +357,7 @@ class BuildDirs:
             self.cpu = None
             self.python_version = None
             for flag in flags:
-                if flag in ('x32', 'x64', 'arm64', 'ARM64'):
+                if flag in ('x32', 'x64', 'arm64'):
                     self.cpu = Cpu(flag)
                 if flag.startswith('py'):
                     self.python_version = flag[2:]

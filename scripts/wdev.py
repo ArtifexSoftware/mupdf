@@ -221,7 +221,7 @@ class WindowsCpu:
             self.windows_name = 'x64'
             self.windows_config = 'x64'
             self.windows_suffix = '64'
-        elif name in ('arm64', 'ARM64'):
+        elif name == 'arm64':
             self.bits = 64
             self.windows_subdir = 'ARM64/'
             self.windows_name = 'ARM64'
@@ -362,11 +362,11 @@ class WindowsPython:
 
 def _cpu_name():
     '''
-    Returns `x32`, `x64` or `ARM64` depending on Python build.
+    Returns `x32`, `x64` or `arm64` depending on Python build.
     '''
     # Check platform architecture
     machine = platform.machine().lower()
-    if machine in ('arm64', 'aarch64'):
+    if machine == 'arm64':
         return 'arm64'
     else:
         #log(f'sys.maxsize={hex(sys.maxsize)}')
