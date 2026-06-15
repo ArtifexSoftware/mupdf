@@ -74,6 +74,13 @@ fz_dct_mem_alloc(j_common_ptr cinfo, size_t size)
 	return Memento_label(fz_malloc_no_throw(state->ctx, size), "dct_alloc");
 }
 
+static void *
+fz_dct_mem_calloc(j_common_ptr cinfo, size_t size)
+{
+	fz_dctd *state = JZ_DCT_STATE_FROM_CINFO(cinfo);
+	return Memento_label(fz_calloc_no_throw(state->ctx, 1, size), "dct_calloc");
+}
+
 static void
 fz_dct_mem_free(j_common_ptr cinfo, void *object, size_t size)
 {
@@ -88,7 +95,7 @@ fz_dct_mem_init(struct jpeg_decompress_struct *cinfo, fz_dctd *state)
 	custmptr = fz_malloc_struct(state->ctx, jpeg_cust_mem_data);
 	if (!jpeg_cust_mem_init(custmptr, (void *) state, NULL, NULL, NULL,
 				fz_dct_mem_alloc, fz_dct_mem_free,
-				fz_dct_mem_alloc, fz_dct_mem_free, NULL))
+				fz_dct_mem_calloc, fz_dct_mem_free, NULL))
 	{
 		fz_free(state->ctx, custmptr);
 		fz_throw(state->ctx, FZ_ERROR_LIBRARY, "cannot initialize custom JPEG memory handler");
@@ -203,6 +210,7 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 	j_decompress_ptr cinfo = &state->cinfo;
 	unsigned char *p = state->buffer;
 	unsigned char *ep;
+	size_t n;
 	int c;
 
 	if (max > sizeof(state->buffer))
@@ -281,8 +289,13 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 			state->wp = state->scanline;
 		}
 
-		while (state->rp < state->wp && p < ep)
-			*p++ = *state->rp++;
+		n = fz_minz(state->wp - state->rp, ep - p);
+		if (n > 0)
+		{
+			memcpy(p, state->rp, n);
+			p += n;
+			state->rp += n;
+		}
 
 		while (p < ep)
 		{
@@ -305,8 +318,13 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 				state->wp = state->scanline + state->stride;
 			}
 
-			while (state->rp < state->wp && p < ep)
-				*p++ = *state->rp++;
+			n = fz_minz(state->wp - state->rp, ep - p);
+			if (n > 0)
+			{
+				memcpy(p, state->rp, n);
+				p += n;
+				state->rp += n;
+			}
 		}
 		stm->rp = state->buffer;
 		stm->wp = p;

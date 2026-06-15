@@ -700,10 +700,16 @@ page_subset(fz_context *ctx, fz_stext_page *page, fz_stext_struct *parent, fz_re
 
 	newblock->u.s.down->first_block = target;
 	newblock->u.s.down->last_block = last;
+	newblock->u.s.down->parent = target_parent;
 	target->prev = NULL;
 
 	for (block = target; block->next != NULL; block = block->next)
+	{
 		newblock->bbox = fz_union_rect(newblock->bbox, block->bbox);
+		if (block->type == FZ_STEXT_BLOCK_STRUCT && block->u.s.down)
+			block->u.s.down->parent = newblock->u.s.down;
+	}
+
 	newblock->bbox = fz_union_rect(newblock->bbox, block->bbox);
 	newblock->u.s.down->last_block = block;
 
@@ -947,7 +953,7 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 	fz_rect coverage = fz_empty_rect;
 
 	/* First, find the area actually covered on the page. */
-	for (iter = fz_stext_page_block_iterator_begin(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
+	for (iter = fz_stext_page_block_iterator_begin_dfs(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
 	{
 		/* Try to ignore stuff that's completely off screen */
 		fz_rect bbox = fz_intersect_rect(page->mediabox, iter.block->bbox);
@@ -959,7 +965,7 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 	 * when we find the first one that is not a white (or transparent) rectangle fill
 	 * that covers a significant amount of the page. This therefore copes with several
 	 * page fills on the same page. */
-	for (iter = fz_stext_page_block_iterator_begin(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
+	for (iter = fz_stext_page_block_iterator_begin_dfs(page); !fz_stext_page_block_iterator_eod_dfs(iter); iter = fz_stext_page_block_iterator_next_dfs(iter))
 	{
 		fz_rect bbox;
 

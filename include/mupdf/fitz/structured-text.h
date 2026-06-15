@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -127,10 +127,10 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 
 	FZ_STEXT_CLIP: If this option is set, characters that would be entirely
 	clipped away by the current clipping path (or, more accurate, the smallest
-	bbox that contains the current clipping path) will be ignored. The
-	clip path is guaranteed to be smaller then the page mediabox, hence
-	this option subsumes an older, now deprecated, FZ_STEXT_MEDIABOX_CLIP
-	option.
+	bbox that contains the current clipping path) will be ignored. The bboxes
+	of images will be similarly reduced in size. The clip path is guaranteed
+	to be smaller then the page mediabox, hence this option subsumes an older,
+	now deprecated, FZ_STEXT_MEDIABOX_CLIP option.
 
 	FZ_STEXT_CLIP_RECT: If this option is set, characters that would be entirely
 	clipped away by the specified 'clip' rectangle in the options struct
@@ -146,6 +146,17 @@ typedef struct fz_stext_grid_positions fz_stext_grid_positions;
 	FZ_STEXT_COLLECT_VECTORS: If this option is set, we will collect
 	details (currently just the bbox) of vector graphics. This is intended
 	to be of use in segmentation analysis.
+
+	FZ_STEXT_LAZY_VECTORS: If this option is set, we will defer collected
+	vectors to the end of the text run they appear in. This prevents vector
+	drawn strikeouts, or diacritics/accents/marks from breaking the flow
+	of text.
+
+	FZ_STEXT_FUZZY_VECTORS: If this option is set, we 'fuzzily' collect
+	rectangular vectors of the same colour together. This enables us to
+	spot where 'pixels' or 'slices' of vectors are used to create the
+	appearance of characters on the page without exploding the storage
+	and processing time requirements.
 
 	FZ_STEXT_IGNORE_ACTUALTEXT: If this option is set, we will no longer
 	replace text by the ActualText replacement specified in the document.
@@ -203,6 +214,7 @@ enum
 	FZ_STEXT_ACCURATE_ASCENDERS = (1<<18),
 	FZ_STEXT_ACCURATE_SIDE_BEARINGS = (1<<19),
 	FZ_STEXT_LAZY_VECTORS = (1<<20),
+	FZ_STEXT_FUZZY_VECTORS = (1<<21),
 
 	/* An old, deprecated option. */
 	FZ_STEXT_MEDIABOX_CLIP = FZ_STEXT_CLIP
@@ -369,7 +381,7 @@ enum
 {
 	FZ_STEXT_TEXT_JUSTIFY_UNKNOWN = 0,
 	FZ_STEXT_TEXT_JUSTIFY_LEFT = 1,
-	FZ_STEXT_TEXT_JUSTIFY_CENTRE = 2,
+	FZ_STEXT_TEXT_JUSTIFY_CENTER = 2,
 	FZ_STEXT_TEXT_JUSTIFY_RIGHT = 3,
 	FZ_STEXT_TEXT_JUSTIFY_FULL = 4,
 };
@@ -550,17 +562,20 @@ struct fz_stext_struct
  *                                  :   :
  */
 
+ typedef struct
+ {
+	int reinforcement;
+	float pos;
+	float min;
+	float max;
+	int uncertainty;
+ } fz_stext_grid_divider;
+
  struct fz_stext_grid_positions
  {
 	int len;
 	int max_uncertainty;
-	struct {
-		int reinforcement;
-		float pos;
-		float min;
-		float max;
-		int uncertainty;
-	} list[FZ_FLEXIBLE_ARRAY];
+	fz_stext_grid_divider list[FZ_FLEXIBLE_ARRAY];
  };
 
 FZ_DATA extern const char *fz_stext_options_usage;
@@ -594,6 +609,22 @@ void fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out);
 	Output structured text to a file in XML format.
 */
 void fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page, int id);
+
+/**
+	Output structured text to a file in XML format, with flags
+	to control how much of the structure is displayed.
+*/
+typedef enum {
+	FZ_STEXT_XML_FLAGS_CHARS = 1,
+	FZ_STEXT_XML_FLAGS_POINTERS = 2
+} fz_stext_xml_flags;
+void fz_print_stext_page_as_xml_with_flags(fz_context *ctx, fz_output *out, fz_stext_page *page, int id, fz_stext_xml_flags flags);
+
+/**
+	Convenience function to call the above.
+*/
+void fz_debug_stext_page(fz_context *ctx, fz_stext_page *page, int id);
+
 
 /**
 	Output structured text to a file in JSON format.
@@ -695,11 +726,21 @@ typedef struct
 	fz_rect clip;
 } fz_stext_options;
 
+void fz_init_stext_options(fz_context *ctx, fz_stext_options *opts);
+
 /**
 	Parse stext device options from a comma separated key-value
 	string.
+
+	This initialises the opts structure.
 */
 fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string);
+
+/**
+	Parse stext device options from an fz_options struct
+	into an already initialised opts structure.
+*/
+void fz_apply_stext_options(fz_context *ctx, fz_stext_options *opts, fz_options *options);
 
 /**
 	Perform segmentation analysis on an (unstructured) page to look for
@@ -778,6 +819,43 @@ void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect b
 */
 fz_stext_block *
 fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
+
+/**
+	Interpret the contents of a given stext page that fall within
+	a given grid as a table.
+
+	The page contents will be rewritten to contain a Table
+	structure with the identified content in it.
+
+	This uses the same logic as for fz_table_hunt, without the
+	actual hunting, and the grid detection phase. fz_table_hunt
+	hunts to find possible bounds for multiple tables on the
+	page; this routine just finds a single table contained within
+	the given rectangle. The grid detection phase is skipped, and
+	we just use the grid as given to us. We still perform the
+	cell analysis stage though, so the grid can be refined.
+
+	Returns the stext_block list that contains the content of
+	the table, or NULL if no table is found that scores below
+	limit.
+*/
+fz_stext_block *
+fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit);
+
+/**
+	Try to guess at the table structure within given bounds.
+
+	If no table can be found, we return 0. If we find one we
+	return non-zero. (Currently, 1, other values reserved
+	for the future.)
+
+	In the case of a non-zero return. xposp and ypos are returned
+	as pointers to fz_stext_grid_positions records that must be
+	freed.
+*/
+int
+fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp);
+
 
 /**
 	Create a device to extract the text on a page.
@@ -878,7 +956,7 @@ fz_device *fz_new_ocr_device(fz_context *ctx, fz_device *target, fz_matrix ctm, 
 			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg);
 
 fz_device *fz_new_ocr_device_with_options(fz_context *ctx, fz_device *target, fz_matrix ctm, fz_rect mediabox, int with_list, const char *language,
-			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg, const char *options);
+			const char *datadir, int (*progress)(fz_context *, void *, int), void *progress_arg, fz_options *options);
 
 fz_document *fz_open_reflowed_document(fz_context *ctx, fz_document *underdoc, const fz_stext_options *opts);
 
@@ -912,26 +990,18 @@ typedef enum
 
 FZ_DATA extern const char *fz_search_options_usage;
 
-fz_search_options fz_parse_search_options(const char *options);
+void fz_init_search_options(fz_context *ctx, fz_search_options *options);
+
+fz_search_options *fz_parse_search_options(fz_context *ctx, fz_search_options *options, const char *args);
+
+void fz_apply_search_options(fz_context *ctx, fz_search_options *options, fz_options *opts);
 
 /**
 	Create a new search.
+
+	If the needle is invalid (in the case of regexps, it fails to compile) it will throw an error.
 */
-fz_search *fz_new_search(fz_context *ctx);
-
-/**
-	Change the options/needle to be used for a search.
-
-	If the needle is invalid (in the case of regexps, it fails to compile)
-	it will throw an error.
-
-	If the needle changes, the current position of the search within the
-	text is kept.
-
-	If the options change, the search position may revert to the beginning
-	of the current page.
-*/
-void fz_search_set_options(fz_context *ctx, fz_search *search, fz_search_options options, const char *needle);
+fz_search *fz_new_search(fz_context *ctx, const char *needle, fz_search_options options);
 
 typedef enum
 {
@@ -947,11 +1017,9 @@ typedef enum
 
 typedef struct
 {
-	fz_quad quad;
 	int seq;
-	int chapter_num;
-	int page_num;
-} fz_match_quad;
+	fz_quad quad;
+} fz_search_quad;
 
 typedef struct
 {
@@ -965,11 +1033,10 @@ typedef struct
 typedef struct
 {
 	int num_quads;
-	fz_match_quad *quads;
-	fz_stext_position begin;
-	fz_stext_position end;
-}
-fz_search_result_details;
+	fz_search_quad *quads;
+	fz_stext_position begin, end;
+	int begin_seq, end_seq;
+} fz_search_match;
 
 /**
 	Structure used to represent the 'result' of a search.
@@ -979,14 +1046,8 @@ typedef struct
 	fz_search_reason reason;
 	union
 	{
-		struct
-		{
-			int seq_needed;
-		} more_input;
-		struct
-		{
-			fz_search_result_details *result;
-		} match;
+		int seq_needed;
+		fz_search_match *match;
 	} u;
 } fz_search_result;
 
@@ -1093,6 +1154,7 @@ typedef struct
 	fz_stext_page *page;
 	fz_stext_struct *parent;
 	fz_stext_block *block;
+	fz_stext_struct *top;
 } fz_stext_page_block_iterator;
 
 /*
@@ -1101,10 +1163,35 @@ typedef struct
 fz_stext_page_block_iterator fz_stext_page_block_iterator_begin(fz_stext_page *page);
 
 /*
+	Create a new iterator, initialised to point at the given point on the page.
+*/
+fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_from(fz_stext_page *page, fz_stext_block *block, fz_stext_struct *top);
+
+/*
 	Create a new iterator, initialised to point at the first non-struct block on the page
 	in depth first search order.
 */
 fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_dfs(fz_stext_page *page);
+
+/*
+	Create a new iterator, initialised to point at the first non-struct block on the page
+	in depth first search order after the given point. The start point is recorded so that
+	the DFS search will 'eod' at the end of the level that block is in.
+*/
+fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_from_dfs(fz_stext_page *page, fz_stext_block *block, fz_stext_struct *top);
+
+/*
+	Create a new iterator, initialised to point at the first non-struct block on the page
+	in reverse depth first search order.
+*/
+fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_rdfs(fz_stext_page *page);
+
+/*
+	Create a new iterator, initialised to point at the first non-struct block on the page
+	in reverse depth first search order after the given point. The start point is recorded so that
+	the DFS search will 'eod' at the start of the level that block is in.
+*/
+fz_stext_page_block_iterator fz_stext_page_block_iterator_begin_from_rdfs(fz_stext_page *page, fz_stext_block *block, fz_stext_struct *top);
 
 /*
 	Move to the next block (never moving upwards).
@@ -1133,9 +1220,20 @@ fz_stext_page_block_iterator fz_stext_page_block_iterator_up(fz_stext_page_block
 
 	The iterator never stops on struct blocks, and instead steps into them.
 	At the end of a set of child blocks, it will move back to the parent and
-	continue from there.
+	continue from there. It will never move past the parent given to begin_from,
+	if used.
 */
 fz_stext_page_block_iterator fz_stext_page_block_iterator_next_dfs(fz_stext_page_block_iterator pos);
+
+/*
+	Move to the next block (in a reverse depth first traversal style).
+
+	The iterator never stops on struct blocks, and instead steps into them.
+	At the end of a set of child blocks, it will move back to the parent and
+	continue from there. It will never most past the parent given to begin_from,
+	if used.
+*/
+fz_stext_page_block_iterator fz_stext_page_block_iterator_next_rdfs(fz_stext_page_block_iterator pos);
 
 /*
 	Return true if the iterator is at the end of a list of blocks.
@@ -1146,9 +1244,19 @@ int fz_stext_page_block_iterator_eod(fz_stext_page_block_iterator pos);
 
 /*
 	Return true if the iterator is at the end of a depth first traversal
-	of the stext page.
+	of the stext page. The depth first traversal endpoint will be the
+	end of the page, or (if begin_from was used) the end of the level
+	given at init time.
 */
 int fz_stext_page_block_iterator_eod_dfs(fz_stext_page_block_iterator pos);
+
+/*
+	Return true if the iterator is at the end of a reverse depth first
+	traversal of the stext page. The reverse depth first traversal endpoint
+	will be the start of the page, or (if begin_from was used) the start
+	of the level given at init time.
+*/
+int fz_stext_page_block_iterator_eod_rdfs(fz_stext_page_block_iterator pos);
 
 /*
 	Update a given stext page so that the contents within it that fall
@@ -1182,7 +1290,61 @@ typedef struct
 	int combine_image;
 } fz_image_raft_options;
 
-void fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_options *options);
+void
+fz_stext_raft_images(fz_context *ctx, fz_stext_page *stext, fz_image_raft_options *options);
 
+/*
+	Flotilla/Raft handling
+
+	We call any 2-dimensional area that's covered by (some type of) content
+	a raft. i.e. it's made up of several distinct objects ("planks") lashed
+	together into something that covers a large flat area (a "raft").
+
+	The set of all such non-overlapping rafts on a page can be called a
+	"flotilla".
+
+	For instance, the borders and/or backgrounds from a table would form a
+	raft behind the text content. And the boundaries of that raft might
+	help us distinguish that table from an adjacent table on a different
+	raft.
+
+	While we could theoretically make rafts from anything, images and
+	vectors seem like the best bet. We could make rafts from mixed images
+	and vectors, but to start with, I think we'll get best results from
+	images and vectors separately.
+*/
+typedef struct fz_flotilla fz_flotilla;
+
+/*
+	Construct a flotilla from all the (rectangular) vectors on a page.
+*/
+fz_flotilla *
+fz_new_flotilla_from_stext_page_vectors(fz_context *ctx, fz_stext_page *page);
+
+/*
+	Drop the flotilla.
+*/
+void
+fz_drop_flotilla(fz_context *ctx, fz_flotilla *f);
+
+/*
+	How many rafts in this flotilla?
+*/
+int
+fz_flotilla_size(fz_context *ctx, fz_flotilla *flot);
+
+/*
+	Return the bounds of the ith raft in the flotilla.
+*/
+fz_rect
+fz_flotilla_raft_area(fz_context *ctx, fz_flotilla *flot, int i);
+
+/*
+	Internal debugging function to verify the soundness
+	of an stext page.
+
+	title: optional string to be printed.
+*/
+void fz_verify_stext_page(fz_context *ctx, fz_stext_page *page, const char *title);
 
 #endif

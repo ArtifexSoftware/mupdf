@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1310,15 +1310,15 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 {
 	float *s = csi->stack;
 	char csname[40];
-	int key;
+	uint32_t key;
 
 	key = word[0];
 	if (word[1])
 	{
-		key |= word[1] << 8;
+		key |= (uint32_t)word[1] << 8;
 		if (word[2])
 		{
-			key |= word[2] << 16;
+			key |= (uint32_t)word[2] << 16;
 			if (word[3])
 				key = 0;
 		}
@@ -1712,7 +1712,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				{
 					fz_rethrow(ctx);
 				}
-				else if (caught == FZ_ERROR_SYNTAX)
+				else if (caught == FZ_ERROR_SYNTAX || caught == FZ_ERROR_FORMAT)
 				{
 					fz_report_error(ctx);
 					cookie->errors++;
@@ -1738,7 +1738,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				{
 					fz_rethrow(ctx);
 				}
-				else if (caught == FZ_ERROR_SYNTAX)
+				else if (caught == FZ_ERROR_SYNTAX || caught == FZ_ERROR_FORMAT)
 				{
 					fz_report_error(ctx);
 					if (++syntax_errors >= MAX_SYNTAX_ERRORS)
@@ -1991,12 +1991,27 @@ pdf_tos_get_text(fz_context *ctx, pdf_text_object_state *tos)
 	return text;
 }
 
+fz_text *
+pdf_tos_get_clip_text(fz_context *ctx, pdf_text_object_state *tos)
+{
+	fz_text *text = tos->clip_text;
+	tos->clip_text = NULL;
+	return text;
+}
+
 void
 pdf_tos_reset(fz_context *ctx, pdf_text_object_state *tos, int render)
 {
 	tos->text = fz_new_text(ctx);
 	tos->text_mode = render;
 	tos->text_bbox = fz_empty_rect;
+}
+
+void
+pdf_tos_accumulate_clip(fz_context *ctx, pdf_text_object_state *tos)
+{
+	if (tos->clip_text == NULL)
+		tos->clip_text = fz_new_text(ctx);
 }
 
 int

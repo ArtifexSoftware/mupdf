@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -343,9 +343,9 @@ pdf_filter_xobject_instance(fz_context *ctx, pdf_obj *old_xobj, pdf_obj *page_re
 {
 	pdf_cycle_list cycle;
 	pdf_document *doc = pdf_get_bound_document(ctx, old_xobj);
-	pdf_obj *new_xobj;
-	pdf_obj *new_res, *old_res;
-	fz_buffer *new_buf;
+	pdf_obj *new_xobj = NULL;
+	pdf_obj *new_res = NULL, *old_res;
+	fz_buffer *new_buf = NULL;
 	int struct_parents;
 	fz_matrix matrix;
 

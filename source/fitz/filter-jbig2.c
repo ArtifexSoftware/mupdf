@@ -52,13 +52,16 @@ typedef struct
 fz_jbig2_globals *
 fz_keep_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
 {
-	return fz_keep_storable(ctx, &globals->storable);
+	if (globals)
+		return fz_keep_storable(ctx, &globals->storable);
+	return NULL;
 }
 
 void
 fz_drop_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
 {
-	fz_drop_storable(ctx, &globals->storable);
+	if (globals)
+		fz_drop_storable(ctx, &globals->storable);
 }
 
 static void
@@ -230,7 +233,11 @@ fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals, int
 
 	options = 0;
 	if (embedded)
-		options |= JBIG2_OPTIONS_EMBEDDED;
+#ifdef JBIG2_SUPPORTS_FORGIVING
+		options |= JBIG2_OPTIONS_EMBEDDED_FORGIVING;
+#else
+		options |= JBIG2_OPTIONS_EMBEDDED; /* Old version of JBIG2. Do the best we can. */
+#endif
 
 	state->ctx = jbig2_ctx_new((Jbig2Allocator *) &state->alloc, options, globals ? globals->gctx : NULL, error_callback, ctx);
 	if (state->ctx == NULL)

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -145,7 +145,7 @@ populate_destination(fz_context *ctx, pdf_document *doc, pdf_obj *dest, int is_r
 		rect.y0 = arg2v;
 		rect.x1 = arg3v;
 		rect.y1 = arg4v;
-		fz_transform_rect(rect, ctm);
+		rect = fz_transform_rect(rect, ctm);
 		destination->x = fz_min(rect.x0, rect.x1);
 		destination->y = fz_min(rect.y0, rect.y1);
 		destination->w = fz_abs(rect.x1 - rect.x0);
@@ -315,7 +315,8 @@ pdf_is_filespec(fz_context *ctx, pdf_obj *fs)
 	pdf_obj *name;
 	pdf_obj *type = pdf_dict_get(ctx, fs, PDF_NAME(Type));
 
-	if (type == NULL || !pdf_name_eq(ctx, type, PDF_NAME(Filespec)))
+	// Note: allow "FileSpec" as a common mis-capitalization
+	if (type != PDF_NAME(Filespec) && type != PDF_NAME(FileSpec))
 		return 0;
 
 	(void)get_file_stream_and_name(ctx, fs, &name);
@@ -328,7 +329,8 @@ pdf_is_embedded_file(fz_context *ctx, pdf_obj *fs)
 {
 	pdf_obj *type = pdf_dict_get(ctx, fs, PDF_NAME(Type));
 
-	if (type == NULL || !pdf_name_eq(ctx, type, PDF_NAME(Filespec)))
+	// Note: allow "FileSpec" as a common mis-capitalization
+	if (type != PDF_NAME(Filespec) && type != PDF_NAME(FileSpec))
 		return 0;
 
 	return pdf_is_stream(ctx, get_file_stream_and_name(ctx, fs, NULL));
@@ -380,10 +382,12 @@ pdf_verify_embedded_file_checksum(fz_context *ctx, pdf_obj *fs)
 	unsigned char digest[16];
 	pdf_obj *params;
 	const char *checksum;
-	fz_buffer *contents;
+	fz_buffer *contents = NULL;
 	int valid = 0;
 	size_t len;
 	pdf_obj *file = get_file_stream_and_name(ctx, fs, NULL);
+
+	fz_var(contents);
 
 	if (!pdf_is_stream(ctx, file))
 		return 1;
@@ -696,40 +700,40 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *dict,
 fz_link *
 pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *annots, int pagenum, fz_matrix page_ctm)
 {
-	fz_link *link, *head, *tail;
+	fz_link *head, *tail;
 	pdf_obj *obj;
 	int i, n;
 
 	head = tail = NULL;
-	link = NULL;
 
 	n = pdf_array_len(ctx, annots);
 	for (i = 0; i < n; i++)
 	{
+		fz_link *link;
+
 		/* FIXME: Move the try/catch out of the loop for performance? */
 		fz_try(ctx)
 		{
 			obj = pdf_array_get(ctx, annots, i);
 			link = pdf_load_link(ctx, doc, page, obj, pagenum, page_ctm);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-			fz_report_error(ctx);
-			link = NULL;
-		}
-
-		if (link)
-		{
 			if (!head)
 				head = tail = link;
-			else
+			else if (link)
 			{
 				tail->next = link;
 				tail = link;
 			}
 		}
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) == FZ_ERROR_TRYLATER || fz_caught(ctx) == FZ_ERROR_SYSTEM)
+			{
+				fz_drop_link(ctx, head);
+				fz_rethrow(ctx);
+			}
+			fz_report_error(ctx);
+		}
+
 	}
 
 	return head;
@@ -930,17 +934,17 @@ parse_uri_named_dest(fz_context *ctx, const char *uri)
 	return fz_decode_uri_component(ctx, strchr(uri, '#') + 1);
 }
 
-static float next_float(const char *str, int eatcomma, char **end)
+static float next_float(const char *str, int eatcomma, const char **end)
 {
 	if (eatcomma && *str == ',')
 		++str;
-	return fz_strtof(str, end);
+	return fz_strtof(str, (char **) end);
 }
 
 static fz_link_dest
 pdf_new_explicit_dest_from_uri(fz_context *ctx, pdf_document *doc, const char *uri)
 {
-	char *page, *rect, *zoom, *view;
+	const char *page, *rect, *zoom, *view;
 	fz_link_dest val = fz_make_link_dest_none();
 
 	uri = uri ? strchr(uri, '#') : NULL;
@@ -1153,6 +1157,7 @@ pdf_add_filespec_from_link(fz_context *ctx, pdf_document *doc, const char *uri)
 {
 	char *file = NULL;
 	pdf_obj *filespec = NULL;
+	fz_var(file);
 	fz_try(ctx)
 	{
 		if (is_file_uri(ctx, uri))
@@ -1406,7 +1411,7 @@ pdf_new_dest_from_link(fz_context *ctx, pdf_document *doc, const char *uri, int 
 				r.y0 = val.y;
 				r.x1 = val.x + val.w;
 				r.y1 = val.y + val.h;
-				fz_transform_rect(r, invctm);
+				r = fz_transform_rect(r, invctm);
 				pdf_array_push(ctx, dest, PDF_NAME(FitR));
 				pdf_array_push_real(ctx, dest, r.x0);
 				pdf_array_push_real(ctx, dest, r.y0);
@@ -1439,6 +1444,7 @@ pdf_resolve_link_dest(fz_context *ctx, pdf_document *doc, const char *uri)
 
 	fz_var(needle);
 	fz_var(name);
+	fz_var(desturi);
 
 	fz_try(ctx)
 	{

@@ -41,6 +41,12 @@ enum
 	FZ_RECOMPRESS_FAX
 };
 
+enum
+{
+	FZ_RECOMPRESS_WHEN_SMALLER,
+	FZ_RECOMPRESS_WHEN_ALWAYS
+};
+
 typedef struct
 {
 	int color_lossless_image_subsample_method;
@@ -68,6 +74,7 @@ typedef struct
 	int bitonal_image_subsample_to; /* 0, or the dpi to subsample to */
 	int bitonal_image_recompress_method; /* Which compression method to use for bitonal images? */
 	char *bitonal_image_recompress_quality;
+	int recompress_when; /* 0 to only recompress if the new one is smaller, 1 to recompress always */
 } pdf_image_rewriter_options;
 
 /*

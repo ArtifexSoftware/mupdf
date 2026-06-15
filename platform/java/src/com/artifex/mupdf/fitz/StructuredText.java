@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -65,6 +65,12 @@ public class StructuredText
 	public static final int CHAR_FLAGS_UNICODE_IS_GID = 256;
 	public static final int CHAR_FLAGS_SYNTHETIC_LARGE = 512;
 
+	public static final int TEXT_JUSTIFY_UNKNOWN = 0;
+	public static final int TEXT_JUSTIFY_LEFT = 1;
+	public static final int TEXT_JUSTIFY_CENTER = 2;
+	public static final int TEXT_JUSTIFY_RIGHT = 3;
+	public static final int TEXT_JUSTIFY_FULL = 4;
+
 	public native Quad[][] search(String needle, int style);
 	public Quad[][] search(String needle)
 	{
@@ -76,6 +82,7 @@ public class StructuredText
 
 	public final static int VECTOR_IS_STROKED = 1;
 	public final static int VECTOR_IS_RECTANGLE = 2;
+	public final static int VECTOR_CONTINUES = 4;
 
 	public native void walk(StructuredTextWalker walker);
 
@@ -104,6 +111,7 @@ public class StructuredText
 		Rect lineBbox;
 		Point lineDir;
 		Rect blockBbox;
+		int blockFlags;
 
 		BlockWalker() {
 			blocks = new ArrayList<TextBlock>();
@@ -112,15 +120,17 @@ public class StructuredText
 		public void onImageBlock(Rect bbox, Matrix transform, Image image) {
 		}
 
-		public void beginTextBlock(Rect bbox) {
+		public void beginTextBlock(Rect bbox, int flags) {
 			lines = new ArrayList<TextLine>();
 			blockBbox = bbox;
+			blockFlags = flags;
 		}
 
 		public void endTextBlock() {
 			TextBlock block = new TextBlock();
 			block.bbox = blockBbox;
 			block.lines = lines.toArray(new TextLine[0]);
+			block.flags = blockFlags;
 			blocks.add(block);
 		}
 
@@ -138,7 +148,7 @@ public class StructuredText
 			lines.add(line);
 		}
 
-		public void onChar(int c, Point origin, Font font, float size, Quad quad, int argb, int flags) {
+		public void onChar(int c, Point origin, Font font, float size, Quad quad, int argb, int flags, int bidi) {
 			TextChar chr = new TextChar();
 			chr.c = c;
 			chr.quad = quad;
@@ -146,6 +156,7 @@ public class StructuredText
 			chrs.add(chr);
 			chr.argb = argb;
 			chr.flags = flags;
+			chr.bidi = bidi;
 		}
 
 		public void beginStruct(String standard, String raw, int index) {
@@ -165,6 +176,7 @@ public class StructuredText
 	public static class TextBlock {
 		public TextLine[] lines;
 		public Rect bbox;
+		public int flags;
 	}
 
 	public static class TextLine {
@@ -182,6 +194,7 @@ public class StructuredText
 		}
 		public int argb;
 		public int flags;
+		public int bidi;
 	}
 
 }

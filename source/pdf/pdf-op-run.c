@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -787,7 +787,8 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, int p
 	 * best we've found; only use it as a tile if a whole repeat is
 	 * required in at least one direction. Note, that this allows for
 	 * 'sections' of 4 tiles to be show, but all non-overlapping. */
-	if (fx1-fx0 > 1 || fy1-fy0 > 1)
+	/* If the pattern uses blending, we never use the tile cache. */
+	if ((fx1-fx0 > 1 || fy1-fy0 > 1) && !pat->uses_blending && !(pr->dev->hints & FZ_NO_TILING))
 #else
 	if (0)
 #endif
@@ -1112,7 +1113,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
  */
 
 static pdf_gstate *
-pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
+pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int flush_clip)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	fz_text *text;
@@ -1123,11 +1124,15 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
 
-	text = pdf_tos_get_text(ctx, &pr->tos);
+	if (flush_clip)
+		text = pdf_tos_get_clip_text(ctx, &pr->tos);
+	else
+		text = pdf_tos_get_text(ctx, &pr->tos);
 	if (!text)
 		return gstate;
 
 	pop_any_pending_mcid_changes(ctx, pr);
+
 	/* If we are going to output text, we need to have flushed any begin layers first. */
 	flush_begin_layer(ctx, pr);
 
@@ -1143,6 +1148,11 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	case 6: dofill = dostroke = doclip = 1; break;
 	case 7: doclip = 1; break;
 	}
+
+	if (flush_clip)
+		dostroke = dofill = 0;
+	else
+		doclip = 0;
 
 	if (pr->super.hidden)
 		dostroke = dofill = 0;
@@ -1268,6 +1278,18 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	return pr->gstate + pr->gtop;
 }
 
+static inline pdf_gstate *
+pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
+{
+	return pdf_flush_text_imp(ctx, pr, 0);
+}
+
+static inline pdf_gstate *
+pdf_flush_clip_text(fz_context *ctx, pdf_run_processor *pr)
+{
+	return pdf_flush_text_imp(ctx, pr, 1);
+}
+
 static int
 guess_bidi_level(int bidiclass, int cur_bidi)
 {
@@ -1346,6 +1368,13 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 	if (fontdesc->font->t3procs && pr->tos.text_mode != 3)
 		pr->tos.text_mode = 0;
 
+	/* Colored Type3 glyphs shall not be rendered with pattern fills. */
+	if (fontdesc->font->t3procs && (fontdesc->font->t3flags[gid] & FZ_DEVFLAG_COLOR))
+	{
+		if (gstate->fill.kind != PDF_MAT_COLOR)
+			render_direct = 1;
+	}
+
 	if (render_direct && pr->tos.text_mode != 3 /* or 7, by type3_hitr */)
 	{
 		/* Render the glyph stream direct here (only happens for
@@ -1358,16 +1387,24 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 		pdf_gstate *fill_gstate = NULL;
 		pdf_gstate *stroke_gstate = NULL;
 		pdf_gsave(ctx, pr);
-		gstate = pr->gstate + pr->gtop;
-		if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.gstate_num >= 0)
-			fill_gstate = pr->gstate + gstate->fill.gstate_num;
-		if (gstate->stroke.kind == PDF_MAT_PATTERN && gstate->stroke.gstate_num >= 0)
-			stroke_gstate = pr->gstate + gstate->stroke.gstate_num;
-		pdf_drop_font(ctx, gstate->text.font);
-		gstate->text.font = NULL; /* don't inherit the current font... */
-		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs, fill_gstate, stroke_gstate);
-		pr->dev->flags = old_flags;
-		pdf_grestore(ctx, pr);
+		fz_try(ctx)
+		{
+			gstate = pr->gstate + pr->gtop;
+			if (gstate->fill.kind == PDF_MAT_PATTERN && gstate->fill.gstate_num >= 0)
+				fill_gstate = pr->gstate + gstate->fill.gstate_num;
+			if (gstate->stroke.kind == PDF_MAT_PATTERN && gstate->stroke.gstate_num >= 0)
+				stroke_gstate = pr->gstate + gstate->stroke.gstate_num;
+			pdf_drop_font(ctx, gstate->text.font);
+			gstate->text.font = NULL; /* don't inherit the current font... */
+			fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, composed, gstate, pr->default_cs, fill_gstate, stroke_gstate);
+		}
+		fz_always(ctx)
+		{
+			pr->dev->flags = old_flags;
+			pdf_grestore(ctx, pr);
+		}
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->tos.text_mode = 3;
 	}
@@ -1400,6 +1437,13 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid, fz_text_language 
 
 	/* add glyph to textobject */
 	fz_show_glyph_aux(ctx, pr->tos.text, fontdesc->font, trm, adv, gid, ucsbuf[0], cid, fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
+
+	/* add glyph to clip accumulator */
+	if (pr->tos.text_mode & 4)
+	{
+		pdf_tos_accumulate_clip(ctx, &pr->tos);
+		fz_show_glyph_aux(ctx, pr->tos.clip_text, fontdesc->font, trm, adv, gid, ucsbuf[0], cid, fontdesc->wmode, pr->bidi, FZ_BIDI_NEUTRAL, lang);
+	}
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
@@ -1996,7 +2040,7 @@ get_lineage(fz_context *ctx, pdf_obj *a, int *lenp)
 	return line;
 }
 
-pdf_obj *
+static pdf_obj *
 find_most_recent_common_ancestor(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 {
 	/* First ascend one lineage. */
@@ -2013,16 +2057,28 @@ find_most_recent_common_ancestor(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 
 	fz_try(ctx)
 	{
+repaired:
 		line_a = get_lineage(ctx, a, &a_len);
 		line_b = get_lineage(ctx, b, &b_len);
 
 		assert(a_len > 0 && b_len > 0);
 
 		/* Once both lineages are know, traverse top-down to find most recent common ancestor. */
-		if (line_a[a_len-1] != line_b[b_len-1])
-			fz_throw(ctx, FZ_ERROR_FORMAT, "No common ancestor in structure tree");
+		if (pdf_objcmp_resolve(ctx, line_a[a_len-1], line_b[b_len-1]) != 0)
+		{
+			pdf_document *doc = pdf_get_bound_document(ctx, a);
 
-		while (a_len > 0 && b_len > 0 && line_a[a_len-1] == line_b[b_len-1])
+			if (!doc->struct_tree_repaired)
+			{
+				fz_free(ctx, line_a);
+				fz_free(ctx, line_b);
+				(void)pdf_check_structure_tree(ctx, doc);
+				goto repaired;
+			}
+			fz_throw(ctx, FZ_ERROR_FORMAT, "No common ancestor in structure tree");
+		}
+
+		while (a_len > 0 && b_len > 0 && pdf_objcmp_resolve(ctx, line_a[a_len-1], line_b[b_len-1]) == 0)
 			a_len--, b_len--;
 
 		common = line_a[a_len];
@@ -2324,17 +2380,15 @@ pop_marked_content(fz_context *ctx, pdf_run_processor *proc, int neat)
 static void
 clear_marked_content(fz_context *ctx, pdf_run_processor *pr)
 {
-	if (pr->marked_content == NULL)
-		return;
+	while (pr->marked_content)
+		pop_marked_content(ctx, pr, 1);
+}
 
-	fz_try(ctx)
-		while (pr->marked_content)
-			pop_marked_content(ctx, pr, 1);
-	fz_always(ctx)
-		while (pr->marked_content)
-			pop_marked_content(ctx, pr, 0);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+static void
+drop_marked_content(fz_context *ctx, pdf_run_processor *pr)
+{
+	while (pr->marked_content)
+		pop_marked_content(ctx, pr, 0);
 }
 
 static void
@@ -2507,10 +2561,11 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *pr, pdf_obj *xobj, pdf_obj *
 		{
 			fz_set_default_colorspaces(ctx, pr->dev, save_default_cs);
 		}
+		clear_marked_content(ctx, pr);
 	}
 	fz_always(ctx)
 	{
-		clear_marked_content(ctx, pr);
+		drop_marked_content(ctx, pr);
 		pr->marked_content = save_marked_content;
 		pr->default_cs = save_default_cs;
 		fz_drop_default_colorspaces(ctx, xobj_default_cs);
@@ -2725,6 +2780,16 @@ static void pdf_run_cm(fz_context *ctx, pdf_processor *proc, float a, float b, f
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
 	fz_matrix m;
 
+	if (pr->tos.clip_text)
+	{
+		// FIXME: We can't handle changing CTM while accumulating text clips!
+		// To do so we would need to retroactively change the TRM to apply the CTM change
+		// to glyphs in the current clip_text object. Fortunately we have never seen
+		// any files that would require this to happen.
+		fz_warn(ctx, "ignoring CTM change for accumulated glyph clip paths");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "CTM CHANGE IN CLIP TEXT!!!");
+	}
+
 	m.a = a;
 	m.b = b;
 	m.c = c;
@@ -2871,6 +2936,7 @@ static void pdf_run_ET(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_flush_text(ctx, pr);
+	pdf_flush_clip_text(ctx, pr);
 }
 
 /* text state */
@@ -3258,6 +3324,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 
 	fz_drop_path(ctx, pr->path);
 	fz_drop_text(ctx, pr->tos.text);
+	fz_drop_text(ctx, pr->tos.clip_text);
 
 	fz_drop_default_colorspaces(ctx, pr->default_cs);
 
@@ -3271,8 +3338,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 		fz_free(ctx, stk);
 	}
 
-	while (pr->marked_content)
-		pop_marked_content(ctx, pr, 0);
+	drop_marked_content(ctx, pr);
 
 	pdf_drop_obj(ctx, pr->mcid_sent);
 

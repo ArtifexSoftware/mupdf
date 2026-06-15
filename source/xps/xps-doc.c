@@ -405,6 +405,8 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 	char *width_att;
 	char *height_att;
 
+	fz_var(xml);
+
 	part = xps_read_part(ctx, doc, page->name);
 	fz_try(ctx)
 	{

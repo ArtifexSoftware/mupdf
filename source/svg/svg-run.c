@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -84,13 +84,13 @@ static void svg_pop_use(fz_context *ctx, svg_document *doc)
 		doc->cycle = doc->cycle->up;
 }
 
-void svg_begin_state(fz_context *ctx, svg_state *child, const svg_state *parent)
+static void svg_begin_state(fz_context *ctx, svg_state *child, const svg_state *parent)
 {
 	memcpy(child, parent, sizeof(svg_state));
 	child->stroke = fz_clone_stroke_state(ctx, parent->stroke);
 }
 
-void svg_end_state(fz_context *ctx, svg_state *child)
+static void svg_end_state(fz_context *ctx, svg_state *child)
 {
 	fz_drop_stroke_state(ctx, child->stroke);
 }
@@ -401,6 +401,9 @@ svg_parse_polygon_imp(fz_context *ctx, svg_document *doc, fz_xml *node, int docl
 				nargs = 0;
 			}
 		}
+
+		if (doclose)
+			fz_closepath(ctx, path);
 	}
 	fz_catch(ctx)
 	{

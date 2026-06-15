@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -30,6 +30,7 @@
 static char *
 xps_parse_float_array(fz_context *ctx, xps_document *doc, char *s, int num, int *obtained, float *x)
 {
+	char *s0;
 	int k = 0;
 
 	if (s == NULL || *s == 0)
@@ -43,7 +44,14 @@ xps_parse_float_array(fz_context *ctx, xps_document *doc, char *s, int num, int 
 	{
 		while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
 			s++;
+		s0 = s;
 		x[k] = fz_strtof(s, &s);
+		if (s == s0)
+		{
+			if (obtained)
+				*obtained = k;
+			return NULL;
+		}
 		while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
 			s++;
 		if (*s == ',')
@@ -316,63 +324,63 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 			switch (cmd)
 			{
 			case 'F':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				*fill_rule = atoi(args[i]);
 				i ++;
 				break;
 
 			case 'M':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				fz_moveto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
 				i += 2;
 				break;
 			case 'm':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_moveto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
 				i += 2;
 				break;
 
 			case 'L':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				fz_lineto(ctx, path, fz_atof(args[i]), fz_atof(args[i+1]));
 				i += 2;
 				break;
 			case 'l':
-				if (i + 1 >= n) break;
+				if (i + 1 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y + fz_atof(args[i+1]));
 				i += 2;
 				break;
 
 			case 'H':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, fz_atof(args[i]), pt.y);
 				i += 1;
 				break;
 			case 'h':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x + fz_atof(args[i]), pt.y);
 				i += 1;
 				break;
 
 			case 'V':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x, fz_atof(args[i]));
 				i += 1;
 				break;
 			case 'v':
-				if (i >= n) break;
+				if (i >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				fz_lineto(ctx, path, pt.x, pt.y + fz_atof(args[i]));
 				i += 1;
 				break;
 
 			case 'C':
-				if (i + 5 >= n) break;
+				if (i + 5 >= n) goto missing_args;
 				x1 = fz_atof(args[i+0]);
 				y1 = fz_atof(args[i+1]);
 				x2 = fz_atof(args[i+2]);
@@ -387,7 +395,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'c':
-				if (i + 5 >= n) break;
+				if (i + 5 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]) + pt.x;
 				y1 = fz_atof(args[i+1]) + pt.y;
@@ -403,7 +411,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'S':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]);
 				y1 = fz_atof(args[i+1]);
@@ -417,7 +425,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 's':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]) + pt.x;
 				y1 = fz_atof(args[i+1]) + pt.y;
@@ -431,7 +439,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'Q':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				x1 = fz_atof(args[i+0]);
 				y1 = fz_atof(args[i+1]);
 				x2 = fz_atof(args[i+2]);
@@ -440,7 +448,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				i += 4;
 				break;
 			case 'q':
-				if (i + 3 >= n) break;
+				if (i + 3 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				x1 = fz_atof(args[i+0]) + pt.x;
 				y1 = fz_atof(args[i+1]) + pt.y;
@@ -451,7 +459,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				break;
 
 			case 'A':
-				if (i + 6 >= n) break;
+				if (i + 6 >= n) goto missing_args;
 				xps_draw_arc(ctx, doc, path,
 					fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
 					atoi(args[i+3]), atoi(args[i+4]),
@@ -459,7 +467,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 				i += 7;
 				break;
 			case 'a':
-				if (i + 6 >= n) break;
+				if (i + 6 >= n) goto missing_args;
 				pt = fz_currentpoint(ctx, path);
 				xps_draw_arc(ctx, doc, path,
 					fz_atof(args[i+0]), fz_atof(args[i+1]), fz_atof(args[i+2]),
@@ -471,6 +479,12 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 			case 'Z':
 			case 'z':
 				fz_closepath(ctx, path);
+				break;
+
+			missing_args:
+				fz_warn(ctx, "ignoring command with too few arguments '%c'", cmd);
+				if (old == cmd) /* avoid infinite loop */
+					i++;
 				break;
 
 			default:
@@ -575,6 +589,11 @@ xps_parse_poly_quadratic_bezier_segment(fz_context *ctx, xps_document *doc, fz_p
 		while (*s == ' ') s++;
 		x[n] = y[n] = 0;
 		s = xps_parse_point(ctx, doc, s, &x[n], &y[n]);
+		if (!s)
+		{
+			fz_warn(ctx, "PolyQuadraticBezierSegment element has malformed points");
+			return;
+		}
 		n ++;
 		if (n == 2)
 		{
@@ -624,6 +643,11 @@ xps_parse_poly_bezier_segment(fz_context *ctx, xps_document *doc, fz_path *path,
 		while (*s == ' ') s++;
 		x[n] = y[n] = 0;
 		s = xps_parse_point(ctx, doc, s, &x[n], &y[n]);
+		if (!s)
+		{
+			fz_warn(ctx, "PolyBezierSegment element has malformed points");
+			return;
+		}
 		n ++;
 		if (n == 3)
 		{
@@ -663,6 +687,11 @@ xps_parse_poly_line_segment(fz_context *ctx, xps_document *doc, fz_path *path, f
 		while (*s == ' ') s++;
 		x = y = 0;
 		s = xps_parse_point(ctx, doc, s, &x, &y);
+		if (!s)
+		{
+			fz_warn(ctx, "PolyLineSegment element has malformed points");
+			return;
+		}
 		if (stroking && !is_stroked)
 			fz_moveto(ctx, path, x, y);
 		else
@@ -869,6 +898,9 @@ xps_parse_path(fz_context *ctx, xps_document *doc, fz_matrix ctm, char *base_uri
 	fz_rect area;
 	int fill_rule;
 	int dash_len = 0;
+
+	fz_var(stroke_path);
+	fz_var(path);
 
 	/*
 	 * Extract attributes and extended attributes.

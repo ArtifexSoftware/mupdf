@@ -73,6 +73,7 @@ static int usage(void)
 		"\t--{color,gray,bitonal}-{,lossy-,lossless-}image-subsample-method -\n\t\taverage, bicubic\n"
 		"\t--{color,gray,bitonal}-{,lossy-,lossless-}image-subsample-dpi -[,-]\n\t\tDPI at which to subsample [+ target dpi]\n"
 		"\t--{color,gray,bitonal}-{,lossy-,lossless-}image-recompress-method -[:quality]\n\t\tnever, same, lossless, jpeg, j2k, fax, jbig2\n"
+		"\t--recompress-images-when -\n\t\tsmaller (default), always\n"
 		"\t--structure=keep|drop\tKeep or drop the structure tree\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
@@ -126,6 +127,8 @@ int pdfclean_main(int argc, char **argv)
 		{ "bitonal-image-recompress-method=never|same|lossless|jpeg:|j2k:|fax|jbig2", &opts.image.bitonal_image_recompress_method, (void *)21 },
 
 		{ "structure=drop|keep", &structure, (void *)22 },
+
+		{ "recompress-images-when=smaller|always", &opts.image.recompress_when, (void *)23 },
 
 		{ NULL, NULL, NULL }
 	};
@@ -208,13 +211,13 @@ int pdfclean_main(int argc, char **argv)
 				opts.image.gray_lossless_image_subsample_method = opts.image.gray_lossy_image_subsample_method;
 				break;
 			case 13: /* gray-lossy-image-subsample-dpi */
-				opts.image.gray_lossy_image_subsample_to = (fz_optarg ? fz_atoi(fz_optarg) : opts.image.gray_lossless_image_subsample_threshold);
+				opts.image.gray_lossy_image_subsample_to = (fz_optarg ? fz_atoi(fz_optarg) : opts.image.gray_lossy_image_subsample_threshold);
 				break;
 			case 14: /* gray-lossless-image-subsample-dpi */
 				opts.image.gray_lossless_image_subsample_to = (fz_optarg ? fz_atoi(fz_optarg) : opts.image.gray_lossless_image_subsample_threshold);
 				break;
 			case 15: /* gray-image-subsample-dpi */
-				opts.image.gray_lossless_image_subsample_to = (fz_optarg ? fz_atoi(fz_optarg) : opts.image.gray_lossy_image_subsample_threshold);
+				opts.image.gray_lossless_image_subsample_to = (fz_optarg ? fz_atoi(fz_optarg) : opts.image.gray_lossless_image_subsample_threshold);
 				opts.image.gray_lossy_image_subsample_threshold = opts.image.gray_lossless_image_subsample_threshold;
 				opts.image.gray_lossy_image_subsample_to = opts.image.gray_lossless_image_subsample_to;
 				break;
@@ -242,6 +245,8 @@ int pdfclean_main(int argc, char **argv)
 				break;
 			case 22: /* structure */
 				opts.structure = structure; /* Allow for int/enum size mismatch. */
+				break;
+			case 23: /* recompress-when */
 				break;
 			}
 			break;

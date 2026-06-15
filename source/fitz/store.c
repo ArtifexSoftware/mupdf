@@ -91,13 +91,16 @@ fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 	/* Explicitly drop const to allow us to use const
 	 * sanely throughout the code. */
 	fz_storable *s = (fz_storable *)sc;
-
-	return fz_keep_imp(ctx, s, &s->refs);
+	if (s)
+		return fz_keep_imp(ctx, s, &s->refs);
+	return NULL;
 }
 
 void *fz_keep_key_storable(fz_context *ctx, const fz_key_storable *sc)
 {
-	return fz_keep_storable(ctx, &sc->storable);
+	if (sc)
+		return fz_keep_storable(ctx, &sc->storable);
+	return NULL;
 }
 
 /*

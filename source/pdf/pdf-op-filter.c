@@ -1531,7 +1531,11 @@ end_segment(fz_context *ctx, segmenter_data_t *sd)
 	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE) ? sd->sstate : NULL;
 	r = fz_bound_path(ctx, sd->segment, st, sd->ctm);
 
-	if (sd->p->options->culler && sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
+	if (!fz_is_valid_rect(r))
+	{
+		/* This segment can be skipped */
+	}
+	else if (sd->p->options->culler && sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
 	{
 		/* This segment can be skipped */
 	}
@@ -2848,6 +2852,9 @@ pdf_drop_sanitize_processor(fz_context *ctx, pdf_processor *proc)
 		pop_tag(ctx, p, &p->pending_tags);
 	while (p->current_tags)
 		pop_tag(ctx, p, &p->current_tags);
+
+	fz_drop_text(ctx, p->tos.text);
+	fz_drop_text(ctx, p->tos.clip_text);
 
 	fz_drop_path(ctx, p->path);
 	pdf_drop_obj(ctx, p->structarray);
