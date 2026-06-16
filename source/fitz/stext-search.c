@@ -1630,55 +1630,8 @@ static fz_stext_position
 lookup_stext_position_end(fz_context *ctx, fz_search *search, const char *spun)
 {
 	fz_stext_position pos = lookup_stext_position(ctx, search, spun);
-	while (1)
-	{
-		fz_stext_position next = pos;
-
-		/* If pos.ch && pos.ch->next, we can easily step to the next char. */
-		if (next.ch && next.ch->next)
-		{
-			next.ch = next.ch->next;
-		}
-		/* If not either we're on a synthetic space (so no fz_stext_char to point back to), or
-		 * we've just walked off the end of a line). Either way, we need to locate the next bit
-		 * of text and carry on from there.
-		 *
-		 * If we're lucky, we can just step to the next line.
-		 */
-		else if (next.line && next.line->next)
-		{
-			next.line = next.line->next;
-			next.ch = next.line->first_char;
-		}
-		/* Otherwise we need to step to the next text block. */
-		else
-		{
-			fz_stext_page_block_iterator iter;
-			iter.top = NULL;
-			iter.page = pos.page;
-			iter.parent = pos.parent;
-			iter.block = pos.block;
-			do
-			{
-				iter = fz_stext_page_block_iterator_next_dfs(iter);
-				if (fz_stext_page_block_iterator_eod_dfs(iter))
-				{
-					/* We've hit the end of the stext. */
-					return pos;
-				}
-			}
-			while (iter.block->type != FZ_STEXT_BLOCK_TEXT);
-			next.parent = iter.parent;
-			next.block = iter.block;
-			next.line = iter.block->u.t.first_line;
-			next.ch = next.line ? next.line->first_char : NULL;
-		}
-		if (next.ch == NULL)
-			continue;
-		if (ucdn_get_general_category(next.ch->c) != UCDN_GENERAL_CATEGORY_MN)
-			break;
-		pos = next;
-	}
+	while (pos.ch->next && ucdn_get_general_category(pos.ch->next->c) == UCDN_GENERAL_CATEGORY_MN)
+		pos.ch = pos.ch->next;
 	return pos;
 }
 
