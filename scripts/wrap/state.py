@@ -234,9 +234,9 @@ class Cpu:
             self.windows_suffix = '64'
         elif name == 'arm64':
             self.bits = 64
-            self.windows_subdir = 'ARM64/'
-            self.windows_name = 'ARM64'
-            self.windows_config = 'ARM64'
+            self.windows_subdir = 'arm64/'
+            self.windows_name = 'arm64'
+            self.windows_config = 'arm64'
             self.windows_suffix = '64'
         else:
             assert 0, f'Unrecognised cpu name: {name}'

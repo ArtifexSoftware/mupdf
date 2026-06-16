@@ -1907,7 +1907,7 @@ def build( build_dirs, swig_command, args, vs_upgrade, make_command):
 
                     libdir = f'{build_dirs.dir_mupdf}/platform/win32/'
                     if build_dirs.cpu.name == 'arm64':
-                        libdir += 'ARM64/'
+                        libdir += 'arm64/'
                     elif build_dirs.cpu.bits == 64:
                         libdir += 'x64/'
                     libdir += 'Debug/' if debug else 'Memento/' if memento else 'Release/'
