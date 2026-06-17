@@ -1630,7 +1630,7 @@ static fz_stext_position
 lookup_stext_position_end(fz_context *ctx, fz_search *search, const char *spun)
 {
 	fz_stext_position pos = lookup_stext_position(ctx, search, spun);
-	while (pos.ch->next && ucdn_get_general_category(pos.ch->next->c) == UCDN_GENERAL_CATEGORY_MN)
+	while (pos.ch && pos.ch->next && ucdn_get_general_category(pos.ch->next->c) == UCDN_GENERAL_CATEGORY_MN)
 		pos.ch = pos.ch->next;
 	return pos;
 }
@@ -1849,6 +1849,14 @@ restart:
 		/* Remember the location of the match. */
 		search->match.begin = lookup_stext_position(ctx, search, spun_begin);
 		search->match.end = lookup_stext_position_end(ctx, search, spun_end);
+
+		/* Skip matches that consist of synthetic characters */
+		// TODO: We could create a fake fz_stext_char to return the synthetic space here.
+		// However, there's not much utility to be had from being able
+		// to search for single space characters that stand in for line
+		// and paragraph breaks.
+		if (!search->match.begin.ch || !search->match.end.ch)
+			goto restart;
 
 		search->match.begin_seq = lookup_stext_seq(search, &search->match.begin);
 		search->match.end_seq = lookup_stext_seq(search, &search->match.end);
