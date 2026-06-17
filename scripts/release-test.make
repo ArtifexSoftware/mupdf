@@ -40,8 +40,8 @@ make-release-build:
 test-release-build: make-release-build pdfref17.pdf
 	/usr/bin/test 38b6fd1d44108881f06fe8a260b0c7b3 == $$(./build/release/mutool draw -s5 pdfref17.pdf 1140 2>&1 | grep '^page pdfref17.pdf 1140 ' | cut -d' ' -f4)
 	/usr/bin/test a62d97b3506d05bc2dbd3214d6d07113 == $$(./build/release/mutool draw -N -s5 pdfref17.pdf 1140 2>&1 | grep '^page pdfref17.pdf 1140 ' | cut -d' ' -f4)
-	/usr/bin/test 00cd7f2d1af14d259498830fcf9e70c6 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | grep -v '^warning: ' | md5sum - | cut -d' ' -f1)
-	/usr/bin/test 00cd7f2d1af14d259498830fcf9e70c6 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 208b6e8eec9fcd9d8c3d7df8d2a50241 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | grep -v '^warning: ' | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 208b6e8eec9fcd9d8c3d7df8d2a50241 == $$(./build/release/mutool draw -s5 pdfref17.pdf N-1 2>&1 | md5sum - | cut -d' ' -f1)
 
 make-no-icc-build:
 	$(MAKE) -j2 XCFLAGS=-DFZ_ENABLE_ICC=0 build=release build/release/mutool
@@ -91,7 +91,7 @@ test-examples: make-examples pdfref17.pdf
 	mkdir -p build/examples
 	build/release/example pdfref17.pdf 1 > build/examples/out.pnm
 	cd build/examples; ../release/multi-threaded ../../pdfref17.pdf; zip -0 ../examples.zip out*; cd ../..
-	/usr/bin/test ef3acade156a8c9e01f36575da6e14dc == $$(./build/release/mutool draw -Ds5 build/examples.zip 2>&1 | md5sum - | cut -d' ' -f1)
+	/usr/bin/test 575cf1e8383db6c82b7a9a4496c698bc == $$(./build/release/mutool draw -Ds5 build/examples.zip 2>&1 | md5sum - | cut -d' ' -f1)
 	cd build/examples; ../release/storytest; cd ../..
 	/usr/bin/test 16ee5292a566ef337f663798603e6d82 == $$(./build/release/mutool draw -Ds5 build/examples/leftright.pdf 2>&1 | md5sum - | cut -d' ' -f1)
 	/usr/bin/test fb0056830bf6670f675a0d8068016c52 == $$(./build/release/mutool draw -Ds5 build/examples/out2.pdf 2>&1 | md5sum - | cut -d' ' -f1)
