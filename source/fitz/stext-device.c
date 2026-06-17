@@ -116,6 +116,8 @@ typedef struct
 	fz_point from;
 	fz_point to;
 	float thickness;
+	fz_rect rect;
+	int argb;
 } rect_details;
 
 typedef struct
@@ -1945,15 +1947,20 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 				float dx, dy, dot;
 				fz_rect ch_box;
 
-				/* If the thickness is more than a 1/4 of the size, it's a highlight, not a
-				 * line! */
-				if (ch->size < thickness*4)
-					continue;
-
 				ch_box = expanded_rect_from_quad(ch->quad, line->dir, ch->origin, ch->size);
 
 				if (!line_crosses_rect(from, to, ch_box))
 					continue;
+
+				/* If the thickness is more than a 1/4 of the size, it's a highlight, not a
+				 * line! */
+				if (ch->size < thickness*4)
+				{
+					/* Distinguish from a background fill */
+					if (thickness <= ch->size*1.5f)
+						ch->flags |= FZ_STEXT_HIGHLIGHT;
+					continue;
+				}
 
 				/* Is this a strikeout or an underline? */
 
@@ -2228,7 +2235,7 @@ is_rect_closepath(fz_context *ctx, void *arg)
 }
 
 static int
-is_path_rect(fz_context *ctx, const fz_path *path, fz_point *from, fz_point *to, float *thickness, fz_matrix ctm)
+is_path_rect(fz_context *ctx, const fz_path *path, fz_point *from, fz_point *to, float *thickness, fz_matrix ctm, fz_rect *r)
 {
 	float d01, d01x, d01y, d03, d03x, d03y, d32x, d32y;
 	is_rect_data rd = { 0 };
@@ -2299,19 +2306,42 @@ is_path_rect(fz_context *ctx, const fz_path *path, fz_point *from, fz_point *to,
 	to->x = (rd.corners[1].x + rd.corners[2].x)/2;
 	to->y = (rd.corners[1].y + rd.corners[2].y)/2;
 
+	*r = fz_empty_rect;
+	if ((rd.corners[0].x == rd.corners[3].x && rd.corners[1].x == rd.corners[2].x &&
+		rd.corners[0].y == rd.corners[1].y && rd.corners[2].y == rd.corners[3].y) ||
+		(rd.corners[0].x == rd.corners[1].x && rd.corners[3].x == rd.corners[2].x &&
+		rd.corners[0].y == rd.corners[3].y && rd.corners[2].y == rd.corners[1].y))
+	{
+		*r = fz_include_point_in_rect(*r, rd.corners[0]);
+		*r = fz_include_point_in_rect(*r, rd.corners[2]);
+	}
+
 	return 1;
 }
 
 static void
-check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page, const fz_path *path, fz_matrix ctm)
+check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page, const fz_path *path, fz_matrix ctm, int argb)
 {
 	float thickness;
 	fz_point from, to;
+	int i, n = tdev->rect_len;
+	fz_rect r;
 
 	/* Is this path a thin rectangle (possibly rotated)? If so, then we need to
 	 * consider it as being a strikeout or underline. */
-	if (!is_path_rect(ctx, path, &from, &to, &thickness, ctm))
+	if (!is_path_rect(ctx, path, &from, &to, &thickness, ctm, &r))
 		return;
+
+	/* If we've already had a rectangle of the same colour that covers this region
+	 * then that was probably a cell background color, and this is probably a
+	 * text string background fill. This is not a highlight, or underline or
+	 * strikeout, so don't keep it. */
+	for (i = 0; i < n; i++)
+	{
+		rect_details *rct = &tdev->rects[i];
+		if (rct->argb == argb && fz_contains_rect(rct->rect, r))
+			return;
+	}
 
 	/* Add to the list of rects in the device. */
 	if (tdev->rect_len == tdev->rect_max)
@@ -2326,6 +2356,8 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 	tdev->rects[tdev->rect_len].from = from;
 	tdev->rects[tdev->rect_len].to = to;
 	tdev->rects[tdev->rect_len].thickness = thickness;
+	tdev->rects[tdev->rect_len].rect = r;
+	tdev->rects[tdev->rect_len].argb = argb;
 	tdev->rect_len++;
 }
 
@@ -2705,7 +2737,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_STYLES)
-		check_for_strikeout(ctx, tdev, page, path, ctm);
+		check_for_strikeout(ctx, tdev, page, path, ctm, hexrgba_from_color(ctx, cs, color, alpha));
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
 		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, NULL, 0);
@@ -2725,7 +2757,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
 	if (tdev->flags & FZ_STEXT_COLLECT_STYLES)
-		check_for_strikeout(ctx, tdev, page, path, ctm);
+		check_for_strikeout(ctx, tdev, page, path, ctm, hexrgba_from_color(ctx, cs, color, alpha));
 
 	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
 		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, ss, exp);
