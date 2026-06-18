@@ -6494,7 +6494,7 @@ stext_walk(js_State *J, fz_stext_block *block)
 				js_pushboolean(J, block->u.v.flags & FZ_STEXT_VECTOR_CONTINUES);
 				js_setproperty(J, -2, "continues");
 				ffi_pushrgb(J, block->u.v.argb);
-				js_call(J, 4);
+				js_call(J, 3);
 				js_pop(J, 1);
 			}
 			break;
