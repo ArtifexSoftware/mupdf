@@ -64,6 +64,7 @@ public class StructuredText
 	public static final int CHAR_FLAGS_UNICODE_IS_CID = 128;
 	public static final int CHAR_FLAGS_UNICODE_IS_GID = 256;
 	public static final int CHAR_FLAGS_SYNTHETIC_LARGE = 512;
+	public static final int CHAR_FLAGS_HIGHLIGHT = 1024;
 
 	public static final int TEXT_JUSTIFY_UNKNOWN = 0;
 	public static final int TEXT_JUSTIFY_LEFT = 1;
