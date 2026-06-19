@@ -36,9 +36,9 @@ run-release-test:
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make test-memento-build
 	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make make-one-disabled-defines
+	$(MAKE) -f scripts/release-test.make make-one-disabled-config
 	$(MAKE) nuke
-	$(MAKE) -f scripts/release-test.make make-one-enabled-defines
+	$(MAKE) -f scripts/release-test.make make-one-enabled-config
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make make-all-disabled-defines
 	$(MAKE) nuke
