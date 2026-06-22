@@ -69,7 +69,7 @@ class WindowsVS:
 
             # Find `directory`.
             #
-            pattern = f'C:\\Program Files*\\Microsoft Visual Studio\\{year if year else "2*"}\\{grade if grade else "*"}'
+            pattern = f'C:\\Program Files*\\Microsoft Visual Studio\\{year if year else "[12]*"}\\{grade if grade else "*"}'
             directories = glob.glob( pattern)
             if verbose:
                 _log( f'Matches for: {pattern=}')
