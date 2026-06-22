@@ -33,11 +33,15 @@ public final class AndroidImage extends Image
 		Context.init();
 	}
 
-	private native long newAndroidImageFromBitmap(Bitmap bitmap, long mask);
+	private static native long newAndroidImageFromBitmap(Bitmap bitmap, long mask);
+
+	public AndroidImage(Bitmap bitmap)
+	{
+		super(newAndroidImageFromBitmap(bitmap, 0));
+	}
 
 	public AndroidImage(Bitmap bitmap, AndroidImage mask)
 	{
-		super(0);
-		pointer = newAndroidImageFromBitmap(bitmap, mask.pointer);
+		super(newAndroidImageFromBitmap(bitmap, mask.pointer));
 	}
 }
