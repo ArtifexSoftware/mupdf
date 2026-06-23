@@ -815,18 +815,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	/* We use glyph == -2 to indicate the first no-glyph char from an actualtext. The position
 	 * is valid though, so we want to advance the pen for these. */
-	if (cur_line && glyph == -1)
-	{
-		/* Don't advance pen or break lines for no-glyph characters in a cluster */
-		add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &dev->pen, &dev->pen, bidi, dev->color, 0, flags, dev->flags);
-		dev->lastbidi = bidi;
-		dev->lastchar = c;
-		dev->lastline = cur_line;
-		return;
-	}
 
-	/* Don't move pen for marking non-spacing characters */
-	if (ucdn_get_general_category(c) == UCDN_GENERAL_CATEGORY_MN)
+	/* Don't advance pen or break lines for either no-glyph or marking non-spacing characters in a cluster */
+	if (cur_line && (glyph == -1 || ucdn_get_general_category(c) == UCDN_GENERAL_CATEGORY_MN))
 	{
 		add_char_to_line(ctx, page, cur_line, trm, font, size, c, (dev->flags & FZ_STEXT_ACCURATE_BBOXES) ? glyph : NON_ACCURATE_GLYPH, &dev->pen, &dev->pen, bidi, dev->color, 0, flags, dev->flags);
 		dev->lastbidi = bidi;
