@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -40,6 +40,7 @@ static int do_tight = 0;
 static int do_repair = 0;
 static int do_label = 0;
 static int showcolumn;
+static int external_access = 0;
 
 static int usage(void)
 {
@@ -52,6 +53,7 @@ static int usage(void)
 		"\t-g\tprint only object, one line per object, suitable for grep\n"
 		"\t-r\tforce repair before showing any objects\n"
 		"\t-L\tshow object labels\n"
+		"\t--external-access\tallow access to directory containing file for external resources\n"
 		"\tpath: path to an object, starting with either an object number,\n"
 		"\t\t'pages', 'trailer', or a property in the trailer;\n"
 		"\t\tpath elements separated by '.' or '/'. Path elements must be\n"
@@ -639,6 +641,12 @@ int pdfshow_main(int argc, char **argv)
 	char *output = NULL;
 	int c;
 	int errored = 0;
+	fz_archive *dir = NULL;
+	const fz_getopt_long_options longopts[] =
+	{
+		{ "external-access", &external_access, (void *)1 },
+		{ NULL, NULL, NULL }
+	};
 
 	fz_context *ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 	if (!ctx)
@@ -647,10 +655,28 @@ int pdfshow_main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = fz_getopt(argc, argv, "p:o:begrL")) != -1)
+#define SWITCH(x) switch ((intptr_t)(x))
+#define CASE(x) case ((intptr_t)(x))
+
+	while ((c = fz_getopt_long(argc, argv, "p:o:begrL", longopts)) != -1)
 	{
 		switch (c)
 		{
+		case 0:
+		{
+			SWITCH(fz_optlong->opaque)
+			{
+			// Any future long options go here.
+			default:
+			case 0:
+				assert(!"Never happens");
+				break;
+			case 1:
+				external_access = 1;
+				break;
+			break;
+			}
+		}
 		case 'p': password = fz_optarg; break;
 		case 'o': output = fz_optpath(fz_optarg); break;
 		case 'b': showbinary = 1; break;
@@ -676,7 +702,15 @@ int pdfshow_main(int argc, char **argv)
 	fz_var(labels);
 	fz_try(ctx)
 	{
-		doc = pdf_open_document(ctx, filename);
+		if (external_access)
+		{
+			char dirname[PATH_MAX];
+			fz_dirname(dirname, filename, sizeof dirname);
+			dir = fz_open_directory(ctx, dirname);
+		}
+
+		doc = pdf_open_document_with_dir(ctx, filename, dir);
+
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_warn(ctx, "cannot authenticate password: %s", filename);
@@ -711,6 +745,7 @@ int pdfshow_main(int argc, char **argv)
 		fz_drop_output(ctx, out);
 		pdf_drop_object_labels(ctx, labels);
 		pdf_drop_document(ctx, doc);
+		fz_drop_archive(ctx, dir);
 	}
 	fz_catch(ctx)
 	{

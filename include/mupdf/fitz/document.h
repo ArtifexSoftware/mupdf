@@ -514,6 +514,14 @@ fz_document *fz_open_document(fz_context *ctx, const char *filename);
 fz_document *fz_open_accelerated_document(fz_context *ctx, const char *filename, const char *accel);
 
 /**
+	Like fz_open_accelerated_document, but also takes an
+	archive in which external resources may be looked for.
+
+	A reference will be taken to the archive.
+*/
+fz_document *fz_open_accelerated_document_with_dir(fz_context *ctx, const char *filename, const char *accel, fz_archive *dir);
+
+/**
 	Open a document using the specified stream object rather than
 	opening a file on disk.
 

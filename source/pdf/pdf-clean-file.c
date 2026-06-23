@@ -550,7 +550,7 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 
 	fz_try(ctx)
 	{
-		pdf = pdf_open_document(ctx, infile);
+		pdf = pdf_open_document_with_dir(ctx, infile, opts->dir);
 		if (pdf_needs_password(ctx, pdf))
 			if (!pdf_authenticate_password(ctx, pdf, password))
 				fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot authenticate password: %s", infile);

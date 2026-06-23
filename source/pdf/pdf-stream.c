@@ -61,6 +61,13 @@ pdf_is_stream(fz_context *ctx, pdf_obj *ref)
 	return 0;
 }
 
+int pdf_is_stream_external(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_obj *f = pdf_dict_get(ctx, obj, PDF_NAME(F));
+
+	return (pdf_is_string(ctx, f) || pdf_is_filespec(ctx, f));
+}
+
 static int64_t
 pdf_stream_length(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
@@ -384,13 +391,37 @@ static fz_stream *
 pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *file_stm, pdf_obj *stmobj, int num, int64_t offset, fz_compression_params *imparams, int might_be_image)
 {
 	pdf_obj *filters = pdf_dict_geta(ctx, stmobj, PDF_NAME(Filter), PDF_NAME(F));
-	pdf_obj *params = pdf_dict_geta(ctx, stmobj, PDF_NAME(DecodeParms), PDF_NAME(DP));
 	int orig_num, orig_gen;
 	fz_stream *rstm, *fstm;
+	const char *filename = NULL;
+	pdf_obj *parm_name = PDF_NAME(DecodeParms);
 
-	rstm = pdf_open_raw_filter(ctx, file_stm, doc, stmobj, num, &orig_num, &orig_gen, offset);
+	if (pdf_is_string(ctx, filters))
+		filename = pdf_to_text_string(ctx, filters);
+	else if (pdf_is_filespec(ctx, filters))
+	{
+		pdf_filespec_params fs;
+		pdf_get_filespec_params(ctx, filters, &fs);
+		filename = fs.filename;
+	}
+
+	if (filename)
+	{
+		if (doc->archive == NULL)
+		{
+			fz_warn(ctx, "Cannot open external file resource without an archive");
+			return NULL;
+		}
+		filters = pdf_dict_get(ctx, stmobj, PDF_NAME(FFilter));
+		parm_name = PDF_NAME(FDecodeParms);
+		rstm = fz_open_archive_entry(ctx, doc->archive, filename);
+	}
+	else
+		rstm = pdf_open_raw_filter(ctx, file_stm, doc, stmobj, num, &orig_num, &orig_gen, offset);
+
 	fz_try(ctx)
 	{
+		pdf_obj *params = pdf_dict_geta(ctx, stmobj, parm_name, PDF_NAME(DP));
 		if (pdf_is_name(ctx, filters))
 			fstm = build_filter(ctx, rstm, doc, filters, params, orig_num, orig_gen, imparams, might_be_image);
 		else if (pdf_array_len(ctx, filters) > 0)
@@ -500,6 +531,70 @@ pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj
 	if (stm_ofs == 0)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "object is not a stream");
 	return pdf_open_filter(ctx, doc, doc->file, dict, num, stm_ofs, NULL, 1);
+}
+
+void
+pdf_internalize_external_stream(fz_context *ctx, pdf_document *doc, int num)
+{
+	fz_stream *stm;
+	pdf_obj *dict, *f;
+	fz_buffer *buf = NULL;
+	pdf_xref_entry *x = NULL;
+	const char *filename = NULL;
+
+	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Object number ouf of range");
+
+	x = pdf_get_xref_entry_no_null(ctx, doc, num);
+	if (x->stm_buf)
+		return;
+
+	dict = pdf_load_object(ctx, doc, num);
+
+	fz_try(ctx)
+	{
+		f = pdf_dict_get(ctx, dict, PDF_NAME(F));
+		if (pdf_is_string(ctx, f))
+			filename = pdf_to_text_string(ctx, f);
+		else if (pdf_is_filespec(ctx, f))
+		{
+			pdf_filespec_params fs;
+			pdf_get_filespec_params(ctx, f, &fs);
+			filename = fs.filename;
+		}
+		else
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Not an external stream");
+
+		if (doc->archive == NULL)
+		{
+			fz_warn(ctx, "Cannot open external file resource without an archive");
+			break;
+		}
+		stm = fz_open_archive_entry(ctx, doc->archive, filename);
+
+		x->stm_buf = buf = fz_read_all(ctx, stm, 1024);
+
+		f = pdf_dict_get(ctx, dict, PDF_NAME(FFilter));
+		if (f == NULL)
+			pdf_dict_del(ctx, dict, PDF_NAME(Filter));
+		else
+			pdf_dict_put(ctx, dict, PDF_NAME(Filter), f);
+		pdf_dict_del(ctx, dict, PDF_NAME(FFilter));
+		f = pdf_dict_get(ctx, dict, PDF_NAME(FDecodeParms));
+		if (f == NULL)
+			pdf_dict_del(ctx, dict, PDF_NAME(DecodeParms));
+		else
+			pdf_dict_put(ctx, dict, PDF_NAME(DecodeParms), f);
+		pdf_dict_del(ctx, dict, PDF_NAME(FDecodeParms));
+		pdf_dict_del(ctx, dict, PDF_NAME(F));
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+		pdf_drop_obj(ctx, dict);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 fz_buffer *
@@ -649,7 +744,10 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
 		if ((int64_t)len != ilen)
 			fz_throw(ctx, FZ_ERROR_LIMIT, "stream is too large for 32-bit systems");
 
-		obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
+		if (pdf_is_stream_external(ctx, dict))
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(FFilter));
+		else
+			obj = pdf_dict_get(ctx, dict, PDF_NAME(Filter));
 		len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
 		n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)

@@ -75,6 +75,7 @@ static int usage(void)
 		"\t--{color,gray,bitonal}-{,lossy-,lossless-}image-recompress-method -[:quality]\n\t\tnever, same, lossless, jpeg, j2k, fax, jbig2\n"
 		"\t--recompress-images-when -\n\t\tsmaller (default), always\n"
 		"\t--structure=keep|drop\tKeep or drop the structure tree\n"
+		"\t--external-access\tallow access to directory containing file for external resources\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	return 1;
@@ -99,7 +100,8 @@ int pdfclean_main(int argc, char **argv)
 	pdf_clean_options opts = { 0 };
 	int errors = 0;
 	fz_context *ctx;
-	int structure;
+	int structure = 0;
+	int external_access = 0;
 	const fz_getopt_long_options longopts[] =
 	{
 		{ "color-lossy-image-subsample-method=average|bicubic", &opts.image.color_lossy_image_subsample_method, (void *)1 },
@@ -130,6 +132,7 @@ int pdfclean_main(int argc, char **argv)
 
 		{ "recompress-images-when=smaller|always", &opts.image.recompress_when, (void *)23 },
 
+		{ "external-access", &external_access, (void *)24 },
 		{ NULL, NULL, NULL }
 	};
 
@@ -248,6 +251,8 @@ int pdfclean_main(int argc, char **argv)
 				break;
 			case 23: /* recompress-when */
 				break;
+			case 24: /* external-access */
+				break;
 			}
 			break;
 		}
@@ -287,7 +292,18 @@ int pdfclean_main(int argc, char **argv)
 
 	fz_try(ctx)
 	{
+		if (external_access)
+		{
+			char dirname[PATH_MAX];
+			fz_dirname(dirname, infile, sizeof dirname);
+			opts.dir = fz_open_directory(ctx, dirname);
+		}
+
 		pdf_clean_file(ctx, infile, outfile, password, &opts, argc - fz_optind, &argv[fz_optind]);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_archive(ctx, opts.dir);
 	}
 	fz_catch(ctx)
 	{

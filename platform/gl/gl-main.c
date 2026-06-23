@@ -215,6 +215,7 @@ static float layout_em = FZ_DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
 static char *layout_css_data = NULL;
 static int layout_use_css = 1; // bitmask: 1=publisher-css, 2=user-css
+static int external_access = 0;
 static int enable_js = 1;
 static int tint_white = 0xFFFFF0;
 static int tint_black = 0x303030;
@@ -1820,6 +1821,7 @@ static void load_document(void)
 	time_t atime;
 	time_t dtime;
 	fz_location location;
+	fz_archive *dir = NULL;
 
 	fz_drop_outline(ctx, outline);
 	outline = NULL;
@@ -1863,9 +1865,18 @@ static void load_document(void)
 		}
 	}
 
-	trace_action("doc = Document.openDocument(%q);\n", filename);
+	if (external_access)
+	{
+		char dirname[PATH_MAX];
+		fz_dirname(dirname, filename, sizeof dirname);
+		dir = fz_open_directory(ctx, dirname);
+		trace_action("doc = Document.openDocument(%q, undefined, new Archive(%q));\n", filename, dirname);
+	}
+	else
+		trace_action("doc = Document.openDocument(%q);\n", filename);
 
-	doc = fz_open_accelerated_document(ctx, filename, accel);
+	doc = fz_open_accelerated_document_with_dir(ctx, filename, accel, dir);
+	fz_drop_archive(ctx, dir);
 	pdf = pdf_specifics(ctx, doc);
 
 	if (pdf && trace_file)
@@ -3161,6 +3172,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-C -\tset white tint color (default: FFFFF0)\n");
 	fprintf(stderr, "\t-Y -\tset the UI scaling factor\n");
 	fprintf(stderr, "\t-R -\tenable reflow and set the text extraction options\n");
+	fprintf(stderr, "\t--external-access\tallow access to directory containing file for external resources\n");
 	fprintf(stderr, "\t\t\texample: -R dehyphenate,preserve-images\n");
 	exit(1);
 }
@@ -3255,6 +3267,11 @@ int main(int argc, char **argv)
 	const char *profile_name = NULL;
 	float scale = 0;
 	int c;
+	const fz_getopt_long_options longopts[] =
+	{
+		{ "external-access", &external_access, (void *)1 },
+		{ NULL, NULL, NULL }
+	};
 
 #ifndef _WIN32
 
@@ -3270,10 +3287,28 @@ int main(int argc, char **argv)
 
 	glutInit(&argc, argv);
 
-	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:XJb:A:B:C:T:Y:R:c:v")) != -1)
+#define SWITCH(x) switch ((intptr_t)(x))
+#define CASE(x) case ((intptr_t)(x))
+
+	while ((c = fz_getopt_long(argc, argv, "p:r:IW:H:S:U:XJb:A:B:C:T:Y:R:c:v", longopts)) != -1)
 	{
 		switch (c)
 		{
+		case 0:
+		{
+			SWITCH(fz_optlong->opaque)
+			{
+			// Any future long options go here.
+			default:
+			case 0:
+				assert(!"Never happens");
+				break;
+			case 1:
+				external_access = 1;
+				break;
+			break;
+			}
+		}
 		default: usage(argv[0]); break;
 		case 'v': version(); break;
 		case 'p': password = fz_optarg; break;

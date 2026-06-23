@@ -92,6 +92,12 @@ pdf_obj *pdf_ensure_indirect(fz_context *ctx, pdf_obj *obj);
 int pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num);
 int pdf_is_stream(fz_context *ctx, pdf_obj *obj);
 
+/*
+	Check if an object, known to be a stream, is
+	an external one.
+*/
+int pdf_is_stream_external(fz_context *ctx, pdf_obj *obj);
+
 /* Compare 2 objects. Returns 0 on match, non-zero on mismatch.
  * Streams always mismatch.
  */

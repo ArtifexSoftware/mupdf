@@ -134,6 +134,11 @@ fz_buffer *pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int nu
 fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_obj *ref);
 
 /*
+	Move an external stream to be an internal one.
+*/
+void pdf_internalize_external_stream(fz_context *ctx, pdf_document *doc, int num);
+
+/*
 	Load uncompressed contents of a stream into buf.
 */
 fz_buffer *pdf_load_stream_number(fz_context *ctx, pdf_document *doc, int num);

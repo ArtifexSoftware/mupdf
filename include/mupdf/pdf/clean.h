@@ -64,6 +64,10 @@ typedef struct
 	 * Future values reserved.
 	 */
 	pdf_clean_options_vectorize vectorize;
+
+	/* If non NULL, external streams and the file itself will be loaded from this
+	* archive. */
+	fz_archive *dir;
 } pdf_clean_options;
 
 /*

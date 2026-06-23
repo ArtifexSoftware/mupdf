@@ -1915,7 +1915,7 @@ id_and_password(fz_context *ctx, pdf_document *doc)
  * If password is not null, try to decrypt.
  */
 static void
-pdf_init_document(fz_context *ctx, pdf_document *doc)
+pdf_init_document(fz_context *ctx, pdf_document *doc, fz_archive *zip)
 {
 	int repaired = 0;
 
@@ -1956,6 +1956,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		 */
 		if (!doc->file_reading_linearly)
 			pdf_load_xref(ctx, doc);
+		doc->archive = fz_keep_archive(ctx, zip);
 	}
 	fz_catch(ctx)
 	{
@@ -2071,6 +2072,8 @@ pdf_drop_document_imp(fz_context *ctx, fz_document *doc_)
 	fz_defer_reap_end(ctx);
 
 	pdf_invalidate_xfa(ctx, doc);
+
+	fz_drop_archive(ctx, doc->archive);
 }
 
 void
@@ -3247,10 +3250,16 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 pdf_document *
 pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
+	return pdf_open_document_with_stream_and_dir(ctx, file, NULL);
+}
+
+pdf_document *
+pdf_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *file, fz_archive *zip)
+{
 	pdf_document *doc = pdf_new_document(ctx, file);
 	fz_try(ctx)
 	{
-		pdf_init_document(ctx, doc);
+		pdf_init_document(ctx, doc, zip);
 	}
 	fz_catch(ctx)
 	{
@@ -3270,6 +3279,12 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 pdf_document *
 pdf_open_document(fz_context *ctx, const char *filename)
 {
+	return pdf_open_document_with_dir(ctx, filename, NULL);
+}
+
+pdf_document *
+pdf_open_document_with_dir(fz_context *ctx, const char *filename, fz_archive *zip)
+{
 	fz_stream *file = NULL;
 	pdf_document *doc = NULL;
 
@@ -3278,12 +3293,15 @@ pdf_open_document(fz_context *ctx, const char *filename)
 
 	fz_try(ctx)
 	{
-		file = fz_open_file(ctx, filename);
+		if (!zip)
+			file = fz_open_file(ctx, filename);
+		else
+			file = fz_open_archive_entry(ctx, zip, filename);
 #ifdef TEST_PROGRESSIVE_HACK
 		file->progressive = 1;
 #endif
 		doc = pdf_new_document(ctx, file);
-		pdf_init_document(ctx, doc);
+		pdf_init_document(ctx, doc, zip);
 	}
 	fz_always(ctx)
 	{
@@ -3840,7 +3858,7 @@ open_document(fz_context *ctx, const fz_document_handler *handler, fz_stream *fi
 {
 	if (file == NULL)
 		return NULL;
-	return (fz_document *)pdf_open_document_with_stream(ctx, file);
+	return (fz_document *)pdf_open_document_with_stream_and_dir(ctx, file, zip);
 }
 
 fz_document_handler pdf_document_handler =

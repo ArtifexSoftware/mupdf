@@ -1305,6 +1305,9 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 
 			if (pdf_obj_num_is_stream(ctx, doc, num))
 			{
+				if (pdf_is_stream_external(ctx, obj))
+					pdf_internalize_external_stream(ctx, doc, num);
+
 				do_deflate = opts->do_compress;
 				do_expand = opts->do_expand;
 				if (opts->do_compress_images && pdf_is_image_stream(ctx, obj))

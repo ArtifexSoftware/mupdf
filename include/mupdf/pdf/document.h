@@ -169,6 +169,20 @@ void pdf_js_set_console(fz_context *ctx, pdf_document *doc, pdf_js_console *cons
 pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 
 /*
+	Open a PDF document with an archive. If the archive is non-NULL,
+	the filename will be searched for inside the archive, as will
+	any external files. Otherwise the document will be loaded from
+	the standard filing system, and no external file access will
+	be allowed.
+
+	Same as pdf_open_document, but with the addition of an
+	archive.
+
+	A reference is taken to the archive.
+*/
+pdf_document *pdf_open_document_with_dir(fz_context *ctx, const char *filename, fz_archive *dir);
+
+/*
 	Opens a PDF document.
 
 	Same as pdf_open_document, but takes a stream instead of a
@@ -178,6 +192,15 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 	fz_drop_stream for closing an open stream.
 */
 pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
+
+/*
+	Like pdf_open_document_with_stream, but in addition an
+	archive is passed in which external resources may be looked
+	for.
+
+	A reference will be taken to the archive.
+*/
+pdf_document *pdf_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *file, fz_archive *dir);
 
 /*
 	Closes and frees an opened PDF document.
@@ -572,6 +595,8 @@ struct pdf_document
 	pdf_journal *journal;
 
 	int throw_on_repair;
+
+	fz_archive *archive;
 };
 
 pdf_document *pdf_create_document(fz_context *ctx);
