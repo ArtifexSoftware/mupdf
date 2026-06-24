@@ -4209,7 +4209,11 @@ def pod_struct_fns(
     out_cpp.write( f'FZ_FUNCTION bool operator==( const ::{struct_name}& lhs, const ::{struct_name}& rhs)\n')
     out_cpp.write( f'{{\n')
     for cursor in parse.get_members(struct_cursor):
-        out_cpp.write( f'    if (lhs.{cursor.spelling} != rhs.{cursor.spelling}) return false;\n')
+        if cursor.type.get_array_size() >= 0:
+            # This struct member is an array, so compare with memcmp().
+            out_cpp.write( f'    if (memcmp(lhs.{cursor.spelling}, rhs.{cursor.spelling}, sizeof(lhs.{cursor.spelling}))) return false;\n')
+        else:
+            out_cpp.write( f'    if (lhs.{cursor.spelling} != rhs.{cursor.spelling}) return false;\n')
     out_cpp.write( f'    return true;\n')
     out_cpp.write( f'}}\n')
     out_cpp.write( f'FZ_FUNCTION bool operator!=( const ::{struct_name}& lhs, const ::{struct_name}& rhs)\n')
