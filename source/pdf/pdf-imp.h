@@ -34,4 +34,6 @@ pdf_obj *pdf_lookup_mcid_in_mcids(fz_context *ctx, int id, pdf_obj *mcids);
 
 void pdf_repair_page_tree_parents(fz_context *ctx, pdf_document *doc);
 
+pdf_obj *pdf_hash_obj(fz_context *ctx, pdf_document *doc, int num, int include_streams, uint32_t *hash);
+
 #endif /* MUPDF_PDF_PDF_IMP_H */
