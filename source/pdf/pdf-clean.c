@@ -634,7 +634,27 @@ pdf_redact_image_imp(fz_context *ctx, fz_matrix ctm, fz_image *image, fz_pixmap 
 
 		fz_try(ctx)
 		{
-			pixmap = fz_clone_pixmap(ctx, original);
+			enum fz_colorspace_type type = fz_colorspace_type(ctx, original ? original->colorspace : NULL);
+retry_with_base:
+			switch (type)
+			{
+				case FZ_COLORSPACE_NONE:
+				case FZ_COLORSPACE_RGB:
+				case FZ_COLORSPACE_GRAY:
+				case FZ_COLORSPACE_CMYK:
+				case FZ_COLORSPACE_LAB:
+					pixmap = fz_clone_pixmap(ctx, original);
+					break;
+				case FZ_COLORSPACE_INDEXED:
+					type = original->colorspace->u.indexed.base ? original->colorspace->u.indexed.base->type : FZ_COLORSPACE_NONE;
+					goto retry_with_base;
+				case FZ_COLORSPACE_SEPARATION:
+					pixmap = fz_convert_pixmap(ctx, original, fz_device_cmyk(ctx), NULL, NULL, fz_default_color_params, 1);
+					break;
+				default:
+					pixmap = fz_convert_pixmap(ctx, original, fz_device_rgb(ctx), NULL, NULL, fz_default_color_params, 1);
+					break;
+			}
 			if (imagemask)
 				fz_invert_pixmap_alpha(ctx, pixmap);
 		}
