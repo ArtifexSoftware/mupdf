@@ -22,6 +22,7 @@
 
 #include "mupdf/fitz.h"
 #include "pdf-annot-imp.h"
+#include "pdf-imp.h"
 
 #include <zlib.h>
 
@@ -65,6 +66,7 @@ typedef struct
 	int64_t *ofs_list;
 	int *gen_list;
 	int *renumber_map;
+	uint32_t *obj_crc;
 
 	pdf_object_labels *labels;
 	int num_labels;
@@ -241,6 +243,7 @@ static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_sta
 	int changed = 0;
 
 	expand_lists(ctx, opts, xref_len);
+	opts->obj_crc = fz_realloc_array(ctx, opts->obj_crc, xref_len, uint32_t);
 	for (num = 1; num < xref_len; num++)
 	{
 		pdf_obj *a;
@@ -248,7 +251,11 @@ static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_sta
 		if (num >= opts->list_len || !opts->use_list[num])
 			continue;
 
-		a = pdf_get_xref_entry_no_null(ctx, doc, num)->obj;
+		a = pdf_hash_obj(ctx, doc, num, (opts->do_garbage >= 4), &opts->obj_crc[num]);
+
+		/* Never common up pages! */
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, a, PDF_NAME(Type)), PDF_NAME(Page)))
+			continue;
 
 		/* Only compare an object to objects preceding it */
 		for (other = 1; other < num; other++)
@@ -260,6 +267,8 @@ static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_sta
 				continue;
 
 			/* TODO: resolve indirect references to see if we can omit them */
+			if (opts->obj_crc[num] != opts->obj_crc[other])
+				continue;
 
 			b = pdf_get_xref_entry_no_null(ctx, doc, other)->obj;
 			if (opts->do_garbage >= 4)
@@ -272,10 +281,6 @@ static int removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_sta
 				if (pdf_objcmp(ctx, a, b))
 					continue;
 			}
-
-			/* Never common up pages! */
-			if (pdf_name_eq(ctx, pdf_dict_get(ctx, a, PDF_NAME(Type)), PDF_NAME(Page)))
-				continue;
 
 			/* Keep the lowest numbered object */
 			newnum = fz_mini(num, other);
@@ -1934,6 +1939,7 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	fz_free(ctx, opts->ofs_list);
 	fz_free(ctx, opts->gen_list);
 	fz_free(ctx, opts->renumber_map);
+	fz_free(ctx, opts->obj_crc);
 	pdf_drop_object_labels(ctx, opts->labels);
 }
 
