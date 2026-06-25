@@ -786,12 +786,12 @@ static fz_pixmap *ffi_topixmap(js_State *J, int idx)
 	return (fz_pixmap *) js_touserdata(J, idx, "fz_pixmap");
 }
 
+#if FZ_ENABLE_PDF
+
 static fz_image *ffi_toimage(js_State *J, int idx)
 {
 	return (fz_image *) js_touserdata(J, idx, "fz_image");
 }
-
-#if FZ_ENABLE_PDF
 
 static void ffi_pushobj(js_State *J, pdf_obj *obj);
 
@@ -982,8 +982,6 @@ static void ffi_pushrect(js_State *J, fz_rect rect)
 	js_pushnumber(J, rect.y1); js_setindex(J, -2, 3);
 }
 
-#if FZ_ENABLE_PDF
-
 static fz_quad ffi_toquad(js_State *J, int idx)
 {
 	fz_quad quad;
@@ -997,8 +995,6 @@ static fz_quad ffi_toquad(js_State *J, int idx)
 	js_getindex(J, idx, 7); quad.lr.y = js_tonumber(J, -1); js_pop(J, 1);
 	return quad;
 }
-
-#endif /* FZ_ENABLE_PDF */
 
 static void ffi_pushquad(js_State *J, fz_quad quad)
 {
@@ -4076,6 +4072,7 @@ static void ffi_Document_isPDF(js_State *J)
 	js_pushboolean(J, js_isuserdata(J, 0, "pdf_document"));
 }
 
+#if FZ_ENABLE_PDF
 static void ffi_Document_asPDF(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4092,6 +4089,7 @@ static void ffi_Document_asPDF(js_State *J)
 	else
 		js_pushnull(J);
 }
+#endif
 
 static void ffi_Document_formatLinkURI(js_State *J)
 {
@@ -5390,6 +5388,7 @@ static void ffi_Pixmap_saveAsPKM(js_State *J)
 		rethrow(J);
 }
 
+#if FZ_ENABLE_JPX
 static void ffi_Pixmap_saveAsJPX(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -5402,6 +5401,7 @@ static void ffi_Pixmap_saveAsJPX(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 }
+#endif
 
 static void ffi_Pixmap_convertToColorSpace(js_State *J)
 {
@@ -12454,7 +12454,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);
 		jsB_propfun(J, "Document.loadOutline", ffi_Document_loadOutline, 0);
 		jsB_propfun(J, "Document.outlineIterator", ffi_Document_outlineIterator, 0);
+#if FZ_ENABLE_PDF
 		jsB_propfun(J, "Document.asPDF", ffi_Document_asPDF, 0);
+#endif
 	}
 	js_setregistry(J, "fz_document");
 
@@ -12782,7 +12784,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.saveAsPNM", ffi_Pixmap_saveAsPNM, 1);
 		jsB_propfun(J, "Pixmap.saveAsPBM", ffi_Pixmap_saveAsPBM, 1);
 		jsB_propfun(J, "Pixmap.saveAsPKM", ffi_Pixmap_saveAsPKM, 1);
+#if FZ_ENABLE_JPX
 		jsB_propfun(J, "Pixmap.saveAsJPX", ffi_Pixmap_saveAsJPX, 2);
+#endif
 	}
 	js_setregistry(J, "fz_pixmap");
 
@@ -13299,9 +13303,6 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "Document", "PERMISSION_ASSEMBLE", FZ_PERMISSION_ASSEMBLE);
 		jsB_enum(J, "Document", "PERMISSION_PRINT_HQ", FZ_PERMISSION_PRINT_HQ);
 
-		jsB_enum(J, "Font", "SIMPLE_ENCODING_LATIN", PDF_SIMPLE_ENCODING_LATIN);
-		jsB_enum(J, "Font", "SIMPLE_ENCODING_GREEK", PDF_SIMPLE_ENCODING_GREEK);
-		jsB_enum(J, "Font", "SIMPLE_ENCODING_CYRILLIC", PDF_SIMPLE_ENCODING_CYRILLIC);
 		jsB_enum(J, "Font", "ADOBE_CNS", FZ_ADOBE_CNS);
 		jsB_enum(J, "Font", "ADOBE_GB", FZ_ADOBE_GB);
 		jsB_enum(J, "Font", "ADOBE_JAPAN", FZ_ADOBE_JAPAN);
@@ -13385,6 +13386,10 @@ int murun_main(int argc, char **argv)
 
 #if FZ_ENABLE_PDF
 	{
+		jsB_enum(J, "Font", "SIMPLE_ENCODING_LATIN", PDF_SIMPLE_ENCODING_LATIN);
+		jsB_enum(J, "Font", "SIMPLE_ENCODING_GREEK", PDF_SIMPLE_ENCODING_GREEK);
+		jsB_enum(J, "Font", "SIMPLE_ENCODING_CYRILLIC", PDF_SIMPLE_ENCODING_CYRILLIC);
+
 		jsB_enum(J, "PDFAnnotation", "TYPE_TEXT", PDF_ANNOT_TEXT);
 		jsB_enum(J, "PDFAnnotation", "TYPE_LINK", PDF_ANNOT_LINK);
 		jsB_enum(J, "PDFAnnotation", "TYPE_FREE_TEXT", PDF_ANNOT_FREE_TEXT);
@@ -13517,8 +13522,8 @@ int murun_main(int argc, char **argv)
 		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_MULTI_SELECT", PDF_CH_FIELD_IS_MULTI_SELECT);
 		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_DO_NOT_SPELL_CHECK", PDF_CH_FIELD_IS_DO_NOT_SPELL_CHECK);
 		jsB_enum(J, "PDFWidget", "CH_FIELD_IS_COMMIT_ON_SEL_CHANGE", PDF_CH_FIELD_IS_COMMIT_ON_SEL_CHANGE);
-#endif
 	}
+#endif
 
 	js_dostring(J, postfix_js);
 
