@@ -1731,7 +1731,7 @@ pdf_prime_xref_index(fz_context *ctx, pdf_document *doc)
 			for (j = start; j < end; j++)
 			{
 				char t = subsec->table[j-start].type;
-				if (t != 0 && t != 'f')
+				if (t != 0)
 					idx[j] = i;
 			}
 
