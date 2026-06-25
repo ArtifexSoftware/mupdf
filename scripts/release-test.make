@@ -42,6 +42,8 @@ run-release-test:
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make make-all-disabled-defines
 	$(MAKE) nuke
+	$(MAKE) -f scripts/release-test.make make-all-disabled-defines-but-keep-js
+	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make make-all-disabled-config
 	$(MAKE) nuke
 	$(MAKE) -f scripts/release-test.make make-all-disabled-one-enabled-config
@@ -134,6 +136,9 @@ test-memento-build: make-memento-build pdfref17.pdf
 
 make-all-disabled-defines:
 	$(MAKE) -j2 XCFLAGS='-DFZ_ENABLE_CBZ=0 -DFZ_ENABLE_DOCX_OUTPUT=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_FB2=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_MD=0 -DFZ_ENABLE_HTML_ENGINE=0 -DFZ_ENABLE_ICC=0 -DFZ_ENABLE_IMG=0 -DFZ_ENABLE_JPX=0 -DFZ_ENABLE_JS=0 -DFZ_ENABLE_MOBI=0 -DFZ_ENABLE_OCR_OUTPUT=0 -DFZ_ENABLE_ODT_OUTPUT=0 -DFZ_ENABLE_OFFICE=0 -DFZ_ENABLE_PDF=0 -DFZ_ENABLE_SPOT_RENDERING=0 -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_TXT=0 -DFZ_ENABLE_XPS=0 -DFZ_ENABLE_BROTLI=0' build=release
+
+make-all-disabled-defines-but-keep-js:
+	$(MAKE) -j2 XCFLAGS='-DFZ_ENABLE_CBZ=0 -DFZ_ENABLE_DOCX_OUTPUT=0 -DFZ_ENABLE_EPUB=0 -DFZ_ENABLE_FB2=0 -DFZ_ENABLE_HTML=0 -DFZ_ENABLE_MD=0 -DFZ_ENABLE_HTML_ENGINE=0 -DFZ_ENABLE_ICC=0 -DFZ_ENABLE_IMG=0 -DFZ_ENABLE_JPX=0 -DFZ_ENABLE_MOBI=0 -DFZ_ENABLE_OCR_OUTPUT=0 -DFZ_ENABLE_ODT_OUTPUT=0 -DFZ_ENABLE_OFFICE=0 -DFZ_ENABLE_PDF=0 -DFZ_ENABLE_SPOT_RENDERING=0 -DFZ_ENABLE_SVG=0 -DFZ_ENABLE_TXT=0 -DFZ_ENABLE_XPS=0 -DFZ_ENABLE_BROTLI=0' build=debug
 
 make-all-disabled-config:
 	$(MAKE) -j2 build=release brotli=no mujs=no html=no xps=no svg=no extract=no tesseract=no barcode=no archive=no tofu=no tofu_cjk=no tofu_cjk_ext=no tofu_cjk_lang=no
