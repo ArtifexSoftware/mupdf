@@ -11923,7 +11923,7 @@ static void ffi_PDFWidget_validateSignature(js_State *J)
 	pdf_annot *widget = js_touserdata(J, 0, "pdf_widget");
 	int val = 0;
 	fz_try(ctx)
-		val = pdf_validate_signature(ctx, widget);
+		val = pdf_validate_signature_widget(ctx, widget);
 	fz_catch(ctx)
 		rethrow(J);
 	js_pushnumber(J, val);
