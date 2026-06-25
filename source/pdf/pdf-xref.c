@@ -4612,7 +4612,7 @@ change_found:
 			oval = pdf_dict_get(ctx, old_obj, key);
 
 			if (nval == NULL && oval != NULL)
-				changes->obj_changes[pdf_to_num(ctx, nval)] |= FIELD_CHANGE_INVALID;
+				changes->obj_changes[obj_num] |= FIELD_CHANGE_INVALID;
 		}
 		changes->obj_changes[obj_num] |= FIELD_CHANGE_VALID;
 
