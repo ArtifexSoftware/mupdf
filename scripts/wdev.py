@@ -221,6 +221,12 @@ class WindowsCpu:
             self.windows_name = 'x64'
             self.windows_config = 'x64'
             self.windows_suffix = '64'
+        elif name == 'arm64':
+            self.bits = 64
+            self.windows_subdir = 'arm64/'
+            self.windows_name = 'arm64'
+            self.windows_config = 'arm64'
+            self.windows_suffix = '64'
         else:
             assert 0, f'Unrecognised cpu name: {name}'
 
@@ -356,10 +362,15 @@ class WindowsPython:
 
 def _cpu_name():
     '''
-    Returns `x32` or `x64` depending on Python build.
+    Returns `x32`, `x64` or `arm64` depending on Python build.
     '''
-    #log(f'sys.maxsize={hex(sys.maxsize)}')
-    return f'x{32 if sys.maxsize == 2**31 - 1 else 64}'
+    # Check platform architecture
+    machine = platform.machine().lower()
+    if machine == 'arm64':
+        return 'arm64'
+    else:
+        #log(f'sys.maxsize={hex(sys.maxsize)}')
+        return f'x{32 if sys.maxsize == 2**31 - 1 else 64}'
 
 
 
