@@ -2184,7 +2184,7 @@ xml_to_boxes(fz_context *ctx,
 			move_background_color_up(ctx, &g, tree->root);
 
 			// Parse meta viewport size.
-			if (meta_w && meta_h)
+			if (publisher_css && meta_w && meta_h)
 			{
 				node = fz_xml_find_down_match(head, "meta", "name", "viewport");
 				if (node)
