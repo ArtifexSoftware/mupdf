@@ -16,6 +16,10 @@ indent_size = 4
 indent_style = space
 indent_size = 2
 
+[*.py]
+indent_style = space
+indent_size = 4
+
 [*.{c++,cc,cpp,cppm,cxx,h,h++,hh,hpp,hxx,inl,ipp,ixx,tlh,tli}]
 
 # Visual C++ Code Style settings
