@@ -200,8 +200,12 @@ filter_push(fz_context *ctx, pdf_sanitize_processor *p)
 	new_gstate->next = gstate;
 	p->gstate = new_gstate;
 
+	fz_keep_colorspace(ctx, gstate->pending.CS.cs);
+	fz_keep_colorspace(ctx, gstate->pending.cs.cs);
 	pdf_keep_font(ctx, new_gstate->pending.text.font);
 	fz_keep_string(ctx, new_gstate->pending.text.fontname);
+	fz_keep_colorspace(ctx, gstate->sent.CS.cs);
+	fz_keep_colorspace(ctx, gstate->sent.cs.cs);
 	pdf_keep_font(ctx, new_gstate->sent.text.font);
 	fz_keep_string(ctx, new_gstate->sent.text.fontname);
 	pdf_keep_obj(ctx, new_gstate->pending.stroke.dash);
@@ -214,8 +218,12 @@ drop_gstate(fz_context *ctx, pdf_sanitize_processor *p)
 	filter_gstate *gstate = p->gstate;
 	filter_gstate *old = gstate->next;
 
+	fz_drop_colorspace(ctx, gstate->pending.CS.cs);
+	fz_drop_colorspace(ctx, gstate->pending.cs.cs);
 	pdf_drop_font(ctx, gstate->pending.text.font);
 	fz_drop_string(ctx, gstate->pending.text.fontname);
+	fz_drop_colorspace(ctx, gstate->sent.CS.cs);
+	fz_drop_colorspace(ctx, gstate->sent.cs.cs);
 	pdf_drop_font(ctx, gstate->sent.text.font);
 	fz_drop_string(ctx, gstate->sent.text.fontname);
 	pdf_drop_obj(ctx, gstate->pending.stroke.dash);
@@ -290,9 +298,13 @@ ensure_pushed(fz_context *ctx, pdf_sanitize_processor *p)
 	 * So put, gstate->pending back to sanity. */
 	pdf_drop_font(ctx, gstate->pending.text.font);
 	fz_drop_string(ctx, gstate->pending.text.fontname);
+	fz_drop_colorspace(ctx, gstate->pending.CS.cs);
+	fz_drop_colorspace(ctx, gstate->pending.cs.cs);
 	gstate->pending = p->gstate->next->sent;
 	pdf_keep_font(ctx, gstate->pending.text.font);
 	fz_keep_string(ctx, gstate->pending.text.fontname);
+	fz_keep_colorspace(ctx, gstate->pending.CS.cs);
+	fz_keep_colorspace(ctx, gstate->pending.cs.cs);
 
 	return p->gstate;
 }
@@ -428,7 +440,9 @@ static void filter_flush(fz_context *ctx, pdf_sanitize_processor *p, int flush)
 		}
 
 done_sc:
+		fz_drop_colorspace(ctx, gstate->sent.cs.cs);
 		gstate->sent.cs = gstate->pending.cs;
+		fz_keep_colorspace(ctx, gstate->sent.cs.cs);
 		gstate->sent.sc = gstate->pending.sc;
 	}
 
@@ -511,7 +525,9 @@ done_sc:
 		}
 
 done_SC:
+		fz_drop_colorspace(ctx, gstate->sent.CS.cs);
 		gstate->sent.CS = gstate->pending.CS;
+		fz_keep_colorspace(ctx, gstate->sent.CS.cs);
 		gstate->sent.SC = gstate->pending.SC;
 	}
 
@@ -2261,7 +2277,8 @@ pdf_filter_CS(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorsp
 		return;
 
 	fz_strlcpy(gstate->pending.CS.name, name, sizeof gstate->pending.CS.name);
-	gstate->pending.CS.cs = cs;
+	fz_drop_colorspace(ctx, gstate->pending.CS.cs);
+	gstate->pending.CS.cs = fz_keep_colorspace(ctx, cs);
 	copy_resource(ctx, p, PDF_NAME(ColorSpace), name);
 	set_default_cs_values(&gstate->pending.SC, name, cs);
 }
@@ -2276,7 +2293,8 @@ pdf_filter_cs(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorsp
 		return;
 
 	fz_strlcpy(gstate->pending.cs.name, name, sizeof gstate->pending.cs.name);
-	gstate->pending.cs.cs = cs;
+	fz_drop_colorspace(ctx, gstate->pending.cs.cs);
+	gstate->pending.cs.cs = fz_keep_colorspace(ctx, cs);
 	copy_resource(ctx, p, PDF_NAME(ColorSpace), name);
 	set_default_cs_values(&gstate->pending.sc, name, cs);
 }
