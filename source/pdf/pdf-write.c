@@ -977,6 +977,15 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(Columns), w);
 			}
+			else if (len < 32)
+			{
+				/* Minimum stream length for a compressed flate stream is
+				 * 8 bytes. It's certainly not worth trying to compress anything
+				 * less than that. By the time you've allowed for adding
+				 * /Filter/FlateDecode, anything less than 32 bytes can never
+				 * really be a win. */
+				 tmp_comp = fz_new_buffer_from_copied_data(ctx, data, len);
+			}
 			else if (do_deflate == 1)
 			{
 				tmp_comp = deflatebuf(ctx, data, len, opts->compression_effort);
@@ -1067,6 +1076,15 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 				dp = pdf_dict_put_dict(ctx, obj, PDF_NAME(DecodeParms), 1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(K), -1);
 				pdf_dict_put_int(ctx, dp, PDF_NAME(Columns), w);
+			}
+			else if (len < 32)
+			{
+				/* Minimum stream length for a compressed flate stream is
+				 * 8 bytes. It's certainly not worth trying to compress anything
+				 * less than that. By the time you've allowed for adding
+				 * /Filter/FlateDecode, anything less than 32 bytes can never
+				 * really be a win. */
+				 tmp_comp = fz_new_buffer_from_copied_data(ctx, data, len);
 			}
 			else if (do_deflate == 1)
 			{
