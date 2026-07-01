@@ -233,8 +233,11 @@ xps_drop_page_list(fz_context *ctx, xps_document *doc)
  */
 
 static void
-xps_parse_metadata_imp(fz_context *ctx, xps_document *doc, fz_xml *item, xps_fixdoc *fixdoc)
+xps_parse_metadata_imp(fz_context *ctx, xps_document *doc, fz_xml *item, xps_fixdoc *fixdoc, int depth)
 {
+	if (depth >= 100)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "XPS Metadata too nested (or circular)");
+
 	while (item)
 	{
 		if (fz_xml_is_tag(item, "Relationship"))
@@ -290,7 +293,7 @@ xps_parse_metadata_imp(fz_context *ctx, xps_document *doc, fz_xml *item, xps_fix
 				xps_add_link_target(ctx, doc, name);
 		}
 
-		xps_parse_metadata_imp(ctx, doc, fz_xml_down(item), fixdoc);
+		xps_parse_metadata_imp(ctx, doc, fz_xml_down(item), fixdoc, depth+1);
 
 		item = fz_xml_next(item);
 	}
@@ -323,7 +326,7 @@ xps_parse_metadata(fz_context *ctx, xps_document *doc, xps_part *part, xps_fixdo
 	xml = fz_parse_xml(ctx, part->data, 0);
 	fz_try(ctx)
 	{
-		xps_parse_metadata_imp(ctx, doc, fz_xml_root(xml), fixdoc);
+		xps_parse_metadata_imp(ctx, doc, fz_xml_root(xml), fixdoc, 0);
 	}
 	fz_always(ctx)
 	{
