@@ -463,6 +463,14 @@ function COLOR(c?: AnnotColor) {
 	return _wasm_color << 2 as Pointer<"float">
 }
 
+function ensureOptions(value: any): String {
+	if (value === (void 0) || value === null)
+		return ""
+	if (typeof value === "string")
+		return value
+	return JSON.stringify(value)
+}
+
 /* -------------------------------------------------------------------------- */
 
 function fromColor(n: number): Color {
@@ -1319,8 +1327,8 @@ export class DisplayList extends Userdata<"fz_display_list"> {
 		)
 	}
 
-	toStructuredText(options = "") {
-		checkType(options, "string")
+	toStructuredText(options: any) {
+		options = ensureOptions(options)
 		return new StructuredText(libmupdf._wasm_new_stext_page_from_display_list(this.pointer, STRING(options)))
 	}
 
@@ -1886,7 +1894,8 @@ export class DisplayListDevice extends Device {
 export class DocumentWriter extends Userdata<"fz_document_writer"> {
 	static override readonly _drop = libmupdf._wasm_drop_document_writer
 
-	constructor(buffer: Buffer, format: string, options: string) {
+	constructor(buffer: Buffer, format: string, options: any) {
+		options = ensureOptions(options)
 		super(
 			libmupdf._wasm_new_document_writer_with_buffer(
 				BUFFER(buffer),
@@ -2374,8 +2383,8 @@ export class Page extends Userdata<"any_page"> {
 		return new DisplayList(result)
 	}
 
-	toStructuredText(options = "") {
-		checkType(options, "string")
+	toStructuredText(options: any) {
+		options = ensureOptions(options)
 		return new StructuredText(libmupdf._wasm_new_stext_page_from_page(this.pointer, STRING(options)))
 	}
 
@@ -2754,26 +2763,12 @@ export class PDFDocument extends Document {
 		}
 	}
 
-	saveToBuffer(options: string | Record<string,any> = "") {
-		var options_string
-		if (typeof options === "object") {
-			options_string = Object.entries(options).map(kv => {
-				var k: string = kv[0]
-				var v: any = kv[1]
-				if (v === true)
-					return k + "=" + "yes"
-				else if (v === false)
-					return k + "=" + "no"
-				else
-					return k + "=" + String(v).replaceAll(",", ":")
-			}).join(",")
-		} else {
-			options_string = options
-		}
-		return new Buffer(libmupdf._wasm_pdf_write_document_buffer(this.pointer, STRING(options_string)))
+	saveToBuffer(options: any) {
+		options = ensureOptions(options)
+		return new Buffer(libmupdf._wasm_pdf_write_document_buffer(this.pointer, STRING(options)))
 	}
 
-	save(filename: string, options: string | Record<string,any> = "") {
+	save(filename: string, options: any) {
 		if (node_fs)
 			node_fs.writeFileSync(filename, this.saveToBuffer(options).asUint8Array())
 		else
