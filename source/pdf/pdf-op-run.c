@@ -1258,9 +1258,10 @@ pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int flush_clip)
 
 		if (doclip)
 		{
+			fz_rect ctb = fz_transform_rect(pr->tos.clip_text_bbox, gstate->ctm);
 			push_nest_clip(ctx, pr);
 			gstate->clip_depth++;
-			fz_clip_text(ctx, pr->dev, text, gstate->ctm, tb);
+			fz_clip_text(ctx, pr->dev, text, gstate->ctm, ctb);
 		}
 	}
 	fz_always(ctx)
