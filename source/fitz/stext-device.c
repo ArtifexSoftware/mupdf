@@ -2352,8 +2352,8 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 	tdev->rect_len++;
 }
 
-static void
-add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect bbox, uint32_t flags, uint32_t argb, int id, float exp)
+static fz_stext_block *
+add_vector_imp(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect bbox, uint32_t flags, uint32_t argb, int id, float exp)
 {
 	fz_stext_block *b;
 
@@ -2370,7 +2370,7 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect 
 		fz_rect r = current_clip(ctx, tdev);
 		bbox = fz_intersect_rect(bbox, r);
 		if (!fz_is_valid_rect(bbox))
-			return;
+			return NULL;
 	}
 
 	/* Can we just add this one onto the previous one? */
@@ -2395,14 +2395,14 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect 
 				/* Stacks vertically. */
 				b->bbox.y0 = fz_min(b->bbox.y0, bbox.y0);
 				b->bbox.y1 = fz_max(b->bbox.y1, bbox.y1);
-				return;
+				return b;
 			}
 			else if (b->bbox.y0 == bbox.y0 && b->bbox.y1 == bbox.y1 && b->bbox.x1 + fudge >= bbox.x0 && b->bbox.x0 - fudge <= bbox.x1)
 			{
 				/* Stacks horizontally. */
 				b->bbox.x0 = fz_min(b->bbox.x0, bbox.x0);
 				b->bbox.x1 = fz_max(b->bbox.x1, bbox.x1);
-				return;
+				return b;
 			}
 
 			/* So, we can't add our new vector onto the previous one. But can we merge the 2 previous ones? */
@@ -2432,14 +2432,14 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect 
 					/* Stacks exactly vertically. Very rarely hit. */
 					prev->bbox.y0 = fz_min(prev->bbox.y0, b->bbox.y0);
 					prev->bbox.y1 = fz_max(prev->bbox.y1, b->bbox.y1);
-					return;
+					return prev;
 				}
 				else if (prev->bbox.y0 == b->bbox.y0 && prev->bbox.y1 == b->bbox.y1 && prev->bbox.x1 + fudge >= b->bbox.x0 && prev->bbox.x0 - fudge <= b->bbox.x1)
 				{
 					/* Stacks horizontally.  Very rarely hit. */
 					prev->bbox.x0 = fz_min(prev->bbox.x0, b->bbox.x0);
 					prev->bbox.x1 = fz_max(prev->bbox.x1, b->bbox.x1);
-					return;
+					return prev;
 				}
 				if (tdev->flags & FZ_STEXT_FUZZY_VECTORS)
 				{
@@ -2504,6 +2504,8 @@ add_vector(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, fz_rect 
 	b->bbox = bbox;
 	b->u.v.flags = flags;
 	b->u.v.argb = argb;
+
+	return b;
 }
 
 typedef struct
@@ -2515,44 +2517,54 @@ typedef struct
 	fz_stext_page *page;
 	fz_rect seg_bounds;
 	fz_rect leftovers;
-	fz_rect pending;
 	int count;
 	fz_point p[5];
 	int id;
 	float exp;
+	fz_stext_block *prev_block;
+	const fz_stroke_state *stroke;
 } split_path_data;
 
 static void
-maybe_rect(fz_context *ctx, split_path_data *sp)
+add_vector(fz_context *ctx, split_path_data *sp, fz_rect bbox, uint32_t flags)
+{
+	fz_stext_block *b;
+
+	if (sp->stroke == NULL && fz_is_empty_rect(bbox))
+	{
+		/* If we're filling empty bounds, do nothing. */
+		return;
+	}
+	if (!fz_is_valid_rect(bbox))
+		return;
+
+	/* Try to add the vector (this may resolve to an amendement to an existing vector block),
+	 * or a new block, or even being dropped entirely if it's clipped away. */
+	b = add_vector_imp(ctx, sp->page, sp->dev, bbox, sp->flags | flags, sp->argb, sp->id, sp->exp);
+	if (b)
+	{
+		/* b is the block we just modified. If we have a previous block (and it's different to
+		 * b), then mark that as continuing. */
+		if (sp->prev_block && sp->prev_block != b)
+			sp->prev_block->u.v.flags |= FZ_STEXT_VECTOR_CONTINUES;
+		/* Remember b as being our previous block. */
+		sp->prev_block = b;
+	}
+}
+
+/*
+	This is called whenever we finish a segment (either a new move, or a close, or
+	the end of the path). We check for the last segment (represented by sp->count, and
+	sp->p[0 to 4]) being a rectangle or not; if it is, we send it. If it isn't it goes
+	into leftovers.
+*/
+static void
+segment_finished(fz_context *ctx, split_path_data *sp)
 {
 	int rect = 0;
-	int i;
-	fz_rect leftovers;
+	fz_rect bounds = sp->seg_bounds;
 
-	if (sp->count >= 3)
-	{
-		/* Allow for multiple monotonic points in a horizontal or vertical line,
-		 * such as seen in borders of tables where each column or row is written
-		 * individually. (e.g. move 0 0 line 100 0 line 200 0 line 300 0) */
-		if (feq(sp->p[sp->count-1].x, sp->p[sp->count-2].x) &&
-			feq(sp->p[sp->count-1].x, sp->p[sp->count-3].x) &&
-			((sp->p[sp->count-1].y <= sp->p[sp->count-2].y && sp->p[sp->count-2].y <= sp->p[sp->count-3].y) ||
-			(sp->p[sp->count-1].y >= sp->p[sp->count-2].y && sp->p[sp->count-2].y >= sp->p[sp->count-3].y)))
-		{
-			/*  y---->y---->y - Remove the central y */
-			sp->p[sp->count-2].y = sp->p[sp->count-1].y;
-			sp->count--;
-		}
-		else if (feq(sp->p[sp->count-1].y, sp->p[sp->count-2].y) &&
-			feq(sp->p[sp->count-1].y, sp->p[sp->count-3].y) &&
-			((sp->p[sp->count-1].x <= sp->p[sp->count-2].x && sp->p[sp->count-2].x <= sp->p[sp->count-3].x) ||
-			(sp->p[sp->count-1].x >= sp->p[sp->count-2].x && sp->p[sp->count-2].x >= sp->p[sp->count-3].x)))
-		{
-			/*  x---->x---->x - Remove the central x */
-			sp->p[sp->count-2].x = sp->p[sp->count-1].x;
-			sp->count--;
-		}
-	}
+	sp->seg_bounds = fz_empty_rect;
 
 	if (sp->count >= 0)
 	{
@@ -2576,27 +2588,18 @@ maybe_rect(fz_context *ctx, split_path_data *sp)
 		}
 		if (rect)
 		{
-			fz_rect bounds;
-
-			bounds.x0 = bounds.x1 = sp->p[0].x;
-			bounds.y0 = bounds.y1 = sp->p[0].y;
-			for (i = 1; i < sp->count; i++)
-				bounds = fz_include_point_in_rect(bounds, sp->p[i]);
-			if (fz_is_valid_rect(sp->pending))
-				add_vector(ctx, sp->page, sp->dev, sp->pending, sp->flags | FZ_STEXT_VECTOR_IS_RECTANGLE | FZ_STEXT_VECTOR_CONTINUES, sp->argb, sp->id, sp->exp);
-			sp->pending = bounds;
+			add_vector(ctx, sp, bounds, FZ_STEXT_VECTOR_IS_RECTANGLE);
 			return;
 		}
 	}
 
 	/* We aren't a rectangle! */
-	leftovers = sp->seg_bounds;
 
 	if (sp->dev->flags & (FZ_STEXT_CLIP_RECT | FZ_STEXT_CLIP))
-		leftovers = fz_intersect_rect(leftovers, current_clip(ctx, sp->dev));
+		bounds = fz_intersect_rect(bounds, current_clip(ctx, sp->dev));
 
-	if (fz_is_valid_rect(leftovers))
-		sp->leftovers = fz_union_rect(sp->leftovers, leftovers);
+	if (fz_is_valid_rect(bounds))
+		sp->leftovers = fz_union_rect(sp->leftovers, bounds);
 
 	/* Remember we're not a rect. */
 	sp->count = -1;
@@ -2608,7 +2611,7 @@ split_move(fz_context *ctx, void *arg, float x, float y)
 	split_path_data *sp = (split_path_data *)arg;
 	fz_point p = fz_transform_point_xy(x, y, sp->ctm);
 
-	maybe_rect(ctx, sp);
+	segment_finished(ctx, sp);
 	sp->p[0] = p;
 	sp->count = 1;
 	sp->seg_bounds.x0 = sp->seg_bounds.x1 = p.x;
@@ -2628,6 +2631,32 @@ split_line(fz_context *ctx, void *arg, float x, float y)
 		/* Check for lines to the same point. */
 		if (sp->count > 0 && feq(sp->p[sp->count-1].x, p.x) && feq(sp->p[sp->count-1].y, p.y))
 			return;
+
+		if (sp->count >= 2)
+		{
+			/* Allow for multiple monotonic points in a horizontal or vertical line,
+			 * such as seen in borders of tables where each column or row is written
+			 * individually. (e.g. move 0 0 line 100 0 line 200 0 line 300 0) */
+			if (feq(p.x, sp->p[sp->count-1].x) &&
+				feq(sp->p[sp->count-1].x, sp->p[sp->count-2].x) &&
+				((p.y <= sp->p[sp->count-1].y && sp->p[sp->count-1].y <= sp->p[sp->count-2].y) ||
+				(p.y >= sp->p[sp->count-1].y && sp->p[sp->count-1].y >= sp->p[sp->count-2].y)))
+			{
+				/*  y---->y---->y - Update the previous y */
+				sp->p[sp->count-1].y = p.y;
+				return;
+			}
+			else if (feq(p.y, sp->p[sp->count-1].y) &&
+				feq(sp->p[sp->count-1].y, sp->p[sp->count-2].y) &&
+				((p.x <= sp->p[sp->count-1].x && sp->p[sp->count-1].x <= sp->p[sp->count-2].x) ||
+				(p.x >= sp->p[sp->count-1].x && sp->p[sp->count-1].x >= sp->p[sp->count-2].x)))
+			{
+				/*  x---->x---->x - Remove the previous x */
+				sp->p[sp->count-1].x = p.x;
+				return;
+			}
+		}
+
 		/* If we're still maybe a rect, just record the point. */
 		if (sp->count < 4)
 		{
@@ -2669,7 +2698,7 @@ split_close(fz_context *ctx, void *arg)
 {
 	split_path_data *sp = (split_path_data *)arg;
 
-	maybe_rect(ctx, sp);
+	segment_finished(ctx, sp);
 	sp->count = 0;
 }
 
@@ -2686,7 +2715,6 @@ fz_path_walker split_path_rects =
 static void
 add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, const fz_stroke_state *stroke, float exp)
 {
-	int have_leftovers;
 	split_path_data sp;
 	int id = tdev->id;
 	int trailing_moves_acceptable = (stroke == NULL || stroke->end_cap != FZ_LINECAP_ROUND);
@@ -2699,20 +2727,34 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 	sp.count = 0;
 	sp.leftovers = fz_empty_rect;
 	sp.seg_bounds = fz_empty_rect;
-	sp.pending = fz_empty_rect;
 	sp.id = id;
 	sp.exp = exp;
+	sp.prev_block = NULL;
+	sp.stroke = stroke;
 	fz_walk_path(ctx, path, &split_path_rects, &sp);
 
-	have_leftovers = fz_is_valid_rect(sp.leftovers);
+	if (trailing_moves_acceptable && sp.count == 1)
+	{
+		/* The last thing was a move, in a circumstance where it can't
+		 * make any difference. For instance:
+		 *
+		 *  0 0 100 100 re
+		 *  2000 800 m
+		 *  f
+		 *
+		 * or
+		 *
+		 *  0 0 100 100 re
+		 *  2000 800 m
+		 *  S   (when we aren't using a round endcap)
+		 *
+		 * Just drop it. */
+	}
+	else
+		segment_finished(ctx, &sp);
 
-	if (!trailing_moves_acceptable || sp.count != 1)
-		maybe_rect(ctx, &sp);
-
-	if ((!trailing_moves_acceptable || sp.count != 1) && fz_is_valid_rect(sp.pending))
-		add_vector(ctx, page, sp.dev, sp.pending, sp.flags | FZ_STEXT_VECTOR_IS_RECTANGLE | (have_leftovers ? FZ_STEXT_VECTOR_CONTINUES : 0), sp.argb, id, exp);
-	if (have_leftovers)
-		add_vector(ctx, page, sp.dev, sp.leftovers, sp.flags, sp.argb, id, exp);
+	/* And flush any leftovers (not a rect - by construction!) */
+	add_vector(ctx, &sp, sp.leftovers, 0);
 }
 
 static void
