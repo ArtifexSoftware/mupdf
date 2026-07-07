@@ -25,8 +25,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-/* #define DEBUG_WRITE_AS_PS */
-
 /* #define DEBUG_TABLE_SPLITS */
 
 /* #define DEBUG_TABLE_STRUCTURE */
