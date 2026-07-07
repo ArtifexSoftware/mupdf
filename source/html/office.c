@@ -23,6 +23,8 @@
 #include "mupdf/fitz.h"
 #include "html-imp.h"
 
+#include <limits.h>
+
 #undef DEBUG_OFFICE_TO_HTML
 
 /* Defaults are all 0's. FIXME: Very subject to change. Possibly might be removed entirely. */
@@ -945,6 +947,7 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 	char *resolved = NULL;
 	fz_xml *xml = NULL;
 	char *str = NULL;
+	int i;
 
 	fz_var(xml);
 	fz_var(str);
@@ -970,14 +973,16 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 			{
 				if (n >= info->footnotes_max)
 				{
-					int max = info->footnotes_max;
-					int newmax = max ? max * 2 : 1024;
-					char **arr;
-					if (newmax < n)
-						newmax = n+1;
-					arr = fz_realloc(ctx, info->footnotes, sizeof(*arr) * newmax);
-					memset(&arr[max], 0, sizeof(*arr) * (newmax - max));
-					info->footnotes = arr;
+					int newmax = info->footnotes_max ? info->footnotes_max : 1024;
+					while (n >= newmax)
+					{
+						newmax = newmax * 2;
+						if (newmax < info->footnotes_max) // check for integer overflow
+							newmax = INT_MAX;
+					}
+					info->footnotes = fz_realloc_array(ctx, info->footnotes, newmax, char*);
+					for (i = info->footnotes_max; i < newmax; ++i)
+						info->footnotes[i] = NULL;
 					info->footnotes_max = newmax;
 				}
 
