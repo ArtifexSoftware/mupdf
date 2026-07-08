@@ -136,7 +136,7 @@ typedef struct
 	fz_stext_line *lastline;
 	int lastbidi;
 	int flags;
-	int color;
+	uint32_t color;
 	int last_was_fake_bold;
 	const fz_text *lasttext;
 	fz_stext_options opts;
@@ -602,8 +602,30 @@ font_equiv(fz_context *ctx, fz_font *f, fz_font *g)
 	return (memcmp(fdigest, gdigest, 16) == 0);
 }
 
+
+/* Utility to merge 2 colors.
+ *
+ * This conceptually works by blending col on top of *oldp to
+ * update *oldp.
+ */
+static void
+merge_color(uint32_t *oldp, uint32_t col)
+{
+	uint32_t old = *oldp;
+	uint32_t a = (col>>24) & 0xFF;
+	uint32_t r, g, b, mul;
+
+	mul = a + (a>>7);
+	b = FZ_BLEND(old & 0xFF, col & 0xFF, mul);
+	g = FZ_BLEND((old>>8) & 0xFF, (col>>8) & 0xFF, mul);
+	r = FZ_BLEND((old>>16) & 0xFF, (col>>16) & 0xFF, mul);
+	a = FZ_BLEND((old>>24) & 0xFF, 0xFF, mul);
+
+	*oldp = (a<<24) | (r<<16) | (g<<8) | b;
+}
+
 static int
-check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c, fz_point p, float size, int flags)
+check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c, fz_point p, float size, int flags, uint32_t color)
 {
 	fz_stext_line *line;
 	fz_stext_char *ch;
@@ -612,7 +634,7 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 	{
 		if (block->type == FZ_STEXT_BLOCK_STRUCT)
 		{
-			if (block->u.s.down != NULL && check_for_fake_bold(ctx, block->u.s.down->first_block, font, c, p, size, flags))
+			if (block->u.s.down != NULL && check_for_fake_bold(ctx, block->u.s.down->first_block, font, c, p, size, flags, color))
 				return 1;
 		}
 		else if (block->type == FZ_STEXT_BLOCK_TEXT)
@@ -631,6 +653,13 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 						{
 							/* Update this to be filled + stroked, but don't specifically mark it as fake bold. */
 							ch->flags |= flags;
+
+							/* How should we merge the colors here? A typical case might be a glyph being filled in one colour,
+							 * with a thin stroke in another color - the effective color is therefore the fill color. BUT... if
+							 * the stroke is large compared with with the font size, it might be the other way around.
+							 * We could scale the alpha on this new color based upon stroke width/font_size... but at the moment
+							 * we have no way of judging the stroke size here. So for now, we just keep the original fill
+							 * color. */
 							return 1;
 						}
 						/* Overlaying spaces is tricksy. How can that count as boldening when it doesn't mark? We only accept these
@@ -645,6 +674,8 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 								/* OK, we can be bold. */
 								ch->flags |= FZ_STEXT_BOLD;
 							}
+							/* Keep the later color */
+							merge_color(&ch->argb, color);
 							/* Whether we have recorded this as being bold or not, still
 							 * claim we did, so we swallow the space and don't reemit it. */
 							return 1;
@@ -652,6 +683,8 @@ check_for_fake_bold(fz_context *ctx, fz_stext_block *block, fz_font *font, int c
 						else
 						{
 							ch->flags |= FZ_STEXT_BOLD;
+							/* Keep the later color */
+							merge_color(&ch->argb, color);
 							return 1;
 						}
 					}
@@ -799,7 +832,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 			if (dev->last_was_fake_bold)
 				return;
 		}
-		else if (check_for_fake_bold(ctx, page->first_block, font, c, p, size, flags))
+		else if (check_for_fake_bold(ctx, page->first_block, font, c, p, size, flags, dev->color))
 		{
 			dev->last_was_fake_bold = 1;
 			return;
