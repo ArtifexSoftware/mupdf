@@ -344,9 +344,7 @@ typedef struct
 typedef struct
 {
 	fz_archive super;
-	int len;
-	int max;
-	multi_archive_entry *sub;
+	fz_list(multi_archive_entry, sub);
 } fz_multi_archive;
 
 static int has_multi_entry(fz_context *ctx, fz_archive *arch_, const char *name)
@@ -354,7 +352,7 @@ static int has_multi_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 	fz_multi_archive *arch = (fz_multi_archive *)arch_;
 	int i;
 
-	for (i = arch->len-1; i >= 0; i--)
+	for (i = arch->sub_len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		const char *subname = name;
@@ -377,7 +375,7 @@ static fz_buffer *read_multi_entry(fz_context *ctx, fz_archive *arch_, const cha
 	int i;
 	fz_buffer *res = NULL;
 
-	for (i = arch->len-1; i >= 0; i--)
+	for (i = arch->sub_len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		const char *subname = name;
@@ -405,7 +403,7 @@ static fz_stream *open_multi_entry(fz_context *ctx, fz_archive *arch_, const cha
 	int i;
 	fz_stream *res = NULL;
 
-	for (i = arch->len-1; i >= 0; i--)
+	for (i = arch->sub_len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		const char *subname = name;
@@ -432,7 +430,7 @@ static void drop_multi_archive(fz_context *ctx, fz_archive *arch_)
 	fz_multi_archive *arch = (fz_multi_archive *)arch_;
 	int i;
 
-	for (i = arch->len-1; i >= 0; i--)
+	for (i = arch->sub_len-1; i >= 0; i--)
 	{
 		multi_archive_entry *e = &arch->sub[i];
 		fz_free(ctx, e->dir);
@@ -452,8 +450,8 @@ fz_new_multi_archive(fz_context *ctx)
 	arch->super.read_entry = read_multi_entry;
 	arch->super.open_entry = open_multi_entry;
 	arch->super.drop_archive = drop_multi_archive;
-	arch->max = 0;
-	arch->len = 0;
+	arch->sub_cap = 0;
+	arch->sub_len = 0;
 	arch->sub = NULL;
 
 	return &arch->super;
@@ -464,17 +462,12 @@ fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, cons
 {
 	fz_multi_archive *arch = (fz_multi_archive *)arch_;
 	char *clean_path = NULL;
+	multi_archive_entry *e;
 
 	if (arch->super.has_entry != has_multi_entry)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot mount within a non-multi archive");
 
-	if (arch->len == arch->max)
-	{
-		int n = arch->max ? arch->max * 2 : 8;
-
-		arch->sub = fz_realloc(ctx, arch->sub, sizeof(*arch->sub) * n);
-		arch->max = n;
-	}
+	e = fz_push_list(ctx, arch->sub);
 
 	/* If we have a path, then strip any trailing slashes, and add just one. */
 	if (path)
@@ -500,9 +493,8 @@ fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, cons
 		}
 	}
 
-	arch->sub[arch->len].arch = fz_keep_archive(ctx, sub);
-	arch->sub[arch->len].dir = clean_path;
-	arch->len++;
+	e->arch = fz_keep_archive(ctx, sub);
+	e->dir = clean_path;
 }
 
 static const fz_archive_handler fz_zip_archive_handler =

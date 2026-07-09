@@ -29,8 +29,6 @@
 #undef CHECK_SPLAY
 #undef DUMP_SPLAY
 
-#define CMAP_TABLE_LIMIT 65536
-
 /*
  * Allocate, destroy and simple parameters.
  */
@@ -270,7 +268,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 	{
 		if (parent == EMPTY)
 		{
-			replacement = cmap->ttop = tree[current].left;
+			replacement = cmap->tree_top = tree[current].left;
 		}
 		else if (tree[parent].left == current)
 		{
@@ -290,7 +288,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 	{
 		if (parent == EMPTY)
 		{
-			replacement = cmap->ttop = tree[current].right;
+			replacement = cmap->tree_top = tree[current].right;
 		}
 		else if (tree[parent].left == current)
 		{
@@ -333,7 +331,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 		if (parent == EMPTY)
 		{
 			tree[replacement].parent = EMPTY;
-			cmap->ttop = replacement;
+			cmap->tree_top = replacement;
 		}
 		else if (tree[parent].left == current)
 			tree[parent].left = replacement;
@@ -351,30 +349,30 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 	}
 
 	/* current is now unlinked. We need to remove it from our array. */
-	cmap->tlen--;
-	if (current != (unsigned int) cmap->tlen)
+	cmap->tree_len--;
+	if (current != (unsigned int) cmap->tree_len)
 	{
-		if (replacement == (unsigned int) cmap->tlen)
+		if (replacement == (unsigned int) cmap->tree_len)
 			replacement = current;
-		tree[current] = tree[cmap->tlen];
+		tree[current] = tree[cmap->tree_len];
 		parent = tree[current].parent;
 		if (parent == EMPTY)
-			cmap->ttop = current;
-		else if (tree[parent].left == (unsigned int) cmap->tlen)
+			cmap->tree_top = current;
+		else if (tree[parent].left == (unsigned int) cmap->tree_len)
 			tree[parent].left = current;
 		else
 		{
-			assert(tree[parent].right == (unsigned int) cmap->tlen);
+			assert(tree[parent].right == (unsigned int) cmap->tree_len);
 			tree[parent].right = current;
 		}
 		if (tree[current].left != EMPTY)
 		{
-			assert(tree[tree[current].left].parent == (unsigned int) cmap->tlen);
+			assert(tree[tree[current].left].parent == (unsigned int) cmap->tree_len);
 			tree[tree[current].left].parent = current;
 		}
 		if (tree[current].right != EMPTY)
 		{
-			assert(tree[tree[current].right].parent == (unsigned int) cmap->tlen);
+			assert(tree[tree[current].right].parent == (unsigned int) cmap->tree_len);
 			tree[tree[current].right].parent = current;
 		}
 	}
@@ -511,7 +509,7 @@ static void
 add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, unsigned int out, int check_for_overlap, int many)
 {
 	int current;
-	cmap_splay *tree;
+	cmap_splay *tree, *tr;
 
 	if (low > high)
 	{
@@ -527,9 +525,9 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 
 	tree = cmap->tree;
 
-	if (cmap->tlen)
+	if (cmap->tree_len)
 	{
-		unsigned int move = cmap->ttop;
+		unsigned int move = cmap->tree_top;
 		unsigned int gt = EMPTY;
 		unsigned int lt = EMPTY;
 		if (check_for_overlap)
@@ -559,11 +557,11 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 					if (tree[current].low > tree[current].high || tree[current].many)
 					{
 						/* update lt/gt references that will be moved/stale after deleting current */
-						if (gt == (unsigned int) cmap->tlen - 1)
+						if (gt == (unsigned int) cmap->tree_len - 1)
 							gt = current;
-						if (lt == (unsigned int) cmap->tlen - 1)
+						if (lt == (unsigned int) cmap->tree_len - 1)
 							lt = current;
-						/* delete_node() moves the element at cmap->tlen-1 into current */
+						/* delete_node() moves the element at cmap->tree_len-1 into current */
 						move = delete_node(cmap, current);
 						current = EMPTY;
 						continue;
@@ -642,33 +640,26 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 	else
 		current = EMPTY;
 
-	if (cmap->tlen == cmap->tcap)
-	{
-		int new_cap = cmap->tcap ? cmap->tcap * 2 : 256;
-		if (new_cap > CMAP_TABLE_LIMIT)
-			fz_throw(ctx, FZ_ERROR_LIMIT, "too many entries in CMap table");
-		tree = cmap->tree = fz_realloc_array(ctx, cmap->tree, new_cap, cmap_splay);
-		cmap->tcap = new_cap;
-	}
-	tree[cmap->tlen].low = low;
-	tree[cmap->tlen].high = high;
-	tree[cmap->tlen].out = out;
-	tree[cmap->tlen].parent = current;
-	tree[cmap->tlen].left = EMPTY;
-	tree[cmap->tlen].right = EMPTY;
-	tree[cmap->tlen].many = many;
-	cmap->tlen++;
+	tr = fz_push_list(ctx, cmap->tree);
+	tr->low = low;
+	tr->high = high;
+	tr->out = out;
+	tr->parent = current;
+	tr->left = EMPTY;
+	tr->right = EMPTY;
+	tr->many = many;
+	tree = cmap->tree;
 	if (current == EMPTY)
-		cmap->ttop = 0;
+		cmap->tree_top = 0;
 	else if (tree[current].low > high)
-		tree[current].left = cmap->tlen-1;
+		tree[current].left = cmap->tree_len-1;
 	else
 	{
 		assert(tree[current].high < low);
-		tree[current].right = cmap->tlen-1;
+		tree[current].right = cmap->tree_len-1;
 	}
-	move_to_root(tree, cmap->tlen-1);
-	cmap->ttop = cmap->tlen-1;
+	move_to_root(tree, cmap->tree_len-1);
+	cmap->tree_top = cmap->tree_len-1;
 exit:
 	{}
 #ifdef CHECK_SPLAY
@@ -685,25 +676,10 @@ exit:
 static void
 add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 {
-	int out_pos;
-	int new_len = cmap->dlen + len + 1;
-	int new_cap;
-
-	if (new_len > CMAP_TABLE_LIMIT)
-		fz_throw(ctx, FZ_ERROR_LIMIT, "too many entries in CMap table");
-
-	if (new_len > cmap->dcap)
-	{
-		new_cap = cmap->dcap > 0 ? cmap->dcap : 256;
-		while (new_len > new_cap)
-			new_cap *= 2;
-		cmap->dict = fz_realloc_array(ctx, cmap->dict, new_cap, int);
-		cmap->dcap = new_cap;
-	}
-	out_pos = cmap->dlen;
-	cmap->dict[out_pos] = len;
-	memcpy(&cmap->dict[out_pos+1], out, sizeof(int)*len);
-	cmap->dlen = new_len;
+	int out_pos = cmap->dict_len;
+	int *p = fz_extend_list(ctx, cmap->dict, len + 1);
+	*p = len;
+	memcpy(p+1, out, sizeof(int)*len);
 
 	add_range(ctx, cmap, low, low, out_pos, 1, 1);
 }
@@ -821,7 +797,7 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 	counts[0] = 0;
 	counts[1] = 0;
 	counts[2] = 0;
-	walk_splay(cmap->tree, cmap->ttop, count_node_types, &counts);
+	walk_splay(cmap->tree, cmap->tree_top, count_node_types, &counts);
 
 	cmap->ranges = Memento_label(fz_malloc_array(ctx, counts[0], pdf_range), "cmap_range");
 	cmap->rcap = counts[0];
@@ -830,7 +806,7 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 	cmap->mranges = Memento_label(fz_malloc_array(ctx, counts[2], pdf_mrange), "cmap_mrange");
 	cmap->mcap = counts[2];
 
-	walk_splay(cmap->tree, cmap->ttop, copy_node_types, cmap);
+	walk_splay(cmap->tree, cmap->tree_top, copy_node_types, cmap);
 
 	fz_free(ctx, cmap->tree);
 	cmap->tree = NULL;
@@ -984,6 +960,6 @@ pdf_cmap_size(fz_context *ctx, pdf_cmap *cmap)
 		cmap->rcap * sizeof *cmap->ranges +
 		cmap->xcap * sizeof *cmap->xranges +
 		cmap->mcap * sizeof *cmap->mranges +
-		cmap->tcap * sizeof *cmap->tree +
+		cmap->tree_cap * sizeof *cmap->tree +
 		sizeof(*cmap);
 }

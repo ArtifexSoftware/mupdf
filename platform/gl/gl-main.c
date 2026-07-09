@@ -2564,31 +2564,22 @@ static void do_app(void)
 
 typedef struct
 {
-	int max;
-	int len;
-	pdf_obj **sig;
+	fz_list(pdf_obj *, sig);
 } sigs_list;
 
 static void
 process_sigs(fz_context *ctx_, pdf_obj *field, void *arg, pdf_obj **ft)
 {
 	sigs_list *sigs = (sigs_list *)arg;
+	pdf_obj **op;
 
 	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(Type)), PDF_NAME(Annot)) ||
 		!pdf_name_eq(ctx, pdf_dict_get(ctx, field, PDF_NAME(Subtype)), PDF_NAME(Widget)) ||
 		!pdf_name_eq(ctx, *ft, PDF_NAME(Sig)))
 		return;
 
-	if (sigs->len == sigs->max)
-	{
-		int newsize = sigs->max * 2;
-		if (newsize == 0)
-			newsize = 4;
-		sigs->sig = fz_realloc_array(ctx, sigs->sig, newsize, pdf_obj *);
-		sigs->max = newsize;
-	}
-
-	sigs->sig[sigs->len++] = field;
+	op = fz_push_list(ctx, sigs->sig);
+	*op = field;
 }
 
 static char *short_signature_error_desc(pdf_signature_error err)
@@ -2734,10 +2725,10 @@ static fz_buffer *format_info_text()
 				fz_append_printf(ctx, out, "Invalid changes made to the document %d updates ago.\n", n);
 		}
 
-		if (list.len)
+		if (list.sig_len)
 		{
 			int i;
-			for (i = 0; i < list.len; i++)
+			for (i = 0; i < list.sig_len; i++)
 			{
 				pdf_obj *field = list.sig[i];
 				fz_try(ctx)

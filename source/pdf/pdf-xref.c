@@ -2038,7 +2038,7 @@ pdf_drop_document_imp(fz_context *ctx, fz_document *doc_)
 	fz_free(ctx, doc->hint_shared);
 	fz_free(ctx, doc->hint_obj_offsets);
 
-	for (i=0; i < doc->num_type3_fonts; i++)
+	for (i=0; i < doc->type3_fonts_len; i++)
 	{
 		fz_try(ctx)
 			fz_decouple_type3_font(ctx, doc->type3_fonts[i], (void *)doc);
@@ -4168,9 +4168,7 @@ change_found:
 
 typedef struct
 {
-	int max;
-	int len;
-	char **list;
+	fz_list(char *, list);
 } char_list;
 
 /* This structure is used to hold the definition of which fields
@@ -4191,11 +4189,11 @@ free_char_list(fz_context *ctx, char_list *c)
 	if (c == NULL)
 		return;
 
-	for (i = c->len-1; i >= 0; i--)
+	for (i = c->list_len-1; i >= 0; i--)
 		fz_free(ctx, c->list[i]);
 	fz_free(ctx, c->list);
-	c->len = 0;
-	c->max = 0;
+	c->list_len = 0;
+	c->list_cap = 0;
 }
 
 void
@@ -4212,16 +4210,9 @@ pdf_drop_locked_fields(fz_context *ctx, pdf_locked_fields *fl)
 static void
 char_list_append(fz_context *ctx, char_list *list, const char *s)
 {
-	if (list->len == list->max)
-	{
-		int n = list->max * 2;
-		if (n == 0) n = 4;
+	const char **e = fz_push_list(ctx, list->list);
 
-		list->list = fz_realloc_array(ctx, list->list, n, char *);
-		list->max = n;
-	}
-	list->list[list->len] = fz_strdup(ctx, s);
-	list->len++;
+	*e = fz_strdup(ctx, s);
 }
 
 int
@@ -4239,14 +4230,14 @@ pdf_is_field_locked(fz_context *ctx, pdf_locked_fields *locked, const char *name
 	{
 		/* The only way we might not be unlocked is if
 		 * we are listed in the excludes. */
-		for (i = 0; i < locked->excludes.len; i++)
+		for (i = 0; i < locked->excludes.list_len; i++)
 			if (!strcmp(locked->excludes.list[i], name))
 				return 0;
 		return 1;
 	}
 
 	/* The only way we can be locked is for us to be in the includes. */
-	for (i = 0; i < locked->includes.len; i++)
+	for (i = 0; i < locked->includes.list_len; i++)
 		if (strcmp(locked->includes.list[i], name) == 0)
 			return 1;
 
@@ -4705,12 +4696,12 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				{
 					const char *s = pdf_array_get_text_string(ctx, f, i);
 
-					for (r = w = 0; r < fields->excludes.len; r++)
+					for (r = w = 0; r < fields->excludes.list_len; r++)
 					{
 						if (strcmp(s, fields->excludes.list[r]))
 							fields->excludes.list[w++] = fields->excludes.list[r];
 					}
-					fields->excludes.len = w;
+					fields->excludes.list_len = w;
 				}
 			}
 			else
@@ -4721,12 +4712,12 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				{
 					const char *s = pdf_array_get_text_string(ctx, f, i);
 
-					for (r = 0; r < fields->includes.len; r++)
+					for (r = 0; r < fields->includes.list_len; r++)
 					{
 						if (!strcmp(s, fields->includes.list[r]))
 							break;
 					}
-					if (r == fields->includes.len)
+					if (r == fields->includes.list_len)
 						char_list_append(ctx, &fields->includes, s);
 				}
 			}
@@ -4737,7 +4728,7 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 			{
 				/* Current state = "All except <excludes> are locked.
 				 * We need to remove anything from <excludes> that isn't in <Fields>. */
-				for (r = w = 0; r < fields->excludes.len; r++)
+				for (r = w = 0; r < fields->excludes.list_len; r++)
 				{
 					for (i = 0; i < len; i++)
 					{
@@ -4748,7 +4739,7 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 					if (i != len) /* we found a match */
 						fields->excludes.list[w++] = fields->excludes.list[r];
 				}
-				fields->excludes.len = w;
+				fields->excludes.list_len = w;
 			}
 			else
 			{
@@ -4758,12 +4749,12 @@ merge_lock_specification(fz_context *ctx, pdf_locked_fields *fields, pdf_obj *lo
 				for (i = 0; i < len; i++)
 				{
 					const char *s = pdf_array_get_text_string(ctx, f, i);
-					for (r = 0; r < fields->includes.len; r++)
+					for (r = 0; r < fields->includes.list_len; r++)
 					{
 						if (!strcmp(s, fields->includes.list[r]))
 							break;
 					}
-					if (r == fields->includes.len)
+					if (r == fields->includes.list_len)
 						char_list_append(ctx, &fields->excludes, s);
 				}
 				free_char_list(ctx, &fields->includes);
@@ -5134,7 +5125,7 @@ pdf_validate_changes(fz_context *ctx, pdf_document *doc, int version)
 
 	fz_try(ctx)
 	{
-		if (!locked->all && locked->includes.len == 0 && locked->p == 0)
+		if (!locked->all && locked->includes.list_len == 0 && locked->p == 0)
 		{
 			/* If nothing is locked at all, then all changes are permissible. */
 			result = 1;

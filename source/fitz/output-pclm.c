@@ -106,12 +106,8 @@ typedef struct pclm_band_writer_s
 	fz_band_writer super;
 	fz_pclm_options options;
 
-	int obj_num;
-	int xref_max;
-	int64_t *xref;
-	int pages;
-	int page_max;
-	int *page_obj;
+	fz_list(int64_t, xref);
+	fz_list(int, page);
 	unsigned char *stripbuf;
 	unsigned char *compbuf;
 	size_t complen;
@@ -121,19 +117,11 @@ static int
 new_obj(fz_context *ctx, pclm_band_writer *writer)
 {
 	int64_t pos = fz_tell_output(ctx, writer->super.out);
+	int64_t *posp = fz_push_list(ctx, writer->xref);
 
-	if (writer->obj_num >= writer->xref_max)
-	{
-		int new_max = writer->xref_max * 2;
-		if (new_max < writer->obj_num + 8)
-			new_max = writer->obj_num + 8;
-		writer->xref = fz_realloc_array(ctx, writer->xref, new_max, int64_t);
-		writer->xref_max = new_max;
-	}
+	*posp = pos;
 
-	writer->xref[writer->obj_num] = pos;
-
-	return writer->obj_num++;
+	return writer->xref_len-1;
 }
 
 static void
@@ -171,26 +159,17 @@ pclm_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	writer->compbuf = Memento_label(fz_malloc(ctx, writer->complen), "pclm_compbuf");
 
 	/* Send the file header on the first page */
-	if (writer->pages == 0)
+	if (writer->page_len == 0)
 		fz_write_string(ctx, out, "%PDF-1.4\n%PCLm-1.0\n");
 
-	if (writer->page_max <= writer->pages)
-	{
-		int new_max = writer->page_max * 2;
-		if (new_max == 0)
-			new_max = writer->pages + 8;
-		writer->page_obj = fz_realloc_array(ctx, writer->page_obj, new_max, int);
-		writer->page_max = new_max;
-	}
-	writer->page_obj[writer->pages] = writer->obj_num;
-	writer->pages++;
+	*(int *)fz_push_list(ctx, writer->page) = writer->xref_len;
 
 	/* Send the Page Object */
 	fz_write_printf(ctx, out, "%d 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/Resources <<\n/XObject <<\n", new_obj(ctx, writer));
 	for (i = 0; i < strips; i++)
-		fz_write_printf(ctx, out, "/Image%d %d 0 R\n", i, writer->obj_num + 1 + i);
+		fz_write_printf(ctx, out, "/Image%d %d 0 R\n", i, writer->xref_len + 1 + i);
 	fz_write_printf(ctx, out, ">>\n>>\n/MediaBox[ 0 0 %g %g ]\n/Contents [ %d 0 R ]\n>>\nendobj\n",
-		w * 72.0f / xres, h * 72.0f / yres, writer->obj_num);
+		w * 72.0f / xres, h * 72.0f / yres, writer->xref_len);
 
 	/* And the Page contents */
 	/* We need the length to this, so write to a buffer first */
@@ -290,7 +269,7 @@ pclm_close_band_writer(fz_context *ctx, fz_band_writer *writer_)
 	int i;
 
 	/* We actually do the trailer writing in the close */
-	if (writer->xref_max > 2)
+	if (writer->xref_len > 2)
 	{
 		int64_t t_pos;
 
@@ -300,18 +279,18 @@ pclm_close_band_writer(fz_context *ctx, fz_band_writer *writer_)
 
 		/* Page table */
 		writer->xref[2] = fz_tell_output(ctx, out);
-		fz_write_printf(ctx, out, "2 0 obj\n<<\n/Count %d\n/Kids [ ", writer->pages);
+		fz_write_printf(ctx, out, "2 0 obj\n<<\n/Count %d\n/Kids [ ", writer->page_len);
 
-		for (i = 0; i < writer->pages; i++)
-			fz_write_printf(ctx, out, "%d 0 R ", writer->page_obj[i]);
+		for (i = 0; i < writer->page_len; i++)
+			fz_write_printf(ctx, out, "%d 0 R ", writer->page[i]);
 		fz_write_string(ctx, out, "]\n/Type /Pages\n>>\nendobj\n");
 
 		/* Xref */
 		t_pos = fz_tell_output(ctx, out);
-		fz_write_printf(ctx, out, "xref\n0 %d\n0000000000 65535 f \n", writer->obj_num);
-		for (i = 1; i < writer->obj_num; i++)
+		fz_write_printf(ctx, out, "xref\n0 %d\n0000000000 65535 f \n", writer->xref_len);
+		for (i = 1; i < writer->xref_len; i++)
 			fz_write_printf(ctx, out, "%010zd 00000 n \n", writer->xref[i]);
-		fz_write_printf(ctx, out, "trailer\n<<\n/Size %d\n/Root 1 0 R\n>>\nstartxref\n%ld\n%%%%EOF\n", writer->obj_num, t_pos);
+		fz_write_printf(ctx, out, "trailer\n<<\n/Size %d\n/Root 1 0 R\n>>\nstartxref\n%ld\n%%%%EOF\n", writer->xref_len, t_pos);
 	}
 }
 
@@ -321,7 +300,7 @@ pclm_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 	pclm_band_writer *writer = (pclm_band_writer *)writer_;
 	fz_free(ctx, writer->stripbuf);
 	fz_free(ctx, writer->compbuf);
-	fz_free(ctx, writer->page_obj);
+	fz_free(ctx, writer->page);
 	fz_free(ctx, writer->xref);
 }
 
@@ -342,7 +321,9 @@ fz_band_writer *fz_new_pclm_band_writer(fz_context *ctx, fz_output *out, const f
 
 	if (writer->options.strip_height == 0)
 		writer->options.strip_height = 16;
-	writer->obj_num = 3; /* 1 reserved for catalog, 2 for pages tree. */
+	fz_push_list(ctx, writer->xref); /* Object 0 - always free */
+	fz_push_list(ctx, writer->xref); /* Object 1 - reserved for catalogue */
+	fz_push_list(ctx, writer->xref); /* Object 2 - reserved for pages tree */
 
 	return &writer->super;
 }

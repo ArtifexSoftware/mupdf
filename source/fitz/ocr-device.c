@@ -123,14 +123,10 @@ typedef struct fz_ocr_device_s
 	fz_font *font;
 
 	/* Current word */
-	int char_max;
-	int char_len;
-	int *chars;
+	fz_list(int, chars);
 
 	/* Entire page */
-	int words_max;
-	int words_len;
-	word_record **words;
+	fz_list(word_record *, words);
 
 	char *language;
 	char *datadir;
@@ -405,7 +401,7 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 	float step;
 	fz_rect char_bbox;
 
-	if (ocr->char_len == 0)
+	if (ocr->chars_len == 0)
 		return;
 
 	/* If we're not sending direct to the target device, then insert
@@ -415,22 +411,14 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 	if (ocr->list_dev != ocr->target)
 	{
 		word_record *word;
+		word_record **wr = fz_push_list(ctx, ocr->words);
 
-		if (ocr->words_len == ocr->words_max)
-		{
-			int new_max = ocr->words_max * 2;
-			if (new_max == 0)
-				new_max = 32;
-			ocr->words = fz_realloc_array(ctx, ocr->words, new_max, word_record *);
-			ocr->words_max = new_max;
-		}
-		word = fz_malloc_flexible(ctx, word_record, unicode, ocr->char_len);
-		word->len = ocr->char_len;
+		word = *wr = fz_malloc_flexible(ctx, word_record, unicode, ocr->chars_len);
+		word->len = ocr->chars_len;
 		word->bbox = ocr->word_bbox;
 		word->n = 0;
-		memcpy(word->unicode, ocr->chars, ocr->char_len * sizeof(int));
-		ocr->words[ocr->words_len++] = word;
-		ocr->char_len = 0;
+		memcpy(word->unicode, ocr->chars, ocr->chars_len * sizeof(int));
+		ocr->chars_len = 0;
 		return;
 	}
 	/* FIXME: Look at font-name. */
@@ -451,11 +439,11 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 		 * different widths in, but it's acceptable for these
 		 * purposes. */
 		/* FIXME: This assumes L2R motion of text. */
-		step = (ocr->word_bbox.x1 - ocr->word_bbox.x0) / ocr->char_len;
+		step = (ocr->word_bbox.x1 - ocr->word_bbox.x0) / ocr->chars_len;
 		char_bbox.x1 = ocr->word_bbox.x0;
 		char_bbox.y0 = ocr->word_bbox.y0;
 		char_bbox.y1 = ocr->word_bbox.y1;
-		for (i = 0; i < ocr->char_len; i++)
+		for (i = 0; i < ocr->chars_len; i++)
 		{
 			char_bbox.x0 = char_bbox.x1;
 			char_bbox.x1 += step;
@@ -481,7 +469,7 @@ flush_word(fz_context *ctx, fz_ocr_device *ocr)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	ocr->char_len = 0;
+	ocr->chars_len = 0;
 }
 
 static void
@@ -492,6 +480,7 @@ char_callback(fz_context *ctx, void *arg, int unicode,
 {
 	fz_ocr_device *ocr = (fz_ocr_device *)arg;
 	fz_rect bbox = { word_bbox[0]-1, word_bbox[1]-1, word_bbox[2]+1, word_bbox[3]+1 };
+	int *p;
 
 	if (bbox.x0 != ocr->word_bbox.x0 ||
 		bbox.y0 != ocr->word_bbox.y0 ||
@@ -502,16 +491,8 @@ char_callback(fz_context *ctx, void *arg, int unicode,
 		ocr->word_bbox = bbox;
 	}
 
-	if (ocr->char_max == ocr->char_len)
-	{
-		int new_max = ocr->char_max * 2;
-		if (new_max == 0)
-			new_max = 32;
-		ocr->chars = fz_realloc_array(ctx, ocr->chars, new_max, int);
-		ocr->char_max = new_max;
-	}
-
-	ocr->chars[ocr->char_len++] = unicode;
+	p = fz_push_list(ctx, ocr->chars);
+	*p = unicode;
 }
 
 

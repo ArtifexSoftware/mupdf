@@ -573,9 +573,7 @@ struct pdf_document
 	pdf_free_doc_event_data_cb *free_event_data_cb;
 	void *event_cb_data;
 
-	int num_type3_fonts;
-	int max_type3_fonts;
-	fz_font **type3_fonts;
+	fz_list(fz_font *, type3_fonts);
 
 	struct {
 		fz_hash_table *fonts;

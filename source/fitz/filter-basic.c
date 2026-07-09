@@ -311,8 +311,8 @@ fz_open_endstream_filter(fz_context *ctx, fz_stream *chain, uint64_t len, int64_
 
 struct concat_filter
 {
-	int max;
-	int count;
+	int cap;
+	int len;
 	int current;
 	int pad; /* 1 if we should add whitespace padding between streams */
 	unsigned char ws_buf;
@@ -325,7 +325,7 @@ next_concat(fz_context *ctx, fz_stream *stm, size_t max)
 	struct concat_filter *state = (struct concat_filter *)stm->state;
 	size_t n;
 
-	while (state->current < state->count)
+	while (state->current < state->len)
 	{
 		/* Read the next block of underlying data. */
 		if (stm->wp == state->chain[state->current]->wp)
@@ -367,7 +367,7 @@ close_concat(fz_context *ctx, void *state_)
 	struct concat_filter *state = (struct concat_filter *)state_;
 	int i;
 
-	for (i = state->current; i < state->count; i++)
+	for (i = state->current; i < state->len; i++)
 	{
 		fz_drop_stream(ctx, state->chain[i]);
 	}
@@ -380,8 +380,8 @@ fz_open_concat(fz_context *ctx, int len, int pad)
 	struct concat_filter *state;
 
 	state = fz_calloc(ctx, 1, sizeof(struct concat_filter) + (len-1)*sizeof(fz_stream *));
-	state->max = len;
-	state->count = 0;
+	state->cap = len;
+	state->len = 0;
 	state->current = 0;
 	state->pad = pad;
 	state->ws_buf = 32;
@@ -394,13 +394,13 @@ fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain)
 {
 	struct concat_filter *state = (struct concat_filter *)concat->state;
 
-	if (state->count == state->max)
+	if (state->len == state->cap)
 	{
 		fz_drop_stream(ctx, chain);
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "concatenated more streams than promised");
 	}
 
-	state->chain[state->count++] = chain;
+	state->chain[state->len++] = chain;
 }
 
 /* ASCII Hex Decode */

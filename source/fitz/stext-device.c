@@ -156,9 +156,7 @@ typedef struct
 	} last;
 
 	/* The list of 'rects' seen during processing (if we're collecting styles). */
-	int rect_max;
-	int rect_len;
-	rect_details *rects;
+	fz_list(rect_details, rects);
 
 	fz_stext_block *lazy_vectors;
 	fz_stext_block *lazy_vectors_tail;
@@ -2010,7 +2008,7 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 static void
 check_rects_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page)
 {
-	int i, n = tdev->rect_len;
+	int i, n = tdev->rects_len;
 
 	for (i = 0; i < n; i++)
 	{
@@ -2348,8 +2346,9 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 {
 	float thickness;
 	fz_point from, to;
-	int i, n = tdev->rect_len;
+	int i, n = tdev->rects_len;
 	fz_rect r;
+	rect_details *rd;
 
 	/* Is this path a thin rectangle (possibly rotated)? If so, then we need to
 	 * consider it as being a strikeout or underline. */
@@ -2368,21 +2367,12 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 	}
 
 	/* Add to the list of rects in the device. */
-	if (tdev->rect_len == tdev->rect_max)
-	{
-		int newmax = tdev->rect_max * 2;
-		if (newmax == 0)
-			newmax = 32;
-
-		tdev->rects = fz_realloc(ctx, tdev->rects, sizeof(*tdev->rects) * newmax);
-		tdev->rect_max = newmax;
-	}
-	tdev->rects[tdev->rect_len].from = from;
-	tdev->rects[tdev->rect_len].to = to;
-	tdev->rects[tdev->rect_len].thickness = thickness;
-	tdev->rects[tdev->rect_len].rect = r;
-	tdev->rects[tdev->rect_len].argb = argb;
-	tdev->rect_len++;
+	rd = fz_push_list(ctx, tdev->rects);
+	rd->from = from;
+	rd->to = to;
+	rd->thickness = thickness;
+	rd->rect = r;
+	rd->argb = argb;
 }
 
 static fz_stext_block *
@@ -3100,8 +3090,8 @@ fz_new_stext_device_for_page(fz_context *ctx, fz_stext_page *page, const fz_stex
 	if ((dev->flags & FZ_STEXT_PRESERVE_IMAGES) == 0 && (dev->opts.flags & FZ_STEXT_IGNORE_ACTUALTEXT) != 0)
 		dev->super.hints |= FZ_DONT_DECODE_IMAGES;
 
-	dev->rect_max = 0;
-	dev->rect_len = 0;
+	dev->rects_cap = 0;
+	dev->rects_len = 0;
 	dev->rects = NULL;
 
 	/* Push a new id */

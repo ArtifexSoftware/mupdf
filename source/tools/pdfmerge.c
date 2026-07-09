@@ -97,9 +97,7 @@ typedef struct
 	fz_outline_iterator *it_src;
 	const char *range;
 	int page_count;
-	int max;
-	int len;
-	fz_outline_item *items;
+	fz_list(fz_outline_item, items);
 	int copied_to_depth;
 	int page_output_base;
 } cor_state;
@@ -138,11 +136,11 @@ copy_item(cor_state *cor)
 {
 	fz_context *ctx = cor->ctx;
 
-	while (cor->copied_to_depth < cor->len)
+	while (cor->copied_to_depth < cor->items_len)
 	{
 		/* All items copied in a run get the same uri - that of the last one. */
 		fz_outline_item item = cor->items[cor->copied_to_depth];
-		item.uri = cor->items[cor->len-1].uri;
+		item.uri = cor->items[cor->items_len-1].uri;
 		fz_outline_iterator_insert(ctx, cor->it_dst, &item);
 		cor->copied_to_depth++;
 		fz_outline_iterator_prev(ctx, cor->it_dst);
@@ -180,19 +178,14 @@ do_copy_outline_range(cor_state *cor)
 		int page_num = fz_page_number_from_location(ctx, (fz_document *)doc_src, fz_resolve_link(ctx, (fz_document *)doc_src, item->uri, &x, &y));
 		int page_in_range = position_in_range(ctx, cor->range, cor->page_count, page_num+1);
 		int new_page_number = page_in_range + cor->page_output_base;
+		fz_outline_item *oi;
 
-		if (cor->len == cor->max)
-		{
-			int newmax = cor->max ? cor->max * 2 : 8;
-			cor->items = fz_realloc_array(ctx, cor->items, newmax, fz_outline_item);
-			cor->max = newmax;
-		}
-		cor->len++;
-		cor->items[cor->len-1].title = NULL;
-		cor->items[cor->len-1].uri = NULL;
-		cor->items[cor->len-1].is_open = item->is_open;
-		cor->items[cor->len-1].title = item->title ? fz_strdup(ctx, item->title) : NULL;
-		cor->items[cor->len-1].uri = rewrite_page(ctx, item->uri, new_page_number);
+		oi = fz_push_list(ctx, cor->items);
+		oi->title = NULL;
+		oi->uri = NULL;
+		oi->is_open = item->is_open;
+		oi->title = item->title ? fz_strdup(ctx, item->title) : NULL;
+		oi->uri = rewrite_page(ctx, item->uri, new_page_number);
 
 		if (page_in_range != 0)
 			copy_item(cor);
@@ -203,15 +196,15 @@ do_copy_outline_range(cor_state *cor)
 		if (has_children >= 0)
 			fz_outline_iterator_up(ctx, cor->it_src);
 
-		cor->len--;
-		if (cor->copied_to_depth > cor->len)
+		cor->items_len--;
+		if (cor->copied_to_depth > cor->items_len)
 		{
-			cor->copied_to_depth = cor->len;
+			cor->copied_to_depth = cor->items_len;
 			fz_outline_iterator_up(ctx, cor->it_dst);
 		}
 		fz_outline_iterator_next(ctx, cor->it_dst);
-		fz_free(ctx, cor->items[cor->len].title);
-		fz_free(ctx, cor->items[cor->len].uri);
+		fz_free(ctx, cor->items[cor->items_len].title);
+		fz_free(ctx, cor->items[cor->items_len].uri);
 	}
 	while (fz_outline_iterator_next(ctx, cor->it_src) == 0);
 }
@@ -224,10 +217,10 @@ copy_outline_range(fz_context *ctx, fz_outline_iterator *it_dst, fz_outline_iter
 	cor.ctx = ctx;
 	cor.it_dst = it_dst;
 	cor.it_src = it_src;
-	cor.max = 0;
-	cor.len = 0;
 	cor.copied_to_depth = 0;
 	cor.range = range;
+	cor.items_cap = 0;
+	cor.items_len = 0;
 	cor.items = NULL;
 	cor.page_count = page_count;
 	cor.page_output_base = page_output_base;
@@ -238,7 +231,7 @@ copy_outline_range(fz_context *ctx, fz_outline_iterator *it_dst, fz_outline_iter
 	{
 		int i;
 
-		for (i = 0; i < cor.len; i++)
+		for (i = 0; i < cor.items_len; i++)
 		{
 			fz_free(ctx, cor.items[i].title);
 			fz_free(ctx, cor.items[i].uri);

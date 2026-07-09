@@ -48,10 +48,8 @@ typedef struct fz_edge_s
 typedef struct fz_gel_s
 {
 	fz_rasterizer super;
-	int cap, len;
-	fz_edge *edges;
-	int acap, alen;
-	fz_edge **active;
+	fz_list(fz_edge, edges);
+	fz_list(fz_edge *, active);
 	int bcap;
 	unsigned char *alphas;
 	int *deltas;
@@ -62,8 +60,8 @@ fz_reset_gel(fz_context *ctx, fz_rasterizer *rast)
 {
 	fz_gel *gel = (fz_gel *)rast;
 
-	gel->len = 0;
-	gel->alen = 0;
+	gel->edges_len = 0;
+	gel->active_len = 0;
 
 	return 0;
 }
@@ -139,13 +137,7 @@ fz_insert_gel_raw(fz_context *ctx, fz_rasterizer *ras, int x0, int y0, int x1, i
 	if (y0 < gel->super.bbox.y0) gel->super.bbox.y0 = y0;
 	if (y1 > gel->super.bbox.y1) gel->super.bbox.y1 = y1;
 
-	if (gel->len + 1 == gel->cap) {
-		int new_cap = gel->cap * 2;
-		gel->edges = fz_realloc_array(ctx, gel->edges, new_cap, fz_edge);
-		gel->cap = new_cap;
-	}
-
-	edge = &gel->edges[gel->len++];
+	edge = fz_push_list(ctx, gel->edges);
 
 	dy = y1 - y0;
 	dx = x1 - x0;
@@ -288,7 +280,7 @@ static void
 sort_gel(fz_context *ctx, fz_gel *gel)
 {
 	fz_edge *a = gel->edges;
-	int n = gel->len;
+	int n = gel->edges_len;
 	int h, i, k;
 	fz_edge t;
 
@@ -332,7 +324,7 @@ fz_is_rect_gel(fz_context *ctx, fz_rasterizer *ras)
 {
 	fz_gel *gel = (fz_gel *)ras;
 	/* a rectangular path is converted into two vertical edges of identical height */
-	if (gel->len == 2)
+	if (gel->edges_len == 2)
 	{
 		fz_edge *a = gel->edges + 0;
 		fz_edge *b = gel->edges + 1;
@@ -387,24 +379,19 @@ insert_active(fz_context *ctx, fz_gel *gel, int y, int *e_)
 	int e = *e_;
 
 	/* insert edges that start here */
-	if (e < gel->len && gel->edges[e].y == y)
+	if (e < gel->edges_len && gel->edges[e].y == y)
 	{
 		do {
-			if (gel->alen + 1 == gel->acap) {
-				int newcap = gel->acap + 64;
-				fz_edge **newactive = fz_realloc_array(ctx, gel->active, newcap, fz_edge*);
-				gel->active = newactive;
-				gel->acap = newcap;
-			}
-			gel->active[gel->alen++] = &gel->edges[e++];
-		} while (e < gel->len && gel->edges[e].y == y);
+			fz_edge **edge = fz_push_list(ctx, gel->active);
+			*edge = &gel->edges[e++];
+		} while (e < gel->edges_len && gel->edges[e].y == y);
 		*e_ = e;
 	}
 
-	if (e < gel->len)
+	if (e < gel->edges_len)
 		h_min = gel->edges[e].y - y;
 
-	for (e=0; e < gel->alen; e++)
+	for (e=0; e < gel->active_len; e++)
 	{
 		if (gel->active[e]->xmove != 0 || gel->active[e]->adj_up != 0)
 		{
@@ -420,7 +407,7 @@ insert_active(fz_context *ctx, fz_gel *gel, int y, int *e_)
 	}
 
 	/* shell-sort the edges by increasing x */
-	sort_active(gel->active, gel->alen);
+	sort_active(gel->active, gel->active_len);
 
 	return h_min;
 }
@@ -431,7 +418,7 @@ advance_active(fz_context *ctx, fz_gel *gel, int inc)
 	fz_edge *edge;
 	int i = 0;
 
-	while (i < gel->alen)
+	while (i < gel->active_len)
 	{
 		edge = gel->active[i];
 
@@ -439,7 +426,7 @@ advance_active(fz_context *ctx, fz_gel *gel, int inc)
 
 		/* terminator! */
 		if (edge->h == 0) {
-			gel->active[i] = gel->active[--gel->alen];
+			gel->active[i] = gel->active[--gel->active_len];
 		}
 
 		else {
@@ -502,7 +489,7 @@ non_zero_winding_aa(fz_context *ctx, fz_gel *gel, int *list, int xofs, int h)
 	int x = 0;
 	int i;
 
-	for (i = 0; i < gel->alen; i++)
+	for (i = 0; i < gel->active_len; i++)
 	{
 		if (!winding && (winding + gel->active[i]->ydir))
 			x = gel->active[i]->x;
@@ -519,7 +506,7 @@ even_odd_aa(fz_context *ctx, fz_gel *gel, int *list, int xofs, int h)
 	int x = 0;
 	int i;
 
-	for (i = 0; i < gel->alen; i++)
+	for (i = 0; i < gel->active_len; i++)
 	{
 		if (!even)
 			x = gel->active[i]->x;
@@ -586,7 +573,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	int skipx = clip->x0 - xmin;
 	int clipn = clip->x1 - clip->x0;
 
-	if (gel->len == 0)
+	if (gel->edges_len == 0)
 		return;
 
 	assert(xmin < xmax);
@@ -608,7 +595,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	deltas = gel->deltas;
 
 	memset(deltas, 0, (xmax - xmin + 1) * sizeof(int));
-	gel->alen = 0;
+	gel->active_len = 0;
 
 	/* The theory here is that we have a list of the edges (gel) of length
 	 * gel->len. We have an initially empty list of 'active' edges (of
@@ -627,7 +614,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	yd = fz_idiv(y, vscale);
 
 	/* Quickly skip to the start of the clip region */
-	while (yd < clip->y0 && (gel->alen > 0 || e < gel->len))
+	while (yd < clip->y0 && (gel->active_len > 0 || e < gel->edges_len))
 	{
 		/* rh = remaining height = number of subscanlines left to be
 		 * inserted into the current scanline, which will be plotted
@@ -664,7 +651,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	}
 
 	/* Now do the active lines */
-	while (gel->alen > 0 || e < gel->len)
+	while (gel->active_len > 0 || e < gel->edges_len)
 	{
 		yc = fz_idiv(y, vscale);	/* yc = current scanline */
 		/* rh = remaining height = number of subscanlines left to be
@@ -780,7 +767,7 @@ non_zero_winding_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip
 	int winding = 0;
 	int x = 0;
 	int i;
-	for (i = 0; i < gel->alen; i++)
+	for (i = 0; i < gel->active_len; i++)
 	{
 		if (!winding && (winding + gel->active[i]->ydir))
 			x = gel->active[i]->x;
@@ -796,7 +783,7 @@ even_odd_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pix
 	int even = 0;
 	int x = 0;
 	int i;
-	for (i = 0; i < gel->alen; i++)
+	for (i = 0; i < gel->active_len; i++)
 	{
 		if (!even)
 			x = gel->active[i]->x;
@@ -815,12 +802,12 @@ fz_scan_convert_sharp(fz_context *ctx,
 	int y = gel->edges[0].y;
 	int height;
 
-	gel->alen = 0;
+	gel->active_len = 0;
 
 	/* Skip any lines before the clip region */
 	if (y < clip->y0)
 	{
-		while (gel->alen > 0 || e < gel->len)
+		while (gel->active_len > 0 || e < gel->edges_len)
 		{
 			height = insert_active(ctx, gel, y, &e);
 			y += height;
@@ -833,11 +820,11 @@ fz_scan_convert_sharp(fz_context *ctx,
 	}
 
 	/* Now process as lines within the clip region */
-	while (gel->alen > 0 || e < gel->len)
+	while (gel->active_len > 0 || e < gel->edges_len)
 	{
 		height = insert_active(ctx, gel, y, &e);
 
-		if (gel->alen == 0)
+		if (gel->active_len == 0)
 			y += height;
 		else
 		{
@@ -912,13 +899,13 @@ fz_new_gel(fz_context *ctx)
 	fz_try(ctx)
 	{
 		gel->edges = NULL;
-		gel->cap = 512;
-		gel->len = 0;
-		gel->edges = Memento_label(fz_malloc_array(ctx, gel->cap, fz_edge), "gel_edges");
+		gel->edges_cap = 512;
+		gel->edges_len = 0;
+		gel->edges = Memento_label(fz_malloc_array(ctx, gel->edges_cap, fz_edge), "gel_edges");
 
-		gel->acap = 64;
-		gel->alen = 0;
-		gel->active = Memento_label(fz_malloc_array(ctx, gel->acap, fz_edge*), "gel_active");
+		gel->active_cap = 64;
+		gel->active_len = 0;
+		gel->active = Memento_label(fz_malloc_array(ctx, gel->active_cap, fz_edge*), "gel_active");
 	}
 	fz_catch(ctx)
 	{

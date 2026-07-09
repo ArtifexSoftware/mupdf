@@ -231,9 +231,7 @@ static const char *find_known_fb2_tag(const char *tag)
 
 typedef struct
 {
-	int maxcols;
-	int ncols;
-	col_style *styles;
+	fz_list(col_style, styles);
 }
 table_styles;
 
@@ -1192,16 +1190,7 @@ static fz_html_box *gen2_block(fz_context *ctx, struct genstate *g, fz_html_box 
 static void
 push_colstyle(fz_context *ctx, table_styles *ts, col_style cs)
 {
-	if (ts->ncols == ts->maxcols)
-	{
-		int newmax = ts->maxcols * 2;
-		if (newmax == 0)
-			newmax = 8;
-		ts->styles = fz_realloc(ctx, ts->styles, sizeof(ts->styles[0]) * newmax);
-		ts->maxcols = newmax;
-	}
-
-	ts->styles[ts->ncols++] = cs;
+	*(col_style *)fz_push_list(ctx, ts->styles) = cs;
 }
 
 static void gen2_col(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *node, fz_css_match *match)
@@ -1267,7 +1256,7 @@ static fz_html_box *gen2_table_cell(fz_context *ctx, struct genstate *g, fz_html
 
 	fz_match_css(ctx, &match, root_match, g->css, node, FZ_CSS_PSEUDO_NONE, g->publisher_css);
 	fz_apply_css_style(ctx, g->set, style, &match);
-	if (g->col_num < g->tab_styles.ncols)
+	if (g->col_num < g->tab_styles.styles_len)
 	{
 		/* Make a local copy of the style, and overlay anything onto it from col. */
 		col_style *cs = &g->tab_styles.styles[g->col_num];
@@ -1534,8 +1523,8 @@ static void gen2_tag(fz_context *ctx, struct genstate *g, fz_html_box *root_box,
 		int saved_col_num = g->col_num;
 		fz_try(ctx)
 		{
-			g->tab_styles.maxcols = 0;
-			g->tab_styles.ncols = 0;
+			g->tab_styles.styles_cap = 0;
+			g->tab_styles.styles_len = 0;
 			g->tab_styles.styles = NULL;
 			gen2_children(ctx, g, this_box, node, match);
 		}

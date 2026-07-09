@@ -122,23 +122,14 @@ fz_disable_device_hints(fz_context *ctx, fz_device *dev, int hints)
 static void
 push_clip_stack(fz_context *ctx, fz_device *dev, fz_rect rect, int type)
 {
-	if (dev->container_len == dev->container_cap)
-	{
-		int newmax = dev->container_cap * 2;
-		if (newmax == 0)
-			newmax = 4;
-		dev->container = fz_realloc_array(ctx, dev->container, newmax, fz_device_container_stack);
-		dev->container_cap = newmax;
-	}
-	if (dev->container_len == 0)
-		dev->container[0].scissor = rect;
+	fz_device_container_stack *c = fz_push_list(ctx, dev->container);
+
+	if (dev->container_len == 1)
+		c->scissor = rect;
 	else
-	{
-		dev->container[dev->container_len].scissor = fz_intersect_rect(dev->container[dev->container_len-1].scissor, rect);
-	}
-	dev->container[dev->container_len].type = type;
-	dev->container[dev->container_len].user = 0;
-	dev->container_len++;
+		c->scissor = fz_intersect_rect(c[-1].scissor, rect);
+	c->type = type;
+	c->user = 0;
 }
 
 static void

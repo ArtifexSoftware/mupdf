@@ -62,7 +62,7 @@ typedef struct
  * already present.  When we have an image on a particular page, the resource
  * dict will be updated with the proper indirect reference across the document.
  * We do need to maintain some information as to what image resources we have
- * already specified for this page which is the purpose of image_indices
+ * already specified for this page which is the purpose of the image array.
  */
 
 typedef struct
@@ -80,6 +80,12 @@ typedef struct
 	pdf_obj *ref;
 } group_entry;
 
+typedef struct
+{
+	fz_font *font;
+	int enc;
+} cid_font;
+
 struct pdf_device
 {
 	fz_device super;
@@ -92,31 +98,20 @@ struct pdf_device
 	int num_forms;
 	int num_smasks;
 
-	int num_gstates;
-	int max_gstates;
-	gstate *gstates;
+	fz_list(gstate, gstates);
 
-	int num_imgs;
-	int max_imgs;
-	int *image_indices;
+	fz_list(int, image);
 
-	int num_cid_fonts;
-	int max_cid_fonts;
-	fz_font **cid_fonts;
-	int *cid_fonts_enc;
+	fz_list(cid_font, cid_fonts);
 
-	int num_alphas;
-	int max_alphas;
-	alpha_entry *alphas;
+	fz_list(alpha_entry, alphas);
 
-	int num_groups;
-	int max_groups;
-	group_entry *groups;
+	fz_list(group_entry, groups);
 
 	int num_shadings;
 };
 
-#define CURRENT_GSTATE(pdev) (&(pdev)->gstates[(pdev)->num_gstates-1])
+#define CURRENT_GSTATE(pdev) (&(pdev)->gstates[(pdev)->gstates_len-1])
 
 /* Helper functions */
 static void
@@ -352,25 +347,18 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 	gs->alpha[stroke] = alpha;
 
 	/* Have we sent such an alpha before? */
-	for (i = 0; i < pdev->num_alphas; i++)
+	for (i = 0; i < pdev->alphas_len; i++)
 		if (pdev->alphas[i].alpha == alpha && pdev->alphas[i].stroke == stroke)
 			break;
 
-	if (i == pdev->num_alphas)
+	if (i == pdev->alphas_len)
 	{
 		pdf_obj *o, *ref;
 
 		/* No. Need to make a new one */
-		if (pdev->num_alphas == pdev->max_alphas)
-		{
-			int newmax = pdev->max_alphas * 2;
-			if (newmax == 0)
-				newmax = 4;
-			pdev->alphas = fz_realloc_array(ctx, pdev->alphas, newmax, alpha_entry);
-			pdev->max_alphas = newmax;
-		}
-		pdev->alphas[i].alpha = alpha;
-		pdev->alphas[i].stroke = stroke;
+		alpha_entry *a = fz_push_list(ctx, pdev->alphas);
+		a->alpha = alpha;
+		a->stroke = stroke;
 
 		o = pdf_new_dict(ctx, doc, 1);
 		fz_try(ctx)
@@ -389,7 +377,6 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 		{
 			fz_rethrow(ctx);
 		}
-		pdev->num_alphas++;
 	}
 	fz_append_printf(ctx, gs->buf, "/Alp%d gs\n", i);
 }
@@ -400,8 +387,8 @@ pdf_dev_find_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 	int k;
 
 	/* Check if we already had this one */
-	for (k = 0; k < pdev->num_cid_fonts; k++)
-		if (pdev->cid_fonts[k] == font)
+	for (k = 0; k < pdev->cid_fonts_len; k++)
+		if (pdev->cid_fonts[k].font == font)
 			return k;
 
 	return -1;
@@ -411,26 +398,17 @@ static int
 pdf_dev_add_font_res_imp(fz_context *ctx, pdf_device *pdev, fz_font *font, pdf_obj *fres, int enc)
 {
 	char text[32];
-	int num;
+	cid_font *cf;
 
 	/* Not there so add to resources */
-	fz_snprintf(text, sizeof(text), "Font/F%d", pdev->num_cid_fonts);
+	fz_snprintf(text, sizeof(text), "Font/F%d", pdev->cid_fonts_len);
 	pdf_dict_putp_drop(ctx, pdev->resources, text, fres);
 
 	/* And add index to our list for this page */
-	if (pdev->num_cid_fonts == pdev->max_cid_fonts)
-	{
-		int newmax = pdev->max_cid_fonts * 2;
-		if (newmax == 0)
-			newmax = 4;
-		pdev->cid_fonts = fz_realloc_array(ctx, pdev->cid_fonts, newmax, fz_font*);
-		pdev->cid_fonts_enc = fz_realloc_array(ctx, pdev->cid_fonts_enc, newmax, int);
-		pdev->max_cid_fonts = newmax;
-	}
-	num = pdev->num_cid_fonts++;
-	pdev->cid_fonts[num] = fz_keep_font(ctx, font);
-	pdev->cid_fonts_enc[num] = enc;
-	return num;
+	cf = fz_push_list(ctx, pdev->cid_fonts);
+	cf->font = fz_keep_font(ctx, font);
+	cf->enc = enc;
+	return pdev->cid_fonts_len-1;
 }
 
 static int
@@ -479,7 +457,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, fz_matrix trm)
 	float font_size = fz_matrix_expansion(trm);
 
 	/* If the font is unchanged, nothing to do */
-	if (gs->font >= 0 && pdev->cid_fonts[gs->font] == font && gs->font_size == font_size)
+	if (gs->font >= 0 && pdev->cid_fonts[gs->font].font == font && gs->font_size == font_size)
 		return;
 
 	// TODO: vertical wmode
@@ -500,22 +478,17 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, fz_matrix trm)
 static void
 pdf_dev_push_new_buf(fz_context *ctx, pdf_device *pdev, fz_buffer *buf, void (*on_pop)(fz_context*,pdf_device*,void*), void *on_pop_arg)
 {
-	if (pdev->num_gstates == pdev->max_gstates)
-	{
-		int newmax = pdev->max_gstates*2;
-		pdev->gstates = fz_realloc_array(ctx, pdev->gstates, newmax, gstate);
-		pdev->max_gstates = newmax;
-	}
-	memcpy(&pdev->gstates[pdev->num_gstates], &pdev->gstates[pdev->num_gstates-1], sizeof(*pdev->gstates));
-	fz_keep_stroke_state(ctx, pdev->gstates[pdev->num_gstates].stroke_state);
+	gstate *g = fz_push_list(ctx, pdev->gstates);
+
+	memcpy(g, &g[-1], sizeof(*g));
+	fz_keep_stroke_state(ctx, g->stroke_state);
 	if (buf)
-		pdev->gstates[pdev->num_gstates].buf = buf;
+		g->buf = buf;
 	else
-		fz_keep_buffer(ctx, pdev->gstates[pdev->num_gstates].buf);
-	pdev->gstates[pdev->num_gstates].on_pop = on_pop;
-	pdev->gstates[pdev->num_gstates].on_pop_arg = on_pop_arg;
-	fz_append_string(ctx, pdev->gstates[pdev->num_gstates].buf, "q\n");
-	pdev->num_gstates++;
+		fz_keep_buffer(ctx, g->buf);
+	g->on_pop = on_pop;
+	g->on_pop_arg = on_pop_arg;
+	fz_append_string(ctx, g->buf, "q\n");
 }
 
 static void
@@ -533,9 +506,9 @@ pdf_dev_pop(fz_context *ctx, pdf_device *pdev)
 	fz_append_string(ctx, gs->buf, "Q\n");
 	if (gs->on_pop)
 		gs->on_pop(ctx, pdev, arg);
-	pdev->num_gstates--;
-	fz_drop_stroke_state(ctx, pdev->gstates[pdev->num_gstates].stroke_state);
-	fz_drop_buffer(ctx, pdev->gstates[pdev->num_gstates].buf);
+	pdev->gstates_len--;
+	fz_drop_stroke_state(ctx, pdev->gstates[pdev->gstates_len].stroke_state);
+	fz_drop_buffer(ctx, pdev->gstates[pdev->gstates_len].buf);
 	return arg;
 }
 
@@ -566,7 +539,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 	inv_tm = fz_invert_matrix(tm);
 	inv_trm = fz_invert_matrix(trm);
 
-	enc = pdev->cid_fonts_enc[gs->font];
+	enc = pdev->cid_fonts[gs->font].enc;
 
 	fz_append_printf(ctx, gs->buf, "%M Tm\n[<", &tm);
 
@@ -661,7 +634,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, fz_rect 
 	*form_ref = NULL;
 
 	/* Find (or make) a new group with the required options. */
-	for(num = 0; num < pdev->num_groups; num++)
+	for(num = 0; num < pdev->groups_len; num++)
 	{
 		group_entry *g = &pdev->groups[num];
 		if (g->isolated == isolated && g->knockout == knockout && g->alpha == alpha && g->colorspace == colorspace)
@@ -672,22 +645,14 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, fz_rect 
 	}
 
 	/* If we didn't find one, make one */
-	if (num == pdev->num_groups)
+	if (num == pdev->groups_len)
 	{
-		if (pdev->num_groups == pdev->max_groups)
-		{
-			int newmax = pdev->max_groups * 2;
-			if (newmax == 0)
-				newmax = 4;
-			pdev->groups = fz_realloc_array(ctx, pdev->groups, newmax, group_entry);
-			pdev->max_groups = newmax;
-		}
-		pdev->num_groups++;
-		pdev->groups[num].isolated = isolated;
-		pdev->groups[num].knockout = knockout;
-		pdev->groups[num].alpha = alpha;
-		pdev->groups[num].colorspace = fz_keep_colorspace(ctx, colorspace);
-		pdev->groups[num].ref = NULL;
+		group_entry *g = fz_push_list(ctx, pdev->groups);
+		g->isolated = isolated;
+		g->knockout = knockout;
+		g->alpha = alpha;
+		g->colorspace = fz_keep_colorspace(ctx, colorspace);
+		g->ref = NULL;
 		group = pdf_new_dict(ctx, doc, 5);
 		fz_try(ctx)
 		{
@@ -709,7 +674,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, fz_rect 
 			default:
 				break;
 			}
-			group_ref = pdev->groups[num].ref = pdf_add_object(ctx, doc, group);
+			group_ref = g->ref = pdf_add_object(ctx, doc, group);
 		}
 		fz_always(ctx)
 		{
@@ -916,12 +881,11 @@ pdf_dev_add_image_res(fz_context *ctx, fz_device *dev, pdf_obj *im_res)
 	char text[32];
 	pdf_device *pdev = (pdf_device*)dev;
 	int k;
-	int num;
 
 	/* Check if we already had this one */
-	for (k = 0; k < pdev->num_imgs; k++)
+	for (k = 0; k < pdev->image_len; k++)
 	{
-		if (pdev->image_indices[k] == pdf_to_num(ctx, im_res))
+		if (pdev->image[k] == pdf_to_num(ctx, im_res))
 			return;
 	}
 
@@ -930,16 +894,7 @@ pdf_dev_add_image_res(fz_context *ctx, fz_device *dev, pdf_obj *im_res)
 	pdf_dict_putp(ctx, pdev->resources, text, im_res);
 
 	/* And add index to our list for this page */
-	if (pdev->num_imgs == pdev->max_imgs)
-	{
-		int newmax = pdev->max_imgs * 2;
-		if (newmax == 0)
-			newmax = 4;
-		pdev->image_indices = fz_realloc_array(ctx, pdev->image_indices, newmax, int);
-		pdev->max_imgs = newmax;
-	}
-	num = pdev->num_imgs++;
-	pdev->image_indices[num] = pdf_to_num(ctx, im_res);
+	*(int *)fz_push_list(ctx, pdev->image) = pdf_to_num(ctx, im_res);
 }
 
 static void
@@ -1377,16 +1332,16 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 	pdf_device *pdev = (pdf_device*)dev;
 	int i;
 
-	for (i = pdev->num_gstates-1; i >= 0; i--)
+	for (i = pdev->gstates_len-1; i >= 0; i--)
 	{
 		fz_drop_buffer(ctx, pdev->gstates[i].buf);
 		fz_drop_stroke_state(ctx, pdev->gstates[i].stroke_state);
 	}
 
-	for (i = pdev->num_cid_fonts-1; i >= 0; i--)
-		fz_drop_font(ctx, pdev->cid_fonts[i]);
+	for (i = pdev->cid_fonts_len-1; i >= 0; i--)
+		fz_drop_font(ctx, pdev->cid_fonts[i].font);
 
-	for (i = pdev->num_groups - 1; i >= 0; i--)
+	for (i = pdev->groups_len - 1; i >= 0; i--)
 	{
 		pdf_drop_obj(ctx, pdev->groups[i].ref);
 		fz_drop_colorspace(ctx, pdev->groups[i].colorspace);
@@ -1394,8 +1349,7 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 
 	pdf_drop_obj(ctx, pdev->resources);
 	fz_free(ctx, pdev->cid_fonts);
-	fz_free(ctx, pdev->cid_fonts_enc);
-	fz_free(ctx, pdev->image_indices);
+	fz_free(ctx, pdev->image);
 	fz_free(ctx, pdev->groups);
 	fz_free(ctx, pdev->alphas);
 	fz_free(ctx, pdev->gstates);
@@ -1441,23 +1395,22 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_matrix topc
 
 	fz_try(ctx)
 	{
+		gstate *g;
 		dev->doc = pdf_keep_document(ctx, doc);
 		dev->resources = pdf_keep_obj(ctx, resources);
-		dev->gstates = fz_malloc_struct(ctx, gstate);
+		g = fz_push_list(ctx, dev->gstates);
 		if (buf)
-			dev->gstates[0].buf = fz_keep_buffer(ctx, buf);
+			g->buf = fz_keep_buffer(ctx, buf);
 		else
-			dev->gstates[0].buf = fz_new_buffer(ctx, 256);
-		dev->gstates[0].ctm = fz_identity; // XXX
-		dev->gstates[0].colorspace[0] = fz_device_gray(ctx);
-		dev->gstates[0].colorspace[1] = fz_device_gray(ctx);
-		dev->gstates[0].color[0][0] = 0;
-		dev->gstates[0].color[1][0] = 0;
-		dev->gstates[0].alpha[0] = 1.0f;
-		dev->gstates[0].alpha[1] = 1.0f;
-		dev->gstates[0].font = -1;
-		dev->num_gstates = 1;
-		dev->max_gstates = 1;
+			g->buf = fz_new_buffer(ctx, 256);
+		g->ctm = fz_identity; // XXX
+		g->colorspace[0] = fz_device_gray(ctx);
+		g->colorspace[1] = fz_device_gray(ctx);
+		g->color[0][0] = 0;
+		g->color[1][0] = 0;
+		g->alpha[0] = 1.0f;
+		g->alpha[1] = 1.0f;
+		g->font = -1;
 		dev->num_shadings = 0;
 
 		if (!fz_is_identity(topctm))

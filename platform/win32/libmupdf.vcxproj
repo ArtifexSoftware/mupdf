@@ -1135,6 +1135,7 @@
     <ClCompile Include="..\..\source\fitz\json.c" />
     <ClCompile Include="..\..\source\fitz\link.c" />
     <ClCompile Include="..\..\source\fitz\list-device.c" />
+    <ClCompile Include="..\..\source\fitz\list.c" />
     <ClCompile Include="..\..\source\fitz\load-bmp.c" />
     <ClCompile Include="..\..\source\fitz\load-gif.c" />
     <ClCompile Include="..\..\source\fitz\load-jbig2.c" />
@@ -1331,6 +1332,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\image.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\json.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\link.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\list.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\log.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\options.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\outline.h" />

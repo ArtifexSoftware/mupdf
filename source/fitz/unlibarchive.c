@@ -46,9 +46,7 @@ typedef struct
 
 	int current_entry_idx;
 
-	int entries_max;
-	int entries_len;
-	entry_t **entries;
+	fz_list(entry_t, entries);
 
 	fz_context *ctx; /* safe! */
 	uint8_t block[4096];
@@ -398,6 +396,7 @@ fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file)
 		{
 			struct archive_entry *entry;
 			size_t z;
+			entry_t **e;
 
 			r = archive_read_next_header(arch->archive, &entry);
 			if (r == ARCHIVE_EOF)
@@ -415,27 +414,17 @@ fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file)
 			if (!path)
 				continue;
 
-			if (arch->entries_len == arch->entries_max)
-			{
-				int new_max = arch->entries_max * 2;
-				if (new_max == 0)
-					new_max = 32;
-
-				arch->entries = fz_realloc(ctx, arch->entries, sizeof(arch->entries[0]) * new_max);
-				arch->entries_max = new_max;
-			}
+			e = fz_push_list(ctx, arch->entries);
 
 			z = strlen(path);
-			arch->entries[arch->entries_len] = fz_malloc(ctx, sizeof(entry_t) - 32 + z + 1);
-			memcpy(&arch->entries[arch->entries_len]->name[0], path, z+1);
+			*e = fz_malloc(ctx, sizeof(entry_t) - 32 + z + 1);
+			memcpy(&(*e)->name[0], path, z+1);
 			if (free_path)
 			{
 				fz_free(ctx, free_path);
 				free_path = NULL;
 			}
-			arch->entries[arch->entries_len]->len = archive_entry_size(entry);
-
-			arch->entries_len++;
+			(*e)->len = archive_entry_size(entry);
 		}
 		while (r != ARCHIVE_EOF && r != ARCHIVE_FATAL);
 

@@ -245,9 +245,7 @@ typedef struct
 
 struct fz_flotilla
 {
-	int len;
-	int max;
-	fz_raft *rafts;
+	fz_list(fz_raft, rafts);
 };
 
 fz_flotilla *
@@ -268,16 +266,9 @@ fz_drop_flotilla(fz_context *ctx, fz_flotilla *f)
 static void
 add_raft_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_raft r)
 {
-	if (f->len == f->max)
-	{
-		int newmax = f->max * 2;
-		if (newmax == 0)
-			newmax = 8;
-		f->rafts = (fz_raft *) fz_realloc(ctx, f->rafts, sizeof(f->rafts[0]) * newmax);
-		f->max = newmax;
-	}
+	fz_raft *raft = fz_push_list(ctx, f->rafts);
 
-	f->rafts[f->len++] = r;
+	*raft = r;
 }
 
 /* Without FUDGE this would be equivalent to:
@@ -299,15 +290,15 @@ verify(fz_context *ctx, fz_flotilla *f)
 {
 	int i, j;
 
-	printf("Dump: len=%d\n", f->len);
-	for (i = 0; i < f->len; i++)
+	printf("Dump: len=%d\n", f->rafts_len);
+	for (i = 0; i < f->rafts_len; i++)
 	{
 		printf("%d: %g %g %g %g\n", i, f->rafts[i].area.x0, f->rafts[i].area.y0, f->rafts[i].area.x1, f->rafts[i].area.y1);
 	}
 
-	for (i = 0; i < f->len-1; i++)
+	for (i = 0; i < f->rafts_len-1; i++)
 	{
-		for (j = i+1; j < f->len; j++)
+		for (j = i+1; j < f->rafts_len; j++)
 		{
 			if (overlap_or_abut(f->rafts[i].area, f->rafts[j].area))
 			{
@@ -331,7 +322,7 @@ add_plank_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_rect rect)
 #endif
 
 	/* Does the plank extend any of the existing rafts? */
-	for (i = f->len-1; i >= 0; i--)
+	for (i = f->rafts_len-1; i >= 0; i--)
 	{
 		if (overlap_or_abut(rect, f->rafts[i].area))
 		{
@@ -368,7 +359,7 @@ add_plank_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_rect rect)
 		{
 			int changed = 0;
 
-			for (j = f->len-1; j > i; j--)
+			for (j = f->rafts_len-1; j > i; j--)
 			{
 				if (overlap_or_abut(f->rafts[j].area, f->rafts[i].area))
 				{
@@ -378,10 +369,10 @@ add_plank_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_rect rect)
 					printf("Bridge %d -> %g %g %g %g\n", j, f->rafts[i].area.x0, f->rafts[i].area.y0, f->rafts[i].area.x1, f->rafts[i].area.y1);
 #endif
 					/* Shorten the list by moving the end one down to be the ith one. */
-					f->len--;
-					if (j != f->len)
+					f->rafts_len--;
+					if (j != f->rafts_len)
 					{
-						f->rafts[j] = f->rafts[f->len];
+						f->rafts[j] = f->rafts[f->rafts_len];
 					}
 					changed = 1;
 				}
@@ -397,10 +388,10 @@ add_plank_to_flotilla(fz_context *ctx, fz_flotilla *f, fz_rect rect)
 					printf("Bridge %d -> %g %g %g %g\n", j, f->rafts[j].area.x0, f->rafts[j].area.y0, f->rafts[j].area.x1, f->rafts[j].area.y1);
 #endif
 					/* Shorten the list by moving the end one down to be the ith one. */
-					f->len--;
-					if (i != f->len)
+					f->rafts_len--;
+					if (i != f->rafts_len)
 					{
-						f->rafts[i] = f->rafts[f->len];
+						f->rafts[i] = f->rafts[f->rafts_len];
 					}
 					i = j;
 					changed = 1;
@@ -450,13 +441,13 @@ fz_new_flotilla_from_stext_page_vectors(fz_context *ctx, fz_stext_page *page)
 int
 fz_flotilla_size(fz_context *ctx, fz_flotilla *flot)
 {
-	return flot ? flot->len : 0;
+	return flot ? flot->rafts_len : 0;
 }
 
 fz_rect
 fz_flotilla_raft_area(fz_context *ctx, fz_flotilla *flot, int i)
 {
-	if (flot == NULL || i < 0 || i >= flot->len)
+	if (flot == NULL || i < 0 || i >= flot->rafts_len)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "out of range raft in flotilla");
 	return flot->rafts[i].area;
 }

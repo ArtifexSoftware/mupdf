@@ -75,11 +75,10 @@ typedef struct pdf_cmap
 	int mlen, mcap;
 	pdf_mrange *mranges;
 
-	int dlen, dcap;
-	int *dict;
+	fz_list(int, dict);
 
-	int tlen, tcap, ttop;
-	cmap_splay *tree;
+	int tree_top;
+	fz_list(cmap_splay, tree);
 } pdf_cmap;
 
 pdf_cmap *pdf_new_cmap(fz_context *ctx);

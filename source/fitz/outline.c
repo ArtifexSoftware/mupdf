@@ -194,28 +194,22 @@ typedef struct {
 	fz_outline *outline;
 	fz_outline *current;
 	fz_outline_item item;
-	int down_max;
-	int down_len;
-	fz_outline **down_array;
+	fz_list(fz_outline *, down);
 } fz_outline_iter_std;
 
 static int
 iter_std_down(fz_context *ctx, fz_outline_iterator *iter_)
 {
 	fz_outline_iter_std *iter = (fz_outline_iter_std *)iter_;
+	fz_outline **op;
 
 	if (iter->current == NULL)
 		return -1;
 	if (iter->current->down == NULL)
 		return -1;
 
-	if (iter->down_max == iter->down_len)
-	{
-		int new_max = iter->down_max ? iter->down_max * 2 : 32;
-		iter->down_array = fz_realloc_array(ctx, iter->down_array, new_max, fz_outline *);
-		iter->down_max = new_max;
-	}
-	iter->down_array[iter->down_len++] = iter->current;
+	op = fz_push_list(ctx, iter->down);
+	*op = iter->current;
 
 	iter->current = iter->current->down;
 	return 0;
@@ -231,7 +225,7 @@ iter_std_up(fz_context *ctx, fz_outline_iterator *iter_)
 	if (iter->down_len == 0)
 		return -1;
 
-	iter->current = iter->down_array[--iter->down_len];
+	iter->current = iter->down[--iter->down_len];
 
 	return 0;
 }
@@ -259,7 +253,7 @@ iter_std_prev(fz_context *ctx, fz_outline_iterator *iter_)
 
 	if (iter->current == NULL)
 		return -1;
-	first = iter->down_len == 0 ? iter->outline : iter->down_array[iter->down_len-1];
+	first = iter->down_len == 0 ? iter->outline : iter->down[iter->down_len-1];
 	if (iter->current == first)
 		return -1;
 
@@ -299,7 +293,7 @@ iter_std_drop(fz_context *ctx, fz_outline_iterator *iter_)
 		return;
 
 	fz_drop_outline(ctx, iter->outline);
-	fz_free(ctx, iter->down_array);
+	fz_free(ctx, iter->down);
 }
 
 fz_outline_iterator *fz_outline_iterator_from_outline(fz_context *ctx, fz_outline *outline)

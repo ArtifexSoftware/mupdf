@@ -51,9 +51,7 @@ typedef struct
 {
 	fz_archive super;
 
-	int max;
-	int count;
-	cfb_entry *entries;
+	fz_list(cfb_entry, entries);
 
 	/* Header information from the file */
 	uint16_t major;
@@ -211,7 +209,7 @@ static void drop_cfb_archive(fz_context *ctx, fz_archive *arch)
 {
 	fz_cfb_archive *cfb = (fz_cfb_archive *) arch;
 	int i;
-	for (i = 0; i < cfb->count; ++i)
+	for (i = 0; i < cfb->entries_len; ++i)
 		fz_free(ctx, cfb->entries[i].name);
 	fz_free(ctx, cfb->entries);
 }
@@ -219,7 +217,7 @@ static void drop_cfb_archive(fz_context *ctx, fz_archive *arch)
 static cfb_entry *lookup_cfb_entry(fz_context *ctx, fz_cfb_archive *cfb, const char *name)
 {
 	int i;
-	for (i = 0; i < cfb->count; i++)
+	for (i = 0; i < cfb->entries_len; i++)
 		if (!fz_strcasecmp(name, cfb->entries[i].name))
 			return &cfb->entries[i];
 	return NULL;
@@ -494,7 +492,7 @@ static int has_cfb_entry(fz_context *ctx, fz_archive *arch, const char *name)
 static const char *list_cfb_entry(fz_context *ctx, fz_archive *arch, int idx)
 {
 	fz_cfb_archive *cfb = (fz_cfb_archive *) arch;
-	if (idx < 0 || idx >= cfb->count)
+	if (idx < 0 || idx >= cfb->entries_len)
 		return NULL;
 	return cfb->entries[idx].name;
 }
@@ -502,7 +500,7 @@ static const char *list_cfb_entry(fz_context *ctx, fz_archive *arch, int idx)
 static int count_cfb_entries(fz_context *ctx, fz_archive *arch)
 {
 	fz_cfb_archive *cfb = (fz_cfb_archive *) arch;
-	return cfb->count;
+	return cfb->entries_len;
 }
 
 static const uint8_t sig[8] = { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 };
@@ -570,7 +568,7 @@ make_absolute(fz_context *ctx, fz_cfb_archive *cfb, char *prefix, int node, int 
 		if (node == (int)NOSTREAM)
 			return;
 
-		if (node < 0 || node >= cfb->count)
+		if (node < 0 || node >= cfb->entries_len)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid tree");
 
 		if (depth >= 32)
@@ -627,7 +625,7 @@ static void
 strip_unused_names(fz_context *ctx, fz_cfb_archive *cfb)
 {
 	int i, j;
-	int n = cfb->count;
+	int n = cfb->entries_len;
 
 	/* Init i and j so that we always delete the root node. */
 	fz_free(ctx, cfb->entries[0].name);
@@ -643,7 +641,7 @@ strip_unused_names(fz_context *ctx, fz_cfb_archive *cfb)
 		else
 			fz_free(ctx, cfb->entries[i].name);
 	}
-	cfb->count = j;
+	cfb->entries_len = j;
 }
 
 fz_archive *
@@ -718,22 +716,13 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 				int count = 0;
 				int type;
 				int namelen = get16(buffer+off+64);
+				cfb_entry *e;
 
 				if (namelen == 0)
 					break;
 
 				/* What flavour of object is this? */
 				type = buffer[off+64+2];
-
-				/* Ensure our entries list is long enough. */
-				if (cfb->max == cfb->count)
-				{
-					int newmax = cfb->max * 2;
-					if (newmax == 0)
-						newmax = 32;
-					cfb->entries = fz_realloc_array(ctx, cfb->entries, newmax, cfb_entry);
-					cfb->max = newmax;
-				}
 
 				/* Count the name length in utf8 encoded bytes, including terminator. */
 				for (i = 0; i < 64; i += 2)
@@ -746,27 +735,30 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 				if (i+2 != namelen || i == 64)
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Malformed name in CFB directory");
 
+				/* Ensure our entries list is long enough. */
+				e = fz_push_list(ctx, cfb->entries);
+
 				/* Copy the name. */
-				cfb->entries[cfb->count++].name = fz_malloc(ctx, count + 1);
+				e->name = fz_malloc(ctx, count + 1);
 				count = 0;
 				for (i = 0; i < 64; i += 2)
 				{
 					int ucs = buffer[off+i] + (buffer[off+i+1]<<8);
 					if (ucs == 0)
 						break;
-					count += fz_runetochar(&cfb->entries[cfb->count-1].name[count], ucs);
+					count += fz_runetochar(&e->name[count], ucs);
 				}
-				cfb->entries[cfb->count-1].name[count] = 0;
+				e->name[count] = 0;
 
-				cfb->entries[cfb->count-1].sector = get32(buffer+off+128-12);
-				cfb->entries[cfb->count-1].size = get_len(ctx, cfb, buffer+off+128-8);
-				cfb->entries[cfb->count-1].l = get32(buffer+off+68);
-				cfb->entries[cfb->count-1].r = get32(buffer+off+72);
-				cfb->entries[cfb->count-1].d = get32(buffer+off+76);
-				cfb->entries[cfb->count-1].t = type;
+				e->sector = get32(buffer+off+128-12);
+				e->size = get_len(ctx, cfb, buffer+off+128-8);
+				e->l = get32(buffer+off+68);
+				e->r = get32(buffer+off+72);
+				e->d = get32(buffer+off+76);
+				e->t = type;
 
 #ifdef DEBUG_DIRENTRIES
-				fz_write_printf(ctx, fz_stddbg(ctx), "%d: ", cfb->count-1);
+				fz_write_printf(ctx, fz_stddbg(ctx), "%d: ", cfb->entries_len-1);
 				if (type == 1)
 					fz_write_printf(ctx, fz_stddbg(ctx), "(storage) ");
 				else if (type == 2)
@@ -776,14 +768,14 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 				else
 					fz_write_printf(ctx, fz_stddbg(ctx), "(%d?) ", type);
 
-				fz_write_printf(ctx, fz_stddbg(ctx), "%q", cfb->entries[cfb->count-1].name);
-				fz_write_printf(ctx, fz_stddbg(ctx), " @%x+%x\n", cfb->entries[cfb->count-1].sector, cfb->entries[cfb->count-1].size );
-				if (cfb->entries[cfb->count-1].l <= MAXREGSID)
-					fz_write_printf(ctx, fz_stddbg(ctx), "\tleft=%d\n", cfb->entries[cfb->count-1].l);
-				if (cfb->entries[cfb->count-1].r <= MAXREGSID)
-					fz_write_printf(ctx, fz_stddbg(ctx), "\tright=%d\n", cfb->entries[cfb->count-1].r);
-				if (cfb->entries[cfb->count-1].d <= MAXREGSID)
-					fz_write_printf(ctx, fz_stddbg(ctx), "\tchild=%d\n", cfb->entries[cfb->count-1].d);
+				fz_write_printf(ctx, fz_stddbg(ctx), "%q", e->name);
+				fz_write_printf(ctx, fz_stddbg(ctx), " @%x+%x\n", e->sector, e->size );
+				if (cfb->entries[cfb->entries_len-1].l <= MAXREGSID)
+					fz_write_printf(ctx, fz_stddbg(ctx), "\tleft=%d\n", e->l);
+				if (cfb->entries[cfb->entries_len-1].r <= MAXREGSID)
+					fz_write_printf(ctx, fz_stddbg(ctx), "\tright=%d\n", e->r);
+				if (cfb->entries[cfb->entries_len-1].d <= MAXREGSID)
+					fz_write_printf(ctx, fz_stddbg(ctx), "\tchild=%d\n", e->d);
 #endif
 
 				/* Type 5 is just for the root. */
@@ -808,7 +800,7 @@ fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file)
 		strip_unused_names(ctx, cfb);
 
 #ifdef DEBUG_DIRENTRIES
-		for (i = 0; i < cfb->count; i++)
+		for (i = 0; i < cfb->entries_len; i++)
 			fz_write_printf(ctx, fz_stddbg(ctx), "%d: %s (was %d)\n", i, cfb->entries[i].name, cfb->entries[i].t);
 #endif
 	}

@@ -63,12 +63,9 @@ typedef struct
 	 * sheets name here. */
 	const char *sheet_name;
 
-	int shared_string_max;
-	int shared_string_len;
-	char **shared_strings;
+	fz_list(char *, shared_strings);
 
-	int footnotes_max;
-	char **footnotes;
+	fz_list(char *, footnotes);
 
 	char *title;
 } doc_info;
@@ -179,7 +176,7 @@ show_footnote(fz_context *ctx, fz_xml *v, doc_info *info)
 {
 	int n = fz_atoi(fz_xml_att(v, "w:id"));
 
-	if (n < 0 || n >= info->footnotes_max)
+	if (n < 0 || n >= info->footnotes_cap)
 		return;
 
 	if (info->footnotes[n] == NULL ||
@@ -501,7 +498,7 @@ show_shared_string(fz_context *ctx, fz_xml *v, doc_info *info)
 	const char *t = fz_xml_text(fz_xml_down(v));
 	int n = fz_atoi(t);
 
-	if (n < 0 || n >= info->shared_string_len)
+	if (n < 0 || n >= info->shared_strings_len)
 		return;
 
 	if (info->shared_strings[n] == NULL ||
@@ -895,13 +892,11 @@ load_shared_strings(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *i
 	const char *ss_file = fz_xml_att(pos, "Target");
 	char *resolved = NULL;
 	fz_xml *xml = NULL;
-	char *str = NULL;
 
 	if (ss_file == NULL)
 		return;
 
 	fz_var(xml);
-	fz_var(str);
 	fz_var(resolved);
 
 	fz_try(ctx)
@@ -912,22 +907,10 @@ load_shared_strings(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *i
 		pos = fz_xml_find_dfs(xml, "si", NULL, NULL);
 		while (pos)
 		{
-			int n = info->shared_string_len;
-			str = collate_t_content(ctx, pos);
+			char **ss = fz_push_list(ctx, info->shared_strings);
 
-			if (n == info->shared_string_max)
-			{
-				int max = info->shared_string_max;
-				int newmax = max ? max * 2 : 1024;
-				char **arr = fz_realloc(ctx, info->shared_strings, sizeof(*arr) * newmax);
-				memset(&arr[max], 0, sizeof(*arr) * (newmax - max));
-				info->shared_strings = arr;
-				info->shared_string_max = newmax;
-			}
+			*ss = collate_t_content(ctx, pos);
 
-			info->shared_strings[n] = str;
-			str = NULL;
-			info->shared_string_len++;
 			pos = fz_xml_find_next_dfs(pos, "si", NULL, NULL);
 		}
 	}
@@ -935,7 +918,6 @@ load_shared_strings(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *i
 	{
 		fz_drop_xml(ctx, xml);
 		fz_free(ctx, resolved);
-		fz_free(ctx, str);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -947,7 +929,6 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 	char *resolved = NULL;
 	fz_xml *xml = NULL;
 	char *str = NULL;
-	int i;
 
 	fz_var(xml);
 	fz_var(str);
@@ -971,20 +952,8 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 
 			if (str && n >= 0)
 			{
-				if (n >= info->footnotes_max)
-				{
-					int newmax = info->footnotes_max ? info->footnotes_max : 1024;
-					while (n >= newmax)
-					{
-						newmax = newmax * 2;
-						if (newmax < info->footnotes_max) // check for integer overflow
-							newmax = INT_MAX;
-					}
-					info->footnotes = fz_realloc_array(ctx, info->footnotes, newmax, char*);
-					for (i = info->footnotes_max; i < newmax; ++i)
-						info->footnotes[i] = NULL;
-					info->footnotes_max = newmax;
-				}
+				if (n >= info->footnotes_len)
+					fz_extend_list(ctx, info->footnotes, n+1 - info->footnotes_len);
 
 				info->footnotes[n] = str;
 				str = NULL;
@@ -1207,10 +1176,10 @@ fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, 
 	{
 		fz_drop_xml(ctx, rels);
 		fz_drop_xml(ctx, xml);
-		for (i = 0; i < info.shared_string_len; ++i)
+		for (i = 0; i < info.shared_strings_len; ++i)
 			fz_free(ctx, info.shared_strings[i]);
 		fz_free(ctx, info.shared_strings);
-		for (i = 0; i < info.footnotes_max; ++i)
+		for (i = 0; i < info.footnotes_cap; ++i)
 			fz_free(ctx, info.footnotes[i]);
 		fz_free(ctx, info.footnotes);
 		fz_drop_output(ctx, info.out);

@@ -24,13 +24,13 @@
 #define MUPDF_FITZ_DEVICE_H
 
 #include "mupdf/fitz/system.h"
-#include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/image.h"
 #include "mupdf/fitz/shade.h"
 #include "mupdf/fitz/path.h"
 #include "mupdf/fitz/text.h"
 #include "mupdf/fitz/options.h"
+#include "mupdf/fitz/list.h"
 
 /**
 	The different format handlers (pdf, xps etc) interpret pages to
@@ -332,9 +332,7 @@ struct fz_device
 
 	fz_rect d1_rect;
 
-	int container_len;
-	int container_cap;
-	fz_device_container_stack *container;
+	fz_list(fz_device_container_stack, container);
 
 	/* For simplicity, every device has a passthrough entry, but not every device uses it. */
 	fz_device *passthrough;

@@ -86,9 +86,7 @@ typedef struct
 
 typedef struct
 {
-	int len;
-	int max;
-	usage_t *list;
+	fz_list(usage_t, list);
 } usage_list_t;
 
 typedef struct
@@ -718,7 +716,7 @@ do_subset(fz_context *ctx, cff_t *cff, fz_buffer **buffer, usage_list_t *keep_li
 	uint32_t required, offset_size, fill;
 	uint32_t num_charstrings = index->count;
 	int gid;
-	int num_gids = keep_list->len;
+	int num_gids = keep_list->list_len;
 	const usage_t *gids = keep_list->list;
 
 	if (num_charstrings == 0)
@@ -839,7 +837,7 @@ usage_list_find(fz_context *ctx, usage_list_t *list, int value)
 {
 	/* are we on the list already? */
 	int lo = 0;
-	int hi = list->len;
+	int hi = list->list_len;
 
 	while (lo < hi)
 	{
@@ -860,7 +858,7 @@ usage_list_contains(fz_context *ctx, usage_list_t *list, int value)
 {
 	int lo = usage_list_find(ctx, list, value);
 
-	return (lo < list->len && list->list[lo].num == value);
+	return (lo < list->list_len && list->list[lo].num == value);
 }
 
 static void
@@ -868,24 +866,14 @@ usage_list_add(fz_context *ctx, usage_list_t *list, int value)
 {
 	int lo = usage_list_find(ctx, list, value);
 
-	if (lo < list->len && list->list[lo].num == value)
+	if (lo < list->list_len && list->list[lo].num == value)
 		return;
 
-	if (list->len == list->max)
-	{
-		int newmax = list->max * 2;
+	fz_push_list(ctx, list->list);
 
-		if (newmax == 0)
-			newmax = 32;
-
-		list->list = fz_realloc(ctx, list->list, sizeof(*list->list) * newmax);
-		list->max = newmax;
-	}
-
-	memmove(&list->list[lo+1], &list->list[lo], (list->len - lo) * sizeof(*list->list));
+	memmove(&list->list[lo+1], &list->list[lo], (list->list_len - lo - 1) * sizeof(*list->list));
 	list->list[lo].num = value;
 	list->list[lo].scanned = 0;
-	list->len++;
 }
 
 static void
@@ -1266,7 +1254,7 @@ static usage_list_t *
 get_font_locals(fz_context *ctx, cff_t *cff, int gid, int is_pdf_cidfont, uint16_t *subr_bias)
 {
 	usage_t *gids = cff->gids_to_keep.list;
-	int num_gids = cff->gids_to_keep.len;
+	int num_gids = cff->gids_to_keep.list_len;
 
 	if (is_pdf_cidfont && cff->is_cidfont)
 	{
@@ -1295,7 +1283,7 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 	int num_charstrings = (int)cff->charstrings_index.count;
 	int i, gid, font;
 	usage_t *gids = cff->gids_to_keep.list;
-	int num_gids = cff->gids_to_keep.len;
+	int num_gids = cff->gids_to_keep.list_len;
 	int changed;
 	uint16_t subr_bias;
 	usage_list_t *local_usage = NULL;
@@ -1331,7 +1319,7 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 	{
 		changed = 0;
 		/* Extra (subsidiary) glyphs */
-		for (i = 0; i < cff->extra_gids_to_keep.len; i++)
+		for (i = 0; i < cff->extra_gids_to_keep.list_len; i++)
 		{
 			if (cff->extra_gids_to_keep.list[i].scanned)
 				continue;
@@ -1347,7 +1335,7 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 		}
 
 		/* Now, run through the locals, seeing what locals and globals they call.  */
-		for (i = 0; i < cff->local_usage.len; i++)
+		for (i = 0; i < cff->local_usage.list_len; i++)
 		{
 			if (cff->local_usage.list[i].scanned)
 				continue;
@@ -1364,7 +1352,7 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 		/* Now, run through the per-font locals, seeing what per-font locals and globals they call.  */
 		for (font = 0; font < cff->fdarray_index.count; font++)
 		{
-			for (i = 0; i < cff->fdarray[font].local_usage.len; i++)
+			for (i = 0; i < cff->fdarray[font].local_usage.list_len; i++)
 			{
 				gid = cff->fdarray[font].local_usage.list[i].num;
 
@@ -1382,7 +1370,7 @@ scan_charstrings(fz_context *ctx, cff_t *cff, int is_pdf_cidfont)
 		}
 
 		/* Now, run through the globals, seeing what globals they call.  */
-		for (i = 0; i < cff->global_usage.len; i++)
+		for (i = 0; i < cff->global_usage.list_len; i++)
 		{
 			if (cff->global_usage.list[i].scanned)
 				continue;

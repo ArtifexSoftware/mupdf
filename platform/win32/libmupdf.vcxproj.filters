@@ -744,6 +744,9 @@
     <ClCompile Include="..\..\source\pdf\pdf-struct.c">
       <Filter>pdf</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\list.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\draw-imp.h">
@@ -1041,6 +1044,9 @@
       <Filter>pdf</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\mupdf\fitz\options.h">
+      <Filter>!include\fitz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\fitz\list.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
   </ItemGroup>

@@ -92,8 +92,7 @@ struct pdf_ocg_descriptor
 	pdf_obj *intent;
 	const char *usage;
 
-	int num_ui_entries;
-	pdf_ocg_ui *ui;
+	fz_list(pdf_ocg_ui, ui);
 };
 
 int
@@ -139,40 +138,6 @@ pdf_enable_layer(fz_context *ctx, pdf_document *doc, int layer, int enabled)
 }
 
 static int
-count_entries(fz_context *ctx, pdf_obj *obj, pdf_cycle_list *cycle_up)
-{
-	pdf_cycle_list cycle;
-	int len = pdf_array_len(ctx, obj);
-	int i;
-	int count = 0;
-
-	for (i = 0; i < len; i++)
-	{
-		pdf_obj *o = pdf_array_get(ctx, obj, i);
-		if (pdf_cycle(ctx, &cycle, cycle_up, o))
-			continue;
-		count += (pdf_is_array(ctx, o) ? count_entries(ctx, o, &cycle) : 1);
-	}
-	return count;
-}
-
-static pdf_ocg_ui *
-get_ocg_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill)
-{
-	if (fill == desc->num_ui_entries)
-	{
-		/* Number of layers changed while parsing;
-		 * probably due to a repair. */
-		int newsize = desc->num_ui_entries * 2;
-		if (newsize == 0)
-			newsize = 4; /* Arbitrary non-zero */
-		desc->ui = fz_realloc_array(ctx, desc->ui, newsize, pdf_ocg_ui);
-		desc->num_ui_entries = newsize;
-	}
-	return &desc->ui[fill];
-}
-
-static int
 ocgcmp(const void *a_, const void *b_)
 {
 	const pdf_ocg_entry *a = a_;
@@ -205,8 +170,8 @@ find_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *obj)
 	return -1;
 }
 
-static int
-populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order, int depth, pdf_obj *rbgroups, pdf_obj *locked,
+static void
+populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *order, int depth, pdf_obj *rbgroups, pdf_obj *locked,
 	int *min, pdf_cycle_list *cycle_up)
 {
 	pdf_cycle_list cycle;
@@ -214,10 +179,6 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 	int len2;
 	int i, j, k;
 	pdf_ocg_ui *ui;
-	int mindepth = INT_MAX;
-
-	if (min == NULL)
-		min = &mindepth;
 
 	for (i = 0; i < len; i++)
 	{
@@ -227,12 +188,12 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 			if (pdf_cycle(ctx, &cycle, cycle_up, o))
 				continue;
 
-			fill = populate_ui(ctx, desc, fill, o, depth+1, rbgroups, locked, min, &cycle);
+			populate_ui(ctx, desc, o, depth+1, rbgroups, locked, min, &cycle);
 			continue;
 		}
 		if (pdf_is_string(ctx, o))
 		{
-			ui = get_ocg_ui(ctx, desc, fill++);
+			ui = fz_push_list(ctx, desc->ui);
 			ui->depth = depth;
 			*min = fz_mini(*min, ui->depth);
 			ui->ocg = -1;
@@ -245,7 +206,7 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 		j = find_ocg(ctx, desc, o);
 		if (j < 0)
 			continue; /* OCG not found in main list! Just ignore it */
-		ui = get_ocg_ui(ctx, desc, fill++);
+		ui = fz_push_list(ctx, desc->ui);
 		ui->depth = depth + 1;
 		*min = fz_mini(*min, ui->depth);
 		ui->ocg = j;
@@ -262,17 +223,6 @@ populate_ui(fz_context *ctx, pdf_ocg_descriptor *desc, int fill, pdf_obj *order,
 			}
 		}
 	}
-
-	/* After having iterated over all items at the top-level, the minimum depth is
-	   known. Subtract that from the depth of each item, so that top-level items
-	   always start at depth == 0. */
-	if (depth == 0 && *min > 0)
-	{
-		for (i = 0; i < fill; i++)
-			desc->ui[i].depth -= *min;
-	}
-
-	return fill;
 }
 
 static void
@@ -291,26 +241,34 @@ load_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *ocprops, pdf_obj *oc
 	pdf_obj *order;
 	pdf_obj *rbgroups;
 	pdf_obj *locked;
-	int count;
 
-	/* Count the number of entries */
 	order = pdf_dict_get(ctx, occg, PDF_NAME(Order));
 	if (!order)
 		order = pdf_dict_getp(ctx, ocprops, "D/Order");
-	count = count_entries(ctx, order, NULL);
 	rbgroups = pdf_dict_get(ctx, occg, PDF_NAME(RBGroups));
 	if (!rbgroups)
 		rbgroups = pdf_dict_getp(ctx, ocprops, "D/RBGroups");
 	locked = pdf_dict_get(ctx, occg, PDF_NAME(Locked));
 
-	desc->num_ui_entries = count;
-	if (desc->num_ui_entries == 0)
-		return;
+	desc->ui_cap = 0;
+	desc->ui_len = 0;
+	desc->ui = NULL;
 
-	desc->ui = fz_malloc_struct_array(ctx, count, pdf_ocg_ui);
 	fz_try(ctx)
 	{
-		desc->num_ui_entries = populate_ui(ctx, desc, 0, order, 0, rbgroups, locked, NULL, NULL);
+		int i;
+		int mindepth = INT_MAX;
+
+		populate_ui(ctx, desc, order, 0, rbgroups, locked, &mindepth, NULL);
+
+		/* After having iterated over all items at the top-level, the minimum depth is
+		   known. Subtract that from the depth of each item, so that top-level items
+		   always start at depth == 0. */
+		if (mindepth > 0)
+		{
+			for (i = 0; i < desc->ui_len; i++)
+				desc->ui[i].depth -= mindepth;
+		}
 	}
 	fz_catch(ctx)
 	{
@@ -529,7 +487,7 @@ clear_radio_group(fz_context *ctx, pdf_document *doc, int config_num, pdf_obj *o
 int pdf_count_layer_config_ui(fz_context *ctx, pdf_document *doc)
 {
 	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
-	return desc ? desc->num_ui_entries : 0;
+	return desc ? desc->ui_len : 0;
 }
 
 void pdf_select_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
@@ -537,7 +495,7 @@ void pdf_select_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
 	pdf_ocg_ui *entry;
 
-	if (ui < 0 || ui >= desc->num_ui_entries)
+	if (ui < 0 || ui >= desc->ui_len)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Out of range UI entry selected");
 
 	entry = &desc->ui[ui];
@@ -559,7 +517,7 @@ void pdf_toggle_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 	pdf_ocg_ui *entry;
 	int selected;
 
-	if (ui < 0 || ui >= desc->num_ui_entries)
+	if (ui < 0 || ui >= desc->ui_len)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Out of range UI entry toggled");
 
 	entry = &desc->ui[ui];
@@ -582,7 +540,7 @@ void pdf_deselect_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 	pdf_ocg_descriptor *desc = pdf_read_ocg(ctx, doc);
 	pdf_ocg_ui *entry;
 
-	if (ui < 0 || ui >= desc->num_ui_entries)
+	if (ui < 0 || ui >= desc->ui_len)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Out of range UI entry deselected");
 
 	entry = &desc->ui[ui];
@@ -610,7 +568,7 @@ pdf_layer_config_ui_info(fz_context *ctx, pdf_document *doc, int ui, pdf_layer_c
 	info->text = NULL;
 	info->type = 0;
 
-	if (ui < 0 || ui >= desc->num_ui_entries)
+	if (ui < 0 || ui >= desc->ui_len)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Out of range UI entry selected");
 
 	entry = &desc->ui[ui];

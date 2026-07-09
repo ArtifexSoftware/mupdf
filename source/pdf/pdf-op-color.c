@@ -56,9 +56,7 @@ typedef struct
 
 typedef struct
 {
-	int max;
-	int len;
-	rewritten_image *res;
+	fz_list(rewritten_image, res);
 } rewritten_images;
 
 typedef struct
@@ -70,8 +68,8 @@ typedef struct
 
 typedef struct
 {
-	int max;
-	int len;
+	int res_cap;
+	int res_len;
 	rewritten_shade *res;
 } rewritten_shades;
 
@@ -94,19 +92,11 @@ static void
 push_rewritten_image(fz_context *ctx, pdf_color_processor *p, pdf_obj *im_obj, fz_image *after, char *name)
 {
 	rewritten_images *list = &p->images;
+	rewritten_image *i = fz_push_list(ctx, list->res);
 
-	if (list->max == list->len)
-	{
-		int new_max = list->max * 2;
-		if (new_max == 0)
-			new_max = 32;
-		list->res = fz_realloc(ctx, list->res, sizeof(*list->res) * new_max);
-		list->max = new_max;
-	}
-	list->res[list->len].im_obj = pdf_keep_obj(ctx, im_obj);
-	list->res[list->len].after = fz_keep_image(ctx, after);
-	memcpy(list->res[list->len].name, name, MAX_REWRITTEN_NAME);
-	list->len++;
+	i->im_obj = pdf_keep_obj(ctx, im_obj);
+	i->after = fz_keep_image(ctx, after);
+	memcpy(i->name, name, MAX_REWRITTEN_NAME);
 }
 
 static fz_image *
@@ -115,7 +105,7 @@ find_rewritten_image(fz_context *ctx, pdf_color_processor *p, pdf_obj *im_obj, c
 	rewritten_images *list = &p->images;
 	int i;
 
-	for (i = 0; i < list->len; i++)
+	for (i = 0; i < list->res_len; i++)
 		if (list->res[i].im_obj == im_obj)
 		{
 			memcpy(name, list->res[i].name, MAX_REWRITTEN_NAME);
@@ -131,34 +121,26 @@ drop_rewritten_images(fz_context *ctx, pdf_color_processor *p)
 	rewritten_images *list = &p->images;
 	int i;
 
-	for (i = 0; i < list->len; i++)
+	for (i = 0; i < list->res_len; i++)
 	{
 		pdf_drop_obj(ctx, list->res[i].im_obj);
 		fz_drop_image(ctx, list->res[i].after);
 	}
 	fz_free(ctx, list->res);
 	list->res = NULL;
-	list->len = 0;
-	list->max = 0;
+	list->res_len = 0;
+	list->res_cap = 0;
 }
 
 static void
 push_rewritten_shade(fz_context *ctx, pdf_color_processor *p, pdf_obj *before, fz_shade *after, char *name)
 {
 	rewritten_shades *list = &p->shades;
+	rewritten_shade *s = fz_push_list(ctx, list->res);
 
-	if (list->max == list->len)
-	{
-		int new_max = list->max * 2;
-		if (new_max == 0)
-			new_max = 32;
-		list->res = fz_realloc(ctx, list->res, sizeof(*list->res) * new_max);
-		list->max = new_max;
-	}
-	list->res[list->len].before = pdf_keep_obj(ctx, before);
-	list->res[list->len].after = fz_keep_shade(ctx, after);
-	memcpy(list->res[list->len].name, name, MAX_REWRITTEN_NAME);
-	list->len++;
+	s->before = pdf_keep_obj(ctx, before);
+	s->after = fz_keep_shade(ctx, after);
+	memcpy(s->name, name, MAX_REWRITTEN_NAME);
 }
 
 static fz_shade *
@@ -167,7 +149,7 @@ find_rewritten_shade(fz_context *ctx, pdf_color_processor *p, pdf_obj *before, c
 	rewritten_shades *list = &p->shades;
 	int i;
 
-	for (i = 0; i < list->len; i++)
+	for (i = 0; i < list->res_len; i++)
 		if (list->res[i].before == before)
 		{
 			memcpy(name, list->res[i].name, MAX_REWRITTEN_NAME);
@@ -183,15 +165,15 @@ drop_rewritten_shades(fz_context *ctx, pdf_color_processor *p)
 	rewritten_shades *list = &p->shades;
 	int i;
 
-	for (i = 0; i < list->len; i++)
+	for (i = 0; i < list->res_len; i++)
 	{
 		pdf_drop_obj(ctx, list->res[i].before);
 		fz_drop_shade(ctx, list->res[i].after);
 	}
 	fz_free(ctx, list->res);
 	list->res = NULL;
-	list->len = 0;
-	list->max = 0;
+	list->res_len = 0;
+	list->res_cap = 0;
 }
 
 static void

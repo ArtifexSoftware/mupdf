@@ -48,16 +48,12 @@ typedef struct
 	fz_int_heap cids;
 
 	/* Pointers back to the top level fonts that refer to this. */
-	int max;
-	int len;
-	pdf_obj **font;
+	fz_list(pdf_obj *, font);
 } font_usage_t;
 
 typedef struct
 {
-	int max;
-	int len;
-	font_usage_t *font;
+	fz_list(font_usage_t, font);
 } fonts_usage_t;
 
 typedef struct
@@ -120,6 +116,7 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 	int is_cidfont = 0;
 	int is_ttf = 0;
 	unsigned char digest[16];
+	font_usage_t *fu;
 
 	p->gs->current_font = -1; /* unknown font! */
 
@@ -194,7 +191,7 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 	num = pdf_to_num(ctx, fontfile);
 	gen = pdf_to_gen(ctx, fontfile);
 
-	for (i = 0; i < p->usage->len; i++)
+	for (i = 0; i < p->usage->font_len; i++)
 	{
 		if (p->usage->font[i].num == num &&
 			p->usage->font[i].gen == gen)
@@ -206,9 +203,9 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 	/* Check for duplicate fonts. (Fonts in the document that have
 	 * the font stream included multiple times as different objects).
 	 * This can happen with naive insertion routines. */
-	if (i == p->usage->len)
+	if (i == p->usage->font_len)
 	{
-		for (i = 0; i < p->usage->len; i++)
+		for (i = 0; i < p->usage->font_len; i++)
 		{
 			if (memcmp(digest, p->usage->font[i].digest, 16) == 0)
 			{
@@ -221,59 +218,45 @@ font_analysis_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_fon
 	pdf_drop_font(ctx, p->gs->font);
 	p->gs->font = pdf_keep_font(ctx, font);
 	p->gs->current_font = i;
-	if (i < p->usage->len)
+	if (i < p->usage->font_len)
 	{
 		int j;
+		pdf_obj **op;
 
-		for (j = 0; j < p->usage->font[i].len; j++)
+		for (j = 0; j < p->usage->font[i].font_len; j++)
 		{
 			if (pdf_objcmp(ctx, p->usage->font[i].font[j], dict) == 0)
 				return;
 		}
 
-		if (p->usage->font[i].len == p->usage->font[i].max)
-		{
-			int newmax = p->usage->font[i].max * 2;
-			p->usage->font[i].font = fz_realloc(ctx, p->usage->font[i].font, sizeof(*p->usage->font[i].font) * newmax);
-			p->usage->font[i].max = newmax;
-		}
-		p->usage->font[i].font[j] = pdf_keep_obj(ctx, dict);
-		p->usage->font[i].len++;
+		op = fz_push_list(ctx, p->usage->font[i].font);
+		*op = pdf_keep_obj(ctx, dict);
 
 		return;
 	}
 
-	if (p->usage->max == p->usage->len)
-	{
-		int n = p->usage->max * 2;
+	fu = fz_push_list(ctx, p->usage->font);
 
-		if (n == 0)
-			n = 32;
-		p->usage->font = (font_usage_t *)fz_realloc(ctx, p->usage->font, sizeof(*p->usage->font) * n);
-		p->usage->max = n;
-	}
+	fu->is_ttf = is_ttf;
+	fu->is_cidfont = is_cidfont;
+	fu->fontfile = pdf_keep_obj(ctx, fontfile);
+	fu->num = num;
+	fu->gen = gen;
+	fu->cids.len = 0;
+	fu->cids.max = 0;
+	fu->cids.heap = NULL;
+	fu->gids.len = 0;
+	fu->gids.max = 0;
+	fu->gids.heap = NULL;
+	fu->font_len = 0;
+	fu->font_cap = 0;
+	fu->font = NULL;
+	memcpy(fu->digest, digest, 16);
 
-	p->usage->font[i].is_ttf = is_ttf;
-	p->usage->font[i].is_cidfont = is_cidfont;
-	p->usage->font[i].fontfile = pdf_keep_obj(ctx, fontfile);
-	p->usage->font[i].num = num;
-	p->usage->font[i].gen = gen;
-	p->usage->font[i].cids.len = 0;
-	p->usage->font[i].cids.max = 0;
-	p->usage->font[i].cids.heap = NULL;
-	p->usage->font[i].gids.len = 0;
-	p->usage->font[i].gids.max = 0;
-	p->usage->font[i].gids.heap = NULL;
-	p->usage->font[i].len = 0;
-	p->usage->font[i].max = 0;
-	p->usage->font[i].font = NULL;
-	memcpy(p->usage->font[i].digest, digest, 16);
-	p->usage->len++;
-
-	p->usage->font[i].font = fz_malloc(ctx, sizeof(*p->usage->font[i].font) * 4);
-	p->usage->font[i].len = 1;
-	p->usage->font[i].max = 4;
-	p->usage->font[i].font[0] = pdf_keep_obj(ctx, dict);
+	fu->font = fz_malloc(ctx, sizeof(*p->usage->font[i].font) * 4);
+	fu->font_len = 1;
+	fu->font_cap = 4;
+	fu->font[0] = pdf_keep_obj(ctx, dict);
 }
 
 static void
@@ -559,7 +542,7 @@ adjust_simple_font(fz_context *ctx, pdf_document *doc, font_usage_t *font)
 {
 	int i;
 
-	for (i = 0; i < font->len; i++)
+	for (i = 0; i < font->font_len; i++)
 		do_adjust_simple_font(ctx, doc, font, i);
 }
 
@@ -642,14 +625,14 @@ get_symbolic(fz_context *ctx, font_usage_t *font)
 	int i, flags, symbolic, symbolic2;
 	pdf_obj *fontdesc;
 
-	if (!font || font->len == 0)
+	if (!font || font->font_len == 0)
 		return 0;
 
 	fontdesc = pdf_dict_get(ctx, font->font[0], PDF_NAME(FontDescriptor));
 	flags = pdf_dict_get_int(ctx, fontdesc, PDF_NAME(Flags));
 	symbolic = (!!(flags & 4)) | ((flags & 32) == 0);
 
-	for (i = 1; i < font->len; i++)
+	for (i = 1; i < font->font_len; i++)
 	{
 		fontdesc = pdf_dict_get(ctx, font->font[i], PDF_NAME(FontDescriptor));
 		flags = pdf_dict_get_int(ctx, fontdesc, PDF_NAME(Flags));
@@ -676,12 +659,12 @@ static pdf_obj *get_subtype(fz_context *ctx, font_usage_t *font)
 
 	/* Otherwise we'll have to get it from the font objects, and they'd
 	 * all better agree. */
-	if (font->len == 0)
+	if (font->font_len == 0)
 		return NULL;
 
 	subtype = pdf_dict_get(ctx, font->font[0], PDF_NAME(Subtype));
 
-	for (i = 1; i < font->len; i++)
+	for (i = 1; i < font->font_len; i++)
 	{
 		pdf_obj *subtype2 = pdf_dict_get(ctx, font->font[i], PDF_NAME(Subtype));
 
@@ -731,7 +714,7 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, const int *pages)
 		}
 
 		/* All our font usage data is in heaps. Sort the heaps. */
-		for (i = 0; i < usage.len; i++)
+		for (i = 0; i < usage.font_len; i++)
 		{
 			font_usage_t *font = &usage.font[i];
 
@@ -742,7 +725,7 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, const int *pages)
 		}
 
 		/* Now, actually subset the fonts. */
-		for (i = 0; i < usage.len; i++)
+		for (i = 0; i < usage.font_len; i++)
 		{
 			font_usage_t *font = &usage.font[i];
 			pdf_obj *subtype = get_subtype(ctx, font);
@@ -786,7 +769,7 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, const int *pages)
 			}
 
 			/* And prefix the name */
-			for (j = 0; j < font->len; j++)
+			for (j = 0; j < font->font_len; j++)
 				prefix_font_name(ctx, doc, font->font[j], font->fontfile);
 		}
 	}
@@ -794,12 +777,12 @@ pdf_subset_fonts(fz_context *ctx, pdf_document *doc, int len, const int *pages)
 	{
 			fz_drop_page(ctx, (fz_page *)page);
 
-			for (i = 0; i < usage.len; i++)
+			for (i = 0; i < usage.font_len; i++)
 			{
 				pdf_drop_obj(ctx, usage.font[i].fontfile);
 				fz_free(ctx, usage.font[i].cids.heap);
 				fz_free(ctx, usage.font[i].gids.heap);
-				for (j = 0; j < usage.font[i].len; j++)
+				for (j = 0; j < usage.font[i].font_len; j++)
 					pdf_drop_obj(ctx, usage.font[i].font[j]);
 				fz_free(ctx, usage.font[i].font);
 			}

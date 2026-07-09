@@ -306,24 +306,16 @@ static inline void write_sample(fz_context *ctx, fz_output *out, int bits, float
 
 typedef struct
 {
-	float *p;
-	int len;
-	int max;
+	fz_list(float, p);
 	int pos;
 } float_queue;
 
 static void
 float_queue_push(fz_context *ctx, float_queue *p, float f)
 {
-	if (p->len == p->max)
-	{
-		int new_max = p->max * 2;
-		if (new_max == 0)
-			new_max = 32;
-		p->p = fz_realloc(ctx, p->p, sizeof(float) * new_max);
-		p->max = new_max;
-	}
-	p->p[p->len++] = f;
+	float *fp = fz_push_list(ctx, p->p);
+
+	*fp = f;
 }
 
 static float

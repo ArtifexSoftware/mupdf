@@ -28,9 +28,9 @@
 typedef struct boxer_s boxer_t;
 
 typedef struct {
-	int len;
-	int max;
 	double fudge;
+	int len;
+	int cap;
 	fz_rect list[FZ_FLEXIBLE_ARRAY];
 } rectlist_t;
 
@@ -41,12 +41,12 @@ struct boxer_s {
 };
 
 static rectlist_t *
-rectlist_create(fz_context *ctx, int max, double fudge)
+rectlist_create(fz_context *ctx, int cap, double fudge)
 {
-	rectlist_t *list = fz_malloc_flexible(ctx, rectlist_t, list, max);
+	rectlist_t *list = fz_malloc_flexible(ctx, rectlist_t, list, cap);
 
 	list->len = 0;
-	list->max = max;
+	list->cap = cap;
 	list->fudge = fudge;
 
 	return list;
@@ -94,7 +94,7 @@ rectlist_append(rectlist_t *list, fz_rect *box)
 		}
 	}
 
-	assert(list->len < list->max);
+	assert(list->len < list->cap);
 	memcpy(&list->list[list->len], box, sizeof(*box));
 	list->len++;
 }

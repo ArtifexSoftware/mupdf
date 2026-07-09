@@ -55,6 +55,7 @@ extern "C" {
 #include "mupdf/fitz/filter.h"
 #include "mupdf/fitz/archive.h"
 #include "mupdf/fitz/heap.h"
+#include "mupdf/fitz/list.h"
 
 
 /* Resources */

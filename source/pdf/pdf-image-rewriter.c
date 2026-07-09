@@ -37,9 +37,7 @@ typedef struct
 
 typedef struct
 {
-	int max;
-	int len;
-	image_details *img;
+	fz_list(image_details, img);
 } unique_image_list;
 
 typedef struct
@@ -80,7 +78,7 @@ gather_image_rewrite(fz_context *ctx, void *opaque, fz_image **image, fz_matrix 
 	dpi = dpi_from_ctm(ctm, (*image)->w, (*image)->h);
 
 	/* Find this in the unique image list */
-	for (i = 0; i < uilist->len; i++)
+	for (i = 0; i < uilist->img_len; i++)
 	{
 		/* Found one already. Keep the smaller of the dpi's. */
 		if (uilist->img[i].num == num &&
@@ -92,22 +90,14 @@ gather_image_rewrite(fz_context *ctx, void *opaque, fz_image **image, fz_matrix 
 		}
 	}
 
-	if (i == uilist->len)
+	if (i == uilist->img_len)
 	{
 		/* Need to add a new unique image. */
-		if (uilist->max == uilist->len)
-		{
-			int max2 = uilist->max * 2;
-			if (max2 == 0)
-				max2 = 32; /* Arbitrary */
-			uilist->img = fz_realloc(ctx, uilist->img, max2 * sizeof(*uilist->img));
-			uilist->max = max2;
-		}
+		image_details *id = fz_push_list(ctx, uilist->img);
 
-		uilist->img[uilist->len].num = num;
-		uilist->img[uilist->len].gen = gen;
-		uilist->img[uilist->len].dpi = dpi;
-		uilist->len++;
+		id->num = num;
+		id->gen = gen;
+		id->dpi = dpi;
 	}
 }
 
@@ -710,10 +700,10 @@ do_image_rewrite(fz_context *ctx, void *opaque, fz_image **image, fz_matrix ctm,
 		int num = pdf_to_num(ctx, im_obj);
 		int gen = pdf_to_gen(ctx, im_obj);
 
-		for (i = 0; i < uilist->len; i++)
+		for (i = 0; i < uilist->img_len; i++)
 			if (uilist->img[i].num == num && uilist->img[i].gen == gen)
 				break;
-		if (i == uilist->len)
+		if (i == uilist->img_len)
 		{
 			assert("This should never happen" == NULL);
 			return;

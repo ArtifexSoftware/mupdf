@@ -38,24 +38,15 @@ struct entry
 
 typedef struct
 {
-	int max;
-	int len;
-	pdf_obj **roots;
+	fz_list(pdf_obj *, roots);
 } pdf_root_list;
 
 static void
 add_root(fz_context *ctx, pdf_root_list *roots, pdf_obj *obj)
 {
-	if (roots->max == roots->len)
-	{
-		int new_max_roots = roots->max * 2;
-		if (new_max_roots == 0)
-			new_max_roots = 4;
-		roots->roots = fz_realloc(ctx, roots->roots, new_max_roots * sizeof(roots->roots[0]));
-		roots->max = new_max_roots;
-	}
-	roots->roots[roots->len] = pdf_keep_obj(ctx, obj);
-	roots->len++;
+	pdf_obj **r = fz_push_list(ctx, roots->roots);
+
+	*r = pdf_keep_obj(ctx, obj);
 }
 
 static pdf_root_list *
@@ -72,7 +63,7 @@ pdf_drop_root_list(fz_context *ctx, pdf_root_list *roots)
 	if (roots == NULL)
 		return;
 
-	n = roots->len;
+	n = roots->roots_len;
 	for (i = 0; i < n; i++)
 		pdf_drop_obj(ctx, roots->roots[i]);
 	fz_free(ctx, roots->roots);
@@ -551,7 +542,7 @@ pdf_repair_xref_base(fz_context *ctx, pdf_document *doc)
 					/* If we haven't seen a root yet, there is nothing
 					 * we can do, but give up. Otherwise, we'll make
 					 * do. */
-					if (roots->len == 0 ||
+					if (roots->roots_len == 0 ||
 						errcode == FZ_ERROR_TRYLATER ||
 						errcode == FZ_ERROR_SYSTEM)
 					{
@@ -850,7 +841,7 @@ pdf_repair_roots(fz_context *ctx, pdf_document *doc, pdf_root_list *roots)
 {
 	int i;
 
-	for (i = roots->len-1; i >= 0; i--)
+	for (i = roots->roots_len-1; i >= 0; i--)
 	{
 		if (pdf_is_indirect(ctx, roots->roots[i]) && pdf_is_dict(ctx, roots->roots[i]))
 		{

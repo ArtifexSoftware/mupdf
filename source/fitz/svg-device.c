@@ -67,17 +67,11 @@ typedef struct
 
 	int blend_bitmask;
 
-	int num_tiles;
-	int max_tiles;
-	svg_tile *tiles;
+	fz_list(svg_tile, tiles);
 
-	int num_fonts;
-	int max_fonts;
-	svg_font *fonts;
+	fz_list(svg_font, fonts);
 
-	int num_images;
-	int max_images;
-	svg_image *images;
+	fz_list(svg_image, images);
 
 	int layers;
 
@@ -482,28 +476,19 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 
 	fz_var(path);
 
-	for (font_idx = 0; font_idx < sdev->num_fonts; font_idx++)
+	for (font_idx = 0; font_idx < sdev->fonts_len; font_idx++)
 	{
-		if (sdev->fonts[font_idx].font == span->font)
+		fnt = &sdev->fonts[font_idx];
+		if (fnt->font == span->font)
 			break;
 	}
-	if (font_idx == sdev->num_fonts)
+	if (font_idx == sdev->fonts_len)
 	{
 		/* New font */
-		if (font_idx == sdev->max_fonts)
-		{
-			int newmax = sdev->max_fonts * 2;
-			if (newmax == 0)
-				newmax = 4;
-			sdev->fonts = fz_realloc_array(ctx, sdev->fonts, newmax, svg_font);
-			memset(&sdev->fonts[font_idx], 0, (newmax - font_idx) * sizeof(svg_font));
-			sdev->max_fonts = newmax;
-		}
-		sdev->fonts[font_idx].id = sdev->id++;
-		sdev->fonts[font_idx].font = fz_keep_font(ctx, span->font);
-		sdev->num_fonts++;
+		fnt = fz_push_list(ctx, sdev->fonts);
+		fnt->id = sdev->id++;
+		fnt->font = fz_keep_font(ctx, span->font);
 	}
-	fnt = &sdev->fonts[font_idx];
 
 	fz_try(ctx)
 	{
@@ -923,7 +908,9 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, fz_color_params
 
 	if (sdev->reuse_images)
 	{
-		for (i = sdev->num_images-1; i >= 0; i--)
+		svg_image *si;
+
+		for (i = sdev->images_len-1; i >= 0; i--)
 			if (img == sdev->images[i].image)
 				break;
 		if (i >= 0)
@@ -933,25 +920,17 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, fz_color_params
 			return;
 		}
 
-		/* We need to send this image for the first time */
-		if (sdev->num_images == sdev->max_images)
-		{
-			int new_max = sdev->max_images * 2;
-			if (new_max == 0)
-				new_max = 32;
-			sdev->images = fz_realloc_array(ctx, sdev->images, new_max, svg_image);
-			sdev->max_images = new_max;
-		}
-
 		id = sdev->id++;
 
 		fz_append_printf(ctx, out, "<image id=\"image_%d\" width=\"%d\" height=\"%d\" xlink:href=\"", id, img->w, img->h);
 		fz_append_image_as_data_uri(ctx, out, img);
 		fz_append_printf(ctx, out, "\"/>\n");
 
-		sdev->images[sdev->num_images].id = id;
-		sdev->images[sdev->num_images].image = fz_keep_image(ctx, img);
-		sdev->num_images++;
+		/* We need to send this image for the first time */
+		si = fz_push_list(ctx, sdev->images);
+
+		si->id = id;
+		si->image = fz_keep_image(ctx, img);
 	}
 	else
 	{
@@ -1237,18 +1216,9 @@ svg_dev_begin_tile(fz_context *ctx, fz_device *dev, fz_rect area, fz_rect view, 
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_buffer *out;
-	int num;
 	svg_tile *t;
 
-	if (sdev->num_tiles == sdev->max_tiles)
-	{
-		int n = (sdev->num_tiles == 0 ? 4 : sdev->num_tiles * 2);
-
-		sdev->tiles = fz_realloc_array(ctx, sdev->tiles, n, svg_tile);
-		sdev->max_tiles = n;
-	}
-	num = sdev->num_tiles++;
-	t = &sdev->tiles[num];
+	t = fz_push_list(ctx, sdev->tiles);
 	t->area = area;
 	t->view = view;
 	t->ctm = ctm;
@@ -1294,9 +1264,9 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 	fz_matrix inverse;
 	float x, y, w, h;
 
-	if (sdev->num_tiles == 0)
+	if (sdev->tiles_len == 0)
 		return;
-	num = --sdev->num_tiles;
+	num = --sdev->tiles_len;
 	t = &sdev->tiles[num];
 
 	fz_append_printf(ctx, out, "</g>\n");
@@ -1421,13 +1391,13 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, sdev->tiles);
 	fz_drop_buffer(ctx, sdev->defs);
 	fz_drop_buffer(ctx, sdev->main);
-	for (i = 0; i < sdev->num_fonts; i++)
+	for (i = 0; i < sdev->fonts_len; i++)
 	{
 		fz_drop_font(ctx, sdev->fonts[i].font);
 		fz_free(ctx, sdev->fonts[i].sentlist);
 	}
 	fz_free(ctx, sdev->fonts);
-	for (i = 0; i < sdev->num_images; i++)
+	for (i = 0; i < sdev->images_len; i++)
 	{
 		fz_drop_image(ctx, sdev->images[i].image);
 	}

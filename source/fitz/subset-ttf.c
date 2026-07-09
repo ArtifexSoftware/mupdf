@@ -87,9 +87,7 @@ typedef struct
 	/* Maps from old gid to new gid */
 	uint16_t *gid_renum;
 
-	int max;
-	int len;
-	tagged_table_t *table;
+	fz_list(tagged_table_t, table);
 } ttf_t;
 
 static uint32_t
@@ -187,18 +185,10 @@ add_table(fz_context *ctx, ttf_t *ttf, uint32_t tag, fz_buffer *tab)
 {
 	fz_try(ctx)
 	{
-		if (ttf->max == ttf->len)
-		{
-			int n = ttf->max * 2;
-			if (n == 0)
-				n = 16;
-			ttf->table = fz_realloc(ctx, ttf->table, sizeof(*ttf->table) * n);
-			ttf->max = n;
-		}
+		tagged_table_t *t = fz_push_list(ctx, ttf->table);
 
-		ttf->table[ttf->len].tag = tag;
-		ttf->table[ttf->len].tab = tab;
-		ttf->len++;
+		t->tag = tag;
+		t->tab = tab;
 	}
 	fz_catch(ctx)
 	{
@@ -230,9 +220,9 @@ static void
 sort_tables(fz_context *ctx, ttf_t *ttf)
 {
 	/* Avoid scanbuild/coverity false warning with this unnecessary test */
-	if (ttf->table == NULL || ttf->len == 0)
+	if (ttf->table == NULL || ttf->table_len == 0)
 		return;
-	qsort(ttf->table, ttf->len, sizeof(tagged_table_t), tabcmp);
+	qsort(ttf->table, ttf->table_len, sizeof(tagged_table_t), tabcmp);
 }
 
 static void
@@ -240,7 +230,7 @@ checksum_tables(fz_context *ctx, ttf_t *ttf)
 {
 	int i;
 
-	for (i = 0; i < ttf->len; i++)
+	for (i = 0; i < ttf->table_len; i++)
 		ttf->table[i].checksum = checksum(ttf->table[i].tab);
 }
 
@@ -257,9 +247,9 @@ write_tables(fz_context *ctx, ttf_t *ttf, fz_output *out)
 		fz_write_int32_be(ctx, out, 0x00010000);
 
 	/* number of tables */
-	fz_write_uint16_be(ctx, out, ttf->len);
+	fz_write_uint16_be(ctx, out, ttf->table_len);
 
-	while (1<<(i+1) <= ttf->len)
+	while (1<<(i+1) <= ttf->table_len)
 		i++;
 
 	/* searchRange */
@@ -269,11 +259,11 @@ write_tables(fz_context *ctx, ttf_t *ttf, fz_output *out)
 	fz_write_uint16_be(ctx, out, i);
 
 	/* rangeShift*/
-	fz_write_uint16_be(ctx, out, (ttf->len - (1<<i))<<4);
+	fz_write_uint16_be(ctx, out, (ttf->table_len - (1<<i))<<4);
 
 	/* Table directory */
-	offset = 12 + ttf->len * 16;
-	for (i = 0; i < ttf->len; i++)
+	offset = 12 + ttf->table_len * 16;
+	for (i = 0; i < ttf->table_len; i++)
 	{
 		fz_write_uint32_be(ctx, out, ttf->table[i].tag);
 		fz_write_uint32_be(ctx, out, ttf->table[i].checksum);
@@ -283,7 +273,7 @@ write_tables(fz_context *ctx, ttf_t *ttf, fz_output *out)
 	}
 
 	/* Now the tables in turn */
-	for (i = 0; i < ttf->len; i++)
+	for (i = 0; i < ttf->table_len; i++)
 	{
 		fz_write_buffer(ctx, out, ttf->table[i].tab);
 	}
@@ -2033,7 +2023,7 @@ fz_subset_ttf_for_gids(fz_context *ctx, fz_buffer *orig, int *gids, int num_gids
 
 		fz_drop_output(ctx, out);
 		fz_drop_stream(ctx, stm);
-		for (i = 0; i < ttf.len; i++)
+		for (i = 0; i < ttf.table_len; i++)
 			fz_drop_buffer(ctx, ttf.table[i].tab);
 		fz_free(ctx, ttf.table);
 		fz_free(ctx, ttf.gid_renum);

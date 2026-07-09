@@ -82,11 +82,11 @@ cmapdump_main(int argc, char **argv)
 			printf("\n};\n\n");
 		}
 
-		if (cmap->dlen > 0)
+		if (cmap->dict_len > 0)
 		{
 			int ti = 0, tn = cmap->dict[0];
 			printf("static const int cmap_%s_table[] = {\n", name);
-			for (k = 0; k < cmap->dlen; k++)
+			for (k = 0; k < cmap->dict_len; k++)
 			{
 				if (ti > tn)
 				{
@@ -133,7 +133,7 @@ cmapdump_main(int argc, char **argv)
 		else
 			printf("\t0, 0, NULL, /* mranges */\n");
 		if (cmap->dict)
-			printf("\t%u, %u, (int*)cmap_%s_table,\n", cmap->dlen, cmap->dlen, name);
+			printf("\t%u, %u, (int*)cmap_%s_table,\n", cmap->dict_len, cmap->dict_len, name);
 		else
 			printf("\t0, 0, NULL, /* table */\n");
 		printf("\t0, 0, 0, NULL /* splay tree */\n");

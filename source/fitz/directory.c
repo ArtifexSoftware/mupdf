@@ -40,9 +40,7 @@ typedef struct
 
 	char *path;
 
-	int max_entries;
-	int num_entries;
-	char **entries;
+	fz_list(char *, entries);
 } fz_directory;
 
 static void drop_directory(fz_context *ctx, fz_archive *arch)
@@ -51,7 +49,7 @@ static void drop_directory(fz_context *ctx, fz_archive *arch)
 	int i;
 
 	fz_free(ctx, dir->path);
-	for (i = 0; i < dir->num_entries; i++)
+	for (i = 0; i < dir->entries_len; i++)
 		fz_free(ctx, dir->entries[i]);
 	fz_free(ctx, dir->entries);
 }
@@ -121,7 +119,7 @@ count_dir_entries(fz_context *ctx, fz_archive *arch)
 {
 	fz_directory *dir = (fz_directory *) arch;
 
-	return dir->num_entries;
+	return dir->entries_len;
 }
 
 static const char *
@@ -129,7 +127,7 @@ list_dir_entry(fz_context *ctx, fz_archive *arch, int n)
 {
 	fz_directory *dir = (fz_directory *) arch;
 
-	if (n < 0 || n >= dir->num_entries)
+	if (n < 0 || n >= dir->entries_len)
 		return NULL;
 
 	return dir->entries[n];
@@ -202,16 +200,7 @@ fz_open_directory(fz_context *ctx, const char *path)
 		do
 		{
 			char *u;
-
-			if (dir->max_entries == dir->num_entries)
-			{
-				int newmax = dir->max_entries * 2;
-				if (newmax == 0)
-					newmax = 32;
-
-				dir->entries = fz_realloc(ctx, dir->entries, sizeof(*dir->entries) * newmax);
-				dir->max_entries = newmax;
-			}
+			char **e = fz_push_list(ctx, dir->entries);
 
 			/* Count the len as utf-8. */
 			w = dw.cFileName;
@@ -219,8 +208,7 @@ fz_open_directory(fz_context *ctx, const char *path)
 			while (*w)
 				z += fz_runelen(*w++);
 
-			u = dir->entries[dir->num_entries] = fz_malloc(ctx, z);
-			dir->num_entries++;
+			u = *e = fz_malloc(ctx, z);
 
 			/* Copy the name across. */
 			w = dw.cFileName;
@@ -236,18 +224,9 @@ fz_open_directory(fz_context *ctx, const char *path)
 
 		while ((ep = readdir(dp)) != NULL)
 		{
-			if (dir->max_entries == dir->num_entries)
-			{
-				int newmax = dir->max_entries * 2;
-				if (newmax == 0)
-					newmax = 32;
+			char **e = fz_push_list(ctx, dir->entries);
 
-				dir->entries = fz_realloc(ctx, dir->entries, sizeof(*dir->entries) * newmax);
-				dir->max_entries = newmax;
-			}
-
-			dir->entries[dir->num_entries] = fz_strdup(ctx, ep->d_name);
-			dir->num_entries++;
+			*e = fz_strdup(ctx, ep->d_name);
 		}
 #endif
 		dir->path = fz_strdup(ctx, path);

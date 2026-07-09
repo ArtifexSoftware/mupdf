@@ -51,19 +51,12 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb,
 	fz_rect bbox;
 	fz_matrix matrix;
 	fz_font *font = NULL;
+	fz_font **fe;
 
 	fz_var(fontdesc);
 
 	/* Make a new type3 font entry in the document */
-	if (doc->num_type3_fonts == doc->max_type3_fonts)
-	{
-		int new_max = doc->max_type3_fonts * 2;
-
-		if (new_max == 0)
-			new_max = 4;
-		doc->type3_fonts = fz_realloc_array(ctx, doc->type3_fonts, new_max, fz_font*);
-		doc->max_type3_fonts = new_max;
-	}
+	fe = fz_push_list(ctx, doc->type3_fonts);
 
 	fz_try(ctx)
 	{
@@ -209,7 +202,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb,
 		fz_rethrow(ctx);
 	}
 
-	doc->type3_fonts[doc->num_type3_fonts++] = fz_keep_font(ctx, font);
+	*fe = fz_keep_font(ctx, font);
 
 	return fontdesc;
 }

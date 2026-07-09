@@ -271,12 +271,12 @@ typedef struct pdfocr_band_writer_s
 	int deskewed_w;
 	int deskewed_h;
 
-	int obj_num;
-	int xref_max;
+	int xref_cap;
+	int xref_len;
 	int64_t *xref;
-	int pages;
-	int page_max;
-	int *page_obj;
+	int page_cap;
+	int page_len;
+	int *page;
 	unsigned char *stripbuf;
 	unsigned char *compbuf;
 	size_t complen;
@@ -294,19 +294,11 @@ static int
 new_obj(fz_context *ctx, pdfocr_band_writer *writer)
 {
 	int64_t pos = fz_tell_output(ctx, writer->super.out);
+	int64_t *posp = fz_push_list(ctx, writer->xref);
 
-	if (writer->obj_num >= writer->xref_max)
-	{
-		int new_max = writer->xref_max * 2;
-		if (new_max < writer->obj_num + 8)
-			new_max = writer->obj_num + 8;
-		writer->xref = fz_realloc_array(ctx, writer->xref, new_max, int64_t);
-		writer->xref_max = new_max;
-	}
+	*posp = pos;
 
-	writer->xref[writer->obj_num] = pos;
-
-	return writer->obj_num++;
+	return writer->xref_len-1;
 }
 
 static void
@@ -339,9 +331,9 @@ post_skew_write_header(fz_context *ctx, pdfocr_band_writer *writer, int w, int h
 	/* Send the Page Object */
 	fz_write_printf(ctx, out, "%d 0 obj\n<</Type/Page/Parent 2 0 R/Resources<</XObject<<", new_obj(ctx, writer));
 	for (i = 0; i < strips; i++)
-		fz_write_printf(ctx, out, "/I%d %d 0 R", i, writer->obj_num + i);
+		fz_write_printf(ctx, out, "/I%d %d 0 R", i, writer->xref_len + i);
 	fz_write_printf(ctx, out, ">>/Font<</F0 3 0 R>>>>/MediaBox[0 0 %g %g]/Contents %d 0 R>>\nendobj\n",
-		w * 72.0f / xres, h * 72.0f / yres, writer->obj_num + strips);
+		w * 72.0f / xres, h * 72.0f / yres, writer->xref_len + strips);
 }
 
 static void
@@ -375,16 +367,12 @@ pdfocr_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	writer->ocrbitmap = NULL;
 
 	/* Send the file header on the first page */
-	if (writer->pages == 0)
+	if (writer->page_len == 0)
 	{
 		fz_write_string(ctx, out, "%PDF-1.4\n%PDFOCR-1.0\n");
 
-		if (writer->xref_max < 9)
-		{
-			int new_max = 9;
-			writer->xref = fz_realloc_array(ctx, writer->xref, new_max, int64_t);
-			writer->xref_max = new_max;
-		}
+		if (writer->xref_len < 9)
+			fz_extend_list(ctx, writer->xref, 9-writer->xref_len);
 		writer->xref[3] = fz_tell_output(ctx, out);
 		fz_write_data(ctx, out, funky_font,  sizeof(funky_font)-1);
 		writer->xref[4] = fz_tell_output(ctx, out);
@@ -399,16 +387,7 @@ pdfocr_write_header(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 		fz_write_data(ctx, out, funky_font6, sizeof(funky_font6)-1);
 	}
 
-	if (writer->page_max <= writer->pages)
-	{
-		int new_max = writer->page_max * 2;
-		if (new_max == 0)
-			new_max = writer->pages + 8;
-		writer->page_obj = fz_realloc_array(ctx, writer->page_obj, new_max, int);
-		writer->page_max = new_max;
-	}
-	writer->page_obj[writer->pages] = writer->obj_num;
-	writer->pages++;
+	*(int *)fz_push_list(ctx, writer->page) = writer->xref_len;
 
 	if (writer->options.skew_correct)
 		writer->skew_bitmap = fz_new_pixmap(ctx, n == 3 ? fz_device_rgb(ctx) : fz_device_gray(ctx), w, h, NULL, 0);
@@ -539,9 +518,9 @@ typedef struct
 	pdfocr_band_writer *writer;
 
 	/* We collate the current word into the following fields: */
-	int word_max;
+	int word_cap;
 	int word_len;
-	int *word_chars;
+	int *word; /* chars */
 	float word_bbox[4];
 	int word_dirn;
 	int word_prev_char_bbox[4];
@@ -713,7 +692,7 @@ queue_word(fz_context *ctx, char_callback_data_t *cb)
 	word->next = NULL;
 	word->len = cb->word_len;
 	memcpy(word->bbox, cb->word_bbox, 4*sizeof(float));
-	memcpy(word->chars, cb->word_chars, cb->word_len * sizeof(int));
+	memcpy(word->chars, cb->word, cb->word_len * sizeof(int));
 	cb->word_len = 0;
 
 	line_is_v = !!(cb->line_dirn & (WORD_CONTAINS_B2T | WORD_CONTAINS_T2B));
@@ -785,6 +764,7 @@ char_callback(fz_context *ctx, void *arg, int unicode,
 	char_callback_data_t *cb = (char_callback_data_t *)arg;
 	pdfocr_band_writer *writer = cb->writer;
 	float bbox[4];
+	int *ip;
 
 	bbox[0] = word_bbox[0] * 72.0f / cb->writer->ocrbitmap->xres;
 	bbox[3] = (writer->ocrbitmap->h - 1 - word_bbox[1]) * 72.0f / cb->writer->ocrbitmap->yres;
@@ -829,16 +809,8 @@ char_callback(fz_context *ctx, void *arg, int unicode,
 		}
 	}
 
-	if (cb->word_max == cb->word_len)
-	{
-		int newmax = cb->word_max * 2;
-		if (newmax == 0)
-			newmax = 16;
-		cb->word_chars = fz_realloc_array(ctx, cb->word_chars, newmax, int);
-		cb->word_max = newmax;
-	}
-
-	cb->word_chars[cb->word_len++] = unicode;
+	ip = fz_push_list(ctx, cb->word);
+	*ip = unicode;
 }
 
 static int
@@ -850,7 +822,7 @@ pdfocr_progress(fz_context *ctx, void *arg, int prog)
 	if (writer->progress == NULL)
 		return 0;
 
-	return writer->progress(ctx, writer->progress_arg, writer->pages - 1, prog);
+	return writer->progress(ctx, writer->progress_arg, writer->page_len - 1, prog);
 }
 
 static void
@@ -939,7 +911,7 @@ pdfocr_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 	}
 	fz_always(ctx)
 	{
-		fz_free(ctx, cb.word_chars);
+		fz_free(ctx, cb.word);
 	}
 	fz_catch(ctx)
 	{
@@ -958,7 +930,7 @@ pdfocr_close_band_writer(fz_context *ctx, fz_band_writer *writer_)
 	fz_warn_on_unused_options(ctx, writer->options.options, "pdfocr band-writer");
 
 	/* We actually do the trailer writing in the close */
-	if (writer->xref_max > 2)
+	if (writer->xref_len > 2)
 	{
 		int64_t t_pos;
 
@@ -968,22 +940,22 @@ pdfocr_close_band_writer(fz_context *ctx, fz_band_writer *writer_)
 
 		/* Page table */
 		writer->xref[2] = fz_tell_output(ctx, out);
-		fz_write_printf(ctx, out, "2 0 obj\n<</Count %d/Kids[", writer->pages);
+		fz_write_printf(ctx, out, "2 0 obj\n<</Count %d/Kids[", writer->page_len);
 
-		for (i = 0; i < writer->pages; i++)
+		for (i = 0; i < writer->page_len; i++)
 		{
 			if (i > 0)
 				fz_write_byte(ctx, out, ' ');
-			fz_write_printf(ctx, out, "%d 0 R", writer->page_obj[i]);
+			fz_write_printf(ctx, out, "%d 0 R", writer->page[i]);
 		}
 		fz_write_string(ctx, out, "]/Type/Pages>>\nendobj\n");
 
 		/* Xref */
 		t_pos = fz_tell_output(ctx, out);
-		fz_write_printf(ctx, out, "xref\n0 %d\n0000000000 65535 f \n", writer->obj_num);
-		for (i = 1; i < writer->obj_num; i++)
+		fz_write_printf(ctx, out, "xref\n0 %d\n0000000000 65535 f \n", writer->xref_len);
+		for (i = 1; i < writer->xref_len; i++)
 			fz_write_printf(ctx, out, "%010ld 00000 n \n", writer->xref[i]);
-		fz_write_printf(ctx, out, "trailer\n<</Size %d/Root 1 0 R>>\nstartxref\n%ld\n%%%%EOF\n", writer->obj_num, t_pos);
+		fz_write_printf(ctx, out, "trailer\n<</Size %d/Root 1 0 R>>\nstartxref\n%ld\n%%%%EOF\n", writer->xref_len, t_pos);
 	}
 }
 
@@ -995,7 +967,7 @@ pdfocr_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 	fz_drop_options(ctx, writer->options.options);
 	fz_free(ctx, writer->stripbuf);
 	fz_free(ctx, writer->compbuf);
-	fz_free(ctx, writer->page_obj);
+	fz_free(ctx, writer->page);
 	fz_free(ctx, writer->xref);
 	fz_drop_pixmap(ctx, writer->ocrbitmap);
 	ocr_fin(ctx, writer->tessapi);
@@ -1023,17 +995,15 @@ fz_band_writer *fz_new_pdfocr_band_writer(fz_context *ctx, fz_output *out, const
 	else
 		memset(&writer->options, 0, sizeof(writer->options));
 
-	/* Objects:
-	 *  1 reserved for catalog
-	 *  2 for pages tree
-	 *  3 font
-	 *  4 cidfont
-	 *  5 cid to gid map
-	 *  6 tounicode
-	 *  7 font descriptor
-	 *  8 font file
-	 */
-	writer->obj_num = 9;
+	fz_push_list(ctx, writer->xref); /*  0 always free */
+	fz_push_list(ctx, writer->xref); /*  1 reserved for catalog */
+	fz_push_list(ctx, writer->xref); /*  2 for pages tree */
+	fz_push_list(ctx, writer->xref); /*  3 font */
+	fz_push_list(ctx, writer->xref); /*  4 cidfont */
+	fz_push_list(ctx, writer->xref); /*  5 cid to gid map */
+	fz_push_list(ctx, writer->xref); /*  6 tounicode */
+	fz_push_list(ctx, writer->xref); /*  7 font descriptor */
+	fz_push_list(ctx, writer->xref); /*  8 font file */
 
 	fz_try(ctx)
 	{
