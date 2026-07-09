@@ -1,13 +1,22 @@
 # What is MuPDF?
 
-MuPDF is an open source software framework for viewing, converting, and
-manipulating PDF, XPS, and E-book documents. There are viewers for various
-platforms, several command line tools, and a software library for building
-tools and applications.
+MuPDF is an open-source software library for working with a wide range of document formats.
+Typical tasks include:
+rendering,
+converting to other formats,
+extracting resources,
+extracting plain text,
+filling out forms,
+adding annotations,
+redacting sensitive information,
+reordering and removing pages,
+and much more.
 
 ## Formats
 
 As you can tell by the name, we support reading PDF files. But that's not all!
+We also handle XPS and various E-book formats.
+There is also limited support for reading Office format documents.
 
 - PDF
 - XPS and OpenXPS
@@ -19,119 +28,125 @@ As you can tell by the name, we support reading PDF files. But that's not all!
 - SVG (a limited subset only)
 - Markdown (MD)
 
+## Command Line Tools
+
+The command line tools are all gathered into one umbrella command: [`mutool`](../tools/mutool.rst).
+This swiss army knife has a lot of sub-commands for performing different
+tasks on PDF documents.
+
+### Rendering & Conversion
+
+MuPDF can be used to render pages to images; or to convert a document into a multitude of other formats.
+This is an entirely visual conversion; metadata and other non-visible content will NOT be preserved.
+
+These two tools provide this functionality. They both use the same conversion under the hood, but provide
+separate sets of command line options to fit different use cases.
+
+[`mutool draw`](../tools/mutool-draw.rst)
+: Render or convert a document into various image formats, with lots of fine-grained control over the rendering.
+
+[`mutool convert`](../tools/mutool-convert.rst)
+: Batch convert a document into another document format. Easy to use, with only a few options.
+
+See [document writer options](../reference/common/document-writer-options.md) and
+[PDF write options](../reference/common/pdf-write-options.md) to learn how to
+control the conversion behavior.
+
+### Extraction
+
+[`mutool draw`](../tools/mutool-draw.rst) can also be used to extract detailed textual information in XML or JSON format:
+
+	mutool draw [-O stext-options] -o output.stext input.pdf
+	mutool draw [-O stext-options] -o output.stext.json input.pdf
+
+See [stext-options](../reference/common/stext-options.md) for a description of the available structured text extraction options.
+
+PDF files often have images, fonts, and other embedded files. These can be extracted with [`mutool extract`](../tools/mutool-extract.rst).
+
+### PDF Manipulation
+
+MuPDF has a large toolset for manipulating PDF files on the command line.
+
+[`mutool show`](../tools/mutool-show.rst)
+: A tool for displaying the internal objects in a PDF file, useful for inspecting the file structure and to debug problematic files.
+
+[`mutool clean`](../tools/mutool-clean.rst)
+: Rewrite a PDF file. Used to fix broken files; or to make a PDF file human editable.
+
+[`mutool create`](../tools/mutool-create.rst)
+: Assemble a new PDF file from a text file with graphics commands.
+
+[`mutool merge`](../tools/mutool-merge.rst)
+: Merge pages from multiple input files into a new PDF.
+
+[`mutool poster`](../tools/mutool-poster.rst)
+: Split large pages of a PDF file into smaller pieces that can be printed on a smaller
+paper size. These can then be assembled into a large poster after printing.
+
+[`mutool run`](../tools/mutool-run.rst)
+: Run Javascript programs using the MuPDF library with [`mutool run`](../tools/mutool-run.rst).
+See the library section below for ways to use MuPDF from other programming languages.
+
 ## Viewers
 
-There are many different viewer applications that build on the MuPDF library
-for a large variety of platforms.
+### Desktop
 
-### Linux, Windows, and BSD
-
-For Linux and Windows there are two viewer applications.
-The main viewer (mupdf-gl) has many features such as a table of contents
-sidebar, full unicode search, annotation editing, redaction, etc.
-On systems where this viewer cannot be built, we still support the older
-legacy viewer which does not have as many features.
-
-<dl>
-<dt><a href="../tools/mupdf-gl.html">mupdf-gl</a>
-<dd>The main viewer program that sports the most features.
-<dt>mupdf-x11
-<dd>The legacy X11 viewer that works everywhere.
-<dt>mupdf-win32
-<dd>The legacy win32 viewer for Windows.
-</dl>
+For Linux, Windows and MacOS there are two viewer applications. The main viewer [`mupdf-gl`](../tools/mupdf-gl.rst)
+has many features such as a table of contents sidebar, full unicode search, annotation editing, and redaction.
+On systems where this viewer cannot be built, the older legacy viewers (mupdf-x11, mupdf-win32) are still supported.
 
 ### Android
 
 Android currently has two different viewers with varying degrees of complexity:
 
-<dl>
-<dt><a href="https://play.google.com/store/apps/details?id=com.artifex.mupdf.viewer.app">MuPDF viewer</a>
-<dd>A high performance PDF viewer with a smooth and polished interface.
-<dt><a href="https://play.google.com/store/apps/details?id=com.artifex.mupdf.mini.app">MuPDF mini</a>
-<dd>An example of how to create a PDF viewer with the least amount of code.
-</dl>
+[MuPDF viewer](https://play.google.com/store/apps/details?id=com.artifex.mupdf.viewer.app)
+A high performance PDF viewer with a smooth and polished interface.
 
-### Web Browser
+[MuPDF mini](https://play.google.com/store/apps/details?id=com.artifex.mupdf.mini.app)
+An example of how to create a PDF viewer with the least amount of code.
 
-There's also a commercial license only <a href="https://webviewer.mupdf.com/">MuPDF WebViewer</a> product.
+### Web browser
 
-Here is a <a href="https://mupdf.com/wasm/demo/?file=/docs/mupdf_explored.pdf">demo</a> of it.
+There's also a commercial license (trial available) only [MuPDF WebViewer](https://webviewer.mupdf.com/?utm_source=rtd-mupdf&utm_medium=referral&utm_content=page-link&utm_campaign=docs) product. Here is a [demo](https://webviewer.mupdf.com/demo/?utm_source=rtd-mupdf&utm_medium=referral&utm_content=page-link&utm_campaign=docs) of it.
 
 ### Third party viewers
 
-Here's a non-exhaustive list of other non-affiliated open source projects that use MuPDF:
+A non-exhaustive list of other non-affiliated open source projects that use MuPDF for viewing:
 
-- <a href="https://www.sumatrapdfreader.org/download-free-pdf-viewer">SumatraPDF</a> for Windows
-- <a href="https://pwmt.org/projects/zathura/">Zathura</a> for Linux
-- <a href="https://repo.or.cz/llpp.git">llpp</a>
-
-## Command Line
-
-The command line tools are all gathered into one umbrella command: mutool.
-This swiss army knife has a lot of sub-commands for performing different
-tasks on PDF documents.
-
-For rendering and converting documents use these two commands:
-
-<dl>
-<dt><a href="../tools/mutool-draw.html">mutool draw</a>
-<dd>This is the more customizable tool, but also has a more difficult set of command line options.
-It is primarily used for rendering a document to image files.
-<dt><a href="../tools/mutool-convert.html">mutool convert</a>
-<dd>This tool is used for converting documents into other formats, and is easier to use.
-</dl>
-
-A highlight of some other tools useful for working with PDF documents:
-
-<dl>
-<dt><a href="../tools/mutool-show.html">mutool show</a>
-<dd>A tool for displaying the internal objects in a PDF file.
-<dt><a href="../tools/mutool-extract.html">mutool extract</a>
-<dd>Extract images and embedded font resources.
-<dt><a href="../tools/mutool-clean.html">mutool clean</a>
-<dd>Rewrite PDF file. Used to fix broken files, or to make a PDF file human editable.
-<dt><a href="../tools/mutool-create.html">mutool create</a>
-<dd>Create a new PDF file from a text file with graphics commands.
-<dt><a href="../tools/mutool-merge.html">mutool merge</a>
-<dd>Merge pages from multiple input files into a new PDF.
-<dt><a href="../tools/mutool-poster.html">mutool poster</a>
-<dd>Divide pages of a PDF into pieces that can be printed and merged into a large poster.
-</dl>
-
-And finally, there is a tool for doing anything you can imagine:
-
-<dl>
-<dt><a href="../tools/mutool-run.html">mutool run</a>
-<dd>A tool for running Javascript programs with access to the MuPDF library functions.
-</dl>
+- [SumatraPDF](https://www.sumatrapdfreader.org/download-free-pdf-viewer) for Windows
+- [Zathura](https://pwmt.org/projects/zathura/) for Linux
+- [llpp](https://repo.or.cz/llpp.git)
 
 ## Library
 
-The library is written in portable C.
+The MuPDF library exposes all the functionality we support, so that
+applications built on top of the MuPDF library can do everything the
+tools described above can.
 
-To learn more about the C interface, read the <a href="../cookbook/mupdf-explored.html">MuPDF Explored</a> book.
+### C
+
+The MuPDF library is written in portable C. To learn more about the C interface, read the [MuPDF Explored](../cookbook/mupdf-explored.md) book.
 
 ### Javascript
 
-There is a library available to use MuPDF from Javascript and Typescript,
-powered by WebAssembly. You can use this library to build applications that run
-in a web browser, or that run server side using Node or Bun.
+Write Node or browser applications with the mupdf.js Javascript bindings.
 
-The Javascript library is available as a module on NPM.
+There is a library available to use MuPDF from Javascript and Typescript, powered by WebAssembly.
+You can use this library to build applications that run in a web browser, or that run server side
+using Node. The Javascript library is available as a [module on NPM](https://www.npmjs.com/package/mupdf).
+
+The MuPDF.js library provides the same interface as the `mutool run` scripting tool.
 
 ### Java
 
-There is also a Java library, which uses JNI to provide access to the C library.
+Use the MuPDF Java library to write applications in Java or to build an Android application.
 
-The Java classes provide an interface very similar to that available in the
-<a href="../tools/mutool-run.html">mutool run</a> command line tool.
-This Java library also powers the Android viewers.
+The Java classes provide an interface very similar to the Javascript library.
 
-If you want to build an application for Android, you have several options. You
-can base it off one of the existing viewers, or build a new app using the Java
-library directly.
+If you want to build an application for Android, you can either base it off one
+of the existing viewers or build a new app from scratch using the MuPDF library
+directly.
 
 ### Python
 
-The popular [PyMuPDF](https://pypi.org/project/PyMuPDF/) library makes it trivial to use MuPDF from Python!
+The popular [PyMuPDF library](https://pymupdf.io/?utm_source=rtd-mupdf&utm_medium=referral&utm_content=page-link&utm_campaign=docs) makes it trivial to use MuPDF from Python for extraction, conversion, and rendering alike.

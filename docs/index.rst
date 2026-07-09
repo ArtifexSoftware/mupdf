@@ -8,12 +8,15 @@ Welcome to MuPDF
 	:alt: [MuPDF Logo]
 	:target: welcome_
 
-MuPDF is an open source software framework for viewing and converting PDF, XPS,
-and E-book documents. There are viewers for various platforms, several command
-line tools, and a software library for building tools and applications.
+MuPDF is open source software for working with PDF, XPS, and E-book documents.
+The software can render documents, convert them into other formats, and manipulate
+PDF files in many useful ways.
 
-It is available under either the `GNU GPL Affero license <https://www.gnu.org/licenses/agpl-3.0.html>`_
-or  `licensed for commercial <https://artifex.com/licensing?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link#commercial-license>`_
+There are command line tools and viewers for various platforms,
+and a software library for building your own tools and applications.
+
+MuPDF is available under either the `GNU GPL Affero license <https://www.gnu.org/licenses/agpl-3.0.html>`_
+or `licensed for commercial <https://artifex.com/licensing?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link#commercial-license>`_
 use from `Artifex Software, Inc <https://artifex.com/?utm_source=rtd-mupdf&utm_medium=rtd&utm_content=inline-link>`_.
 
 .. toctree::
