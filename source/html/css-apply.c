@@ -2076,7 +2076,7 @@ fz_css_colstyle(col_style *cs, fz_css_match *match)
 static void
 do_verify_splay(const fz_css_style_splay *x)
 {
-	printf("%x<", x);
+	printf("%llx<", (unsigned long long int) x);
 	if (x->lt)
 	{
 		assert(memcmp(&x->lt->style, &x->style, sizeof(x->style)) < 0);

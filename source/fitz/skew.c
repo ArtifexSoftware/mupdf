@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -196,19 +196,19 @@ do_detect_skew(fz_context *ctx, fz_skew *skew)
 				max_sum = sum, max_at = o;
 			avg_sum += sum;
 #ifdef DEBUG_PRINT_WORKING
-			printf("col %d, offset %d -> %llx\n", i, o, sum);
+			printf("col %d, offset %d -> %llx\n", i, o, (unsigned long long) sum);
 #endif
 		}
 		avg_sum /= (SKEW_MAX_DIFF+1)*2;
 #ifdef DEBUG_PRINT_WORKING
 		ang = (180.0 / 3.1415942) * atan(max_at / (double)(SKEW_COL_OFFSET * 2));
-		printf("col %d max: offset %d -> %llx ang=%g\n", i, max_at, max_sum, ang);
+		printf("col %d max: offset %d -> %llx ang=%g\n", i, max_at, (unsigned long long) max_sum, ang);
 #endif
 		/* Subtract the average from the maximum; we judge the significance of a
 		 * match by how far it exceeds the average. max_sum becomes 'significance'. */
 		max_sum -= avg_sum;
 #ifdef DEBUG_PRINT_WORKING
-		printf("Significance: %llx\n", max_sum - avg_sum);
+		printf("Significance: %llx\n", (unsigned long long) (max_sum - avg_sum));
 #endif
 		corr_at += max_at * max_sum;
 		corr_sum += max_sum;
