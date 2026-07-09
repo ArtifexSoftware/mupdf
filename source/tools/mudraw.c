@@ -58,8 +58,12 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 
 /* Enable for helpful threading debug */
-/* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
+#ifdef DEBUG_THREADS
+#undef DEBUG_THREADS
+#define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0)
+#else
 #define DEBUG_THREADS(A) do { } while (0)
+#endif
 
 enum {
 	OUT_BBOX,
