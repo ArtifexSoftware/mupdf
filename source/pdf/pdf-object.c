@@ -1232,6 +1232,7 @@ void pdf_end_operation(fz_context *ctx, pdf_document *doc)
 	{
 		/* Didn't actually change anything! Remove the empty entry. */
 #ifdef PDF_DEBUG_JOURNAL
+		dump_changes(ctx, doc, entry);
 		fz_write_printf(ctx, fz_stddbg(ctx), "Ending Empty!\n");
 #endif
 		discard_journal_entries(ctx, &doc->journal->pending);
