@@ -1602,7 +1602,7 @@ static void do_page_selection(void)
 
 		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
-		glColor4f(0.0, 0.1, 0.4, 0.3f);
+		glColor4f(0.0f, 0.1f, 0.4f, 0.3f);
 
 		glBegin(GL_QUADS);
 		for (i = 0; i < n; ++i)
