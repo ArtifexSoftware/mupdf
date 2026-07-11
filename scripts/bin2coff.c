@@ -336,8 +336,8 @@ main (int argc, char *argv[])
 		}
 	}
 
-	short_label = (strlen(label) + x86_32) <= IMAGE_SIZEOF_SHORT_NAME;
-	short_size = (strlen(label) + x86_32 + strlen(SIZE_LABEL_SUFFIX)) <= IMAGE_SIZEOF_SHORT_NAME;
+	short_label = (strlen(label) + x86_32) < IMAGE_SIZEOF_SHORT_NAME;
+	short_size = (strlen(label) + x86_32 + strlen(SIZE_LABEL_SUFFIX)) < IMAGE_SIZEOF_SHORT_NAME;
 	padded_size = (size + sizeof(SIZE_TYPE)-1) & ~(size_t)(sizeof(SIZE_TYPE)-1);
 	alloc_size = sizeof(IMAGE_FILE_HEADER) + sizeof(IMAGE_SECTION_HEADER) + padded_size + sizeof(SIZE_TYPE) + 2*sizeof(IMAGE_SYMBOL) + sizeof(IMAGE_STRINGS);
 	if (!short_label) {
@@ -371,7 +371,7 @@ main (int argc, char *argv[])
 	file_header->Characteristics = IMAGE_FILE_LINE_NUMS_STRIPPED;
 
 	/* Populate data section header */
-	strncpy(section_header->Name, ".data", IMAGE_SIZEOF_SHORT_NAME);
+	memcpy(section_header->Name, ".data", 5);
 	section_header->SizeOfRawData = (uint32_t)padded_size+4;
 	section_header->PointerToRawData = sizeof(IMAGE_FILE_HEADER) + sizeof(IMAGE_SECTION_HEADER);
 	section_header->Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_ALIGN_16BYTES | IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE;
@@ -390,7 +390,7 @@ main (int argc, char *argv[])
 	/* Populate symbol table */
 	if (short_label) {
 		symbol_table[0].N.ShortName[0] = '_';
-		strcpy(&symbol_table[0].N.ShortName[x86_32], label);
+		memcpy(&symbol_table[0].N.ShortName[x86_32], label, strlen(label));
 	} else {
 		symbol_table[0].N.LongName.Zeroes = 0;
 		symbol_table[0].N.LongName.Offset = sizeof(IMAGE_STRINGS);
@@ -404,8 +404,8 @@ main (int argc, char *argv[])
 
 	if (short_size) {
 		symbol_table[1].N.ShortName[1] = '_';
-		strcpy(&symbol_table[1].N.ShortName[x86_32], label);
-		strcpy(&symbol_table[1].N.ShortName[x86_32+strlen(label)], SIZE_LABEL_SUFFIX);
+		memcpy(&symbol_table[1].N.ShortName[x86_32], label, strlen(label));
+		memcpy(&symbol_table[1].N.ShortName[x86_32+strlen(label)], SIZE_LABEL_SUFFIX, strlen(SIZE_LABEL_SUFFIX));
 	} else {
 		symbol_table[1].N.LongName.Zeroes = 0;
 		symbol_table[1].N.LongName.Offset = sizeof(IMAGE_STRINGS) + ((short_label)?0:(x86_32 + (uint32_t)strlen(label) + 1));
@@ -419,14 +419,14 @@ main (int argc, char *argv[])
 	string_table->TotalSize = sizeof(IMAGE_STRINGS);
 	if (!short_label) {
 		string_table->Strings[0] = '_';
-		strcpy(&string_table->Strings[0] + x86_32, label);
+		memcpy(&string_table->Strings[0] + x86_32, label, strlen(label) + 1);
 		string_table->TotalSize += x86_32 + (uint32_t)strlen(label) + 1;
 	}
 	if (!short_size) {
 		string_table->Strings[string_table->TotalSize - sizeof(IMAGE_STRINGS)] = '_';
-		strcpy(&string_table->Strings[string_table->TotalSize - sizeof(IMAGE_STRINGS)] + x86_32, label);
+		memcpy(&string_table->Strings[string_table->TotalSize - sizeof(IMAGE_STRINGS)] + x86_32, label, strlen(label) + 1);
 		string_table->TotalSize += x86_32 + (uint32_t)strlen(label);
-		strcpy(&string_table->Strings[string_table->TotalSize - sizeof(IMAGE_STRINGS)], SIZE_LABEL_SUFFIX);
+		memcpy(&string_table->Strings[string_table->TotalSize - sizeof(IMAGE_STRINGS)], SIZE_LABEL_SUFFIX, strlen(SIZE_LABEL_SUFFIX) + 1);
 		string_table->TotalSize += (uint32_t)strlen(SIZE_LABEL_SUFFIX) + 1;
 	}
 
@@ -440,7 +440,7 @@ main (int argc, char *argv[])
 		fprintf(stderr, "Couldn't write file '%s'.\n", argv[2]);
 		goto err;
 	}
-	printf("Successfully created COFF object file '%s'\n", argv[2]);
+	fprintf(stdout, "Successfully created COFF object file '%s'\n", argv[2]);
 
 	r = 0;
 
