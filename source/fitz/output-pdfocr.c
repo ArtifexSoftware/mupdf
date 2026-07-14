@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -1174,9 +1174,10 @@ fz_new_pdfocr_writer_with_output(fz_context *ctx, fz_output *out, const char *op
 		wri->out = out;
 		wri->bander = fz_new_pdfocr_band_writer(ctx, wri->out, &wri->pdfocr);
 	}
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
 	fz_catch(ctx)
 	{
-		fz_drop_options(ctx, options);
 		fz_drop_output(ctx, out);
 		fz_free(ctx, wri);
 		fz_rethrow(ctx);
