@@ -616,10 +616,10 @@ merge_color(uint32_t *oldp, uint32_t col)
 	uint32_t r, g, b, mul;
 
 	mul = a + (a>>7);
-	b = FZ_BLEND(old & 0xFF, col & 0xFF, mul);
-	g = FZ_BLEND((old>>8) & 0xFF, (col>>8) & 0xFF, mul);
-	r = FZ_BLEND((old>>16) & 0xFF, (col>>16) & 0xFF, mul);
-	a = FZ_BLEND((old>>24) & 0xFF, 0xFF, mul);
+	b = FZ_BLEND(col & 0xFF, old & 0xFF, mul);
+	g = FZ_BLEND((col>>8) & 0xFF, (old>>8) & 0xFF, mul);
+	r = FZ_BLEND((col>>16) & 0xFF, (old>>16) & 0xFF, mul);
+	a = FZ_BLEND(0xFF, (old>>24) & 0xFF, mul);
 
 	*oldp = (a<<24) | (r<<16) | (g<<8) | b;
 }
