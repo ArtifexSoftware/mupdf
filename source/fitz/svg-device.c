@@ -551,6 +551,20 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 	return fnt;
 }
 
+static int is_valid_xml_char(int c)
+{
+	/* exclude C0 (except tab and newline) and C1 and surrogates */
+	return (
+		c == 0x9 ||
+		c == 0xA ||
+		c == 0xD ||
+		(c >= 0x20 && c <= 0x7E) ||
+		(c >= 0xA0 && c <= 0xD7FF) ||
+		(c >= 0xE000 && c <= 0xFFFD) ||
+		(c >= 0x10000 && c <= 0x10FFFF)
+	);
+}
+
 static void
 svg_dev_data_text(fz_context *ctx, fz_buffer *out, int c)
 {
@@ -563,8 +577,8 @@ svg_dev_data_text(fz_context *ctx, fz_buffer *out, int c)
 			fz_append_string(ctx, out, "&quot;");
 		else if (c >= 32 && c < 127 && c != '<' && c != '>')
 			fz_append_byte(ctx, out, c);
-		else if (c >= 0xD800 && c <= 0xDFFF)
-			/* no surrogate characters in SVG */
+		else if (!is_valid_xml_char(c))
+			/* no surrogate or other invalid characters in SVG */
 			fz_append_printf(ctx, out, "&#xFFFD;");
 		else
 			fz_append_printf(ctx, out, "&#x%04x;", c);
