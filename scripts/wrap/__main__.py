@@ -912,12 +912,30 @@ import platform
 import re
 import shlex
 import shutil
+import subprocess
 import sys
 import sysconfig
 import tempfile
 import textwrap
 
-import pipcl
+sys.path.insert(0, os.path.normpath(f'{__file__}/../..'))
+try:
+    import autovenv
+finally:
+    del sys.path[0]
+
+autovenv.enter()
+
+# Install/import pipcl. We don't pass 'pipcl' to above call to autovenv.enter()
+# because this would do `pip install pipcl`, which seems to fail if we are
+# being run via `pip install`. It looks like `pip install` deliberately does
+# not install pip in a build venv.
+#
+try:
+    import pipcl
+except ImportError:
+    subprocess.run(f'pip install --upgrade pipcl', shell=1, check=1)
+    import pipcl
 
 if platform.system() == 'Windows':
     '''
