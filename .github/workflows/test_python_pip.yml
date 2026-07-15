@@ -67,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: generated-code
+          name: generated-code-${{ matrix.os }}
           path: |
             platform/c++/
             platform/python/
