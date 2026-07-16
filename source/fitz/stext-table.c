@@ -3189,6 +3189,22 @@ merge_columns(grid_walker_data *gd)
 	for (x = gd->cells->w-3; x >= 0; x--)
 	{
 		/* Can column x be merged with column x+1? */
+		/* A column can be merged if there is no reinforcement, the h_lines are
+		 * all the same, no v_lines and the gap is very small. */
+#define MIN_COL_DIVIDER_WIDTH 4
+		if (gd->xpos->list[x+1].max - gd->xpos->list[x+1].min <= MIN_COL_DIVIDER_WIDTH)
+		{
+			for (y = 0; y < gd->cells->h-1; y++)
+			{
+				cell_t *a = get_cell(gd->cells, x, y);
+				cell_t *b = get_cell(gd->cells, x+1, y);
+				if (!!a->h_line != !!b->h_line || b->v_line)
+					break;
+			}
+			if (y == gd->cells->h-1)
+				goto merge_column;
+		}
+
 		/* An empty column can certainly be merged if the h_lines are the same,
 		 * and there is no v_line. */
 		for (y = 0; y < gd->cells->h-1; y++)
