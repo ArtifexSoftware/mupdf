@@ -48,14 +48,18 @@ match_long_option(int argc, char * const *argv, const fz_getopt_long_options *lo
 
 		/* So we have a match. */
 		fz_optind++;
-		if (opt[z])
-			fz_optarg = &opt[z+1];
-		else if (fz_optind < argc)
-			fz_optarg = argv[fz_optind++];
-		else
+
+		if (arg)
 		{
-			fprintf(stderr, "%s: option requires argument --%s\n", argv[0], s);
-			return ':';
+			if (opt[z])
+				fz_optarg = &opt[z+1];
+			else if (fz_optind < argc)
+				fz_optarg = argv[fz_optind++];
+			else
+			{
+				fprintf(stderr, "%s: option requires argument --%s\n", argv[0], s);
+				return ':';
+			}
 		}
 
 		/* If there is an arg from a predefined list, try to match that here. */
