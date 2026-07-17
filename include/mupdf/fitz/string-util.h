@@ -338,27 +338,27 @@ int fz_toupper(int c);
 
 static inline uint16_t fz_unpack_uint16(const uint8_t *p)
 {
-	return (uint16_t)p[0] << 8 | (uint16_t)p[1];
+	return (uint16_t)((uint16_t)p[0] << 8 | (uint16_t)p[1]);
 }
 
 static inline uint16_t fz_unpack_uint16_le(const uint8_t *p)
 {
-	return (uint16_t)p[1] << 8 | (uint16_t)p[0];
+	return (uint16_t)((uint16_t)p[1] << 8 | (uint16_t)p[0]);
 }
 
 static inline uint32_t fz_unpack_uint32(const uint8_t *p)
 {
-	return (uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | (uint32_t)p[3];
+	return (uint32_t)((uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | (uint32_t)p[3]);
 }
 
 static inline uint32_t fz_unpack_uint32_le(const uint8_t *p)
 {
-	return (uint32_t)p[3] << 24 | (uint32_t)p[2] << 16 | (uint32_t)p[1] << 8 | (uint32_t)p[0];
+	return (uint32_t)((uint32_t)p[3] << 24 | (uint32_t)p[2] << 16 | (uint32_t)p[1] << 8 | (uint32_t)p[0]);
 }
 
 static inline uint64_t fz_unpack_uint64(const uint8_t *p)
 {
-	return  (
+	return  (uint64_t)(
 		(uint64_t)p[0]<<56 | (uint64_t)p[1]<<48 | (uint64_t)p[2]<<40 | (uint64_t)p[3]<<32 |
 		(uint64_t)p[4]<<24 | (uint64_t)p[5]<<16 | (uint64_t)p[6]<<8 | (uint64_t)p[7]
 	);
@@ -366,7 +366,7 @@ static inline uint64_t fz_unpack_uint64(const uint8_t *p)
 
 static inline uint64_t fz_unpack_uint64_le(const uint8_t *p)
 {
-	return (
+	return (uint64_t)(
 		(uint64_t)p[7]<<56 | (uint64_t)p[6]<<48 | (uint64_t)p[5]<<40 | (uint64_t)p[4]<<32 |
 		(uint64_t)p[3]<<24 | (uint64_t)p[2]<<16 | (uint64_t)p[1]<<8 | (uint64_t)p[0]
 	);
