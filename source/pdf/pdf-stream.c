@@ -539,7 +539,7 @@ pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj
 void
 pdf_internalize_external_stream(fz_context *ctx, pdf_document *doc, int num)
 {
-	fz_stream *stm;
+	fz_stream *stm = NULL;
 	pdf_obj *dict, *f;
 	fz_buffer *buf = NULL;
 	pdf_xref_entry *x = NULL;
@@ -553,6 +553,8 @@ pdf_internalize_external_stream(fz_context *ctx, pdf_document *doc, int num)
 		return;
 
 	dict = pdf_load_object(ctx, doc, num);
+
+	fz_var(stm);
 
 	fz_try(ctx)
 	{
