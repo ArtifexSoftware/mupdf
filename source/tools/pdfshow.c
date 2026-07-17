@@ -676,6 +676,7 @@ int pdfshow_main(int argc, char **argv)
 				break;
 			break;
 			}
+			break;
 		}
 		case 'p': password = fz_optarg; break;
 		case 'o': output = fz_optpath(fz_optarg); break;
