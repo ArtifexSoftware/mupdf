@@ -274,6 +274,8 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 	{
 		if (!doc->crypt)
 			fz_warn(ctx, "crypt filter in unencrypted document");
+		else if (num == 0)
+			fz_warn(ctx, "crypt filter in external stream (or illegal object)");
 		else
 		{
 			pdf_obj *name = pdf_dict_get(ctx, p, PDF_NAME(Name));
@@ -391,7 +393,8 @@ static fz_stream *
 pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *file_stm, pdf_obj *stmobj, int num, int64_t offset, fz_compression_params *imparams, int might_be_image)
 {
 	pdf_obj *filters = pdf_dict_geta(ctx, stmobj, PDF_NAME(Filter), PDF_NAME(F));
-	int orig_num, orig_gen;
+	int orig_num = 0;
+	int orig_gen = 0;
 	fz_stream *rstm, *fstm;
 	const char *filename = NULL;
 	pdf_obj *parm_name = PDF_NAME(DecodeParms);
