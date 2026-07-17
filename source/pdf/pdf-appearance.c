@@ -2120,7 +2120,8 @@ write_variable_text(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, pdf_obj *
 				size = 12;
 			else
 			{
-				size = w / measure_string(ctx, lang, font, text);
+				float ms = measure_string(ctx, lang, font, text);
+				size = ms ? w / ms : 12;
 				if (size > h)
 					size = h;
 			}
@@ -2191,7 +2192,8 @@ layout_variable_text(fz_context *ctx, fz_layout_block *out,
 				size = 12;
 			else
 			{
-				size = w / measure_string(ctx, lang, font, text);
+				float ms = measure_string(ctx, lang, font, text);
+				size = ms ? w / ms : 12;
 				if (size > h)
 					size = h;
 			}
