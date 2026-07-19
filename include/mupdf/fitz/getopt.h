@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -53,9 +53,9 @@ typedef struct
 	given, an error will be displayed and argument processing will stop. If an argument
 	is given, and the long option record contains a non-null flag pointer, then the code
 	will decode the argument and fill in that flag pointer. Specifically,
-	case-insensitive matches to 'yes', 'no', 'true' and 'false' will cause a value of 0
-	or 1 as appropriate to be written; failing this the arg will be interpreted as a
-	decimal integer using atoi.
+	case-insensitive matches to 'yes', 'no', 'true', 'false', 'on' and 'off' will cause
+	a value of 0 or 1 as appropriate to be written; failing this the arg will be
+	interpreted as a decimal integer using atoi.
 
 	A long option entry may be followed by an list of options (e.g. myoption=foo|bar|baz)
 	and the option will be passed to fz_opt_from_list. The return value of that will be
