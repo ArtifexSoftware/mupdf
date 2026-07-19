@@ -3306,8 +3306,8 @@ int main(int argc, char **argv)
 			case 1:
 				external_access = 1;
 				break;
-			break;
 			}
+			break;
 		}
 		default: usage(argv[0]); break;
 		case 'v': version(); break;

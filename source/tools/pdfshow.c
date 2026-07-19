@@ -674,7 +674,6 @@ int pdfshow_main(int argc, char **argv)
 			case 1:
 				external_access = 1;
 				break;
-			break;
 			}
 			break;
 		}
