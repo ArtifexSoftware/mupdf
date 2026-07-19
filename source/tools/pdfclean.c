@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -132,7 +132,7 @@ int pdfclean_main(int argc, char **argv)
 
 		{ "recompress-images-when=smaller|always", &opts.image.recompress_when, (void *)23 },
 
-		{ "external-access", &external_access, (void *)24 },
+		{ "external-access", NULL, (void *)24 },
 		{ NULL, NULL, NULL }
 	};
 

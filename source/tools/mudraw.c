@@ -2151,7 +2151,7 @@ int mudraw_main(int argc, char **argv)
 	char *options_string = NULL;
 	const fz_getopt_long_options longopts[] =
 	{
-		{ "external-access", &external_access, (void *)1 },
+		{ "external-access", NULL, (void *)1 },
 		{ NULL, NULL, NULL }
 	};
 
