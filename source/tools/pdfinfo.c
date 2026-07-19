@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -329,7 +329,7 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 		pdf_obj *height;
 		pdf_obj *bpc = NULL;
 		pdf_obj *filter = NULL;
-		pdf_obj *f;
+		pdf_obj *f = NULL;
 		pdf_obj *cs = NULL;
 		pdf_obj *altcs;
 		int k;
@@ -345,9 +345,8 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 		if (!pdf_name_eq(ctx, type, PDF_NAME(Image)))
 			continue;
 
-		f = pdf_dict_get(ctx, imagedict, PDF_NAME(Filter));
-		if (f)
-			filter = pdf_dict_get(ctx, imagedict, PDF_NAME(FFilter));
+		if (pdf_is_stream_external(ctx, imagedict))
+			f = filter = pdf_dict_get(ctx, imagedict, PDF_NAME(FFilter));
 		else
 			filter = pdf_dict_get(ctx, imagedict, PDF_NAME(Filter));
 
