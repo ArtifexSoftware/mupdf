@@ -700,6 +700,8 @@ int pdfshow_main(int argc, char **argv)
 
 	fz_var(doc);
 	fz_var(labels);
+	fz_var(dir);
+
 	fz_try(ctx)
 	{
 		if (external_access)
