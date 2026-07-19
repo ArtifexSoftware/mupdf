@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Artifex Software, Inc.
+// Copyright (C) 2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -107,9 +107,17 @@ boxer_create_length(fz_context *ctx, fz_rect *mediabox, int len, int tight)
 	if (boxer == NULL)
 		return NULL;
 
-	memcpy(&boxer->mediabox, mediabox, sizeof(*mediabox));
-	boxer->list = rectlist_create(ctx, len, tight ? 0 : 4);
-	boxer->tight = tight;
+	fz_try(ctx)
+	{
+		memcpy(&boxer->mediabox, mediabox, sizeof(*mediabox));
+		boxer->list = rectlist_create(ctx, len, tight ? 0 : 4);
+		boxer->tight = tight;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, boxer);
+		fz_rethrow(ctx);
+	}
 
 	return boxer;
 }
