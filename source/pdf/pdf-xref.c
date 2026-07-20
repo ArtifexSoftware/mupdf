@@ -4962,11 +4962,13 @@ static int
 validate_locked_fields(fz_context *ctx, pdf_document *doc, int version, pdf_locked_fields *locked)
 {
 	int o_xref_base;
-	pdf_changes *changes;
+	pdf_changes *changes = NULL;
 	int num_objs;
 	int i, n;
 	int all_indirects = 1;
 	int repaired = 0;
+
+	fz_var(changes);
 
 retry_on_repair:
 	pdf_start_throw_on_repair(ctx, doc, &o_xref_base);
