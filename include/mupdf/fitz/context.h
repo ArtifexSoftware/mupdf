@@ -511,7 +511,7 @@ enum fz_image_rendering_behavior
 	// being compared pixel-by-pixel, this is probably best avoided.
 	FZ_IMAGE_RENDERING_SPEED = 2,
 };
-void fz_tune_image_rendering(fz_context *ctx, int behavior);
+void fz_tune_image_rendering(fz_context *ctx, enum fz_image_rendering_behavior behavior);
 
 /**
 	Get the number of bits of antialiasing we are

@@ -150,7 +150,7 @@ void fz_tune_image_scale(fz_context *ctx, fz_tune_image_scale_fn *image_scale, v
 	ctx->tuning->image_scale_arg = arg;
 }
 
-void fz_tune_image_rendering(fz_context *ctx, int quality)
+void fz_tune_image_rendering(fz_context *ctx, enum fz_image_rendering_behavior quality)
 {
 	ctx->tuning->image_rendering = quality;
 }
