@@ -220,7 +220,7 @@ txt_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *
 	return fz_txt_buffer_to_html(ctx, buf);
 }
 
-static const fz_htdoc_format_t fz_htdoc_txt =
+static const fz_htdoc_format fz_htdoc_txt =
 {
 	"Text",
 	txt_to_html,

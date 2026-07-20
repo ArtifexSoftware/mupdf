@@ -186,7 +186,7 @@ typedef struct
 {
 	void *shaper_handle;
 	void (*destroy)(fz_context *ctx, void *); /* Destructor for shape_handle */
-} fz_shaper_data_t;
+} fz_shaper_data;
 
 /**
 	Retrieve a pointer to the shaper data
@@ -197,7 +197,7 @@ typedef struct
 	Returns a pointer to the shaper data structure (or NULL if
 	font is NULL).
 */
-fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font);
+fz_shaper_data *fz_font_shaper_data(fz_context *ctx, fz_font *font);
 
 /**
 	Retrieve a pointer to the name of the font.
@@ -782,7 +782,7 @@ struct fz_font
 	fz_font_flags_t flags;
 
 	void *ft_face; /* has an FT_Face if used */
-	fz_shaper_data_t shaper_data;
+	fz_shaper_data shaper_data;
 
 	fz_matrix t3matrix;
 	void *t3resources;

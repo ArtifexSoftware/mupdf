@@ -2270,7 +2270,7 @@ fz_font_flags_t *fz_font_flags(fz_font *font)
 	return font ? &font->flags : NULL;
 }
 
-fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font)
+fz_shaper_data *fz_font_shaper_data(fz_context *ctx, fz_font *font)
 {
 	return font ? &font->shaper_data : NULL;
 }

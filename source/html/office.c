@@ -1246,7 +1246,7 @@ office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archiv
 	return fz_office_to_html(ctx, set, buf, zip, &opts);
 }
 
-static const fz_htdoc_format_t fz_htdoc_office =
+static const fz_htdoc_format fz_htdoc_office =
 {
 	"Office document",
 	office_to_html,

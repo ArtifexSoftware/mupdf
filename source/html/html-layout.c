@@ -274,7 +274,7 @@ static int walk_string(string_walker *walker)
 
 		if (!quickshape)
 		{
-			fz_shaper_data_t *hb = fz_font_shaper_data(ctx, walker->font);
+			fz_shaper_data *hb = fz_font_shaper_data(ctx, walker->font);
 			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 			if (hb->shaper_handle == NULL)
 			{

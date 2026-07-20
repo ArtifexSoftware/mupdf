@@ -152,7 +152,7 @@ md_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *z
 	return fz_md_to_html(ctx, set, buf, zip, &opts);
 }
 
-static const fz_htdoc_format_t fz_htdoc_md =
+static const fz_htdoc_format fz_htdoc_md =
 {
 	"Markdown document",
 	md_to_html,
