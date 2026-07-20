@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Artifex Software, Inc.
+// Copyright (C) 2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -3035,104 +3035,110 @@ transcribe_table(fz_context *ctx, grid_walker_data *gd, fz_stext_page *page, fz_
 		insert.parent = parent;
 	}
 
-	/* Make table */
-	table = add_struct_block_before(ctx, insert.block, page, insert.parent, FZ_STRUCTURE_TABLE, "Table");
-
-	/* Run through the cells, and guess at spanning. */
-	for (y = 0; y < h-1; y++)
+	fz_try(ctx)
 	{
-		/* Have we sent this entire row before? */
-		for (x = 0; x < w-1; x++)
+		/* Make table */
+		table = add_struct_block_before(ctx, insert.block, page, insert.parent, FZ_STRUCTURE_TABLE, "Table");
+
+		/* Run through the cells, and guess at spanning. */
+		for (y = 0; y < h-1; y++)
 		{
-			if (!sent_tab[x+y*w])
-				break;
-		}
-		if (x == w-1)
-			continue; /* No point in sending a row with nothing in it! */
-
-		/* Make TR */
-		tr = add_struct_block_before(ctx, NULL, page, table, FZ_STRUCTURE_TR, "TR");
-
-		for (x = 0; x < w-1; x++)
-		{
-			int x2, y2;
-			int cellw = 1;
-			int cellh = 1;
-
-			/* Have we sent this cell already? */
-			if (sent_tab[x+y*w])
-				continue;
-
-			/* Find the width of the cell */
-			for (x2 = x+1; x2 < w-1; x2++)
+			/* Have we sent this entire row before? */
+			for (x = 0; x < w-1; x++)
 			{
-				cell_t *cell = get_cell(gd->cells, x2, y);
-				if (cell->v_line)
-					break; /* Can't go past a line */
-				if (gd->xpos->list[x2].uncertainty == 0)
-					break; /* An uncertainty of 0 is as good as a line. */
-				if (!cell->v_crossed)
+				if (!sent_tab[x+y*w])
 					break;
-				cellw++;
 			}
-			/* Find the height of the cell */
-			for (y2 = y+1; y2 < h-1; y2++)
-			{
-				cell_t *cell;
-				int h_crossed = 0;
-				if (gd->ypos->list[y2].uncertainty == 0)
-					break; /* An uncertainty of 0 is as good as a line. */
+			if (x == w-1)
+				continue; /* No point in sending a row with nothing in it! */
 
-				cell = get_cell(gd->cells, x, y2);
-				if (cell->h_line)
-					break; /* Can't extend down through a line. */
-				if (cell->h_crossed)
-					h_crossed = 1;
-				for (x2 = x+1; x2 < x+cellw; x2++)
+			/* Make TR */
+			tr = add_struct_block_before(ctx, NULL, page, table, FZ_STRUCTURE_TR, "TR");
+
+			for (x = 0; x < w-1; x++)
+			{
+				int x2, y2;
+				int cellw = 1;
+				int cellh = 1;
+
+				/* Have we sent this cell already? */
+				if (sent_tab[x+y*w])
+					continue;
+
+				/* Find the width of the cell */
+				for (x2 = x+1; x2 < w-1; x2++)
 				{
-					cell = get_cell(gd->cells, x2, y2);
-					if (cell->h_line)
-						break;
+					cell_t *cell = get_cell(gd->cells, x2, y);
 					if (cell->v_line)
 						break; /* Can't go past a line */
 					if (gd->xpos->list[x2].uncertainty == 0)
 						break; /* An uncertainty of 0 is as good as a line. */
 					if (!cell->v_crossed)
 						break;
+					cellw++;
+				}
+				/* Find the height of the cell */
+				for (y2 = y+1; y2 < h-1; y2++)
+				{
+					cell_t *cell;
+					int h_crossed = 0;
+					if (gd->ypos->list[y2].uncertainty == 0)
+						break; /* An uncertainty of 0 is as good as a line. */
+
+					cell = get_cell(gd->cells, x, y2);
+					if (cell->h_line)
+						break; /* Can't extend down through a line. */
 					if (cell->h_crossed)
 						h_crossed = 1;
+					for (x2 = x+1; x2 < x+cellw; x2++)
+					{
+						cell = get_cell(gd->cells, x2, y2);
+						if (cell->h_line)
+							break;
+						if (cell->v_line)
+							break; /* Can't go past a line */
+						if (gd->xpos->list[x2].uncertainty == 0)
+							break; /* An uncertainty of 0 is as good as a line. */
+						if (!cell->v_crossed)
+							break;
+						if (cell->h_crossed)
+							h_crossed = 1;
+					}
+					if (x2 == x+cellw && h_crossed)
+						cellh++;
+					else
+						break;
 				}
-				if (x2 == x+cellw && h_crossed)
-					cellh++;
-				else
-					break;
-			}
-			/* Make TD */
-			td = add_struct_block_before(ctx, NULL, page, tr, FZ_STRUCTURE_TD, "TD");
-			r.x0 = gd->xpos->list[x].pos;
-			r.x1 = gd->xpos->list[x+cellw].pos;
-			r.y0 = gd->ypos->list[y].pos;
-			r.y1 = gd->ypos->list[y+cellh].pos;
-			/* Use r, not REAL contents bbox, as otherwise spanned rows
-			 * can end up empty. */
-			td->up->bbox = r;
-			move_contained_content(ctx, page, td, parent, r);
-			tidy_td(ctx, page, td);
+				/* Make TD */
+				td = add_struct_block_before(ctx, NULL, page, tr, FZ_STRUCTURE_TD, "TD");
+				r.x0 = gd->xpos->list[x].pos;
+				r.x1 = gd->xpos->list[x+cellw].pos;
+				r.y0 = gd->ypos->list[y].pos;
+				r.y1 = gd->ypos->list[y+cellh].pos;
+				/* Use r, not REAL contents bbox, as otherwise spanned rows
+				 * can end up empty. */
+				td->up->bbox = r;
+				move_contained_content(ctx, page, td, parent, r);
+				tidy_td(ctx, page, td);
 #ifdef DEBUG_TABLE_STRUCTURE
-			printf("(%d,%d) + (%d,%d)\n", x, y, cellw, cellh);
+				printf("(%d,%d) + (%d,%d)\n", x, y, cellw, cellh);
 #endif
-			for (y2 = y; y2 < y+cellh; y2++)
-				for (x2 = x; x2 < x+cellw; x2++)
-					sent_tab[x2+y2*w] = 1;
+				for (y2 = y; y2 < y+cellh; y2++)
+					for (x2 = x; x2 < x+cellw; x2++)
+						sent_tab[x2+y2*w] = 1;
+			}
+			r.x0 = gd->xpos->list[0].pos;
+			r.x1 = gd->xpos->list[gd->xpos->len-1].pos;
+			r.y0 = gd->ypos->list[y].pos;
+			r.y1 = gd->ypos->list[y+1].pos;
+			tr->up->bbox = r;
+			table->up->bbox = fz_union_rect(table->up->bbox, tr->up->bbox);
 		}
-		r.x0 = gd->xpos->list[0].pos;
-		r.x1 = gd->xpos->list[gd->xpos->len-1].pos;
-		r.y0 = gd->ypos->list[y].pos;
-		r.y1 = gd->ypos->list[y+1].pos;
-		tr->up->bbox = r;
-		table->up->bbox = fz_union_rect(table->up->bbox, tr->up->bbox);
 	}
-	fz_free(ctx, sent_tab);
+	fz_always(ctx)
+		fz_free(ctx, sent_tab);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	{
 		fz_stext_block *block;
