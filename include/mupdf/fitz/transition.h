@@ -27,7 +27,8 @@
 #include "mupdf/fitz/pixmap.h"
 
 /* Transition support */
-enum {
+typedef enum fz_transition_type
+{
 	FZ_TRANSITION_NONE = 0, /* aka 'R' or 'REPLACE' */
 	FZ_TRANSITION_SPLIT,
 	FZ_TRANSITION_BLINDS,
@@ -40,11 +41,11 @@ enum {
 	FZ_TRANSITION_COVER,
 	FZ_TRANSITION_UNCOVER,
 	FZ_TRANSITION_FADE
-};
+} fz_transition_type;
 
-typedef struct
+typedef struct fz_transition
 {
-	int type;
+	fz_transition_type type;
 	float duration; /* Effect duration (seconds) */
 
 	/* Parameters controlling the effect */
