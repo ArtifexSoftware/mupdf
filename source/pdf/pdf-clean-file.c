@@ -360,6 +360,7 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 			}
 
 			pdf_drop_obj(ctx, olddests);
+			olddests = NULL;
 		}
 
 		/* Edit each pages /Annot list to remove any links that point to nowhere. */
@@ -445,6 +446,7 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 		pdf_drop_obj(ctx, root);
 		pdf_drop_obj(ctx, kids);
 		pdf_drop_obj(ctx, structparents);
+		pdf_drop_obj(ctx, olddests);
 	}
 	fz_catch(ctx)
 	{
