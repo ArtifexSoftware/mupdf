@@ -272,6 +272,9 @@ do_recognize_document_stream_and_dir_content(fz_context *ctx, fz_stream **stream
 		}
 	}
 
+	fz_var(best_free_state);
+	fz_var(best_state);
+
 	fz_try(ctx)
 	{
 		int can_recognize_stream = ((stream && stream->seek != NULL) || (stream == NULL && dir != NULL));
