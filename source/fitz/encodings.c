@@ -145,7 +145,7 @@ fz_unicode_from_glyph_name(const char *name)
 		// Bug 709466: Ancient Acrobat Distiller windows/DOS fonts use
 		// G%x glyph names with DOS CP-437 encoding.
 		code = read_num(buf+1, 16);
-		code = (code < 256) ? fz_unicode_from_dos_437[code] : 0;
+		code = (code > 0 && code < 256) ? fz_unicode_from_dos_437[code] : 0;
 	}
 
 	else if (buf[0] == 'g')
@@ -155,7 +155,7 @@ fz_unicode_from_glyph_name(const char *name)
 		// ancient versions of ghostscript, using gXXXX as original glyph
 		// index. Use TrueType-UCS2 mapping for these.
 		code = read_num(buf+1, 16);
-		code = (code < 258) ? fz_unicode_from_true_type_glyph_index[code] : 0;
+		code = (code > 0 && code < 258) ? fz_unicode_from_true_type_glyph_index[code] : 0;
 	}
 
 	else
