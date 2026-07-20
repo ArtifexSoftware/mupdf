@@ -24,7 +24,6 @@
 #define SOURCE_HTML_IMP_H
 
 #include "mupdf/fitz.h"
-#include "mupdf/html.h"
 
 #include "../fitz/xml-imp.h"
 

@@ -1007,7 +1007,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\heap-imp.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\mupdf\html.h">
+    <ClInclude Include="..\..\include\mupdf\fitz\html.h">
       <Filter>!include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\fitz\ucdn_db.h">

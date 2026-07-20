@@ -22,8 +22,8 @@
 
 // This header allows people to easily build HTML-based document handlers.
 
-#ifndef MUPDF_HTML_HTML_H
-#define MUPDF_HTML_HTML_H
+#ifndef MUPDF_FITZ_HTML_H
+#define MUPDF_FITZ_HTML_H
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
@@ -57,6 +57,4 @@ fz_document *fz_htdoc_open_document_with_buffer(fz_context *ctx, fz_archive *dir
 
 fz_document *fz_htdoc_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *stm, fz_archive *dir, const fz_htdoc_format *format);
 
-
-
-#endif /* MUPDF_HTML_HTML_H */
+#endif /* MUPDF_FITZ_HTML_H */

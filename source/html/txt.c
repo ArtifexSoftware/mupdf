@@ -21,7 +21,6 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-#include "mupdf/html.h"
 
 enum { ENCODING_ASCII, ENCODING_UTF8, ENCODING_UTF8_BOM, ENCODING_UTF16_LE, ENCODING_UTF16_BE };
 

@@ -1327,6 +1327,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\hash.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\heap-imp.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\heap.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\html.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\image.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\json.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\link.h" />
@@ -1356,7 +1357,6 @@
     <ClInclude Include="..\..\include\mupdf\fitz\write-pixmap.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\writer.h" />
     <ClInclude Include="..\..\include\mupdf\fitz\xml.h" />
-    <ClInclude Include="..\..\include\mupdf\html.h" />
     <ClInclude Include="..\..\include\mupdf\memento.h" />
     <ClInclude Include="..\..\include\mupdf\pdf.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\annot.h" />
