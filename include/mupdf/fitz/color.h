@@ -99,14 +99,14 @@ const char *fz_rendering_intent_name(int ri);
 	(both stack and heap space), but not hugely. Speed should
 	(largely) be determined by the number of colors actually used.
 */
-enum { FZ_MAX_COLORS = 32 };
+#define FZ_MAX_COLORS 32
 
 /**
 	The maximum number of images samples allowed in any given image.
 
 	This limit is checked when allocating images.
 */
-enum { FZ_MAX_SAMPLES = 1 << 30 };
+#define FZ_MAX_SAMPLES (1 << 30)
 
 enum fz_colorspace_type
 {

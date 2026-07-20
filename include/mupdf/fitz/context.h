@@ -309,10 +309,8 @@ void fz_lock_debug_unlock(fz_context *ctx, int lock);
 	FZ_STORE_DEFAULT: A reasonable upper bound on the size, for
 	devices that are not memory constrained.
 */
-enum {
-	FZ_STORE_UNLIMITED = 0,
-	FZ_STORE_DEFAULT = 256 << 20,
-};
+#define FZ_STORE_UNLIMITED 0
+#define FZ_STORE_DEFAULT (256 << 20)
 
 /**
 	Allocate context containing global state.

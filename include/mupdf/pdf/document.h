@@ -38,11 +38,8 @@ typedef struct pdf_annot pdf_annot;
 typedef struct pdf_js pdf_js;
 typedef struct pdf_document pdf_document;
 
-enum
-{
-	PDF_LEXBUF_SMALL = 256,
-	PDF_LEXBUF_LARGE = 65536
-};
+#define PDF_LEXBUF_SMALL 256
+#define PDF_LEXBUF_LARGE 65536
 
 typedef struct
 {

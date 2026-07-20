@@ -113,11 +113,8 @@ typedef struct fz_function fz_function;
 
 typedef void (fz_function_eval_fn)(fz_context *, fz_function *, const float *, float *);
 
-enum
-{
-	FZ_FUNCTION_MAX_N = FZ_MAX_COLORS,
-	FZ_FUNCTION_MAX_M = FZ_MAX_COLORS
-};
+#define FZ_FUNCTION_MAX_N FZ_MAX_COLORS
+#define FZ_FUNCTION_MAX_M FZ_MAX_COLORS
 
 struct fz_function
 {

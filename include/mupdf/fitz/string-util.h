@@ -214,7 +214,7 @@ int fz_strncasecmp(const char *a, const char *b, size_t n);
 	FZ_UTFMAX: Maximum number of bytes in a decoded rune (maximum
 	length returned by fz_chartorune).
 */
-enum { FZ_UTFMAX = 4 };
+#define FZ_UTFMAX 4
 
 /**
 	UTF8 decode a single rune from a sequence of chars.
