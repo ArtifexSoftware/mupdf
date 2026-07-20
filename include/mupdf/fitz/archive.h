@@ -410,7 +410,7 @@ void fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub,
 typedef int (fz_recognize_archive_fn)(fz_context *, fz_stream *);
 typedef fz_archive *(fz_open_archive_fn)(fz_context *, fz_stream *);
 
-typedef struct
+typedef struct fz_archive_handler
 {
 	fz_recognize_archive_fn *recognize;
 	fz_open_archive_fn *open;

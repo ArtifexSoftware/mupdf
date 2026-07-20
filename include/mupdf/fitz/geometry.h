@@ -183,7 +183,7 @@ static inline void *fz_clampp(void *x, void *min, void *max)
 /**
 	fz_point is a point in a two-dimensional space.
 */
-typedef struct
+typedef struct fz_point
 {
 	float x, y;
 } fz_point;
@@ -227,7 +227,7 @@ static inline fz_point fz_make_point(float x, float y)
 #define FZ_MIN_INF_RECT ((int)0x80000000)
 #define FZ_MAX_INF_RECT ((int)0x7fffff80)
 
-typedef struct
+typedef struct fz_rect
 {
 	float x0, y0;
 	float x1, y1;
@@ -244,7 +244,7 @@ static inline fz_rect fz_make_rect(float x0, float y0, float x1, float y1)
 
 	It's used in the draw device and for pixmap dimensions.
 */
-typedef struct
+typedef struct fz_irect
 {
 	int x0, y0;
 	int x1, y1;
@@ -384,7 +384,7 @@ fz_irect_height(fz_irect r)
 	| c d 0 | normally represented as [ a b c d e f ].
 	\ e f 1 /
 */
-typedef struct
+typedef struct fz_matrix
 {
 	float a, b, c, d, e, f;
 } fz_matrix;
@@ -778,7 +778,7 @@ float fz_matrix_max_expansion(fz_matrix m);
 	The significant difference between quads and rects is that
 	the edges of quads are not axis aligned.
 */
-typedef struct
+typedef struct fz_quad
 {
 	fz_point ul, ur, ll, lr;
 } fz_quad;

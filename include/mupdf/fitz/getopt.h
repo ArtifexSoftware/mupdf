@@ -25,7 +25,7 @@
 
 #include "export.h"
 
-typedef struct
+typedef struct fz_getopt_long_options
 {
 	char *option;
 	int *flag;

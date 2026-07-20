@@ -46,12 +46,12 @@ int pdf_pattern_uses_blending(fz_context *ctx, pdf_obj *dict, pdf_cycle_list *cy
  * the data, enabling rapid lookup.
  */
 
-enum { PDF_SIMPLE_FONT_RESOURCE=1, PDF_CID_FONT_RESOURCE=2, PDF_CJK_FONT_RESOURCE=3 };
-enum { PDF_SIMPLE_ENCODING_LATIN, PDF_SIMPLE_ENCODING_GREEK, PDF_SIMPLE_ENCODING_CYRILLIC };
+enum pdf_font_resource_type { PDF_SIMPLE_FONT_RESOURCE=1, PDF_CID_FONT_RESOURCE=2, PDF_CJK_FONT_RESOURCE=3 };
+enum pdf_simple_font_encoding { PDF_SIMPLE_ENCODING_LATIN, PDF_SIMPLE_ENCODING_GREEK, PDF_SIMPLE_ENCODING_CYRILLIC };
 
 /* The contents of this structure are defined publicly just so we can
  * define this on the stack. */
-typedef struct
+typedef struct pdf_font_resource_key
 {
 	unsigned char digest[16];
 	int type;
@@ -59,13 +59,13 @@ typedef struct
 	int local_xref;
 } pdf_font_resource_key;
 
-typedef struct
+typedef struct pdf_colorspace_resource_key
 {
 	unsigned char digest[16];
 	int local_xref;
 } pdf_colorspace_resource_key;
 
-typedef struct
+typedef struct pdf_image_resource_key
 {
 	int w, h;
 	int decode;
@@ -132,7 +132,7 @@ pdf_obj *pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image);
 
 pdf_obj *pdf_add_colorspace(fz_context *ctx, pdf_document *doc, fz_colorspace *cs);
 
-typedef struct
+typedef struct pdf_pattern
 {
 	fz_storable storable;
 	int ismask;

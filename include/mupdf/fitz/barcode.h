@@ -30,7 +30,7 @@
 #include "mupdf/fitz/document.h"
 #include "mupdf/fitz/display-list.h"
 
-typedef enum
+typedef enum fz_barcode_type
 {
 	FZ_BARCODE_NONE = 0,
 	FZ_BARCODE_AZTEC,

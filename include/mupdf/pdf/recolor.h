@@ -25,7 +25,7 @@
 
 #include "mupdf/pdf/document.h"
 
-typedef struct
+typedef struct pdf_recolor_options
 {
 	/* For gray, use num_comp = 1.
 	 * For rgb, use num_comp = 3.

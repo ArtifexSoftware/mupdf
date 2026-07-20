@@ -38,7 +38,7 @@
 #define HEAP_CAT(A,B) HEAP_XCAT(A,B)
 
 #ifndef MUPDF_FITZ_HEAP_IMPLEMENT
-typedef struct
+typedef struct HEAP_TYPE_NAME
 {
   int max;
   int len;

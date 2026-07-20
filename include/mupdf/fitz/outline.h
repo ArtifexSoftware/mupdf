@@ -31,7 +31,8 @@
 
 /* Outline */
 
-typedef struct {
+typedef struct fz_outline_item
+{
 	char *title;
 	char *uri;
 	int is_open;
@@ -41,13 +42,13 @@ typedef struct {
 	float b;
 } fz_outline_item;
 
-enum
+enum fz_outline_flag
 {
 	FZ_OUTLINE_FLAG_BOLD = 1,
 	FZ_OUTLINE_FLAG_ITALIC = 2,
 };
 
-enum
+enum fz_outline_iterator_state
 {
 	FZ_OUTLINE_ITERATOR_DID_NOT_MOVE = -1,
 	FZ_OUTLINE_ITERATOR_AT_ITEM = 0,

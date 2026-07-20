@@ -48,7 +48,7 @@ struct pdf_resource_stack
 
 pdf_obj *pdf_lookup_resource(fz_context *ctx, pdf_resource_stack *stack, pdf_obj *type, const char *name);
 
-typedef enum
+typedef enum pdf_processor_requirements
 {
 	PDF_PROCESSOR_REQUIRES_DECODED_IMAGES = 1
 } pdf_processor_requirements;
@@ -214,7 +214,7 @@ struct pdf_processor
 	pdf_processor *chain;
 };
 
-typedef struct
+typedef struct pdf_csi
 {
 	/* input */
 	pdf_document *doc;
@@ -301,7 +301,7 @@ typedef pdf_processor *(pdf_filter_factory_fn)(fz_context *ctx, pdf_document *do
 	A pdf_filter_factory is a pdf_filter_factory_fn, plus the options
 	needed to instantiate it.
 */
-typedef struct
+typedef struct pdf_filter_factory
 {
 	pdf_filter_factory_fn *filter;
 	void *options;
@@ -347,7 +347,7 @@ struct pdf_filter_options
 	int newlines;
 };
 
-typedef enum
+typedef enum fz_cull_type
 {
 	FZ_CULL_PATH_DROP,
 	FZ_CULL_PATH_FILL,
@@ -376,7 +376,7 @@ typedef enum
 	culler: A function called to see whether each object should
 	be culled or not.
 */
-typedef struct
+typedef struct pdf_sanitize_filter_options
 {
 	void *opaque;
 	fz_image *(*image_filter)(fz_context *ctx, void *opaque, fz_matrix ctm, const char *name, fz_image *image, fz_rect scissor);
@@ -412,7 +412,7 @@ pdf_sanitize_filter_options;
 */
 pdf_processor *pdf_new_sanitize_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *sopts);
 
-typedef struct
+typedef struct pdf_vectorize_filter_options
 {
 	void *opaque;
 	/* To be expanded */
@@ -462,7 +462,7 @@ pdf_obj *pdf_processor_pop_resources(fz_context *ctx, pdf_processor *proc);
 		Otherwise, it is called for every instance (useful if gathering
 		information about the ctm).
 */
-typedef struct
+typedef struct pdf_color_filter_options
 {
 	void *opaque;
 	void (*color_rewrite)(fz_context *ctx, void *opaque, pdf_obj **cs, int *n, float color[FZ_MAX_COLORS]);
@@ -488,7 +488,7 @@ void pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, 
 void pdf_process_raw_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *stmobj, fz_cookie *cookie);
 
 /* Text handling helper functions */
-typedef struct
+typedef struct pdf_text_state
 {
 	float char_space;
 	float word_space;
@@ -501,7 +501,7 @@ typedef struct
 	float rise;
 } pdf_text_state;
 
-typedef struct
+typedef struct pdf_text_object_state
 {
 	fz_text *clip_text; /* accumulator for clip mode text */
 	fz_rect clip_text_bbox;

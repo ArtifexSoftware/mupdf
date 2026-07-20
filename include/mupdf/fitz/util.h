@@ -91,7 +91,7 @@ fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_l
 /**
 	Convert structured text into plain text.
 */
-typedef enum
+typedef enum fz_text_flatten
 {
 	/* ALL: Flatten the text completely. All gaps between words/
 	 * paragraphs/lines are expressed as a single space. */

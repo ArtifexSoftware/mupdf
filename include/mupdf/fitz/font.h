@@ -135,13 +135,13 @@ void *fz_font_ft_face(fz_context *ctx, fz_font *font);
 fz_buffer **fz_font_t3_procs(fz_context *ctx, fz_font *font);
 
 /* common CJK font collections */
-enum { FZ_ADOBE_CNS, FZ_ADOBE_GB, FZ_ADOBE_JAPAN, FZ_ADOBE_KOREA };
+enum fz_adobe_cjk_collection { FZ_ADOBE_CNS, FZ_ADOBE_GB, FZ_ADOBE_JAPAN, FZ_ADOBE_KOREA };
 
 /**
 	Every fz_font carries a set of flags
 	within it, in a fz_font_flags_t structure.
 */
-typedef struct
+typedef struct fz_font_flags_t
 {
 	unsigned int is_mono : 1;
 	unsigned int is_serif : 1;
@@ -182,7 +182,7 @@ fz_font_flags_t *fz_font_flags(fz_font *font);
 	first required and the destructor is called when the fz_font is
 	destroyed.
 */
-typedef struct
+typedef struct fz_shaper_data
 {
 	void *shaper_handle;
 	void (*destroy)(fz_context *ctx, void *); /* Destructor for shape_handle */
@@ -762,7 +762,7 @@ void fz_enumerate_font_cmap(fz_context *ctx, fz_font *font, fz_cmap_callback *cb
 */
 void fz_calculate_font_ascender_descender(fz_context *ctx, fz_font *font);
 
-typedef enum
+typedef enum fz_ascdesc_source
 {
 	FZ_ASCDESC_FROM_FONT,
 	FZ_ASCDESC_DEFAULT,

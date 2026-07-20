@@ -444,7 +444,7 @@ struct fz_pixmap
 	fz_pixmap *underlying;
 };
 
-enum
+enum fz_pixmap_flags
 {
 	FZ_PIXMAP_FLAG_INTERPOLATE = 1,
 	FZ_PIXMAP_FLAG_FREE_SAMPLES = 2

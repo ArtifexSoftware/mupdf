@@ -27,7 +27,7 @@
 #include "mupdf/fitz/device.h"
 #include "mupdf/fitz/font.h"
 
-enum
+enum pdf_font_descriptor_flags
 {
 	PDF_FD_FIXED_PITCH = 1 << 0,
 	PDF_FD_SERIF = 1 << 1,
@@ -42,14 +42,14 @@ enum
 
 void pdf_load_encoding(const char **estrings, const char *encoding);
 
-typedef struct
+typedef struct pdf_hmtx
 {
 	unsigned short lo;
 	unsigned short hi;
 	int w;	/* type3 fonts can be big! */
 } pdf_hmtx;
 
-typedef struct
+typedef struct pdf_vmtx
 {
 	unsigned short lo;
 	unsigned short hi;
@@ -58,7 +58,7 @@ typedef struct
 	short w;
 } pdf_vmtx;
 
-typedef struct
+typedef struct pdf_font_desc
 {
 	fz_storable storable;
 	size_t size;

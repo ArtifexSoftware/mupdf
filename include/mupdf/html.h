@@ -36,7 +36,7 @@ typedef struct fz_html_s fz_html;
 typedef struct fz_html_font_set_s fz_html_font_set;
 typedef struct fz_html_hyph_set_s fz_html_hyph_set;
 
-typedef enum
+typedef enum fz_html_flavor
 {
 	FZ_HTML_FLAVOR_DEFAULT = 0,
 	FZ_HTML_FLAVOR_MOBI = 1,
@@ -44,7 +44,7 @@ typedef enum
 	FZ_HTML_FLAVOR_FICTIONBOOK2 = 3
 } fz_html_flavor;
 
-typedef struct
+typedef struct fz_htdoc_format
 {
 	const char *format_name;
 	fz_buffer *(*convert_to_html)(fz_context *ctx, fz_html_font_set *set, fz_buffer *buf, fz_archive *dir);

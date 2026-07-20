@@ -111,7 +111,7 @@ int fz_place_story(fz_context *ctx, fz_story *story, fz_rect where, fz_rect *fil
 */
 int fz_place_story_flags(fz_context *ctx, fz_story *story, fz_rect where, fz_rect *filled, int flags);
 
-enum
+enum fz_place_story_return
 {
 	/* Avoid the usual HTML behaviour of overflowing the box horizontally
 	 * in some circumstances. We now abort the place in such cases and
@@ -154,8 +154,7 @@ void fz_drop_story(fz_context *ctx, fz_story *story);
 */
 fz_xml *fz_story_document(fz_context *ctx, fz_story *story);
 
-
-typedef struct
+typedef struct fz_story_element_position
 {
 	/* The overall depth of this element in the box structure.
 	 * This can be used to compare the relative depths of different

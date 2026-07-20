@@ -25,7 +25,7 @@
 
 #include "mupdf/pdf/document.h"
 
-typedef enum
+typedef enum pdf_token
 {
 	PDF_TOK_ERROR,
 	PDF_TOK_EOF,

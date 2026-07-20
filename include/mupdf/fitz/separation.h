@@ -39,7 +39,7 @@
 
 typedef struct fz_separations fz_separations;
 
-typedef enum
+typedef enum fz_separation_behavior
 {
 	/* "Composite" separations are rendered using process
 	 * colors using the equivalent colors */

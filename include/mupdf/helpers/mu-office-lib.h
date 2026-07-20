@@ -103,7 +103,7 @@ typedef enum MuOfficeDocErrorType
 /**
  *Structure holding the detail of the layout of a bitmap. b5g6r5 is assumed.
  */
-typedef struct
+typedef struct MuOfficeBitmap
 {
 	void *memptr;
 	int   width;
@@ -117,7 +117,7 @@ typedef struct
  *    x           x coord of point
  *    y           y coord of point
  */
-typedef struct
+typedef struct MuOfficePoint
 {
 	float x;
 	float y;
@@ -131,7 +131,7 @@ typedef struct
  *    width       width of area
  *    height      height of area
  */
-typedef struct
+typedef struct MuOfficeBox
 {
 	float x;
 	float y;
@@ -145,7 +145,7 @@ typedef enum MuOfficePointType
 	MuOfficePointType_LineTo
 } MuOfficePointType;
 
-typedef struct
+typedef struct MuOfficePathPoint
 {
 	float x;
 	float y;
@@ -159,7 +159,7 @@ typedef struct
  *    origin            coordinates of the document origin within the bitmap
  *    renderArea        the part of the bitmap to which to render
  */
-typedef struct
+typedef struct MuOfficeRenderArea
 {
 	MuOfficePoint   origin;
 	MuOfficeBox     renderArea;
@@ -237,7 +237,7 @@ typedef void (MuOfficeRenderProgressFn)(void    *cookie,
  *
  * Keep in sync with smart-office-lib.h
  */
-typedef enum
+typedef enum MuOfficeDocType
 {
 	MuOfficeDocType_PDF,
 	MuOfficeDocType_XPS,

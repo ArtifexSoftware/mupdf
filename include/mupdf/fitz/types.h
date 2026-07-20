@@ -32,7 +32,7 @@ typedef struct fz_document fz_document;
 	broken into many chapters) this can make navigation much faster
 	as only the required chapter needs to be decoded at a time.
 */
-typedef struct
+typedef struct fz_location
 {
 	int chapter;
 	int page;

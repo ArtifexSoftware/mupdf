@@ -31,7 +31,7 @@
 	Structure definition is public to enable stack
 	based allocation. Do not access the members directly.
 */
-typedef struct
+typedef struct fz_md5
 {
 	uint32_t lo, hi;
 	uint32_t a, b, c, d;
@@ -77,7 +77,7 @@ void fz_md5_final(fz_md5 *state, unsigned char digest[16]);
 	Structure definition is public to enable stack
 	based allocation. Do not access the members directly.
 */
-typedef struct
+typedef struct fz_sha256
 {
 	unsigned int state[8];
 	unsigned int count[2];
@@ -118,7 +118,7 @@ void fz_sha256_final(fz_sha256 *state, unsigned char digest[32]);
 	Structure definition is public to enable stack
 	based allocation. Do not access the members directly.
 */
-typedef struct
+typedef struct fz_sha512
 {
 	uint64_t state[8];
 	unsigned int count[2];
@@ -188,7 +188,7 @@ void fz_sha384_final(fz_sha384 *state, unsigned char digest[64]);
 	Structure definition is public to enable stack
 	based allocation. Do not access the members directly.
 */
-typedef struct
+typedef struct fz_arc4
 {
 	unsigned x;
 	unsigned y;
@@ -224,7 +224,7 @@ void fz_arc4_final(fz_arc4 *state);
 	Structure definitions are public to enable stack
 	based allocation. Do not access the members directly.
 */
-typedef struct
+typedef struct fz_aes
 {
 	int nr; /* number of rounds */
 	uint32_t *rk; /* AES round keys */

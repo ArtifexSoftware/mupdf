@@ -114,7 +114,7 @@
 
 /* Instantiate fz_int2_heap */
 #ifndef MUPDF_FITZ_HEAP_IMPLEMENT
-typedef struct
+typedef struct fz_int2
 {
 	int a;
 	int b;
@@ -128,7 +128,7 @@ typedef struct
 
 /* Instantiate fz_intptr_heap */
 #ifndef MUPDF_FITZ_HEAP_IMPLEMENT
-typedef struct
+typedef struct fz_intptr
 {
 	int a;
 	void *b;

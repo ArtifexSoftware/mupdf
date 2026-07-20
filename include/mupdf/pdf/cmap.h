@@ -31,17 +31,17 @@
 // This results in us needing to support up to 256 characters.
 #define PDF_MRANGE_CAP 256
 
-typedef struct
+typedef struct pdf_range
 {
 	unsigned short low, high, out;
 } pdf_range;
 
-typedef struct
+typedef struct pdf_xrange
 {
 	unsigned int low, high, out;
 } pdf_xrange;
 
-typedef struct
+typedef struct pdf_mrange
 {
 	unsigned int low, out;
 } pdf_mrange;

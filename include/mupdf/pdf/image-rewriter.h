@@ -25,13 +25,13 @@
 
 #include "mupdf/pdf/document.h"
 
-enum
+enum fz_subsample_method
 {
 	FZ_SUBSAMPLE_AVERAGE,
 	FZ_SUBSAMPLE_BICUBIC
 };
 
-enum
+enum fz_recompress_method
 {
 	FZ_RECOMPRESS_NEVER,
 	FZ_RECOMPRESS_SAME,
@@ -41,13 +41,13 @@ enum
 	FZ_RECOMPRESS_FAX
 };
 
-enum
+enum fz_recompress_condition
 {
 	FZ_RECOMPRESS_WHEN_SMALLER,
 	FZ_RECOMPRESS_WHEN_ALWAYS
 };
 
-typedef struct
+typedef struct pdf_image_rewriter_options
 {
 	int color_lossless_image_subsample_method;
 	int color_lossy_image_subsample_method;

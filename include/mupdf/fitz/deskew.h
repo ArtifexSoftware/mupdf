@@ -26,7 +26,7 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
 
-enum
+enum fz_deskew_border_behavior
 {
 	FZ_DESKEW_BORDER_INCREASE = 0,
 	FZ_DESKEW_BORDER_MAINTAIN = 1,

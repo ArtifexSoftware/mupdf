@@ -37,7 +37,7 @@
 	details and are subject to change. Users should use the accessor
 	functions in preference.
 */
-typedef struct
+typedef struct fz_buffer
 {
 	int refs;
 	unsigned char *data;

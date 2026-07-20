@@ -77,7 +77,7 @@ const char *pdf_string_from_annot_type(fz_context *ctx, enum pdf_annot_type type
 */
 enum pdf_annot_type pdf_annot_type_from_string(fz_context *ctx, const char *subtype);
 
-enum
+enum pdf_annot_flags
 {
 	PDF_ANNOT_IS_INVISIBLE = 1 << (1-1),
 	PDF_ANNOT_IS_HIDDEN = 1 << (2-1),
@@ -105,7 +105,7 @@ enum pdf_line_ending
 	PDF_ANNOT_LE_SLASH
 };
 
-enum
+enum pdf_quadding
 {
 	PDF_ANNOT_Q_LEFT = 0,
 	PDF_ANNOT_Q_CENTER = 1,

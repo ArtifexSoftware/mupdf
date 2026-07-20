@@ -26,7 +26,7 @@
 #include "mupdf/pdf/document.h"
 #include "mupdf/pdf/object.h"
 
-enum
+enum pdf_encrypt_algorithm
 {
 	PDF_ENCRYPT_KEEP,
 	PDF_ENCRYPT_NONE,
@@ -71,7 +71,7 @@ void pdf_write_digest(fz_context *ctx, fz_output *out, pdf_obj *byte_range, pdf_
 /*
 	User access permissions from PDF reference.
 */
-enum
+enum pdf_permissions
 {
 	PDF_PERM_PRINT = 1 << 2,
 	PDF_PERM_MODIFY = 1 << 3,

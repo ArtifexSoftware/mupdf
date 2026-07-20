@@ -38,7 +38,7 @@ typedef struct fz_document_handler fz_document_handler;
 typedef struct fz_page fz_page;
 typedef intptr_t fz_bookmark;
 
-typedef enum
+typedef enum fz_box_type
 {
 	FZ_MEDIA_BOX,
 	FZ_CROP_BOX,
@@ -60,7 +60,7 @@ static inline fz_location fz_make_location(int chapter, int page)
 	return loc;
 }
 
-enum
+enum fz_layout_const
 {
 	/* 6in at 4:3 */
 	FZ_LAYOUT_KINDLE_W = 260,
@@ -103,20 +103,20 @@ enum
 	FZ_DEFAULT_LAYOUT_EM = FZ_LAYOUT_A5_EM,
 };
 
-enum
+enum fz_layout_style_const
 {
 	FZ_STYLE_NEEDS_DEFAULT = -1,
 	FZ_STYLE_NEEDS_UPDATE = 0,
 	FZ_STYLE_APPLIED = 1,
 };
 
-enum
+enum fz_layout_update_const
 {
 	FZ_LAYOUT_NEEDS_UPDATE = 0,
 	FZ_LAYOUT_APPLIED = 1,
 };
 
-typedef enum
+typedef enum fz_permission
 {
 	FZ_PERMISSION_PRINT = 'p',
 	FZ_PERMISSION_COPY = 'c',

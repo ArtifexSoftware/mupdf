@@ -84,7 +84,7 @@ struct fz_storable {
 	storable object should include an fz_key_storable structure
 	at the start (by convention at least) of their structure.
 */
-typedef struct
+typedef struct fz_key_storable
 {
 	fz_storable storable;
 	short store_key_refs;
@@ -215,7 +215,7 @@ void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
 	fz_defer_reap_end to bracket a region in which many may be
 	triggered.
 */
-typedef struct
+typedef struct fz_store_hash
 {
 	fz_store_drop_fn *drop;
 	union
@@ -262,7 +262,7 @@ typedef struct
 	fz_store_type. This contains the pointers to functions to
 	make hashes, manipulate keys, and check for needing reaping.
 */
-typedef struct
+typedef struct fz_store_type
 {
 	const char *name;
 	int (*make_hash_key)(fz_context *ctx, fz_store_hash *hash, void *key);

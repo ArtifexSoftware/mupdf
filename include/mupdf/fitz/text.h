@@ -41,7 +41,7 @@
 	with indexes into the glyph array.
 */
 
-typedef struct
+typedef struct fz_text_item
 {
 	float x, y;
 	float adv; /* advance width given by input format */
@@ -53,7 +53,7 @@ typedef struct
 #define FZ_LANG_TAG2(c1,c2) ((c1-'a'+1) + ((c2-'a'+1)*27))
 #define FZ_LANG_TAG3(c1,c2,c3) ((c1-'a'+1) + ((c2-'a'+1)*27) + ((c3-'a'+1)*27*27))
 
-typedef enum
+typedef enum fz_text_language
 {
 	FZ_LANG_UNSET = 0,
 	FZ_LANG_ur = FZ_LANG_TAG2('u','r'),
@@ -78,7 +78,7 @@ typedef struct fz_text_span
 	struct fz_text_span *next;
 } fz_text_span;
 
-typedef struct
+typedef struct fz_text
 {
 	int refs;
 	fz_text_span *head, *tail;

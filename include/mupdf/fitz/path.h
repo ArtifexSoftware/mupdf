@@ -38,7 +38,7 @@
 
 typedef struct fz_path fz_path;
 
-typedef enum
+typedef enum fz_linecap
 {
 	FZ_LINECAP_BUTT = 0,
 	FZ_LINECAP_ROUND = 1,
@@ -46,7 +46,7 @@ typedef enum
 	FZ_LINECAP_TRIANGLE = 3
 } fz_linecap;
 
-typedef enum
+typedef enum fz_linejoin
 {
 	FZ_LINEJOIN_MITER = 0,
 	FZ_LINEJOIN_ROUND = 1,
@@ -54,7 +54,7 @@ typedef enum
 	FZ_LINEJOIN_MITER_XPS = 3
 } fz_linejoin;
 
-typedef struct
+typedef struct fz_stroke_state
 {
 	int refs;
 	fz_linecap start_cap, dash_cap, end_cap;
@@ -66,7 +66,7 @@ typedef struct
 	float dash_list[FZ_FLEXIBLE_ARRAY];
 } fz_stroke_state;
 
-typedef struct
+typedef struct fz_path_walker
 {
 	/* Compulsory ones */
 	void (*moveto)(fz_context *ctx, void *arg, float x, float y);

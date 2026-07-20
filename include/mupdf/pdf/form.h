@@ -119,7 +119,7 @@ int pdf_widget_is_signed(fz_context *ctx, pdf_annot *widget);
 int pdf_widget_is_readonly(fz_context *ctx, pdf_annot *widget);
 
 /* Field flags */
-enum
+enum pdf_field_flags
 {
 	/* All fields */
 	PDF_FIELD_IS_READ_ONLY = 1,
@@ -188,7 +188,7 @@ int pdf_set_text_field_value(fz_context *ctx, pdf_annot *widget, const char *val
 int pdf_set_choice_field_value(fz_context *ctx, pdf_annot *widget, const char *value);
 int pdf_edit_text_field_value(fz_context *ctx, pdf_annot *widget, const char *value, const char *change, int *selStart, int *selEnd, char **newvalue);
 
-typedef struct
+typedef struct pdf_pkcs7_distinguished_name
 {
 	char *cn;
 	char *o;
@@ -198,7 +198,7 @@ typedef struct
 }
 pdf_pkcs7_distinguished_name;
 
-typedef enum
+typedef enum pdf_signature_error
 {
 	PDF_SIGNATURE_ERROR_OKAY,
 	PDF_SIGNATURE_ERROR_NO_SIGNATURES,
@@ -278,7 +278,8 @@ void pdf_clear_signature(fz_context *ctx, pdf_annot *widget);
 */
 void pdf_sign_signature_with_appearance(fz_context *ctx, pdf_annot *widget, pdf_pkcs7_signer *signer, int64_t date, fz_display_list *disp_list);
 
-enum {
+enum pdf_signature_appearance_flags
+{
 	PDF_SIGNATURE_SHOW_LABELS = 1,
 	PDF_SIGNATURE_SHOW_DN = 2,
 	PDF_SIGNATURE_SHOW_DATE = 4,
@@ -333,7 +334,7 @@ pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, const char *name);
 
 /* Form text field editing events: */
 
-typedef struct
+typedef struct pdf_keystroke_event
 {
 	const char *value;
 	const char *change;

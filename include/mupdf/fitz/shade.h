@@ -34,7 +34,7 @@
  * The shading code uses gouraud shaded triangle meshes.
  */
 
-enum
+enum fz_shade_type
 {
 	FZ_FUNCTION_BASED = 1,
 	FZ_LINEAR = 2,
@@ -49,7 +49,7 @@ enum
 	Structure is public to allow derived classes. Do not
 	access the members directly.
 */
-typedef struct
+typedef struct fz_shade
 {
 	fz_storable storable;
 
@@ -163,7 +163,7 @@ void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *override_cs
 /**
  *	Handy routine for processing mesh based shades
  */
-typedef struct
+typedef struct fz_vertex
 {
 	fz_point p;
 	float c[FZ_MAX_COLORS];

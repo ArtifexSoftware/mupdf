@@ -30,7 +30,7 @@
 
 /* JSON parser */
 
-enum {
+enum fz_json_type {
 	FZ_JSON_NULL,
 	FZ_JSON_TRUE,
 	FZ_JSON_FALSE,

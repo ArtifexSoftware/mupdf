@@ -126,7 +126,7 @@ int fz_lookup_option_float(fz_context *ctx, fz_options *options, const char *key
 int fz_lookup_option_integer(fz_context *ctx, fz_options *options, const char *key, int *x);
 int fz_lookup_option_unsigned(fz_context *ctx, fz_options *options, const char *key, unsigned int *x);
 
-typedef struct
+typedef struct fz_option_enums
 {
 	const char *key;
 	int val;

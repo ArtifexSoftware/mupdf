@@ -30,7 +30,7 @@
  * A fz_story_element_position plus page number information; used with
  * fz_write_story() and fz_write_stabilized_story().
  */
-typedef struct
+typedef struct fz_write_story_position
 {
 	fz_story_element_position element;
 	int page_num;
@@ -40,7 +40,7 @@ typedef struct
  * A set of fz_write_story_position items; used with
  * fz_write_stabilized_story().
  */
-typedef struct
+typedef struct fz_write_story_positions
 {
 	fz_write_story_position *positions;
 	int num;

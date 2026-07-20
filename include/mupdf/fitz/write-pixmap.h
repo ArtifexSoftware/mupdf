@@ -36,7 +36,7 @@
 /**
 	PCL output
 */
-typedef struct
+typedef struct fz_pcl_options
 {
 	/* Features of a particular printer */
 	int features;
@@ -137,7 +137,7 @@ void fz_save_pixmap_as_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, i
 /**
 	PCLm output
 */
-typedef struct
+typedef struct fz_pclm_options
 {
 	int compress;
 	int strip_height;
@@ -177,7 +177,7 @@ void fz_save_pixmap_as_pclm(fz_context *ctx, fz_pixmap *pixmap, const char *file
 /**
 	PDFOCR output
 */
-typedef struct
+typedef struct fz_pdfocr_options
 {
 	int compress;
 	int strip_height;
@@ -421,7 +421,7 @@ void fz_write_pixmap_as_psd(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 */
 fz_band_writer *fz_new_psd_band_writer(fz_context *ctx, fz_output *out);
 
-typedef struct
+typedef struct fz_pwg_options
 {
 	/* These are not interpreted as CStrings by the writing code,
 	 * but are rather copied directly out. */

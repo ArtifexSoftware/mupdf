@@ -47,7 +47,7 @@ typedef struct fz_context fz_context;
 /**
 	Allocator structure; holds callbacks and private data pointer.
 */
-typedef struct
+typedef struct fz_alloc_context
 {
 	void *user;
 	void *(*malloc)(void *, size_t);
@@ -266,14 +266,14 @@ void fz_flush_warnings(fz_context *ctx);
 	enabled by defining FITZ_DEBUG_LOCKING.
 */
 
-typedef struct
+typedef struct fz_locks_context
 {
 	void *user;
 	void (*lock)(void *user, int lock);
 	void (*unlock)(void *user, int lock);
 } fz_locks_context;
 
-enum {
+enum fz_lock_id {
 	FZ_LOCK_ALLOC = 0,
 	FZ_LOCK_FREETYPE,
 	FZ_LOCK_GLYPHCACHE,
@@ -517,7 +517,8 @@ void fz_tune_image_scale(fz_context *ctx, fz_tune_image_scale_fn *image_scale, v
 /**
 	Set the behavior for image rendering and resampling.
 */
-enum {
+enum fz_image_rendering_behavior
+{
 	// We may box filter images down by a power of 2, before scaling
 	// accurately to get the final results. Rendering will be stable.
 	// This may be faster and may use less memory than 'QUALITY'
@@ -786,7 +787,7 @@ void fz_memrnd(fz_context *ctx, uint8_t *block, int len);
 /*
 	Reference counted malloced C strings.
 */
-typedef struct
+typedef struct fz_string
 {
 	int refs;
 	char str[FZ_FLEXIBLE_ARRAY];
@@ -826,14 +827,14 @@ int (fz_do_catch)(fz_context *ctx);
 #define FZ_JMPBUF_ALIGN 32
 #endif
 
-typedef struct
+typedef struct fz_error_stack_slot
 {
 	fz_jmp_buf buffer;
 	int state, code;
 	char padding[FZ_JMPBUF_ALIGN-sizeof(int)*2];
 } fz_error_stack_slot;
 
-typedef struct
+typedef struct fz_error_context
 {
 	fz_error_stack_slot *top;
 	fz_error_stack_slot stack[256];
@@ -846,7 +847,7 @@ typedef struct
 	char message[256];
 } fz_error_context;
 
-typedef struct
+typedef struct fz_warn_context
 {
 	void *print_user;
 	void (*print)(void *user, const char *message);
@@ -854,7 +855,7 @@ typedef struct
 	char message[256];
 } fz_warn_context;
 
-typedef struct
+typedef struct fz_aa_context
 {
 	int hscale;
 	int vscale;
@@ -864,7 +865,7 @@ typedef struct
 	float min_line_width;
 } fz_aa_context;
 
-typedef enum
+typedef enum fz_activity_reason
 {
 	FZ_ACTIVITY_NEW_DOC = 0,
 	FZ_ACTIVITY_SHUTDOWN = 1
@@ -872,7 +873,7 @@ typedef enum
 
 typedef void (fz_activity_fn)(fz_context *ctx, void *opaque, fz_activity_reason reason, void *reason_arg);
 
-typedef struct
+typedef struct fz_activity_context
 {
 	void *opaque;
 	fz_activity_fn *activity;

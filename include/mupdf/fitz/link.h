@@ -63,7 +63,7 @@ typedef struct fz_link
 	fz_link_drop_link_fn *drop;
 } fz_link;
 
-typedef enum
+typedef enum fz_link_dest_type
 {
 	FZ_LINK_DEST_FIT,
 	FZ_LINK_DEST_FIT_B,
@@ -75,7 +75,7 @@ typedef enum
 	FZ_LINK_DEST_XYZ
 } fz_link_dest_type;
 
-typedef struct
+typedef struct fz_link_dest
 {
 	fz_location loc;
 	fz_link_dest_type type;

@@ -27,7 +27,7 @@
 #include "mupdf/fitz/buffer.h"
 #include "mupdf/fitz/pixmap.h"
 
-typedef enum
+typedef enum fz_deflate_level
 {
 	FZ_DEFLATE_NONE = 0,
 	FZ_DEFLATE_BEST_SPEED = 1,
@@ -71,7 +71,7 @@ unsigned char *fz_new_deflated_data(fz_context *ctx, size_t *compressed_length, 
 */
 unsigned char *fz_new_deflated_data_from_buffer(fz_context *ctx, size_t *compressed_length, fz_buffer *buffer, fz_deflate_level level);
 
-typedef enum
+typedef enum fz_brotli_level
 {
 	FZ_BROTLI_NONE = 0,
 	FZ_BROTLI_BEST_SPEED = 1,

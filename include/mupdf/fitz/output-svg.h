@@ -28,7 +28,8 @@
 #include "mupdf/fitz/device.h"
 #include "mupdf/fitz/output.h"
 
-enum {
+enum fz_svg_text_format
+{
 	FZ_SVG_TEXT_AS_PATH = 0,
 	FZ_SVG_TEXT_AS_TEXT = 1,
 };

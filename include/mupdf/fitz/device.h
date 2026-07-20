@@ -45,7 +45,7 @@
 */
 typedef struct fz_device fz_device;
 
-enum
+enum fz_device_flags
 {
 	/* Flags */
 	FZ_DEVFLAG_MASK = 1,
@@ -64,7 +64,7 @@ enum
 	FZ_DEVFLAG_DASH_PATTERN_UNDEFINED = 8192,
 };
 
-enum
+enum fz_blend_mode
 {
 	/* PDF 1.4 -- standard separable */
 	FZ_BLEND_NORMAL,
@@ -171,14 +171,14 @@ size_t fz_function_size(fz_context *ctx, fz_function *func);
 	Devices can keep track of containers (clips/masks/groups/tiles)
 	as they go to save callers having to do it.
 */
-typedef struct
+typedef struct fz_device_container_stack
 {
 	fz_rect scissor;
 	int type;
 	int user;
 } fz_device_container_stack;
 
-enum
+enum fz_device_container_stack_type
 {
 	fz_device_container_stack_is_clip,
 	fz_device_container_stack_is_mask,
@@ -187,7 +187,7 @@ enum
 };
 
 /* Structure types */
-typedef enum
+typedef enum fz_structure
 {
 	FZ_STRUCTURE_INVALID = -1,
 
@@ -275,7 +275,7 @@ typedef enum
 const char *fz_structure_to_string(fz_structure type);
 fz_structure fz_structure_from_string(const char *str);
 
-typedef enum
+typedef enum fz_metatext
 {
 	FZ_METATEXT_ACTUALTEXT,
 	FZ_METATEXT_ALT,
@@ -440,7 +440,7 @@ void fz_disable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 */
 fz_rect fz_device_current_scissor(fz_context *ctx, fz_device *dev);
 
-enum
+enum fz_device_hints
 {
 	/* Hints */
 	FZ_DONT_INTERPOLATE_IMAGES = 1,
@@ -492,7 +492,7 @@ enum
 	incomplete: Initially should be set to 0. Will be set to
 	non-zero if a TRYLATER error is thrown during rendering.
 */
-typedef struct
+typedef struct fz_cookie
 {
 	int abort;
 	int progress;
@@ -548,7 +548,7 @@ fz_device *fz_new_bbox_device(fz_context *ctx, fz_rect *rectp);
 */
 fz_device *fz_new_test_device(fz_context *ctx, int *is_color, float threshold, int options, fz_device *passthrough);
 
-enum
+enum fz_test_device_options
 {
 	/* If set, test every pixel of images exhaustively.
 	 * If clear, just look at colorspaces for images. */
@@ -568,7 +568,7 @@ enum
 
 	drop is called when the culling device is closed.
 */
-typedef struct
+typedef struct fz_culling_options
 {
 	void *opaque;
 
@@ -675,7 +675,7 @@ fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_matrix transform, fz_pix
 	struct fz_draw_options: Options for creating a pixmap and draw
 	device.
 */
-typedef struct
+typedef struct fz_draw_options
 {
 	int rotate;
 	int x_resolution;
