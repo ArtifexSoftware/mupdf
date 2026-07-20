@@ -462,6 +462,72 @@ TXT_FILES := $(MAN_FILES:%.1=%.txt)
 
 catman: $(TXT_FILES)
 
+# --- Auto-generate C reference docs from header files ---
+
+DOCS_OUT := build/docs
+
+$(DOCS_OUT)/c/index.md: $(DOCS_H) scripts/docs/index.js
+	$(QUIET_GEN) $(MKTGTDIR) ; ctags -I fz_list -x --sort=yes --c-kinds=dfgpstux $(DOCS_H) | node scripts/docs/index.js $(SPHINX) > $@
+$(DOCS_OUT)/c/%.md: include/mupdf/%.h scripts/docs/header.js
+	$(QUIET_GEN) $(MKTGTDIR) ; ctags -I fz_list -x --sort=no --c-kinds=dfgpstux $< | node scripts/docs/header.js > $@
+
+$(DOCS_OUT)/%.html: $(DOCS_OUT)/%.md scripts/docs/pandoc-template.html scripts/docs/pandoc-filter.lua
+	$(QUIET_GEN) $(MKTGTDIR) ; pandoc --tab-stop=8 --from=markdown+gfm_auto_identifiers --template=scripts/docs/pandoc-template.html --lua-filter=scripts/docs/pandoc-filter.lua -V mupdf_version="$(shell sh scripts/show-version.sh)" -V mupdf_path=$(patsubst $(DOCS_OUT)/%,%,$@) -o $@ $<
+$(DOCS_OUT)/%.html: docs/%.md scripts/docs/pandoc-template.html scripts/docs/pandoc-filter.lua
+	$(QUIET_GEN) $(MKTGTDIR) ; pandoc --tab-stop=8 --from=markdown+gfm_auto_identifiers --template=scripts/docs/pandoc-template.html --lua-filter=scripts/docs/pandoc-filter.lua -V mupdf_version="$(shell sh scripts/show-version.sh)" -V mupdf_path=$(patsubst $(DOCS_OUT)/%,%,$@) -o $@ $<
+$(DOCS_OUT)/%.html: docs/%.adoc scripts/docs/pandoc-template.html scripts/docs/pandoc-filter.lua
+	$(QUIET_GEN) $(MKTGTDIR) ; pandoc --toc --tab-stop=8 --from=asciidoc --template=scripts/docs/pandoc-template.html --lua-filter=scripts/docs/pandoc-filter.lua -V mupdf_version="$(shell sh scripts/show-version.sh)" -V mupdf_path=$(patsubst $(DOCS_OUT)/%,%,$@) -o $@ $<
+
+$(DOCS_OUT)/%.svg: docs/%.svg
+	$(QUIET_GEN) $(MKTGTDIR) ; cp -f $< $@
+$(DOCS_OUT)/%.png: docs/%.png
+	$(QUIET_GEN) $(MKTGTDIR) ; cp -f $< $@
+$(DOCS_OUT)/%.jpg: docs/%.jpg
+	$(QUIET_GEN) $(MKTGTDIR) ; cp -f $< $@
+$(DOCS_OUT)/%.webp: docs/%.webp
+	$(QUIET_GEN) $(MKTGTDIR) ; cp -f $< $@
+
+# generated header file docs
+
+DOCS_MD += $(DOCS_OUT)/c/index.md
+
+DOCS_H := $(wildcard include/mupdf/fitz/*.h include/mupdf/pdf/*.h)
+DOCS_H := $(filter-out include/mupdf/fitz/system.h, $(DOCS_H))
+DOCS_H := $(filter-out include/mupdf/fitz/export.h, $(DOCS_H))
+DOCS_H := $(filter-out include/mupdf/pdf/name-table.h, $(DOCS_H))
+DOCS_H := $(filter-out include/%-imp.h, $(DOCS_H))
+DOCS_MD += $(patsubst include/mupdf/%.h,$(DOCS_OUT)/c/%.md,$(DOCS_H))
+
+DOCS_HTML += $(patsubst %.md,%.html,$(DOCS_MD))
+
+# static docs and images
+DOCS_HTML += $(DOCS_OUT)/index.html
+DOCS_HTML += $(patsubst docs/%,$(DOCS_OUT)/%,$(shell find docs -type f -name '*.svg'))
+DOCS_HTML += $(patsubst docs/%,$(DOCS_OUT)/%,$(shell find docs -type f -name '*.webp'))
+DOCS_HTML += $(patsubst docs/%,$(DOCS_OUT)/%,$(shell find docs -type f -name '*.png'))
+DOCS_HTML += $(patsubst docs/%,$(DOCS_OUT)/%,$(shell find docs -type f -name '*.jpg'))
+
+# mupdf explored
+DOCS_HTML += $(patsubst docs/%.md,$(DOCS_OUT)/%.html,$(shell find docs/explored -type f -name '*.md'))
+DOCS_HTML += $(patsubst docs/%.adoc,$(DOCS_OUT)/%.html,$(shell find docs/explored -type f -name '*.adoc'))
+
+# generated sphinx docs
+DOCS_SPHINX_SRC := $(shell find docs -regex '.*\.\(md\|rst\)' | grep -v 'docs/explored\|docs/index.md')
+DOCS_SPHINX_DST := $(patsubst docs/%,$(DOCS_OUT)/sphinx/%,$(DOCS_SPHINX_SRC))
+DOCS_SPHINX_DST := $(patsubst %.rst,%.md,$(DOCS_SPHINX_DST))
+
+$(DOCS_SPHINX_DST) &: $(DOCS_SPHINX_SRC)
+	bash scripts/sphinx/build-markdown.sh
+
+oop-dst: $(DOCS_SPHINX_DST)
+
+DOCS_HTML += $(patsubst %.md,%.html,$(DOCS_SPHINX_DST))
+
+docs: $(DOCS_MD) $(DOCS_HTML)
+
+docs-clean: sphinx-clean
+	rm -rf build/docs
+
 # --- Install ---
 
 prefix ?= /usr/local
@@ -591,7 +657,7 @@ all: libs apps extra-apps
 clean:
 	rm -rf $(OUT)
 nuke:
-	rm -rf build/*
+	rm -rf build
 	rm -rf generated/resources/fonts/droid
 	rm -rf generated/resources/fonts/han
 	rm -rf generated/resources/fonts/noto

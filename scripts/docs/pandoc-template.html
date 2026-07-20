@@ -1,0 +1,60 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>$title$</title>
+<style>
+html { background-color: whitesmoke; margin: 0; padding: 0; overflow-y: scroll; }
+body { background-color: white; max-width: 80ch; margin: 0 auto; padding: 12px 24px; }
+h1 { background-color: lightsteelblue; }
+h2 { background-color: lavender; }
+h3 { background-color: whitesmoke; }
+:target { background-color: lemonchiffon; }
+p:has(a:target:empty) + h3 { background-color: lemonchiffon; }
+p:has(a:target:empty) + dl > dt:first-child { background-color: lemonchiffon; }
+h1, h2, h3 { padding: 4px 8px; margin: 12px -8px; }
+h2 a, h3 a { text-decoration: none; color: black; }
+pre { margin: 1rem 2rem; white-space: pre-wrap; tab-size: 8; }
+pre > div { padding-left: 12ch; text-indent: -12ch; min-height: 1em; }
+blockquote { margin: 1rem 0; padding: 0.5rem 1rem; background-color: ghostwhite; }
+blockquote > p:first-child { margin-top: 0 }
+blockquote > p:last-child { margin-bottom: 0 }
+dd { margin-left: 2rem; }
+header { color: gray; font-size: smaller; }
+header a { color: gray; text-decoration: none; }
+img { display: block; margin: 1rem auto; max-width: 100% }
+table { border-collapse: collapse }
+th { border-bottom: 1px solid gray }
+th, td { padding: 4px 6px; text-align: left }
+hr { border: 0; border-top: 2px solid silver; margin: 1em 0; }
+</style>
+<header><span id="crumbs">...</span><a style="float:right" href="https://docs.mupdf.com/">$mupdf_version$</a></header>
+<h1>$title$</h1>
+<nav>$table-of-contents$</nav>
+$body$
+<script>
+var leaf = "/$mupdf_path$"
+var root = window.location.pathname.replace(leaf, "")
+window.crumbs.innerHTML = [
+	[ "/", "mupdf", "/index.html" ],
+	[ "/c/", "c", "/c/index.html" ],
+	[ "/explored/", "explored", "/explored/index.html" ],
+	[ "/sphinx/", "docs", "/sphinx/index.html" ],
+	[ "/sphinx/tools/", "tools", "/sphinx/tools/index.html" ],
+	[ "/sphinx/guide/", "guides", "/sphinx/index.html#guides" ],
+	[ "/sphinx/cookbook/", "cookbook", "/sphinx/index.html#cookbook" ],
+	[ "/sphinx/cookbook/javascript", "javascript", "/sphinx/cookbook/javascript.html" ],
+	[ "/sphinx/reference/", "reference", "/sphinx/index.html#reference" ],
+	[ "/sphinx/reference/common/", "concepts", "/sphinx/reference/common/index.html" ],
+	[ "/sphinx/reference/c/", "c", "/sphinx/reference/c/index.html" ],
+	[ "/sphinx/reference/javascript/", "javascript", "/sphinx/reference/javascript/index.html" ],
+].map(([p,n,h])=>({p,n,h})).filter(x=>leaf.startsWith(x.p)).map(x=>"<a href=H>N</a>".replace("H",root+x.h).replace("N",x.n)).join(" \u203a ")
+document.querySelectorAll("pre").forEach(pre => {
+	pre.replaceChildren(
+		...pre.textContent.split("\n").map(line => {
+			var div = document.createElement("div")
+			div.textContent = line
+			return div
+		})
+	)
+})
+</script>
