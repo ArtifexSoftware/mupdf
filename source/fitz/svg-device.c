@@ -478,6 +478,9 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 	fz_buffer *out = sdev->out;
 	int i, font_idx;
 	svg_font *fnt;
+	fz_path *path = NULL;
+
+	fz_var(path);
 
 	for (font_idx = 0; font_idx < sdev->num_fonts; font_idx++)
 	{
@@ -502,52 +505,61 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 	}
 	fnt = &sdev->fonts[font_idx];
 
-	for (i=0; i < span->len; i++)
+	fz_try(ctx)
 	{
-		fz_text_item *it = &span->items[i];
-		int gid = it->gid;
+		for (i=0; i < span->len; i++)
+		{
+			fz_text_item *it = &span->items[i];
+			int gid = it->gid;
 
-		if (gid < 0)
-			continue;
-		if (gid >= fnt->max_sentlist)
-		{
-			int j;
-			fnt->sentlist = fz_realloc_array(ctx, fnt->sentlist, gid+1, char);
-			for (j = fnt->max_sentlist; j <= gid; j++)
-				fnt->sentlist[j] = 0;
-			fnt->max_sentlist = gid+1;
-		}
-		if (!fnt->sentlist[gid])
-		{
-			/* Need to send this one */
-			fz_path *path;
-			out = start_def(ctx, sdev, 1);
-			if (fz_font_ft_face(ctx, span->font))
+			if (gid < 0)
+				continue;
+			if (gid >= fnt->max_sentlist)
 			{
-				path = fz_outline_glyph(ctx, span->font, gid, fz_identity);
-				if (path)
-				{
-					fz_append_printf(ctx, out, "<path id=\"font_%d_%d\"", fnt->id, gid);
-					svg_dev_path(ctx, sdev, path);
-					fz_append_printf(ctx, out, "/>\n");
-					fz_drop_path(ctx, path);
-				}
-				else
-				{
-					fz_append_printf(ctx, out, "<g id=\"font_%d_%d\"></g>\n", fnt->id, gid);
-				}
+				int j;
+				fnt->sentlist = fz_realloc_array(ctx, fnt->sentlist, gid+1, char);
+				for (j = fnt->max_sentlist; j <= gid; j++)
+					fnt->sentlist[j] = 0;
+				fnt->max_sentlist = gid+1;
 			}
-			else if (fz_font_t3_procs(ctx, span->font))
+			if (!fnt->sentlist[gid])
 			{
-				fz_append_printf(ctx, out, "<g id=\"font_%d_%d\">\n", fnt->id, gid);
-				fz_run_t3_glyph(ctx, span->font, gid, fz_identity, dev);
-				fnt = &sdev->fonts[font_idx]; /* recursion may realloc the font array! */
-				fz_append_printf(ctx, out, "</g>\n");
+				/* Need to send this one */
+				out = start_def(ctx, sdev, 1);
+				if (fz_font_ft_face(ctx, span->font))
+				{
+					path = fz_outline_glyph(ctx, span->font, gid, fz_identity);
+					if (path)
+					{
+						fz_append_printf(ctx, out, "<path id=\"font_%d_%d\"", fnt->id, gid);
+						svg_dev_path(ctx, sdev, path);
+						fz_append_printf(ctx, out, "/>\n");
+						fz_drop_path(ctx, path);
+						path = NULL;
+					}
+					else
+					{
+						fz_append_printf(ctx, out, "<g id=\"font_%d_%d\"></g>\n", fnt->id, gid);
+					}
+				}
+				else if (fz_font_t3_procs(ctx, span->font))
+				{
+					fz_append_printf(ctx, out, "<g id=\"font_%d_%d\">\n", fnt->id, gid);
+					fz_run_t3_glyph(ctx, span->font, gid, fz_identity, dev);
+					fnt = &sdev->fonts[font_idx]; /* recursion may realloc the font array! */
+					fz_append_printf(ctx, out, "</g>\n");
+				}
+				out = end_def(ctx, sdev, 1);
+				fnt->sentlist[gid] = 1;
 			}
-			out = end_def(ctx, sdev, 1);
-			fnt->sentlist[gid] = 1;
 		}
 	}
+	fz_catch(ctx)
+	{
+		fz_drop_path(ctx, path);
+		fz_rethrow(ctx);
+	}
+
 	return fnt;
 }
 
