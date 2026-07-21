@@ -1349,30 +1349,38 @@ fz_search *fz_new_search(fz_context *ctx, const char *needle, fz_search_options 
 {
 	fz_search *search = fz_malloc_struct(ctx, fz_search);
 
-	search->hfuzz = 0.5f; /* merge large gaps */
-	search->vfuzz = 0.1f;
+	fz_try(ctx)
+	{
+		search->hfuzz = 0.5f; /* merge large gaps */
+		search->vfuzz = 0.1f;
 
-	/* for the initial page feed before we start requesting pages */
-	search->req_seq = 0;
-	search->req_target = NULL;
+		/* for the initial page feed before we start requesting pages */
+		search->req_seq = 0;
+		search->req_target = NULL;
 
-	if (needle == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search for a non-existent needle");
+		if (needle == NULL)
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Can't search for a non-existent needle");
 
-	search->transform = init_transform_and_finder(options, &search->finder);
+		search->transform = init_transform_and_finder(options, &search->finder);
 
-	/* Make sure we have a copy of the needle. */
-	search->needle = fz_strdup(ctx, needle);
+		/* Make sure we have a copy of the needle. */
+		search->needle = fz_strdup(ctx, needle);
 
-	/* Spin that needle into gold (to match the haystack) */
-	if (search->transform == FZ_TEXT_TRANSFORM_NONE)
-		search->spun_needle = search->needle;
-	else
-		search->spun_needle = transform_text_without_index(ctx, search->transform, search->needle);
+		/* Spin that needle into gold (to match the haystack) */
+		if (search->transform == FZ_TEXT_TRANSFORM_NONE)
+			search->spun_needle = search->needle;
+		else
+			search->spun_needle = transform_text_without_index(ctx, search->transform, search->needle);
 
-	/* Compile the needle if required. */
-	if (search->finder->init)
-		search->finder->init(ctx, &search->compiled_needle, search->spun_needle);
+		/* Compile the needle if required. */
+		if (search->finder->init)
+			search->finder->init(ctx, &search->compiled_needle, search->spun_needle);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_search(ctx, search);
+		fz_rethrow(ctx);
+	}
 
 	return search;
 }
