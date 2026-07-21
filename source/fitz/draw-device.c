@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -3229,34 +3229,34 @@ new_draw_device(fz_context *ctx, fz_matrix transform, fz_pixmap *dest, const fz_
 			dev->stack[0].scissor.y1 = clip->y1;
 	}
 
-	/* If we have no separations structure at all, then we want a
-	 * simple composite rendering (with no overprint simulation).
-	 * If we do have a separations structure, so: 1) Any
-	 * 'disabled' separations are ignored. 2) Any 'composite'
-	 * separations means we will need to do an overprint
-	 * simulation.
-	 *
-	 * The supplied pixmaps 's' will match the number of
-	 * 'spots' separations. If we have any 'composite'
-	 * separations therefore, we'll need to make a new pixmap
-	 * with a new (completely 'spots') separations structure,
-	 * render to that, and then map down at the end.
-	 *
-	 * Unfortunately we can't produce this until we know what
-	 * the default_colorspaces etc are, so set a flag for us
-	 * to trigger on later.
-	 */
-	if (dest->seps || dev->proof_cs != NULL)
-#if FZ_ENABLE_SPOT_RENDERING
-		dev->resolve_spots = 1;
-#else
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Spot rendering (and overprint/overprint simulation) not available in this build");
-#endif
-
-	dev->overprint_possible = (dest->seps != NULL);
-
 	fz_try(ctx)
 	{
+		/* If we have no separations structure at all, then we want a
+		 * simple composite rendering (with no overprint simulation).
+		 * If we do have a separations structure, so: 1) Any
+		 * 'disabled' separations are ignored. 2) Any 'composite'
+		 * separations means we will need to do an overprint
+		 * simulation.
+		 *
+		 * The supplied pixmaps 's' will match the number of
+		 * 'spots' separations. If we have any 'composite'
+		 * separations therefore, we'll need to make a new pixmap
+		 * with a new (completely 'spots') separations structure,
+		 * render to that, and then map down at the end.
+		 *
+		 * Unfortunately we can't produce this until we know what
+		 * the default_colorspaces etc are, so set a flag for us
+		 * to trigger on later.
+		 */
+		if (dest->seps || dev->proof_cs != NULL)
+#if FZ_ENABLE_SPOT_RENDERING
+			dev->resolve_spots = 1;
+#else
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Spot rendering (and overprint/overprint simulation) not available in this build");
+#endif
+
+		dev->overprint_possible = (dest->seps != NULL);
+
 		dev->rast = fz_new_rasterizer(ctx, aa);
 		dev->cache_x = fz_new_scale_cache(ctx);
 		dev->cache_y = fz_new_scale_cache(ctx);
