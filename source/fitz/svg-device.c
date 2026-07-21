@@ -1470,53 +1470,61 @@ fz_device *fz_new_svg_device_with_options(fz_context *ctx, fz_output *out, float
 {
 	svg_device *dev = fz_new_derived_device(ctx, svg_device);
 
-	dev->super.close_device = svg_dev_close_device;
-	dev->super.drop_device = svg_dev_drop_device;
+	fz_try(ctx)
+	{
+		dev->super.close_device = svg_dev_close_device;
+		dev->super.drop_device = svg_dev_drop_device;
 
-	dev->super.fill_path = svg_dev_fill_path;
-	dev->super.stroke_path = svg_dev_stroke_path;
-	dev->super.clip_path = svg_dev_clip_path;
-	dev->super.clip_stroke_path = svg_dev_clip_stroke_path;
+		dev->super.fill_path = svg_dev_fill_path;
+		dev->super.stroke_path = svg_dev_stroke_path;
+		dev->super.clip_path = svg_dev_clip_path;
+		dev->super.clip_stroke_path = svg_dev_clip_stroke_path;
 
-	dev->super.fill_text = svg_dev_fill_text;
-	dev->super.stroke_text = svg_dev_stroke_text;
-	dev->super.clip_text = svg_dev_clip_text;
-	dev->super.clip_stroke_text = svg_dev_clip_stroke_text;
-	dev->super.ignore_text = svg_dev_ignore_text;
+		dev->super.fill_text = svg_dev_fill_text;
+		dev->super.stroke_text = svg_dev_stroke_text;
+		dev->super.clip_text = svg_dev_clip_text;
+		dev->super.clip_stroke_text = svg_dev_clip_stroke_text;
+		dev->super.ignore_text = svg_dev_ignore_text;
 
-	dev->super.fill_shade = svg_dev_fill_shade;
-	dev->super.fill_image = svg_dev_fill_image;
-	dev->super.fill_image_mask = svg_dev_fill_image_mask;
-	dev->super.clip_image_mask = svg_dev_clip_image_mask;
+		dev->super.fill_shade = svg_dev_fill_shade;
+		dev->super.fill_image = svg_dev_fill_image;
+		dev->super.fill_image_mask = svg_dev_fill_image_mask;
+		dev->super.clip_image_mask = svg_dev_clip_image_mask;
 
-	dev->super.pop_clip = svg_dev_pop_clip;
+		dev->super.pop_clip = svg_dev_pop_clip;
 
-	dev->super.begin_mask = svg_dev_begin_mask;
-	dev->super.end_mask = svg_dev_end_mask;
-	dev->super.begin_group = svg_dev_begin_group;
-	dev->super.end_group = svg_dev_end_group;
+		dev->super.begin_mask = svg_dev_begin_mask;
+		dev->super.end_mask = svg_dev_end_mask;
+		dev->super.begin_group = svg_dev_begin_group;
+		dev->super.end_group = svg_dev_end_group;
 
-	dev->super.begin_tile = svg_dev_begin_tile;
-	dev->super.end_tile = svg_dev_end_tile;
+		dev->super.begin_tile = svg_dev_begin_tile;
+		dev->super.end_tile = svg_dev_end_tile;
 
-	dev->super.begin_layer = svg_dev_begin_layer;
-	dev->super.end_layer = svg_dev_end_layer;
+		dev->super.begin_layer = svg_dev_begin_layer;
+		dev->super.end_layer = svg_dev_end_layer;
 
-	dev->real_out = out;
-	dev->in_defs = 0;
-	dev->defs = fz_new_buffer(ctx, 4096);
-	dev->main = fz_new_buffer(ctx, 4096);
-	dev->out = dev->main;
+		dev->real_out = out;
+		dev->in_defs = 0;
+		dev->defs = fz_new_buffer(ctx, 4096);
+		dev->main = fz_new_buffer(ctx, 4096);
+		dev->out = dev->main;
 
-	dev->save_id = opts->id;
-	dev->id = opts->id ? *opts->id : 1;
-	dev->layers = 0;
-	dev->text_as_text = (opts->text_format == FZ_SVG_TEXT_AS_TEXT);
-	dev->reuse_images = opts->reuse_images;
-	dev->page_width = page_width;
-	dev->page_height = page_height;
+		dev->save_id = opts->id;
+		dev->id = opts->id ? *opts->id : 1;
+		dev->layers = 0;
+		dev->text_as_text = (opts->text_format == FZ_SVG_TEXT_AS_TEXT);
+		dev->reuse_images = opts->reuse_images;
+		dev->page_width = page_width;
+		dev->page_height = page_height;
 
-	dev->raster_scale = opts->resolution / 72.0f;
+		dev->raster_scale = opts->resolution / 72.0f;
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_device(ctx, &dev->super);
+		fz_rethrow(ctx);
+	}
 
 	return (fz_device*)dev;
 }
