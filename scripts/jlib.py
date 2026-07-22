@@ -33,7 +33,7 @@ def place( frame_record=1):
     function    = frame_record.function
     ret = os.path.split( filename)[1] + ':' + str( line) + ':' + function + ':'
     if 0:   # lgtm [py/unreachable-statement]
-        tid = str( threading.currentThread())
+        tid = str( threading.current_thread())
         ret = '[' + tid + '] ' + ret
     return ret
 
