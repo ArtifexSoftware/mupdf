@@ -176,7 +176,7 @@ show_footnote(fz_context *ctx, fz_xml *v, doc_info *info)
 {
 	int n = fz_atoi(fz_xml_att(v, "w:id"));
 
-	if (n < 0 || n >= info->footnotes_cap)
+	if (n < 0 || n >= info->footnotes_len)
 		return;
 
 	if (info->footnotes[n] == NULL ||
@@ -948,15 +948,17 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 		{
 			int n = fz_atoi(fz_xml_att(pos, "w:id"));
 
-			str = collate_t_content(ctx, pos);
-
-			if (str && n >= 0)
+			if (n >= 0)
 			{
-				if (n >= info->footnotes_len)
-					fz_extend_list(ctx, info->footnotes, n+1 - info->footnotes_len);
+				str = collate_t_content(ctx, pos);
+				if (str)
+				{
+					if (n >= info->footnotes_len)
+						fz_extend_list(ctx, info->footnotes, n+1 - info->footnotes_len);
 
-				info->footnotes[n] = str;
-				str = NULL;
+					info->footnotes[n] = str;
+					str = NULL;
+				}
 			}
 			pos = fz_xml_find_next_dfs(pos, "footnote", NULL, NULL);
 		}
@@ -1179,7 +1181,7 @@ fz_office_to_html(fz_context *ctx, fz_html_font_set *set, fz_buffer *buffer_in, 
 		for (i = 0; i < info.shared_strings_len; ++i)
 			fz_free(ctx, info.shared_strings[i]);
 		fz_free(ctx, info.shared_strings);
-		for (i = 0; i < info.footnotes_cap; ++i)
+		for (i = 0; i < info.footnotes_len; ++i)
 			fz_free(ctx, info.footnotes[i]);
 		fz_free(ctx, info.footnotes);
 		fz_drop_output(ctx, info.out);
