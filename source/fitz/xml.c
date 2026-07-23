@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -32,7 +32,7 @@
 
 #define FZ_XML_MAX_DEPTH 4096
 
-/* #define FZ_XML_SEQ */
+//#define FZ_XML_SEQ
 
 static const struct { const char *name; int c; } html_entities[] = {
 	{"nbsp",160}, {"iexcl",161}, {"cent",162}, {"pound",163},

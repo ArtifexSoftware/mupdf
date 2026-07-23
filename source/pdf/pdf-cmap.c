@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -26,8 +26,8 @@
 #include <assert.h>
 #include <string.h>
 
-#undef CHECK_SPLAY
-#undef DUMP_SPLAY
+//#define CHECK_SPLAY
+//#define DUMP_SPLAY
 
 /*
  * Allocate, destroy and simple parameters.

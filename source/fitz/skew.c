@@ -32,7 +32,7 @@
 #endif
 
 /* Uncomment the following to enable Debugging printfs. */
-/* #define DEBUG_PRINT_WORKING */
+//#define DEBUG_PRINT_WORKING
 
 enum {
 	NUM_SKEW_COLS = 4,

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -27,24 +27,24 @@
 #include <string.h>
 
 /* Define TIMINGS to get timing information dumped to stdout. */
-#undef TIMINGS
+//#define TIMINGS
 
 /* Define WARP_DEBUG to get debugging output (and PNGs saved). Note
  * that this will affect timings! */
-#undef WARP_DEBUG
+//#define WARP_DEBUG
 
 /* Define WARP_SPEW_DEBUG to get even more debug output (and PNGs). */
-#undef WARP_SPEW_DEBUG
+//#define WARP_SPEW_DEBUG
 
 /* One reference suggested doing histogram equalisation. */
-#define DO_HISTEQ
+//#define DO_HISTEQ
 
 /* Define DETECT_DOCUMENT_RGB, and edge detection on RGB documents will
  * look for edges in just the R,G,B planes as well as the grey plane. */
-#undef DETECT_DOCUMENT_RGB
+//#define DETECT_DOCUMENT_RGB
 
-#undef SLOW_INTERPOLATION
-#undef SLOW_WARPING
+//#define SLOW_INTERPOLATION
+//#define SLOW_WARPING
 
 #ifdef WARP_DEBUG
 static void

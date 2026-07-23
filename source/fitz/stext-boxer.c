@@ -22,8 +22,8 @@
 
 #include "mupdf/fitz.h"
 
-#undef DEBUG_WRITE_AS_PS
-#undef DEBUG_STRUCT
+//#define DEBUG_WRITE_AS_PS
+//#define DEBUG_STRUCT
 
 typedef struct boxer_s boxer_t;
 

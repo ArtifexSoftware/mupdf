@@ -25,7 +25,7 @@
 
 #include <limits.h>
 
-#undef DEBUG_OFFICE_TO_HTML
+//#define DEBUG_OFFICE_TO_HTML
 
 /* Defaults are all 0's. FIXME: Very subject to change. Possibly might be removed entirely. */
 typedef struct

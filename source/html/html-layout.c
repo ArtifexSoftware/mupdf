@@ -31,9 +31,9 @@
 #include <math.h>
 #include <assert.h>
 
-#undef DEBUG_HARFBUZZ
+//#define DEBUG_HARFBUZZ
 
-#undef DEBUG_DESPERATE_SPLITTING
+//#define DEBUG_DESPERATE_SPLITTING
 
 /*
 	Some notes on the layout code below and the concepts used.

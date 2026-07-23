@@ -28,7 +28,7 @@
 #include <limits.h>
 #include <string.h>
 
-#undef DEBUG_PROGESSIVE_ADVANCE
+//#define DEBUG_PROGESSIVE_ADVANCE
 
 #ifdef DEBUG_PROGESSIVE_ADVANCE
 #define DEBUGMESS(A) do { fz_warn A; } while (0)
@@ -3274,7 +3274,7 @@ pdf_open_document_with_stream_and_dir(fz_context *ctx, fz_stream *file, fz_archi
 }
 
 /* Uncomment the following to test progressive loading. */
-/* #define TEST_PROGRESSIVE_HACK */
+//#define TEST_PROGRESSIVE_HACK
 
 pdf_document *
 pdf_open_document(fz_context *ctx, const char *filename)

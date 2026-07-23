@@ -34,7 +34,7 @@
 
 #include "annotation-icons.h"
 
-/* #define PDF_DEBUG_APPEARANCE_SYNTHESIS */
+//#define PDF_DEBUG_APPEARANCE_SYNTHESIS
 
 #define REPLACEMENT 0xB7
 #define CIRCLE_MAGIC 0.551915f

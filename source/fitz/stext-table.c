@@ -25,13 +25,13 @@
 #include <assert.h>
 #include <stdlib.h>
 
-/* #define DEBUG_TABLE_SPLITS */
+//#define DEBUG_TABLE_SPLITS
 
-/* #define DEBUG_TABLE_STRUCTURE */
+//#define DEBUG_TABLE_STRUCTURE
 
-/* #define DEBUG_TABLE_HUNT */
+//#define DEBUG_TABLE_HUNT
 
-/* #define DEBUG_TABLE_SCORES */
+//#define DEBUG_TABLE_SCORES
 
 /*
  * The algorithm.

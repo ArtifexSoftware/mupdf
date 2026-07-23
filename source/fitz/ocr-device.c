@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -26,7 +26,7 @@
 #include <string.h>
 #include <errno.h>
 
-#undef DEBUG_OCR
+//#define DEBUG_OCR
 
 #ifndef OCR_DISABLED
 #include "tessocr.h"

@@ -24,9 +24,9 @@
 
 #include <assert.h>
 
-/* #define DEBUG_SPLITS */
+//#define DEBUG_SPLITS
 
-/* #define DEBUG_PARA_SPLITS */
+//#define DEBUG_PARA_SPLITS
 
 static void
 recalc_bbox(fz_stext_block *block)

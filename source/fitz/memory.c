@@ -30,9 +30,7 @@
 
 /* Enable FITZ_DEBUG_LOCKING_TIMES below if you want to check the times
  * for which locks are held too. */
-#ifdef FITZ_DEBUG_LOCKING
-#undef FITZ_DEBUG_LOCKING_TIMES
-#endif
+//#define FITZ_DEBUG_LOCKING_TIMES
 
 /*
  * The malloc family of functions will always try scavenging when they run out of memory.

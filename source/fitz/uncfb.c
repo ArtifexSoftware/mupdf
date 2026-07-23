@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Artifex Software, Inc.
+// Copyright (C) 2023-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -33,7 +33,7 @@
 #define ENDOFCHAIN 0xfffffffe
 #define FREESECT 0xffffffff
 
-#undef DEBUG_DIRENTRIES
+//#define DEBUG_DIRENTRIES
 
 typedef struct
 {

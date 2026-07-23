@@ -31,7 +31,7 @@
 #define TILE
 
 /* Enable this to watch changes in the structure stack. */
-#undef DEBUG_STRUCTURE
+//#define DEBUG_STRUCTURE
 
 /*
  * Emit graphics calls to device.

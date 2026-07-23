@@ -25,7 +25,7 @@
 #include "mupdf/pdf.h"
 
 /* Define the following for some debugging output. */
-#undef DEBUG_SUBSETTING
+//#define DEBUG_SUBSETTING
 
 typedef struct gstate
 {
