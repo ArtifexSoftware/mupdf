@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Artifex Software, Inc.
+// Copyright (C) 2022-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -127,7 +127,7 @@ fz_new_dom_node(fz_context *ctx, fz_xml *dom, const char *tag)
 	xml->u.node.prev = NULL;
 #ifdef FZ_XML_SEQ
 	/* We don't have sequence numbers here. */
-	xml->seq = 0;
+	xml->u.node.seq = 0;
 #endif
 
 	return xml;

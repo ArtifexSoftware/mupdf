@@ -2301,7 +2301,7 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 	if (tok != PDF_TOK_INT)
 	{
 		/* Failed! */
-		DEBUGMESS((ctx, "skipping unexpected data (tok=%d) at %d", tok, *offset));
+		DEBUGMESS((ctx, "skipping unexpected data (tok=%d) at %ld", tok, *offset));
 		*offset = genofs;
 		return tok == PDF_TOK_EOF;
 	}
@@ -2313,7 +2313,7 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 	if (tok != PDF_TOK_INT)
 	{
 		/* Failed! */
-		DEBUGMESS((ctx, "skipping unexpected data after \"%d\" (tok=%d) at %d", num, tok, *offset));
+		DEBUGMESS((ctx, "skipping unexpected data after \"%d\" (tok=%d) at %ld", num, tok, *offset));
 		*offset = tmpofs;
 		return tok == PDF_TOK_EOF;
 	}
@@ -2328,11 +2328,11 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 			break;
 		if (tok != PDF_TOK_INT)
 		{
-			DEBUGMESS((ctx, "skipping unexpected data (tok=%d) at %d", tok, tmpofs));
+			DEBUGMESS((ctx, "skipping unexpected data (tok=%d) at %ld", tok, tmpofs));
 			*offset = fz_tell(ctx, doc->file);
 			return tok == PDF_TOK_EOF;
 		}
-		DEBUGMESS((ctx, "skipping unexpected int %d at %d", num, numofs));
+		DEBUGMESS((ctx, "skipping unexpected int %d at %ld", num, numofs));
 		*nump = num = gen;
 		numofs = genofs;
 		gen = buf->i;
@@ -2380,7 +2380,7 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 		}
 		if (page && *page)
 		{
-			DEBUGMESS((ctx, "Successfully read object %d @ %d - and found page %d!", num, numofs, doc->linear_page_num));
+			DEBUGMESS((ctx, "Successfully read object %d @ %ld - and found page %d!", num, numofs, doc->linear_page_num));
 			if (!entry->obj)
 				entry->obj = pdf_keep_obj(ctx, *page);
 
@@ -2389,7 +2389,7 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 		}
 		else
 		{
-			DEBUGMESS((ctx, "Successfully read object %d @ %d", num, numofs));
+			DEBUGMESS((ctx, "Successfully read object %d @ %ld", num, numofs));
 		}
 		entry->type = 'n';
 		entry->gen = gen; // XXX: was 0
@@ -2476,9 +2476,9 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 		do
 		{
 			start = offset;
-			DEBUGMESS((ctx, "Searching for object %d @ %d", expected, offset));
+			DEBUGMESS((ctx, "Searching for object %d @ %ld", expected, offset));
 			pdf_obj_read(ctx, doc, &offset, &found, 0);
-			DEBUGMESS((ctx, "Found object %d - next will be @ %d", found, offset));
+			DEBUGMESS((ctx, "Found object %d - next will be @ %ld", found, offset));
 			if (found <= expected)
 			{
 				/* We found the right one (or one earlier than
@@ -3613,7 +3613,7 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 		pdf_load_hint_object(ctx, doc);
 	}
 
-	DEBUGMESS((ctx, "continuing to try to advance from %d", doc->linear_pos));
+	DEBUGMESS((ctx, "continuing to try to advance from %ld", doc->linear_pos));
 	curr_pos = fz_tell(ctx, doc->file);
 
 	fz_var(page);

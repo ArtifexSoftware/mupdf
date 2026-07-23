@@ -672,9 +672,9 @@ fz_test_buffer_write(fz_context *ctx)
 
 		if (memcmp(copy->data, master->data, TEST_LEN) != 0)
 			fprintf(stderr, "Copied buffer is different!\n");
-		fz_seek(stm, 0, 0);
+		fz_seek(ctx, stm, 0, 0);
 	}
-	fz_drop_stream(stm);
+	fz_drop_stream(ctx, stm);
 	fz_drop_buffer(ctx, master);
 	fz_drop_buffer(ctx, copy);
 }

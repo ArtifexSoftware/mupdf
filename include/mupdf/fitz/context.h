@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -281,7 +281,9 @@ enum fz_lock_id {
 };
 
 #if defined(MEMENTO) || !defined(NDEBUG)
+#ifndef FITZ_DEBUG_LOCKING
 #define FITZ_DEBUG_LOCKING
+#endif
 #endif
 
 #ifdef FITZ_DEBUG_LOCKING

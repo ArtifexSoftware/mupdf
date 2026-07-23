@@ -167,7 +167,7 @@ void fz_output_xml(fz_context *ctx, fz_output *out, fz_xml *item, int level)
 		}
 		fz_write_byte(ctx, out, '"');
 #ifdef FZ_XML_SEQ
-		fz_write_printf(ctx, out, " <%d>", item->seq);
+		fz_write_printf(ctx, out, " <%d>", item->u.node.seq);
 #endif
 		fz_write_byte(ctx, out, '\n');
 	}

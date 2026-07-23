@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -24,11 +24,11 @@
 
 #ifdef TRACK_USAGE
 
-static track_usage_data_t *usage_head = NULL;
+track_usage_data *usage_head = NULL;
 
 static void dump_usage(void)
 {
-	track_usage_data_t *u = usage_head;
+	track_usage_data *u = usage_head;
 
 	while (u)
 	{
@@ -38,7 +38,7 @@ static void dump_usage(void)
 	}
 }
 
-void track_usage(track_usage_data_t *data, const char *function, int line, const char *desc)
+void track_usage(track_usage_data *data, const char *function, int line, const char *desc)
 {
 	int c = data->count++;
 	if (c == 0)

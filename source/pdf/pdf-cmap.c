@@ -467,7 +467,7 @@ static void walk_splay(cmap_splay *tree, unsigned int node, void (*fn)(cmap_spla
 #ifdef CHECK_SPLAY
 
 static int
-tree_has_overlap(cmap_splay *tree, int node, int low, int high)
+tree_has_overlap(cmap_splay *tree, int node, unsigned int low, unsigned int high)
 {
 	if (tree[node].left != EMPTY)
 		if (tree_has_overlap(tree, tree[node].left, low, high))
@@ -663,10 +663,10 @@ add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, 
 exit:
 	{}
 #ifdef CHECK_SPLAY
-	check_splay(cmap->tree, cmap->ttop, 0);
+	check_splay(cmap->tree, cmap->tree_top, 0);
 #endif
 #ifdef DUMP_SPLAY
-	dump_splay(cmap->tree, cmap->ttop, 0, "");
+	dump_splay(cmap->tree, cmap->tree_top, 0, "");
 #endif
 }
 
