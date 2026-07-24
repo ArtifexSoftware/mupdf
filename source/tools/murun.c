@@ -9855,7 +9855,7 @@ static void ffi_PDFPage_clip(js_State *J)
 	pdf_page *page = js_touserdata(J, 0, "pdf_page");
 	fz_rect rect = ffi_torect(J, 1);
 	fz_try(ctx)
-		pdf_clip_page(ctx, page, &rect);
+		pdf_clip_page(ctx, page, rect);
 	fz_catch(ctx)
 		rethrow(J);
 }
