@@ -1234,14 +1234,14 @@ static int clip_culler(fz_context *ctx, void *opaque, fz_rect bbox, fz_cull_type
 	case FZ_CULL_GLYPH:
 	case FZ_CULL_IMAGE:
 	case FZ_CULL_SHADING:
-		return (fz_is_empty_rect(fz_intersect_rect(bbox, hc->clip)));
+		return fz_is_empty_rect(fz_intersect_rect(bbox, hc->clip));
 	default:
 		return 0;
 	}
 }
 
 static
-void init_clip_filter(fz_context *ctx, struct clip_filter_state *hc, pdf_page *page, fz_rect *clip)
+void init_clip_filter(fz_context *ctx, struct clip_filter_state *hc, pdf_page *page, fz_rect clip)
 {
 	memset(&hc->filter_opts, 0, sizeof hc->filter_opts);
 	memset(&hc->sanitize_opts, 0, sizeof hc->sanitize_opts);
@@ -1251,7 +1251,7 @@ void init_clip_filter(fz_context *ctx, struct clip_filter_state *hc, pdf_page *p
 	hc->filter_opts.ascii = 0;
 	hc->filter_opts.opaque = hc;
 	hc->filter_opts.filters = hc->filter_list;
-	hc->clip = *clip;
+	hc->clip = clip;
 
 	hc->sanitize_opts.opaque = hc;
 	hc->sanitize_opts.culler = clip_culler;
@@ -1312,7 +1312,7 @@ restart:
 }
 
 void
-pdf_clip_page(fz_context *ctx, pdf_page *page, fz_rect *clip)
+pdf_clip_page(fz_context *ctx, pdf_page *page, fz_rect clip)
 {
 	pdf_document *doc;
 	struct clip_filter_state hc;
