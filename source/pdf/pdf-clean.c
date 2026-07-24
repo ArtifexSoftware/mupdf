@@ -1316,11 +1316,16 @@ pdf_clip_page(fz_context *ctx, pdf_page *page, fz_rect clip)
 {
 	pdf_document *doc;
 	struct clip_filter_state hc;
+	fz_matrix page_ctm, inv_page_ctm;
 
 	if (page == NULL)
 		return;
 
 	doc = page->doc;
+
+	pdf_page_transform(ctx, page, NULL, &page_ctm);
+	inv_page_ctm = fz_invert_matrix(page_ctm);
+	clip = fz_transform_rect(clip, inv_page_ctm);
 
 	init_clip_filter(ctx, &hc, page, clip);
 
