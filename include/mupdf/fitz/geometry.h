@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -303,8 +303,8 @@ static inline int fz_is_empty_irect(fz_irect r)
 */
 static inline int fz_is_infinite_rect(fz_rect r)
 {
-	return (r.x0 == FZ_MIN_INF_RECT && r.x1 == FZ_MAX_INF_RECT &&
-		r.y0 == FZ_MIN_INF_RECT && r.y1 == FZ_MAX_INF_RECT);
+	return (r.x0 <= FZ_MIN_INF_RECT && r.x1 >= FZ_MAX_INF_RECT &&
+		r.y0 <= FZ_MIN_INF_RECT && r.y1 >= FZ_MAX_INF_RECT);
 }
 
 /**
@@ -313,8 +313,8 @@ static inline int fz_is_infinite_rect(fz_rect r)
 */
 static inline int fz_is_infinite_irect(fz_irect r)
 {
-	return (r.x0 == FZ_MIN_INF_RECT && r.x1 == FZ_MAX_INF_RECT &&
-		r.y0 == FZ_MIN_INF_RECT && r.y1 == FZ_MAX_INF_RECT);
+	return (r.x0 <= FZ_MIN_INF_RECT && r.x1 >= FZ_MAX_INF_RECT &&
+		r.y0 <= FZ_MIN_INF_RECT && r.y1 >= FZ_MAX_INF_RECT);
 }
 
 /**
