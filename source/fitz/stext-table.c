@@ -3755,7 +3755,7 @@ score_table(fz_context *ctx, grid_walker_data *gd)
 			cell_t *cell = get_cell(gd->cells, x, y);
 			cell_t *right = get_cell(gd->cells, x+1, y);
 			cell_t *below = get_cell(gd->cells, x, y+1);
-			score += cell->h_crossed + cell->v_crossed;
+			score += !!cell->h_crossed + !!cell->v_crossed;
 			if (cell->full)
 			{
 				/* We have content. */
