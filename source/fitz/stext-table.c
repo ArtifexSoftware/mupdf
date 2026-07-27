@@ -4140,18 +4140,6 @@ cull_unhelpful_background_fills(fz_context *ctx, fz_stext_page *page)
 	}
 }
 
-static float
-scaled_table_score(fz_potential_table_list *list, int k)
-{
-	float score = list->tables[k].data.score;
-	float w = list->tables[k].data.bounds.x1 - list->tables[k].data.bounds.x0;
-	float h = list->tables[k].data.bounds.y1 - list->tables[k].data.bounds.y0;
-
-	if (w <= 0 || h <= 0)
-		return 999999; /* Zero area tables are bad choices. */
-	return score / w / h;
-}
-
 static int
 table_size_cmp(const void *a_, const void *b_)
 {
@@ -4287,14 +4275,18 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 				if (fz_contains_rect(list->tables[i].data.bounds, list->tables[k].data.bounds))
 				{
 					/* We contain table k. */
-					overlapped_score += scaled_table_score(list, k);
-					num_overlaps++;
+					int num_cells = (list->tables[k].data.cells->w-1) * (list->tables[k].data.cells->h-1);
+					if (num_cells)
+						overlapped_score += list->tables[k].data.score * num_cells;
+					num_overlaps += num_cells;
 				}
 			}
 			/* If we don't overlap anything, nothing to worry about. Just keep us. */
 			if (num_overlaps)
 			{
-				if (overlapped_score <= scaled_table_score(list, i))
+				/* Make overlapped_score the average cell badness of all the tables. */
+				overlapped_score /= num_overlaps;
+				if (overlapped_score <= list->tables[i].data.score)
 				{
 					/* The "badness" for the subtables is less than the "badness" for this table. Drop this table. */
 					fz_drop_potential_table(ctx, &list->tables[i]);
