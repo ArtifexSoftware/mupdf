@@ -118,6 +118,7 @@ typedef struct
 	float thickness;
 	fz_rect rect;
 	int argb;
+	fz_stext_block *blk;
 } rect_details;
 
 typedef struct
@@ -1944,9 +1945,11 @@ static int feq(float a,float b)
 	return a < EPSILON;
 }
 
-static void
+static int
 check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point to, fz_point dir, float thickness)
 {
+	int style_flags = 0;
+
 	for ( ; block; block = block->next)
 	{
 		fz_stext_line *line;
@@ -1983,7 +1986,10 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 				{
 					/* Distinguish from a background fill */
 					if (thickness <= ch->size*1.5f)
+					{
 						ch->flags |= FZ_STEXT_HIGHLIGHT;
+						style_flags |= FZ_STEXT_VECTOR_IS_HIGHLIGHT;
+					}
 					continue;
 				}
 
@@ -2000,12 +2006,20 @@ check_strikeout(fz_context *ctx, fz_stext_block *block, fz_point from, fz_point 
 				dot = dx * up.x + dy * up.y;
 
 				if (dot > 0 && dot <= 0.8f * ch->font->ascender * ch->size)
+				{
 					ch->flags |= FZ_STEXT_STRIKEOUT;
+					style_flags |= FZ_STEXT_VECTOR_IS_STRIKEOUT;
+				}
 				else
+				{
 					ch->flags |= FZ_STEXT_UNDERLINE;
+					style_flags |= FZ_STEXT_VECTOR_IS_UNDERLINE;
+				}
 			}
 		}
 	}
+
+	return style_flags;
 }
 
 static void
@@ -2019,11 +2033,14 @@ check_rects_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page 
 		fz_point to = tdev->rects[i].to;
 		float thickness = tdev->rects[i].thickness;
 		fz_point dir;
+		int type;
 		dir.x = to.x - from.x;
 		dir.y = to.y - from.y;
 		dir = fz_normalize_vector(dir);
 
-		check_strikeout(ctx, page->first_block, from, to, dir, thickness);
+		type = check_strikeout(ctx, page->first_block, from, to, dir, thickness);
+		if (tdev->rects[i].blk)
+			tdev->rects[i].blk->u.v.flags |= type;
 	}
 }
 
@@ -2191,171 +2208,30 @@ fz_apply_stext_options(fz_context *ctx, fz_stext_options *opts, fz_options *stri
 	fz_validate_options(ctx, string, "stext");
 }
 
-typedef struct
-{
-	int fail;
-	int count;
-	fz_point corners[4];
-} is_rect_data;
-
 static void
-stash_point(is_rect_data *rd, float x, float y)
-{
-	if (rd->count > 3)
-	{
-		rd->fail = 1;
-		return;
-	}
-
-	rd->corners[rd->count].x = x;
-	rd->corners[rd->count].y = y;
-	rd->count++;
-}
-
-static void
-is_rect_moveto(fz_context *ctx, void *arg, float x, float y)
-{
-	is_rect_data *rd = arg;
-	if (rd->fail)
-		return;
-
-	if (rd->count != 0)
-	{
-		rd->fail = 1;
-		return;
-	}
-	stash_point(rd, x, y);
-}
-
-static void
-is_rect_lineto(fz_context *ctx, void *arg, float x, float y)
-{
-	is_rect_data *rd = arg;
-	if (rd->fail)
-		return;
-
-	if (rd->count == 4 && rd->corners[0].x == x && rd->corners[1].y == y)
-		return;
-
-	stash_point(rd, x, y);
-}
-
-static void
-is_rect_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
-{
-	is_rect_data *rd = arg;
-	rd->fail = 1;
-}
-
-static void
-is_rect_closepath(fz_context *ctx, void *arg)
-{
-	is_rect_data *rd = arg;
-	if (rd->fail)
-		return;
-	if (rd->count == 3)
-		stash_point(rd, rd->corners[0].x, rd->corners[0].y);
-	if (rd->count != 4)
-		rd->fail = 1;
-}
-
-static int
-is_path_rect(fz_context *ctx, const fz_path *path, fz_point *from, fz_point *to, float *thickness, fz_matrix ctm, fz_rect *r)
-{
-	float d01, d01x, d01y, d03, d03x, d03y, d32x, d32y;
-	is_rect_data rd = { 0 };
-	static const fz_path_walker walker =
-	{
-		is_rect_moveto, is_rect_lineto, is_rect_curveto, is_rect_closepath
-	};
-	int i;
-
-	fz_walk_path(ctx, path, &walker, &rd);
-
-	if (rd.fail)
-		return 0;
-
-	if (rd.count == 2)
-	{
-		stash_point(&rd, rd.corners[1].x, rd.corners[1].y);
-		stash_point(&rd, rd.corners[0].x, rd.corners[0].y);
-	}
-
-	for (i = 0 ; i < 4; i++)
-	{
-		fz_point p = fz_transform_point(rd.corners[i], ctm);
-
-		rd.corners[i].x = p.x;
-		rd.corners[i].y = p.y;
-	}
-
-	/* So we have a 4 cornered path. Hopefully something like:
-	 * 0---------1
-	 * |         |
-	 * 3---------2
-	 * but it might be:
-	 * 0---------3
-	 * |         |
-	 * 1---------2
-	*/
-	while (1)
-	{
-		d01x = rd.corners[1].x - rd.corners[0].x;
-		d01y = rd.corners[1].y - rd.corners[0].y;
-		d01 = d01x * d01x + d01y * d01y;
-		d03x = rd.corners[3].x - rd.corners[0].x;
-		d03y = rd.corners[3].y - rd.corners[0].y;
-		d03 = d03x * d03x + d03y * d03y;
-		if(d01 < d03)
-		{
-			/* We are the latter case. Transpose it. */
-			fz_point p = rd.corners[1];
-			rd.corners[1] = rd.corners[3];
-			rd.corners[3] = p;
-		}
-		else
-			break;
-	}
-	d32x = rd.corners[2].x - rd.corners[3].x;
-	d32y = rd.corners[2].y - rd.corners[3].y;
-
-	/* So d32x and d01x need to be the same for this to be a strikeout. */
-	if (!feq(d32x, d01x) || !feq(d32y, d01y))
-		return 0;
-
-	/* We are plausibly a rectangle. */
-	*thickness = sqrtf(d03x * d03x + d03y * d03y);
-
-	from->x = (rd.corners[0].x + rd.corners[3].x)/2;
-	from->y = (rd.corners[0].y + rd.corners[3].y)/2;
-	to->x = (rd.corners[1].x + rd.corners[2].x)/2;
-	to->y = (rd.corners[1].y + rd.corners[2].y)/2;
-
-	*r = fz_empty_rect;
-	if ((rd.corners[0].x == rd.corners[3].x && rd.corners[1].x == rd.corners[2].x &&
-		rd.corners[0].y == rd.corners[1].y && rd.corners[2].y == rd.corners[3].y) ||
-		(rd.corners[0].x == rd.corners[1].x && rd.corners[3].x == rd.corners[2].x &&
-		rd.corners[0].y == rd.corners[3].y && rd.corners[2].y == rd.corners[1].y))
-	{
-		*r = fz_include_point_in_rect(*r, rd.corners[0]);
-		*r = fz_include_point_in_rect(*r, rd.corners[2]);
-	}
-
-	return 1;
-}
-
-static void
-check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page, const fz_path *path, fz_matrix ctm, int argb)
+check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page, fz_rect r, int argb, fz_stext_block *block)
 {
 	float thickness;
 	fz_point from, to;
 	int i, n = tdev->rect_len;
-	fz_rect r;
+	float w = r.x1 - r.x0;
+	float h = r.y1 - r.y0;
 
-	/* Is this path a thin rectangle (possibly rotated)? If so, then we need to
-	 * consider it as being a strikeout or underline. */
-	if (!is_path_rect(ctx, path, &from, &to, &thickness, ctm, &r))
-		return;
+	/* We know the path is a rectangle, or we wouldn't be here. */
+	if (w >= h)
+	{
+		thickness = h;
+		from.x = r.x0;
+		to.x = r.x1;
+		from.y = to.y = (r.y0 + r.y1)/2;
+	}
+	else
+	{
+		thickness = w;
+		from.y = r.y0;
+		to.y = r.y1;
+		from.x = to.x = (r.x0 + r.x1)/2;
+	}
 
 	/* If we've already had a rectangle of the same colour that covers this region
 	 * then that was probably a cell background color, and this is probably a
@@ -2383,6 +2259,7 @@ check_for_strikeout(fz_context *ctx, fz_stext_device *tdev, fz_stext_page *page,
 	tdev->rects[tdev->rect_len].thickness = thickness;
 	tdev->rects[tdev->rect_len].rect = r;
 	tdev->rects[tdev->rect_len].argb = argb;
+	tdev->rects[tdev->rect_len].blk = block;
 	tdev->rect_len++;
 }
 
@@ -2557,12 +2434,13 @@ typedef struct
 	float exp;
 	fz_stext_block *prev_block;
 	const fz_stroke_state *stroke;
+	fz_stext_block *rect_block;
 } split_path_data;
 
 static void
 add_vector(fz_context *ctx, split_path_data *sp, fz_rect bbox, uint32_t flags)
 {
-	fz_stext_block *b;
+	fz_stext_block *b = NULL;
 
 	if (sp->stroke == NULL && fz_is_empty_rect(bbox))
 	{
@@ -2572,18 +2450,25 @@ add_vector(fz_context *ctx, split_path_data *sp, fz_rect bbox, uint32_t flags)
 	if (!fz_is_valid_rect(bbox))
 		return;
 
-	/* Try to add the vector (this may resolve to an amendement to an existing vector block),
-	 * or a new block, or even being dropped entirely if it's clipped away. */
-	b = add_vector_imp(ctx, sp->page, sp->dev, bbox, sp->flags | flags, sp->argb, sp->id, sp->exp);
-	if (b)
+	flags |= sp->flags;
+	if (sp->dev->flags & FZ_STEXT_COLLECT_VECTORS)
 	{
-		/* b is the block we just modified. If we have a previous block (and it's different to
-		 * b), then mark that as continuing. */
-		if (sp->prev_block && sp->prev_block != b)
-			sp->prev_block->u.v.flags |= FZ_STEXT_VECTOR_CONTINUES;
-		/* Remember b as being our previous block. */
-		sp->prev_block = b;
+		/* Try to add the vector (this may resolve to an amendement to an existing vector block),
+		 * or a new block, or even being dropped entirely if it's clipped away. */
+		b = add_vector_imp(ctx, sp->page, sp->dev, bbox, flags, sp->argb, sp->id, sp->exp);
+		if (b)
+		{
+			/* b is the block we just modified. If we have a previous block (and it's different to
+			 * b), then mark that as continuing. */
+			if (sp->prev_block && sp->prev_block != b)
+				sp->prev_block->u.v.flags |= FZ_STEXT_VECTOR_CONTINUES;
+			/* Remember b as being our previous block. */
+			sp->prev_block = b;
+		}
 	}
+
+	if ((sp->dev->flags & FZ_STEXT_COLLECT_STYLES) && (flags & FZ_STEXT_VECTOR_IS_RECTANGLE))
+		check_for_strikeout(ctx, sp->dev, sp->page, bbox, sp->argb, b);
 }
 
 /*
@@ -2746,7 +2631,7 @@ fz_path_walker split_path_rects =
 	split_close
 };
 
-static void
+static fz_stext_block *
 add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tdev, const fz_path *path, fz_matrix ctm, fz_colorspace *cs, const float *color, float alpha, fz_color_params cp, const fz_stroke_state *stroke, float exp)
 {
 	split_path_data sp;
@@ -2789,6 +2674,8 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 
 	/* And flush any leftovers (not a rect - by construction!) */
 	add_vector(ctx, &sp, sp.leftovers, 0);
+
+	return sp.rect_block;
 }
 
 static void
@@ -2803,10 +2690,7 @@ fz_stext_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int eve
 	if (bounds != NULL)
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
-	if (tdev->flags & FZ_STEXT_COLLECT_STYLES)
-		check_for_strikeout(ctx, tdev, page, path, ctm, hexrgba_from_color(ctx, cs, color, alpha));
-
-	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
+	if (tdev->flags & (FZ_STEXT_COLLECT_VECTORS | FZ_STEXT_COLLECT_STYLES))
 		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, NULL, 0);
 }
 
@@ -2823,10 +2707,7 @@ fz_stext_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 	if (bounds != NULL)
 		*bounds = fz_union_rect(*bounds, path_bounds);
 
-	if (tdev->flags & FZ_STEXT_COLLECT_STYLES)
-		check_for_strikeout(ctx, tdev, page, path, ctm, hexrgba_from_color(ctx, cs, color, alpha));
-
-	if (tdev->flags & FZ_STEXT_COLLECT_VECTORS)
+	if (tdev->flags & (FZ_STEXT_COLLECT_VECTORS | FZ_STEXT_COLLECT_STYLES))
 		add_vectors_from_path(ctx, page, tdev, path, ctm, cs, color, alpha, cp, ss, exp);
 }
 
