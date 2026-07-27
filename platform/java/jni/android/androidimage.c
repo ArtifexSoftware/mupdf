@@ -23,7 +23,7 @@
 /* AndroidImage interface */
 
 JNIEXPORT jlong JNICALL
-FUN(AndroidImage_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong jmask)
+FUN(android_AndroidImage_newAndroidImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong jmask)
 {
 	fz_context *ctx = get_context(env);
 	fz_image *mask = CAST(fz_image *, jmask);
