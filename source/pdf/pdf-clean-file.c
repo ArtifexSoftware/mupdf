@@ -294,6 +294,7 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 	fz_var(page_object_nums);
 	fz_var(kids);
 	fz_var(marks);
+	fz_var(olddests);
 
 	fz_try(ctx)
 	{
