@@ -36,9 +36,8 @@ static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *
 	fz_write_int32_be(ctx, out, (int)size);
 	fz_write_data(ctx, out, tag, 4);
 	fz_write_data(ctx, out, data, size);
-	sum = crc32(0, NULL, 0);
-	sum = crc32(sum, (unsigned char*)tag, 4);
-	sum = crc32(sum, data, (unsigned int)size);
+	sum = fz_crc32(0, tag, 4);
+	sum = fz_crc32(sum, data, size);
 	fz_write_int32_be(ctx, out, sum);
 }
 

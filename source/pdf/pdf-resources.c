@@ -23,8 +23,6 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-#include <zlib.h> /* for crc32 */
-
 #include <string.h>
 
 static void pdf_drop_obj_as_void(fz_context *ctx, void *obj)
@@ -94,8 +92,8 @@ pdf_find_image_resource(fz_context *ctx, pdf_document *doc, fz_image *item, pdf_
 	key->imagemask = item->imagemask;
 	key->use_colorkey = item->use_colorkey;
 	key->use_decode = item->use_decode;
-	key->decode = crc32(0, (unsigned char *)item->decode, 2 * item->n * sizeof(float));
-	key->decode = crc32(key->decode, (unsigned char *)item->colorkey, 2 * item->n * sizeof(int));
+	key->decode = fz_crc32c(0, item->decode, 2 * item->n * sizeof(float));
+	key->decode = fz_crc32c(key->decode, item->colorkey, 2 * item->n * sizeof(int));
 
 	if (item->mask)
 		fz_image_digest(ctx, item->mask, key->mask);

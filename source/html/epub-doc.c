@@ -26,8 +26,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <zlib.h> /* for crc32 */
-
 enum { T, R, B, L };
 
 typedef struct epub_chapter epub_chapter;
@@ -90,9 +88,8 @@ static uint32_t
 checksum_css(fz_context *ctx, const char *css)
 {
 	uint32_t sum = 0;
-	sum = crc32(0, NULL, 0);
 	if (css)
-		sum = crc32(sum, (Byte*)css, (int)strlen(css));
+		sum = fz_crc32c(sum, css, strlen(css));
 	return sum;
 }
 

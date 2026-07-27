@@ -25,6 +25,17 @@
 
 #include "mupdf/fitz/system.h"
 
+/* simple checksums */
+
+/**
+	CRC-32/ISO-HDLC and CRC-32/ISCSI checksum functions.
+	These can be called sequentially to compute the checksum
+	over separate chunks of data, by passing the return value from one to the next.
+	Pass 0 as the starting value.
+*/
+uint32_t fz_crc32(uint32_t sum, const void *data, size_t n);
+uint32_t fz_crc32c(uint32_t sum, const void *data, size_t n);
+
 /* md5 digests */
 
 /**

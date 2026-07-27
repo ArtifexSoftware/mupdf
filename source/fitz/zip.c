@@ -48,8 +48,7 @@ fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buf
 	int offset = fz_tell_output(ctx, zip->output);
 	int sum;
 
-	sum = crc32(0, NULL, 0);
-	sum = crc32(sum, buf->data, (uInt)buf->len);
+	sum = fz_crc32(0, buf->data, buf->len);
 
 	/* bit 11 of general purpose bit flag indicates UTF-8. */
 	fz_append_int32_le(ctx, zip->central, ZIP_CENTRAL_DIRECTORY_SIG);

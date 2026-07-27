@@ -1073,6 +1073,7 @@
     <ClCompile Include="..\..\source\fitz\bitmap.c" />
     <ClCompile Include="..\..\source\fitz\brotli.c" />
     <ClCompile Include="..\..\source\fitz\buffer.c" />
+    <ClCompile Include="..\..\source\fitz\crc32.c" />
     <ClCompile Include="..\..\source\fitz\color-fast.c" />
     <ClCompile Include="..\..\source\fitz\color-icc-create.c" />
     <ClCompile Include="..\..\source\fitz\color-lcms.c" />

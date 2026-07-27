@@ -51,18 +51,7 @@ struct fz_hash_table
 
 static unsigned hash(const unsigned char *s, int len)
 {
-	unsigned val = 0;
-	int i;
-	for (i = 0; i < len; i++)
-	{
-		val += s[i];
-		val += (val << 10);
-		val ^= (val >> 6);
-	}
-	val += (val << 3);
-	val ^= (val >> 11);
-	val += (val << 15);
-	return val;
+	return fz_crc32c(0, s, len);
 }
 
 fz_hash_table *

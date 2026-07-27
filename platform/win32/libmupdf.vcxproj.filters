@@ -108,6 +108,9 @@
     <ClCompile Include="..\..\source\fitz\buffer.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\crc32.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\fitz\color-fast.c">
       <Filter>fitz</Filter>
     </ClCompile>
