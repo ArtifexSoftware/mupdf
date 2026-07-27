@@ -1629,6 +1629,10 @@ background_hunt(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block0, f
 			if (!fz_is_valid_rect(s))
 				continue;
 
+			/* Ignore highlight, strikeout or underlined blocks. */
+			if (block->u.v.flags & (FZ_STEXT_VECTOR_IS_HIGHLIGHT | FZ_STEXT_VECTOR_IS_STRIKEOUT | FZ_STEXT_VECTOR_IS_UNDERLINE))
+				continue;
+
 			/* Only rectangular && non-stroked blocks can possibly be background
 			 * fills. */
 			if ((block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0 ||
@@ -1729,6 +1733,10 @@ walk_grid_lines(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 			if ((block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
 				continue;
 
+			/* Ignore highlight, strikeout or underlined blocks. */
+			if (block->u.v.flags & (FZ_STEXT_VECTOR_IS_HIGHLIGHT | FZ_STEXT_VECTOR_IS_STRIKEOUT | FZ_STEXT_VECTOR_IS_UNDERLINE))
+				continue;
+
 			r = fz_collate_small_vector_run(&block);
 			r = fz_intersect_rect(r, gd->bounds);
 			if (!fz_is_valid_rect(r))
@@ -1773,6 +1781,10 @@ walk_grid_lines2(fz_context *ctx, grid_walker_data *gd, fz_stext_block *block)
 
 			/* Only process rectangle blocks. */
 			if ((block->u.v.flags & FZ_STEXT_VECTOR_IS_RECTANGLE) == 0)
+				continue;
+
+			/* Ignore highlight, strikeout or underlined blocks. */
+			if (block->u.v.flags & (FZ_STEXT_VECTOR_IS_HIGHLIGHT | FZ_STEXT_VECTOR_IS_STRIKEOUT | FZ_STEXT_VECTOR_IS_UNDERLINE))
 				continue;
 
 			r = fz_collate_small_vector_run(&block);
