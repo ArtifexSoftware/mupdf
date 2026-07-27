@@ -399,7 +399,13 @@ enum fz_stext_vector_flags
 	/* Indicates that this vector came from a path
 	 * segment, and more segments from this same path are
 	 * still to come. */
-	FZ_STEXT_VECTOR_CONTINUES = 4
+	FZ_STEXT_VECTOR_CONTINUES = 4,
+
+	/* Indicates that this was detected as being
+	 * part of an underline/strikeout/highlight. */
+	FZ_STEXT_VECTOR_IS_HIGHLIGHT = 8,
+	FZ_STEXT_VECTOR_IS_UNDERLINE = 16,
+	FZ_STEXT_VECTOR_IS_STRIKEOUT = 32
 };
 
 enum fz_stext_grid_flags
