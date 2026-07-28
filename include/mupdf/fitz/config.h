@@ -20,9 +20,9 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef FZ_CONFIG_H
 
-#define FZ_CONFIG_H
+#ifndef MUPDF_FITZ_CONFIG_H
+#define MUPDF_FITZ_CONFIG_H
 
 /**
 	Enable the following for spot (and hence overprint/overprint
@@ -322,4 +322,4 @@
 #define FZ_ENABLE_BARCODE 1
 #endif
 
-#endif /* FZ_CONFIG_H */
+#endif /* MUPDF_FITZ_CONFIG_H */

@@ -20,8 +20,8 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef MUDPF_FITZ_H
-#define MUDPF_FITZ_H
+#ifndef MUPDF_FITZ_H
+#define MUPDF_FITZ_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -20,8 +20,8 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef PDF_INTERPRET_H
-#define PDF_INTERPRET_H
+#ifndef MUPDF_PDF_INTERPRET_H
+#define MUPDF_PDF_INTERPRET_H
 
 #include "mupdf/pdf/font.h"
 #include "mupdf/pdf/resource.h"

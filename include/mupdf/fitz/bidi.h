@@ -17,8 +17,8 @@
 	is based on the reference implementation found on Unicode.org.
 */
 
-#ifndef FITZ_BIDI_H
-#define FITZ_BIDI_H
+#ifndef MUPDF_FITZ_BIDI_H
+#define MUPDF_FITZ_BIDI_H
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"

@@ -20,8 +20,8 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef TRACK_USAGE_H
-#define TRACK_USAGE_H
+#ifndef MUPDF_FITZ_TRACK_USAGE_H
+#define MUPDF_FITZ_TRACK_USAGE_H
 
 #ifdef TRACK_USAGE
 
