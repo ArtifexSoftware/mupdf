@@ -118,7 +118,12 @@ fz_bitmap *fz_new_bitmap_from_image(fz_context *ctx, fz_image *img, fz_halftone 
 	Returns the resultant bitmap. Throws exceptions in the case of
 	failure to allocate.
 */
-fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start);
+fz_bitmap *fz_new_bitmap_from_pixmap_band(
+	fz_context *ctx,
+	fz_pixmap *pix,
+	fz_halftone *ht,
+	int band_start
+);
 
 /**
 	Create a new bitmap.

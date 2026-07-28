@@ -20,12 +20,20 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
+/*
+	Compress and decompress data buffers.
+*/
+
 #ifndef MUPDF_FITZ_COMPRESS_H
 #define MUPDF_FITZ_COMPRESS_H
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/buffer.h"
 #include "mupdf/fitz/pixmap.h"
+
+/*
+	## Deflate and inflate
+*/
 
 typedef enum fz_deflate_level
 {
@@ -47,7 +55,14 @@ size_t fz_deflate_bound(fz_context *ctx, size_t size);
 	dest. *compressed_length will be updated on exit to contain the size
 	actually used.
  */
-void fz_deflate(fz_context *ctx, unsigned char *dest, size_t *compressed_length, const unsigned char *source, size_t source_length, fz_deflate_level level);
+void fz_deflate(
+	fz_context *ctx,
+	unsigned char *dest,
+	size_t *compressed_length,
+	const unsigned char *source,
+	size_t source_length,
+	fz_deflate_level level
+);
 
 /**
 	Compress source_length bytes of data starting
@@ -58,7 +73,13 @@ void fz_deflate(fz_context *ctx, unsigned char *dest, size_t *compressed_length,
 	considerably larger than is actually required. The caller is
 	free to fz_realloc it down if it wants to.
 */
-unsigned char *fz_new_deflated_data(fz_context *ctx, size_t *compressed_length, const unsigned char *source, size_t source_length, fz_deflate_level level);
+unsigned char *fz_new_deflated_data(
+	fz_context *ctx,
+	size_t *compressed_length,
+	const unsigned char *source,
+	size_t source_length,
+	fz_deflate_level level
+);
 
 /**
 	Compress the contents of a fz_buffer into a
@@ -69,7 +90,18 @@ unsigned char *fz_new_deflated_data(fz_context *ctx, size_t *compressed_length, 
 	than is actually required. The caller is free to fz_realloc it
 	down if it wants to.
 */
-unsigned char *fz_new_deflated_data_from_buffer(fz_context *ctx, size_t *compressed_length, fz_buffer *buffer, fz_deflate_level level);
+unsigned char *fz_new_deflated_data_from_buffer(
+	fz_context *ctx,
+	size_t *compressed_length,
+	fz_buffer *buffer,
+	fz_deflate_level level
+);
+
+/*
+	## Brotli
+
+	This is an optional feature, and is only present if libbrotli was enabled at compile time.
+*/
 
 typedef enum fz_brotli_level
 {
@@ -91,7 +123,14 @@ size_t fz_brotli_bound(fz_context *ctx, size_t size);
 	*compressed_length will be updated on exit to contain the size
 	actually used.
  */
-void fz_compress_brotli(fz_context *ctx, unsigned char *dest, size_t *compressed_length, const unsigned char *source, size_t source_length, fz_brotli_level level);
+void fz_compress_brotli(
+	fz_context *ctx,
+	unsigned char *dest,
+	size_t *compressed_length,
+	const unsigned char *source,
+	size_t source_length,
+	fz_brotli_level level
+);
 
 /**
 	Compress source_length bytes of data starting
@@ -102,7 +141,13 @@ void fz_compress_brotli(fz_context *ctx, unsigned char *dest, size_t *compressed
 	considerably larger than is actually required. The caller is
 	free to fz_realloc it down if it wants to.
 */
-unsigned char *fz_new_brotli_data(fz_context *ctx, size_t *compressed_length, const unsigned char *source, size_t source_length, fz_brotli_level level);
+unsigned char *fz_new_brotli_data(
+	fz_context *ctx,
+	size_t *compressed_length,
+	const unsigned char *source,
+	size_t source_length,
+	fz_brotli_level level
+);
 
 /**
 	Compress the contents of a fz_buffer into a
@@ -113,20 +158,41 @@ unsigned char *fz_new_brotli_data(fz_context *ctx, size_t *compressed_length, co
 	than is actually required. The caller is free to fz_realloc it
 	down if it wants to.
 */
-unsigned char *fz_new_brotli_data_from_buffer(fz_context *ctx, size_t *compressed_length, fz_buffer *buffer, fz_brotli_level level);
+unsigned char *fz_new_brotli_data_from_buffer(
+	fz_context *ctx,
+	size_t *compressed_length,
+	fz_buffer *buffer,
+	fz_brotli_level level
+);
+
+/**
+	## Fax
+*/
 
 /**
 	Compress bitmap data as CCITT Group 3 1D fax image.
 	Creates a stream assuming the default PDF parameters,
 	except the number of columns.
 */
-fz_buffer *fz_compress_ccitt_fax_g3(fz_context *ctx, const unsigned char *data, int columns, int rows, ptrdiff_t stride);
+fz_buffer *fz_compress_ccitt_fax_g3(
+	fz_context *ctx,
+	const unsigned char *data,
+	int columns,
+	int rows,
+	ptrdiff_t stride
+);
 
 /**
 	Compress bitmap data as CCITT Group 4 2D fax image.
 	Creates a stream assuming the default PDF parameters, except
 	K=-1 and the number of columns.
 */
-fz_buffer *fz_compress_ccitt_fax_g4(fz_context *ctx, const unsigned char *data, int columns, int rows, ptrdiff_t stride);
+fz_buffer *fz_compress_ccitt_fax_g4(
+	fz_context *ctx,
+	const unsigned char *data,
+	int columns,
+	int rows,
+	ptrdiff_t stride
+);
 
 #endif

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -158,10 +158,20 @@ void fz_drop_shade_color_cache(fz_context *ctx, fz_shade_color_cache *cache);
 	is set to point to a new fz_shade_color_cache. If cache is NULL it is
 	ignored.
 */
-void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *override_cs, fz_matrix ctm, fz_pixmap *dest, fz_color_params color_params, fz_irect bbox, const fz_overprint *eop, fz_shade_color_cache **cache);
+void fz_paint_shade(
+	fz_context *ctx,
+	fz_shade *shade,
+	fz_colorspace *override_cs,
+	fz_matrix ctm,
+	fz_pixmap *dest,
+	fz_color_params color_params,
+	fz_irect bbox,
+	const fz_overprint *eop,
+	fz_shade_color_cache **cache
+);
 
 /**
- *	Handy routine for processing mesh based shades
+	Vertices used when processing mesh based shades.
  */
 typedef struct fz_vertex
 {
@@ -179,7 +189,12 @@ typedef struct fz_vertex
 
 	c: Pointer to an array of floats used to populate v.
 */
-typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
+typedef void (fz_shade_prepare_fn)(
+	fz_context *ctx,
+	void *arg,
+	fz_vertex *v,
+	const float *c
+);
 
 /**
 	Callback function type for use with
@@ -191,7 +206,13 @@ typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, con
 	the corner locations and colors of a triangle to be
 	filled.
 */
-typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
+typedef void (fz_shade_process_fn)(
+	fz_context *ctx,
+	void *arg,
+	fz_vertex *av,
+	fz_vertex *bv,
+	fz_vertex *cv
+);
 
 /**
 	Process a shade, using supplied callback functions. This
@@ -213,12 +234,16 @@ typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz
 
 	process_arg: An opaque argument passed through from caller
 	to callback functions.
-*/
-void fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_rect scissor,
-			fz_shade_prepare_fn *prepare,
-			fz_shade_process_fn *process,
-			void *process_arg);
-
+ */
+void fz_process_shade(
+	fz_context *ctx,
+	fz_shade *shade,
+	fz_matrix ctm,
+	fz_rect scissor,
+	fz_shade_prepare_fn *prepare,
+	fz_shade_process_fn *process,
+	void *process_arg
+);
 
 /* Implementation details: subject to change. */
 

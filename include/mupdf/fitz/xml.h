@@ -88,6 +88,11 @@ fz_xml *fz_keep_xml(fz_context *ctx, fz_xml *xml);
 void fz_drop_xml(fz_context *ctx, fz_xml *xml);
 
 /**
+	Return the allocation pool associated with a given XML tree.
+*/
+fz_pool *fz_xml_pool(fz_xml *xml);
+
+/**
 	Detach a node from the tree, unlinking it from its parent,
 	and setting the document root to the node.
 */
@@ -262,12 +267,7 @@ fz_xml *fz_xml_find_next_dfs_top(fz_xml *item, const char *tag, const char *att,
 char *fz_new_text_from_xml(fz_context *ctx, fz_xml *root);
 
 /**
-	Return the pool associated with a given XML tree.
-*/
-fz_pool *fz_xml_pool(fz_xml *xml);
-
-/**
-	DOM-like functions for html in xml.
+	## DOM-like functions for HTML in XML
 */
 
 /**

@@ -30,7 +30,10 @@
 #include "mupdf/fitz/separation.h"
 
 /**
-	fz_band_writer
+	A band writer is used to write image files incrementally.
+	This is typically used when there isn't enough memory to hold
+	the full image at once; for example when rendering a high resolution
+	page in bands.
 */
 typedef struct fz_band_writer fz_band_writer;
 
@@ -52,7 +55,15 @@ typedef struct fz_band_writer fz_band_writer;
 
 	seps: Separation details (or NULL).
 */
-void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, fz_colorspace *cs, fz_separations *seps);
+void fz_write_header(
+	fz_context *ctx,
+	fz_band_writer *writer,
+	int w, int h, int n, int alpha,
+	int xres, int yres,
+	int pagenum,
+	fz_colorspace *cs,
+	fz_separations *seps
+);
 
 /**
 	Cause a band writer to write the next band
@@ -66,7 +77,13 @@ void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int 
 
 	samples: Pointer to first byte of the data.
 */
-void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_height, const unsigned char *samples);
+void fz_write_band(
+	fz_context *ctx,
+	fz_band_writer *writer,
+	int stride,
+	int band_height,
+	const unsigned char *samples
+);
 
 /**
 	Finishes up the output and closes the band writer. After this
@@ -82,12 +99,31 @@ void fz_close_band_writer(fz_context *ctx, fz_band_writer *writer);
 */
 void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer);
 
-/* Implementation details: subject to change. */
+/*
+	## Implementation details
 
-typedef void (fz_write_header_fn)(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs);
-typedef void (fz_write_band_fn)(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *samples);
+	Subject to change.
+*/
+
+typedef void (fz_write_header_fn)(
+	fz_context *ctx,
+	fz_band_writer *writer,
+	fz_colorspace *cs
+);
+
+typedef void (fz_write_band_fn)(
+	fz_context *ctx,
+	fz_band_writer *writer,
+	int stride,
+	int band_start,
+	int band_height,
+	const unsigned char *samples
+);
+
 typedef void (fz_write_trailer_fn)(fz_context *ctx, fz_band_writer *writer);
+
 typedef void (fz_close_band_writer_fn)(fz_context *ctx, fz_band_writer *writer);
+
 typedef void (fz_drop_band_writer_fn)(fz_context *ctx, fz_band_writer *writer);
 
 struct fz_band_writer

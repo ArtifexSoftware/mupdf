@@ -20,8 +20,8 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef MUPDF_FITZ_STRING_H
-#define MUPDF_FITZ_STRING_H
+#ifndef MUPDF_FITZ_STRING_UTIL_H
+#define MUPDF_FITZ_STRING_UTIL_H
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
@@ -243,7 +243,7 @@ int fz_chartorune(int *rune, const char *str);
 	of given length.
 
 	rune: Pointer to an int to assign the decoded 'rune' to.
-	(0xFFFD on error).
+		(0xFFFD on error).
 
 	str: Pointer to a UTF8 encoded string.
 

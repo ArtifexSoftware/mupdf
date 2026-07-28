@@ -373,9 +373,15 @@ fz_irect_height(fz_irect r)
 	vary in a matrix. Below is how the elements map between
 	different representations.
 
-	/ a b 0 \
-	| c d 0 | normally represented as [ a b c d e f ].
-	\ e f 1 /
+	This 2-d matrix
+
+		/ a b 0 \
+		| c d 0 |
+		\ e f 1 /
+
+	is represented as a 1-d vector:
+
+		[ a b c d e f ]
 */
 typedef struct fz_matrix
 {

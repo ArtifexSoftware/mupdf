@@ -428,39 +428,35 @@ void pdf_processor_push_resources(fz_context *ctx, pdf_processor *proc, pdf_obj 
 pdf_obj *pdf_processor_pop_resources(fz_context *ctx, pdf_processor *proc);
 
 /*
-	opaque: Opaque value that is passed to all the filter functions.
+	opaque:
+	: Opaque value that is passed to all the filter functions.
 
-	color_rewrite: function pointer called to rewrite a color
-		On entry:
-			*cs = reference to a pdf object representing the colorspace.
+	color_rewrite:
+	: function pointer called to rewrite a color
+	: On entry
+		: *cs = reference to a pdf object representing the colorspace.
+		: *n = number of color components
+		: color = *n color values.
+	: On exit
+		: *cs = either the same (for no change in colorspace) or updated to be a new one.
+			Reference must be dropped, and a new kept reference returned!
+		: *n = number of color components (maybe updated)
+		: color = *n color values (maybe updated)
 
-			*n = number of color components
+	image_rewrite:
+	: function pointer called to rewrite an image
+	: On entry
+		: *image = reference to an fz_image.
+	: On exit
+		: *image = either the same (for no change) or updated to be a new one.
+			Reference must be dropped, and a new kept reference returned.
 
-			color = *n color values.
+	share_rewrite:
+	: function pointer called to rewrite a shade
 
-		On exit:
-			*cs either the same (for no change in colorspace) or
-			updated to be a new one. Reference must be dropped, and
-			a new kept reference returned!
-
-			*n = number of color components (maybe updated)
-
-			color = *n color values (maybe updated)
-
-	image_rewrite: function pointer called to rewrite an image
-		On entry:
-			*image = reference to an fz_image.
-
-		On exit:
-			*image either the same (for no change) or updated
-			to be a new one. Reference must be dropped, and a
-			new kept reference returned.
-
-	share_rewrite: function pointer called to rewrite a shade
-
-	repeated_image_rewrite: If 0, then each image is rewritten only once.
-		Otherwise, it is called for every instance (useful if gathering
-		information about the ctm).
+	repeated_image_rewrite:
+	: If 0, then each image is rewritten only once.
+	: Otherwise, it is called for every instance (useful if gathering information about the ctm).
 */
 typedef struct pdf_color_filter_options
 {

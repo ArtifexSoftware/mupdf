@@ -117,8 +117,7 @@ typedef enum fz_permission
 	FZ_PERMISSION_ACCESSIBILITY = 'y',
 	FZ_PERMISSION_ASSEMBLE = 'a',
 	FZ_PERMISSION_PRINT_HQ = 'h',
-}
-fz_permission;
+} fz_permission;
 
 /**
 	Type for a function to be called when

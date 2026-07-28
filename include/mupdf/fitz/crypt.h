@@ -25,18 +25,23 @@
 
 #include "mupdf/fitz/system.h"
 
-/* simple checksums */
-
 /**
-	CRC-32/ISO-HDLC and CRC-32/ISCSI checksum functions.
+	## CRC-32 checksums
+
 	These can be called sequentially to compute the checksum
 	over separate chunks of data, by passing the return value from one to the next.
 	Pass 0 as the starting value.
 */
+
+/* CRC-32/ISO-HDLC checksum */
 uint32_t fz_crc32(uint32_t sum, const void *data, size_t n);
+
+/* CRC-32/ISCSI checksum (aka CRC32-Castagnoli) */
 uint32_t fz_crc32c(uint32_t sum, const void *data, size_t n);
 
-/* md5 digests */
+/*
+	## MD5 digests
+*/
 
 /**
 	Structure definition is public to enable stack
@@ -82,7 +87,9 @@ void fz_md5_update_int64(fz_md5 *state, int64_t i);
 */
 void fz_md5_final(fz_md5 *state, unsigned char digest[16]);
 
-/* sha-256 digests */
+/*
+	## SHA-256 digests
+*/
 
 /**
 	Structure definition is public to enable stack
@@ -123,7 +130,9 @@ void fz_sha256_update(fz_sha256 *state, const unsigned char *input, size_t inlen
 */
 void fz_sha256_final(fz_sha256 *state, unsigned char digest[32]);
 
-/* sha-512 digests */
+/*
+	## SHA-512 digests
+*/
 
 /**
 	Structure definition is public to enable stack
@@ -164,7 +173,9 @@ void fz_sha512_update(fz_sha512 *state, const unsigned char *input, size_t inlen
 */
 void fz_sha512_final(fz_sha512 *state, unsigned char digest[64]);
 
-/* sha-384 digests */
+/*
+	## SHA-384 digests
+*/
 
 typedef fz_sha512 fz_sha384;
 
@@ -193,7 +204,9 @@ void fz_sha384_update(fz_sha384 *state, const unsigned char *input, size_t inlen
 */
 void fz_sha384_final(fz_sha384 *state, unsigned char digest[64]);
 
-/* arc4 crypto */
+/*
+	## RC4 crypto
+*/
 
 /**
 	Structure definition is public to enable stack
@@ -229,7 +242,9 @@ void fz_arc4_encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *s
 */
 void fz_arc4_final(fz_arc4 *state);
 
-/* AES block cipher implementation from XYSSL */
+/*
+	## AES block cipher implementation from XYSSL
+*/
 
 /**
 	Structure definitions are public to enable stack
@@ -273,10 +288,14 @@ int fz_aes_setkey_dec(fz_aes *ctx, const unsigned char *key, int keysize);
 
 	Never throws an exception.
 */
-void fz_aes_crypt_cbc(fz_aes *ctx, int mode, size_t length,
+void fz_aes_crypt_cbc(
+	fz_aes *ctx,
+	int mode,
+	size_t length,
 	unsigned char iv[16],
 	const unsigned char *input,
-	unsigned char *output );
+	unsigned char *output
+);
 
 /* ## ChaCha20 stream cipher (RFC 7539) */
 

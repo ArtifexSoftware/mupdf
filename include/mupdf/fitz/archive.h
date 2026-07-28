@@ -29,12 +29,8 @@
 #include "mupdf/fitz/stream.h"
 #include "mupdf/fitz/tree.h"
 
-/* PUBLIC API */
-
 /**
-	fz_archive:
-
-	fz_archive provides methods for accessing "archive" files.
+	A fz_archive provides methods for accessing "archive" files.
 	An archive file is a conceptual entity that contains multiple
 	files, which can be counted, enumerated, and read.
 
@@ -85,7 +81,6 @@ fz_archive *fz_try_open_archive_with_stream(fz_context *ctx, fz_stream *file);
 */
 fz_archive *fz_open_directory(fz_context *ctx, const char *path);
 
-
 /**
 	Determine if a given path is a directory.
 
@@ -105,8 +100,7 @@ void fz_drop_archive(fz_context *ctx, fz_archive *arch);
 /**
 	Keep a reference to an archive.
 */
-fz_archive *
-fz_keep_archive(fz_context *ctx, fz_archive *arch);
+fz_archive *fz_keep_archive(fz_context *ctx, fz_archive *arch);
 
 /**
 	Return a pointer to a string describing the format of the
@@ -193,132 +187,70 @@ fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *
 fz_buffer *fz_try_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /**
-	fz_archive: tar implementation
+	## Tree archive
 */
 
 /**
-	Detect if stream object is a tar archive.
+	Create an archive that holds named buffers.
 
-	Assumes that the stream object is seekable.
+	tree can either be a preformed tree with fz_buffers as values,
+	or it can be NULL for an empty tree.
 */
-int fz_is_tar_archive(fz_context *ctx, fz_stream *file);
+fz_archive *fz_new_tree_archive(fz_context *ctx, fz_tree *tree);
 
 /**
-	Detect if stream object is an archive supported by libarchive.
+	Add a named buffer to an existing tree archive.
 
-	Assumes that the stream object is seekable.
+	The tree will take a new reference to the buffer. Ownership
+	is not transferred.
 */
-int fz_is_libarchive_archive(fz_context *ctx, fz_stream *file);
+void fz_tree_archive_add_buffer(
+	fz_context *ctx,
+	fz_archive *archive,
+	const char *name,
+	fz_buffer *buf
+);
 
 /**
-	Detect if stream object is a cfb archive.
+	Add a named block of data to an existing tree archive.
 
-	Assumes that the stream object is seekable.
+	The data will be copied into a buffer, and so the caller
+	may free it as soon as this returns.
 */
-int fz_is_cfb_archive(fz_context *ctx, fz_stream *file);
+void fz_tree_archive_add_data(
+	fz_context *ctx,
+	fz_archive *archive,
+	const char *name,
+	const void *data,
+	size_t size
+);
 
 /**
-	Open a tar archive file.
-
-	An exception is thrown if the file is not a tar archive as
-	indicated by the presence of a tar signature.
-
-	filename: a path to a tar archive file as it would be given to
-	open(2).
-*/
-fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
-
-/**
-	Open a tar archive stream.
-
-	Open an archive using a seekable stream object rather than
-	opening a file or directory on disk.
-
-	An exception is thrown if the stream is not a tar archive as
-	indicated by the presence of a tar signature.
-
-*/
-fz_archive *fz_open_tar_archive_with_stream(fz_context *ctx, fz_stream *file);
-
-/**
-	Open an archive using libarchive.
-
-	An exception is thrown if the file is not supported by libarchive.
-
-	filename: a path to an archive file as it would be given to
-	open(2).
-*/
-fz_archive *fz_open_libarchive_archive(fz_context *ctx, const char *filename);
-
-/**
-	Open an archive using libarchive.
-
-	Open an archive using a seekable stream object rather than
-	opening a file or directory on disk.
-
-	An exception is thrown if the stream is not supported by libarchive.
-*/
-fz_archive *fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file);
-
-/**
-	Open a cfb file as an archive.
-
-	An exception is thrown if the file is not recognised as a cfb.
-
-	filename: a path to an archive file as it would be given to
-	open(2).
-*/
-fz_archive *fz_open_cfb_archive(fz_context *ctx, const char *filename);
-
-/**
-	Open a cfb file as an archive.
-
-	Open an archive using a seekable stream object rather than
-	opening a file or directory on disk.
-
-	An exception is thrown if the file is not recognised as a chm.
-*/
-fz_archive *fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file);
-
-/**
-	fz_archive: zip implementation
+	## Multi archive
 */
 
 /**
-	Detect if stream object is a zip archive.
-
-	Assumes that the stream object is seekable.
+	Create a new multi archive (initially empty).
 */
-int fz_is_zip_archive(fz_context *ctx, fz_stream *file);
+fz_archive *fz_new_multi_archive(fz_context *ctx);
 
 /**
-	Open a zip archive file.
+	Add an archive to the set of archives handled by a multi
+	archive.
 
-	An exception is thrown if the file is not a zip archive as
-	indicated by the presence of a zip signature.
-
-	filename: a path to a zip archive file as it would be given to
-	open(2).
+	If path is NULL, then the child archive contents will appear at the
+	top level; otherwise they will appear prefixed by path.
 */
-fz_archive *fz_open_zip_archive(fz_context *ctx, const char *path);
-
+void fz_mount_multi_archive(
+	fz_context *ctx,
+	fz_archive *archive,
+	fz_archive *child,
+	const char *path
+);
 
 /**
-	Open a zip archive stream.
-
-	Open an archive using a seekable stream object rather than
-	opening a file or directory on disk.
-
-	An exception is thrown if the stream is not a zip archive as
-	indicated by the presence of a zip signature.
-
+	## ZIP writer
 */
-fz_archive *fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file);
-
-/**
-	Open a zip archive from static data.
-*/
-fz_archive *fz_open_zip_archive_with_memory(fz_context *ctx, const unsigned char *data, size_t size);
 
 /**
 	fz_zip_writer offers methods for creating and writing zip files.
@@ -350,7 +282,13 @@ fz_zip_writer *fz_new_zip_writer_with_output(fz_context *ctx, fz_output *out);
 	Given a buffer of data, (optionally) compress it, and add it to
 	the zip file with the given name.
 */
-void fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buffer *buf, int compress);
+void fz_write_zip_entry(
+	fz_context *ctx,
+	fz_zip_writer *zip,
+	const char *name,
+	fz_buffer *buf,
+	int compress
+);
 
 /**
 	Close the zip file for writing.
@@ -369,43 +307,147 @@ void fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip);
 void fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip);
 
 /**
-	Create an archive that holds named buffers.
-
-	tree can either be a preformed tree with fz_buffers as values,
-	or it can be NULL for an empty tree.
+	## ZIP archive
 */
-fz_archive *fz_new_tree_archive(fz_context *ctx, fz_tree *tree);
 
 /**
-	Add a named buffer to an existing tree archive.
+	Detect if stream object is a zip archive.
 
-	The tree will take a new reference to the buffer. Ownership
-	is not transferred.
+	Assumes that the stream object is seekable.
 */
-void fz_tree_archive_add_buffer(fz_context *ctx, fz_archive *arch_, const char *name, fz_buffer *buf);
+int fz_is_zip_archive(fz_context *ctx, fz_stream *file);
 
 /**
-	Add a named block of data to an existing tree archive.
+	Open a zip archive file.
 
-	The data will be copied into a buffer, and so the caller
-	may free it as soon as this returns.
+	An exception is thrown if the file is not a zip archive as
+	indicated by the presence of a zip signature.
+
+	filename: a path to a zip archive file as it would be given to
+	open(2).
 */
-void fz_tree_archive_add_data(fz_context *ctx, fz_archive *arch_, const char *name, const void *data, size_t size);
+fz_archive *fz_open_zip_archive(fz_context *ctx, const char *path);
 
 /**
-	Create a new multi archive (initially empty).
+	Open a zip archive stream.
+
+	Open an archive using a seekable stream object rather than
+	opening a file or directory on disk.
+
+	An exception is thrown if the stream is not a zip archive as
+	indicated by the presence of a zip signature.
+
 */
-fz_archive *fz_new_multi_archive(fz_context *ctx);
+fz_archive *fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file);
 
 /**
-	Add an archive to the set of archives handled by a multi
-	archive.
-
-	If path is NULL, then the archive contents will appear at the
-	top level, otherwise, the archives contents will appear prefixed
-	by path.
+	Open a zip archive from static data.
 */
-void fz_mount_multi_archive(fz_context *ctx, fz_archive *arch_, fz_archive *sub, const char *path);
+fz_archive *fz_open_zip_archive_with_memory(
+	fz_context *ctx,
+	const unsigned char *data,
+	size_t size
+);
+
+/**
+	## Tar (Unix tape archive)
+*/
+
+/**
+	Detect if stream object is a tar archive.
+
+	Assumes that the stream object is seekable.
+*/
+int fz_is_tar_archive(fz_context *ctx, fz_stream *file);
+
+/**
+	Open a tar archive file.
+
+	An exception is thrown if the file is not a tar archive as
+	indicated by the presence of a tar signature.
+
+	filename: a path to a tar archive file as it would be given to
+	open(2).
+*/
+fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
+
+/**
+	Open a tar archive stream.
+
+	Open an archive using a seekable stream object rather than
+	opening a file or directory on disk.
+
+	An exception is thrown if the stream is not a tar archive as
+	indicated by the presence of a tar signature.
+
+*/
+fz_archive *fz_open_tar_archive_with_stream(fz_context *ctx, fz_stream *file);
+
+/**
+	## CFB (Microsoft Compound File Binary)
+*/
+
+/**
+	Detect if stream object is a CFB archive.
+
+	Assumes that the stream object is seekable.
+*/
+int fz_is_cfb_archive(fz_context *ctx, fz_stream *file);
+
+/**
+	Open a CFB file as an archive.
+
+	An exception is thrown if the file is not recognised as a CFB.
+
+	filename: a path to an archive file as it would be given to
+	open(2).
+*/
+fz_archive *fz_open_cfb_archive(fz_context *ctx, const char *filename);
+
+/**
+	Open a CFB file as an archive.
+
+	Open an archive using a seekable stream object rather than
+	opening a file or directory on disk.
+
+	An exception is thrown if the file is not recognised as a chm.
+*/
+fz_archive *fz_open_cfb_archive_with_stream(fz_context *ctx, fz_stream *file);
+
+/**
+	## libarchive (optional third party library)
+*/
+
+/**
+	Detect if stream object is an archive supported by libarchive.
+
+	Assumes that the stream object is seekable.
+*/
+int fz_is_libarchive_archive(fz_context *ctx, fz_stream *file);
+
+/**
+	Open an archive using libarchive.
+
+	An exception is thrown if the file is not supported by libarchive.
+
+	filename: a path to an archive file as it would be given to
+	open(2).
+*/
+fz_archive *fz_open_libarchive_archive(fz_context *ctx, const char *filename);
+
+/**
+	Open an archive using libarchive.
+
+	Open an archive using a seekable stream object rather than
+	opening a file or directory on disk.
+
+	An exception is thrown if the stream is not supported by libarchive.
+*/
+fz_archive *fz_open_libarchive_archive_with_stream(fz_context *ctx, fz_stream *file);
+
+/*
+	## Archive format handlers
+*/
 
 typedef int (fz_recognize_archive_fn)(fz_context *, fz_stream *);
 typedef fz_archive *(fz_open_archive_fn)(fz_context *, fz_stream *);
@@ -414,15 +456,14 @@ typedef struct fz_archive_handler
 {
 	fz_recognize_archive_fn *recognize;
 	fz_open_archive_fn *open;
-}
-fz_archive_handler;
-
-FZ_DATA extern const fz_archive_handler fz_libarchive_archive_handler;
+} fz_archive_handler;
 
 void fz_register_archive_handler(fz_context *ctx, const fz_archive_handler *handler);
 
 /**
-	Implementation details: Subject to change.
+	## Implementation details
+
+	Subject to change.
 */
 
 struct fz_archive
@@ -445,6 +486,7 @@ fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 #define fz_new_derived_archive(C,F,M) \
 	((M*)Memento_label(fz_new_archive_of_size(C, F, sizeof(M)), #M))
 
-
+/* Only when built with optional libarchive thirdparty library. */
+FZ_DATA extern const fz_archive_handler fz_libarchive_archive_handler;
 
 #endif

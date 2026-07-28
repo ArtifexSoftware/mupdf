@@ -220,109 +220,114 @@ enum fz_stext_option_flags
 };
 
 /**
- *	A note on stext's handling of structure.
- *
- *	A PDF document can contain a structure tree. This gives the
- *	structure of a document in its entirety as a tree. e.g.
- *
- *	Tree			MCID	INDEX
- *	-------------------------------------
- *	DOC			0	0
- *	 TOC			1	0
- *	  TOC_ITEM		2	0
- *	  TOC_ITEM		3	1
- *	  TOC_ITEM		4	2
- *	  ...
- *	 STORY			100	1
- *	  SECTION		101	0
- *	   HEADING		102	0
- *	   SUBSECTION		103	1
- *	    PARAGRAPH		104	0
- *	    PARAGRAPH		105	1
- *	    PARAGRAPH		106	2
- *	   SUBSECTION		107	2
- *	    PARAGRAPH		108	0
- *	    PARAGRAPH		109	1
- *	    PARAGRAPH		110	2
- *	   ...
- *	  SECTION		200	1
- *      ...
- *
- *	Each different section of the tree is identified as part of an
- *	MCID by a number (this is a slight simplification, but makes the
- *	explanation easier).
- *
- *	The PDF document contains markings that say "Entering MCID 0"
- *	and "Leaving MCID 0". Any content within that region is therefore
- *	identified as appearing in that particular structural region.
- *
- *	This means that content can be sent in the document in a different
- *	order to which it appears 'logically' in the tree.
- *
- *	MuPDF converts this tree form into a nested series of calls to
- *	begin_structure and end_structure.
- *
- *	For instance, if the document started out with MCID 100, then
- *	we'd send:
- *		begin_structure("DOC")
- *		begin_structure("STORY")
- *
- *	The problem with this is that if we send:
- *		begin_structure("DOC")
- *		begin_structure("STORY")
- *		begin_structure("SECTION")
- *		begin_structure("SUBSECTION")
- *
- *	or
- *		begin_structure("DOC")
- *		begin_structure("STORY")
- *		begin_structure("SECTION")
- *		begin_structure("HEADING")
- *
- *	How do I know what order the SECTION and HEADING should appear in?
- *	Are they even in the same STORY? Or the same DOC?
- *
- *	Accordingly, every begin_structure is accompanied not only with the
- *	node type, but with an index. The index is the number of this node
- *	within this level of the tree. Hence:
- *
- *		begin_structure("DOC", 0)
- *		begin_structure("STORY", 0)
- *		begin_structure("SECTION", 0)
- *		begin_structure("HEADING", 0)
- *	and
- *		begin_structure("DOC", 0)
- *		begin_structure("STORY", 0)
- *		begin_structure("SECTION", 0)
- *		begin_structure("SUBSECTION", 1)
- *
- *	are now unambiguous in their describing of the tree.
- *
- *	MuPDF automatically sends the minimal end_structure/begin_structure
- *	pairs to move us between nodes in the tree.
- *
- *	In order to accommodate this information within the structured text
- *	data structures an additional block type is used. Previously a
- *	"page" was just a list of blocks, either text or images. e.g.
- *
- *	[BLOCK:TEXT] <-> [BLOCK:IMG] <-> [BLOCK:TEXT] <-> [BLOCK:TEXT] ...
- *
- *	We now introduce a new type of block, STRUCT, that turns this into
- *	a tree:
- *
- *	[BLOCK:TEXT] <-> [BLOCK:STRUCT(IDX=0)] <-> [BLOCK:TEXT] <-> ...
- *	                      /|\
- *	[STRUCT:TYPE=DOC] <----
- *	    |
- *	[BLOCK:TEXT] <-> [BLOCK:STRUCT(IDX=0)] <-> [BLOCK:TEXT] <-> ...
- *	                      /|\
- *	[STRUCT:TYPE=STORY] <--
- *	    |
- *	   ...
- *
- *	Rather than doing a simple linear traversal of the list to extract
- *	the logical data, a caller now has to do a depth-first traversal.
- */
+	## A note on stext's handling of structure.
+
+	A PDF document can contain a structure tree. This gives the
+	structure of a document in its entirety as a tree. e.g.
+
+		Tree						MCID	INDEX
+		-------------------------------------------------------------
+		DOC						0	0
+			TOC					1	0
+				TOC_ITEM			2	0
+				TOC_ITEM			3	1
+				TOC_ITEM			4	2
+				...
+			STORY					100	1
+				SECTION				101	0
+					HEADING			102	0
+					SUBSECTION		103	1
+						PARAGRAPH	104	0
+						PARAGRAPH	105	1
+						PARAGRAPH	106	2
+					SUBSECTION		107	2
+						PARAGRAPH	108	0
+						PARAGRAPH	109	1
+						PARAGRAPH	110	2
+					...
+				SECTION				200	1
+		...
+
+	Each different section of the tree is identified as part of an
+	MCID by a number (this is a slight simplification, but makes the
+	explanation easier).
+
+	The PDF document contains markings that say "Entering MCID 0"
+	and "Leaving MCID 0". Any content within that region is therefore
+	identified as appearing in that particular structural region.
+
+	This means that content can be sent in the document in a different
+	order to which it appears 'logically' in the tree.
+
+	MuPDF converts this tree form into a nested series of calls to
+	begin_structure and end_structure.
+
+	For instance, if the document started out with MCID 100, then
+	we'd send:
+
+		begin_structure("DOC")
+		begin_structure("STORY")
+
+	The problem with this is that if we send:
+
+		begin_structure("DOC")
+		begin_structure("STORY")
+		begin_structure("SECTION")
+		begin_structure("SUBSECTION")
+
+	or
+
+		begin_structure("DOC")
+		begin_structure("STORY")
+		begin_structure("SECTION")
+		begin_structure("HEADING")
+
+	How do I know what order the SECTION and HEADING should appear in?
+	Are they even in the same STORY? Or the same DOC?
+
+	Accordingly, every begin_structure is accompanied not only with the
+	node type, but with an index. The index is the number of this node
+	within this level of the tree. Hence:
+
+		begin_structure("DOC", 0)
+		begin_structure("STORY", 0)
+		begin_structure("SECTION", 0)
+		begin_structure("HEADING", 0)
+
+	and
+
+		begin_structure("DOC", 0)
+		begin_structure("STORY", 0)
+		begin_structure("SECTION", 0)
+		begin_structure("SUBSECTION", 1)
+
+	are now unambiguous in their describing of the tree.
+
+	MuPDF automatically sends the minimal end_structure/begin_structure
+	pairs to move us between nodes in the tree.
+
+	In order to accommodate this information within the structured text
+	data structures an additional block type is used. Previously a
+	"page" was just a list of blocks, either text or images. e.g.
+
+		[BLOCK:TEXT] <-> [BLOCK:IMG] <-> [BLOCK:TEXT] <-> [BLOCK:TEXT] ...
+
+	We now introduce a new type of block, STRUCT, that turns this into
+	a tree:
+
+		[BLOCK:TEXT] <-> [BLOCK:STRUCT(IDX=0)] <-> [BLOCK:TEXT] <-> ...
+					/|\
+		[STRUCT:TYPE=DOC] <------+
+			|
+		[BLOCK:TEXT] <-> [BLOCK:STRUCT(IDX=0)] <-> [BLOCK:TEXT] <-> ...
+					/|\
+		[STRUCT:TYPE=STORY] <----+
+			|
+			...
+
+	Rather than doing a simple linear traversal of the list to extract
+	the logical data, a caller now has to do a depth-first traversal.
+*/
 
 typedef struct fz_stext_page_details
 {
@@ -450,8 +455,8 @@ struct fz_stext_block
 		struct { fz_stext_line *first_line, *last_line; int flags;} t;
 		struct { fz_matrix transform; fz_image *image; } i;
 		struct { fz_stext_struct *down; int index; } s;
-		struct { uint32_t flags; uint32_t argb; } v;
-		struct { fz_stext_grid_positions *xs; fz_stext_grid_positions *ys; fz_stext_grid_info *info; } b;
+		struct { uint32_t flags, argb; } v;
+		struct { fz_stext_grid_positions *xs, *ys; fz_stext_grid_info *info; } b;
 	} u;
 	fz_stext_block *prev, *next;
 };
@@ -507,40 +512,17 @@ enum fz_stext_char_flags
 };
 
 /**
-	When we are collecting the structure information from
-	PDF structure trees/tags, we end up with a tree of
-	nodes. The structure should be walked in depth-first
-	traversal order to extract the content.
-
-	An fz_stext_struct pointer can be NULL to indicate that
-	we know there is a child there within the complete tree,
-	but we don't know what it is yet.
-*/
-struct fz_stext_struct
-{
-	/* up points to the block that contains this fz_stext_struct. */
-	fz_stext_block *up;
-	/* parent points to the struct that has up as one of its children.
-	 * parent is useful for doing depth first traversal without having
-	 * to store the entire chain of structs in the iterator. */
-	fz_stext_struct *parent;
-
-	/* first_block points to the first child of this node (or NULL
-	 * if there are none). */
-	fz_stext_block *first_block;
-	/* last_block points to the last child of this node (or NULL
-	 * if there are none). */
-	fz_stext_block *last_block;
-
-	/* We have a set of 'standard' structure types. Every structure
-	 * element should correspond to one of these. */
-	fz_structure standard;
-	/* Documents can use their own non-standard structure types, which
-	 * are held as 'raw' strings. */
-	char raw[FZ_FLEXIBLE_ARRAY];
-};
-
-/* An example to show how fz_stext_blocks and fz_stext_structs interact:
+ *	When we are collecting the structure information from
+ *	PDF structure trees/tags, we end up with a tree of
+ *	nodes. The structure should be walked in depth-first
+ *	traversal order to extract the content.
+ *
+ *	An fz_stext_struct pointer can be NULL to indicate that
+ *	we know there is a child there within the complete tree,
+ *	but we don't know what it is yet.
+ *
+ *	An example to show how fz_stext_blocks and fz_stext_structs interact:
+ * ```
  *
  *         [fz_stext_page]
  *             |
@@ -566,7 +548,31 @@ struct fz_stext_struct
  *                                  |   |
  *                       first_block|   |last_block
  *                                  :   :
+ * ```
  */
+struct fz_stext_struct
+{
+	/* up points to the block that contains this fz_stext_struct. */
+	fz_stext_block *up;
+	/* parent points to the struct that has up as one of its children.
+	 * parent is useful for doing depth first traversal without having
+	 * to store the entire chain of structs in the iterator. */
+	fz_stext_struct *parent;
+
+	/* first_block points to the first child of this node (or NULL
+	 * if there are none). */
+	fz_stext_block *first_block;
+	/* last_block points to the last child of this node (or NULL
+	 * if there are none). */
+	fz_stext_block *last_block;
+
+	/* We have a set of 'standard' structure types. Every structure
+	 * element should correspond to one of these. */
+	fz_structure standard;
+	/* Documents can use their own non-standard structure types, which
+	 * are held as 'raw' strings. */
+	char raw[FZ_FLEXIBLE_ARRAY];
+};
 
 typedef struct fz_stext_grid_divider
 {

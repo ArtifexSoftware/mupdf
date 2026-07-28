@@ -53,31 +53,26 @@ typedef struct fz_alloc_context
 } fz_alloc_context;
 
 /**
-	Exception macro definitions. Just treat these as a black box -
-	pay no attention to the man behind the curtain.
-*/
-#define fz_var(var) fz_var_imp((void *)&(var))
-#define fz_try(ctx) if (!fz_setjmp(*fz_push_try(ctx))) if (fz_do_try(ctx)) do
-#define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
-#define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
+	## Exception macro definitions
 
-/**
+	Just treat these as a black box - pay no attention to the man behind the curtain.
+
 	These macros provide a simple exception handling system. Use them as
 	follows:
 
-	fz_try(ctx)
-		...
-	fz_catch(ctx)
-		...
+		fz_try(ctx)
+			...
+		fz_catch(ctx)
+			...
 
 	or as:
 
-	fz_try(ctx)
-		...
-	fz_always(ctx)
-		...
-	fz_catch(ctx)
-		...
+		fz_try(ctx)
+			...
+		fz_always(ctx)
+			...
+		fz_catch(ctx)
+			...
 
 	Code within the fz_try() section can then throw exceptions using fz_throw()
 	(or fz_vthrow()).
@@ -94,13 +89,28 @@ typedef struct fz_alloc_context
 	as long as there has been no intervening use of fz_try/fz_catch.
 */
 
+/*
+	Guard a local from losing changes when an exception throws.
+	Must use this when a local is assigned a new value inside a try block, and is read outside the try block.
+ */
+#define fz_var(var) fz_var_imp((void *)&(var))
+
+#define fz_try(ctx) if (!fz_setjmp(*fz_push_try(ctx))) if (fz_do_try(ctx)) do
+#define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
+#define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
+
 /**
 	Throw an exception.
 
 	This assumes an enclosing fz_try() block within the callstack.
 */
-FZ_NORETURN void fz_vthrow(fz_context *ctx, int errcode, const char *, va_list ap);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) FZ_PRINTFLIKE(3,4);
+FZ_NORETURN void fz_vthrow(fz_context *ctx, int errcode, const char *, va_list ap);
+
+/*
+	Rethrow the last exception.
+	Use this inside a fz_catch to propagate the error after cleanup.
+ */
 FZ_NORETURN void fz_rethrow(fz_context *ctx);
 
 /**
@@ -117,8 +127,8 @@ void fz_morph_error(fz_context *ctx, int fromcode, int tocode);
 	This goes to the registered warning stream (stderr by
 	default).
 */
-void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap);
 void fz_warn(fz_context *ctx, const char *fmt, ...) FZ_PRINTFLIKE(2,3);
+void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap);
 
 /**
 	Within an fz_catch() block, retrieve the formatted message
@@ -211,7 +221,7 @@ enum fz_error_type
 void fz_flush_warnings(fz_context *ctx);
 
 /**
-	Locking functions
+	## Locking functions
 
 	MuPDF is kept deliberately free of any knowledge of particular
 	threading systems. As such, in order for safe multi-threaded
@@ -231,6 +241,7 @@ void fz_flush_warnings(fz_context *ctx);
 	enabled by defining FITZ_DEBUG_LOCKING.
 */
 
+/**/
 typedef struct fz_locks_context
 {
 	void *user;
@@ -248,6 +259,7 @@ enum fz_lock_id {
 	FZ_LOCK_MAX
 };
 
+/* We turn on lock debugging automatically in Memento builds. */
 #if defined(MEMENTO) || !defined(NDEBUG)
 #ifndef FITZ_DEBUG_LOCKING
 #define FITZ_DEBUG_LOCKING
@@ -271,16 +283,8 @@ void fz_lock_debug_unlock(fz_context *ctx, int lock);
 #endif /* !FITZ_DEBUG_LOCKING */
 
 /**
-	Specifies the maximum size in bytes of the resource store in
-	fz_context. Given as argument to fz_new_context.
-
-	FZ_STORE_UNLIMITED: Let resource store grow unbounded.
-
-	FZ_STORE_DEFAULT: A reasonable upper bound on the size, for
-	devices that are not memory constrained.
+	## Context allocation
 */
-#define FZ_STORE_UNLIMITED 0
-#define FZ_STORE_DEFAULT (256 << 20)
 
 /**
 	Allocate context containing global state.
@@ -312,6 +316,18 @@ void fz_lock_debug_unlock(fz_context *ctx, int lock);
 */
 #define fz_new_context(alloc, locks, max_store) fz_new_context_imp(alloc, locks, max_store, FZ_VERSION)
 
+/*
+	Let the resource store grow unbounded.
+	Given as max_store to fz_new_context.
+*/
+#define FZ_STORE_UNLIMITED 0
+
+/**
+	Specifies a reasonable upper bound on the size, for devices that are not memory constrained.
+	Given as max_store to fz_new_context.
+ */
+#define FZ_STORE_DEFAULT (256 << 20)
+
 /**
 	Make a clone of an existing context.
 
@@ -319,11 +335,12 @@ void fz_lock_debug_unlock(fz_context *ctx, int lock);
 	applications where each thread requires its own context, yet
 	parts of the global state, for example caching, are shared.
 
-	ctx: Context obtained from fz_new_context to make a copy of.
-	ctx must have had locks and lock/functions setup when created.
-	The two contexts will share the memory allocator, resource
-	store, locks and lock/unlock functions. They will each have
-	their own exception stacks though.
+	ctx:
+		Context obtained from fz_new_context to make a copy of.
+		ctx must have had locks and lock/functions setup when created.
+		The two contexts will share the memory allocator, resource
+		store, locks and lock/unlock functions. They will each have
+		their own exception stacks though.
 
 	May return NULL.
 */
@@ -355,14 +372,19 @@ void fz_set_user_context(fz_context *ctx, void *user);
 void *fz_user_context(fz_context *ctx);
 
 /**
-	FIXME: Better not to expose fz_default_error_callback, and
-	fz_default_warning callback and to allow 'NULL' to be used
-	int fz_set_xxxx_callback to mean "defaults".
-
-	FIXME: Do we need/want functions like
-	fz_error_callback(ctx, message) to allow callers to inject
-	stuff into the error/warning streams?
+> FIXME: Better not to expose fz_default_error_callback, and
+> fz_default_warning callback and to allow 'NULL' to be used
+> int fz_set_xxxx_callback to mean "defaults".
+>
+> FIXME: Do we need/want functions like
+> fz_error_callback(ctx, message) to allow callers to inject
+> stuff into the error/warning streams?
 */
+
+/**
+	## Error logging
+*/
+
 /**
 	The default error callback. Declared publicly just so that the
 	error callback can be set back to this after it has been
@@ -424,6 +446,8 @@ void fz_set_warning_callback(fz_context *ctx, fz_warning_cb *warning_cb, void *u
 fz_warning_cb *fz_warning_callback(fz_context *ctx, void **user);
 
 /**
+	## Behavior tuning
+
 	In order to tune MuPDF's behaviour, certain functions can
 	(optionally) be provided by callers.
 */
@@ -614,7 +638,7 @@ void fz_enable_icc(fz_context *ctx);
 void fz_disable_icc(fz_context *ctx);
 
 /**
-	Memory Allocation and Scavenging:
+	## Memory Allocation and Scavenging
 
 	All calls to MuPDF's allocator functions pass through to the
 	underlying allocators passed in when the initial context is
@@ -783,9 +807,12 @@ void fz_drop_string(fz_context *ctx, fz_string *str);
 
 #define fz_cstring_from_string(A) ((A) == NULL ? NULL : (A)->str)
 
-/* Implementation details: subject to change. */
+/*
+	## Implementation details
 
-/* Implementations exposed for speed, but considered private. */
+	Implementations exposed for speed, but considered private and subject
+	to change at any time.
+*/
 
 void fz_var_imp(void *);
 fz_jmp_buf *fz_push_try(fz_context *ctx);

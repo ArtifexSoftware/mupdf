@@ -111,7 +111,7 @@ enum pdf_alert_button_pressed
 };
 
 /*
-	access the details of an alert event
+	Access the details of an alert event.
 	The returned pointer and all the data referred to by the
 	structure are owned by mupdf and need not be freed by the
 	caller.
@@ -119,13 +119,12 @@ enum pdf_alert_button_pressed
 pdf_alert_event *pdf_access_alert_event(fz_context *ctx, pdf_doc_event *evt);
 
 /*
-	access the details of am execMenuItem
-	event, which consists of just the name of the menu item
+	Access the details of am execMenuItem event, which consists of just the name of the menu item.
 */
 const char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *evt);
 
 /*
-	details of a launch-url event. The app should
+	Details of a launch-url event. The app should
 	open the url, either in a new frame or in the current window.
 */
 typedef struct pdf_launch_url_event
@@ -135,14 +134,14 @@ typedef struct pdf_launch_url_event
 } pdf_launch_url_event;
 
 /*
-	access the details of a launch-url
+	Access the details of a launch-url
 	event. The returned pointer and all data referred to by the structure
 	are owned by mupdf and need not be freed by the caller.
 */
 pdf_launch_url_event *pdf_access_launch_url_event(fz_context *ctx, pdf_doc_event *evt);
 
 /*
-	details of a mail_doc event. The app should save
+	Details of a mail_doc event. The app should save
 	the current state of the document and email it using the specified
 	parameters.
 */

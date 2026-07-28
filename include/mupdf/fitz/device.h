@@ -20,6 +20,10 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
+/*
+	## Device
+*/
+
 #ifndef MUPDF_FITZ_DEVICE_H
 #define MUPDF_FITZ_DEVICE_H
 

@@ -91,29 +91,42 @@
  *                          with the sort/uniq being done based on 'a' alone. Form 1.
  */
 
+/* ## Private */
+
 /* Everything after this point is preprocessor magic. Ignore it, and just read the above
  * unless you are wanting to instantiate a new set of functions. */
 
 #ifndef MUPDF_FITZ_HEAP_H
-
 #define MUPDF_FITZ_HEAP_H
 
 #define MUPDF_FITZ_HEAP_I_KNOW_WHAT_IM_DOING
 
-/* Instantiate fz_int_heap */
+#ifdef DUMMY
+/* The name of the heap type to define: fz_TYPE_NAME_heap */
+#define HEAP_TYPE_NAME
+/* The type of the container values */
+#define HEAP_CONTAINER_TYPE
+/* The expression to compare two heap values. */
+#define HEAP_CMP(a,b)
+/* A fz_write_print statement to dump a heap value. */
+#define HEAP_DUMP(CTX, OUT, I, A)
+#endif
+
+// Instantiate fz_int_heap
 #define HEAP_TYPE_NAME fz_int_heap
 #define HEAP_CONTAINER_TYPE int
 #define HEAP_CMP(a,b) ((*a) - (*b))
 #define HEAP_DUMP(CTX, OUT, I, A) fz_write_printf(CTX, OUT, "%d: %d\n", I, *A)
 #include "mupdf/fitz/heap-imp.h"
 
-/* Instantiate fz_ptr_heap */
+// Instantiate fz_ptr_heap
 #define HEAP_TYPE_NAME fz_ptr_heap
 #define HEAP_CONTAINER_TYPE void *
 #include "mupdf/fitz/heap-imp.h"
 
-/* Instantiate fz_int2_heap */
+// Instantiate fz_int2_heap
 #ifndef MUPDF_FITZ_HEAP_IMPLEMENT
+/* The type for values in a fz_int2_heap. */
 typedef struct fz_int2
 {
 	int a;
@@ -126,8 +139,9 @@ typedef struct fz_int2
 #define HEAP_DUMP(CTX, OUT, I, A) fz_write_printf(CTX, OUT, "%d: %d %d\n", I, (A)->a, (A)->b)
 #include "mupdf/fitz/heap-imp.h"
 
-/* Instantiate fz_intptr_heap */
+// Instantiate fz_intptr_heap
 #ifndef MUPDF_FITZ_HEAP_IMPLEMENT
+/* The type for values in a fz_intptr_heap. */
 typedef struct fz_intptr
 {
 	int a;

@@ -60,14 +60,6 @@ enum fz_rendering_intent
 	FZ_RI_ABSOLUTE_COLORIMETRIC,
 };
 
-/* We abuse the top bit of the rendering intent to hold details of
- * whether we are in a softmask or not. This should not be used by
- * non-internal code. */
-enum fz_rendering_intent_abuse
-{
-	FZ_RI_IN_SOFTMASK = 0x80
-};
-
 typedef struct fz_color_params
 {
 	uint8_t ri;	/* rendering intent */
@@ -102,7 +94,7 @@ const char *fz_rendering_intent_name(int ri);
 #define FZ_MAX_COLORS 32
 
 /**
-	The maximum number of images samples allowed in any given image.
+	The maximum number of samples allowed in any given image.
 
 	This limit is checked when allocating images.
 */
@@ -130,6 +122,10 @@ enum fz_colorspace_flags
 };
 
 /**
+	## Constructors
+*/
+
+/**
 	Creates a new colorspace instance and returns a reference.
 
 	No internal checking is done that the colorspace type (e.g.
@@ -141,7 +137,13 @@ enum fz_colorspace_flags
 	Colorspaces are immutable once created (with the exception of
 	setting up colorant names for separation spaces).
 */
-fz_colorspace *fz_new_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, int n, const char *name);
+fz_colorspace *fz_new_colorspace(
+	fz_context *ctx,
+	enum fz_colorspace_type type,
+	int flags,
+	int n,
+	const char *name
+);
 
 /**
 	Increment the reference count for the colorspace.
@@ -176,7 +178,32 @@ void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 
 	Colorspaces are immutable once created.
 */
-fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
+fz_colorspace *fz_new_indexed_colorspace(
+	fz_context *ctx,
+	fz_colorspace *base,
+	int high,
+	unsigned char *lookup
+);
+
+/**
+	Create a Lab colorspace.
+
+	Return a reference to an LAB colorspace with the given
+	properties.
+
+	This might be a reference to an existing one, or to a new
+	one.
+
+	> Note: Currently whitepoint and blackpoint are ignored.
+	> Use the default values below to ensure code will work in
+	> the future.
+*/
+fz_colorspace *
+fz_new_lab_colorspace(fz_context *ctx, float range[4], float whitepoint[3], float blackpoint[3]);
+
+#define FZ_DEFAULT_LAB_WHITEPOINT { 0.9642f, 1.0f, 0.8249f }
+#define FZ_DEFAULT_LAB_BLACKPOINT { 0, 0, 0 }
+#define FZ_DEFAULT_LAB_RANGE { -100, 100, -100, 100 }
 
 /**
 	Create a colorspace from an ICC profile supplied in buf.
@@ -192,7 +219,13 @@ fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, i
 
 	Colorspaces are immutable once created.
 */
-fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, const char *name, fz_buffer *buf);
+fz_colorspace *fz_new_icc_colorspace(
+	fz_context *ctx,
+	enum fz_colorspace_type type,
+	int flags,
+	const char *name,
+	fz_buffer *buf
+);
 
 
 /**
@@ -203,7 +236,12 @@ fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, enum fz_colorspace_type ty
 
 	Colorspaces are immutable once created.
 */
-fz_colorspace *fz_new_cal_gray_colorspace(fz_context *ctx, float wp[3], float bp[3], float gamma);
+fz_colorspace *fz_new_cal_gray_colorspace(
+	fz_context *ctx,
+	float wp[3],
+	float bp[3],
+	float gamma
+);
 
 /**
 	Create a calibrated rgb colorspace.
@@ -213,7 +251,55 @@ fz_colorspace *fz_new_cal_gray_colorspace(fz_context *ctx, float wp[3], float bp
 
 	Colorspaces are immutable once created.
 */
-fz_colorspace *fz_new_cal_rgb_colorspace(fz_context *ctx, float wp[3], float bp[3], float gamma[3], float matrix[9]);
+fz_colorspace *fz_new_cal_rgb_colorspace(
+	fz_context *ctx,
+	float wp[3],
+	float bp[3],
+	float gamma[3],
+	float matrix[9]
+);
+
+/**
+	Assign a name for a given colorant in a colorspace.
+
+	Used while initially setting up a colorspace. The string is
+	copied into local storage, so need not be retained by the
+	caller.
+*/
+void fz_colorspace_name_colorant(
+	fz_context *ctx,
+	fz_colorspace *cs,
+	int n,
+	const char *name
+);
+
+/**
+	Retrieve a the name for a colorant.
+
+	Returns a pointer with the same lifespan as the colorspace.
+*/
+const char *fz_colorspace_colorant(fz_context *ctx, fz_colorspace *cs, int n);
+
+/**
+	## Colorspace properties
+*/
+
+/**
+	Get checksum of underlying ICC profile.
+*/
+void fz_colorspace_digest(fz_context *ctx, fz_colorspace *cs, unsigned char digest[16]);
+
+/**
+	Get the 'base' colorspace for a colorspace.
+
+	For indexed colorspaces, this is the colorspace the index
+	decodes into. For all other colorspaces, it is the colorspace
+	itself.
+
+	The returned colorspace is 'borrowed' (i.e. no additional
+	references are taken or dropped).
+*/
+fz_colorspace *fz_base_colorspace(fz_context *ctx, fz_colorspace *cs);
 
 /**
 	Query the type of colorspace.
@@ -250,7 +336,7 @@ int fz_colorspace_device_n_has_only_cmyk(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_device_n_has_cmyk(fz_context *ctx, fz_colorspace *cs);
 
 /**
-	Tests for particular types of colorspaces
+	## Tests for particular types of colorspaces
 */
 int fz_colorspace_is_gray(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_is_rgb(fz_context *ctx, fz_colorspace *cs);
@@ -265,57 +351,14 @@ int fz_colorspace_is_device_cmyk(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_is_lab_icc(fz_context *ctx, fz_colorspace *cs);
 
 /**
-	Get checksum of underlying ICC profile.
-*/
-void fz_colorspace_digest(fz_context *ctx, fz_colorspace *cs, unsigned char digest[16]);
-
-/**
 	Check to see that a colorspace is appropriate to be used as
 	a blending space (i.e. only grey, rgb or cmyk).
 */
 int fz_is_valid_blend_colorspace(fz_context *ctx, fz_colorspace *cs);
 
-/**
-	Get the 'base' colorspace for a colorspace.
-
-	For indexed colorspaces, this is the colorspace the index
-	decodes into. For all other colorspaces, it is the colorspace
-	itself.
-
-	The returned colorspace is 'borrowed' (i.e. no additional
-	references are taken or dropped).
+/*
+	## Color conversion
 */
-fz_colorspace *fz_base_colorspace(fz_context *ctx, fz_colorspace *cs);
-
-/**
-	Retrieve global default colorspaces.
-
-	These return borrowed references that should not be dropped,
-	unless they are kept first.
-*/
-fz_colorspace *fz_device_gray(fz_context *ctx);
-fz_colorspace *fz_device_rgb(fz_context *ctx);
-fz_colorspace *fz_device_bgr(fz_context *ctx);
-fz_colorspace *fz_device_cmyk(fz_context *ctx);
-fz_colorspace *fz_device_lab(fz_context *ctx);
-
-/**
-	Assign a name for a given colorant in a colorspace.
-
-	Used while initially setting up a colorspace. The string is
-	copied into local storage, so need not be retained by the
-	caller.
-*/
-void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int n, const char *name);
-
-/**
-	Retrieve a the name for a colorant.
-
-	Returns a pointer with the same lifespan as the colorspace.
-*/
-const char *fz_colorspace_colorant(fz_context *ctx, fz_colorspace *cs, int n);
-
-/* Color conversion */
 
 /**
 	Clamp the samples in a color to the correct ranges for a
@@ -328,30 +371,33 @@ void fz_clamp_color(fz_context *ctx, fz_colorspace *cs, const float *in, float *
 	for colorspace ds, via an optional intervening space is,
 	respecting the given color_params.
 */
-void fz_convert_color(fz_context *ctx, fz_colorspace *ss, const float *sv, fz_colorspace *ds, float *dv, fz_colorspace *is, fz_color_params params);
-
-/* LAB space handling. */
-
-#define FZ_DEFAULT_LAB_WHITEPOINT { 0.9642f, 1.0f, 0.8249f }
-#define FZ_DEFAULT_LAB_BLACKPOINT { 0, 0, 0 }
-#define FZ_DEFAULT_LAB_RANGE { -100, 100, -100, 100 }
+void fz_convert_color(
+	fz_context *ctx,
+	fz_colorspace *ss,
+	const float *sv,
+	fz_colorspace *ds,
+	float *dv,
+	fz_colorspace *is,
+	fz_color_params params
+);
 
 /**
-	Return a reference to an LAB colorspace with the given
-	properties.
+	## Global colorspaces
 
-	This might be a reference to an existing one, or to a new
-	one.
+	Retrieve global default colorspaces.
 
-	@note: Currently whitepoint and blackpoint are ignored.
-	Use the default values above to ensure code will work in
-	the future.
+	These return borrowed references that should not be dropped,
+	unless they are kept first.
 */
-fz_colorspace *
-fz_new_lab_colorspace(fz_context *ctx, float range[4], float whitepoint[3], float blackpoint[3]);
+fz_colorspace *fz_device_gray(fz_context *ctx);
+fz_colorspace *fz_device_rgb(fz_context *ctx);
+fz_colorspace *fz_device_bgr(fz_context *ctx);
+fz_colorspace *fz_device_cmyk(fz_context *ctx);
+fz_colorspace *fz_device_lab(fz_context *ctx);
 
-
-/* Default (fallback) colorspace handling */
+/*
+	## Default (fallback) colorspace handling
+*/
 
 /**
 	Structure to hold default colorspaces.
@@ -384,7 +430,7 @@ fz_default_colorspaces *fz_new_default_colorspaces(fz_context *ctx);
 
 	Never throws exceptions.
 */
-fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
+fz_default_colorspaces *fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
 
 /**
 	Drop a reference to the default colorspaces structure. When the
@@ -432,7 +478,19 @@ void fz_set_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs, fz_
 void fz_set_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 void fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 
-/* Implementation details: subject to change. */
+/*
+	## Implementation details
+
+	Subject to change.
+*/
+
+/* We abuse the top bit of the rendering intent to hold details of
+ * whether we are in a softmask or not. This should not be used by
+ * non-internal code. */
+enum fz_rendering_intent_abuse
+{
+	FZ_RI_IN_SOFTMASK = 0x80
+};
 
 struct fz_colorspace
 {

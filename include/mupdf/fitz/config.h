@@ -20,17 +20,22 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
+/* Compile-time build configuration with C preprocessor defines. */
 
 #ifndef MUPDF_FITZ_CONFIG_H
 #define MUPDF_FITZ_CONFIG_H
 
 /**
+	### Spot rendering
+
 	Enable the following for spot (and hence overprint/overprint
 	simulation) capable rendering. This forces FZ_PLOTTERS_N on.
 */
 /* #define FZ_ENABLE_SPOT_RENDERING 1 */
 
 /**
+	### Plotters
+
 	Choose which plotters we need.
 	By default we build all the plotters in. To avoid building
 	plotters in that aren't needed, define the unwanted
@@ -42,6 +47,8 @@
 /* #define FZ_PLOTTERS_N 1 */
 
 /**
+	### Document agents
+
 	Choose which document agents to include.
 	By default all are enabled. To avoid building unwanted
 	ones, define FZ_ENABLE_... to 0.
@@ -68,6 +75,8 @@
 /* #define FZ_ENABLE_HTML_ENGINE 1 */
 
 /**
+	### Document writers
+
 	Choose which document writers to include.
 	By default all are enabled. To avoid building unwanted
 	ones, define FZ_ENABLE_..._OUTPUT to 0.
@@ -77,9 +86,15 @@
 /* #define FZ_ENABLE_ODT_OUTPUT 1 */
 
 /**
+	### Color management
+
 	Choose whether to enable ICC color profiles.
 */
 /* #define FZ_ENABLE_ICC 1 */
+
+/**
+	### Optional features
+*/
 
 /**
 	Choose whether to enable JPEG2000 decoding.
@@ -109,7 +124,17 @@
 */
 /* #define FZ_ENABLE_BARCODE 1 */
 
+/*
+	Choose which hyphenation patterns to include.
+*/
+/* Include core hyphenation patterns (bn, de, en, es, fr, gu, hi, it, kn, mr, pt, ru, ta, te, th, tr). */
+/* #define FZ_ENABLE_HYPHEN 1 */
+/* Include core + extra hyphenation patterns. */
+/* #define FZ_ENABLE_HYPHEN_ALL 1 */
+
 /**
+	## Embedded fonts
+
 	Choose which fonts to include.
 	By default we include the base 14 PDF fonts,
 	DroidSansFallback from Android for CJK, and
@@ -148,11 +173,11 @@
 /* (You probably really don't want to do that except for measurement
  * purposes!) */
 
-/* Choose which hyphenation patterns to include. */
-/* #define FZ_ENABLE_HYPHEN 1 */
-/* #define FZ_ENABLE_HYPHEN_ALL 1 */
+// ---------- DO NOT EDIT ANYTHING UNDER THIS LINE ----------
 
-/* ---------- DO NOT EDIT ANYTHING UNDER THIS LINE ---------- */
+/*
+	## Default configuration defines
+*/
 
 #ifndef FZ_ENABLE_SPOT_RENDERING
 #define FZ_ENABLE_SPOT_RENDERING 1
