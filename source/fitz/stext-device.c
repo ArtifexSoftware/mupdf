@@ -1002,7 +1002,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	/* Start a new block (but only at the beginning of a text object) */
 	/* OR, if we have pending lazy vectors, and we are about to start a new line) */
-	if (new_para || !cur_block || (dev->lazy_vectors != NULL && new_line || !cur_line || force_new_line))
+	if (new_para || !cur_block || (dev->lazy_vectors != NULL && (new_line || !cur_line || force_new_line)))
 	{
 		flush_lazy_vectors(ctx, page, dev);
 		cur_block = add_text_block_to_page(ctx, page, dev->id);
