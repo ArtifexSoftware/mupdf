@@ -3503,7 +3503,7 @@ merge_row(grid_walker_data *gd, int y)
 }
 
 static void
-merge_rows(grid_walker_data *gd)
+merge_rows(grid_walker_data *gd, const fz_table_hunt_options *opts)
 {
 	int x, y;
 
@@ -3531,16 +3531,19 @@ merge_rows(grid_walker_data *gd)
 		}
 		if (x == gd->cells->w-1)
 			goto merge_row;
-		/* If every cell in a row is plausibly bounded, and none have a horizontal
-		 * line under them, we can merge. */
-		for (x = 0; x < gd->cells->w-1; x++)
+		if (opts != NULL && opts->vertically_collapse_bordered_cells != FZ_TABLE_HUNT_VERTICAL_COLLAPSE_NO)
 		{
-			cell_t *b = get_cell(gd->cells, x, y+1);
-			if (!plausibly_bordered_spanned_cell(gd->cells, x, y) || b->h_line)
-				break;
+			/* If every cell in a row is plausibly bounded, and none have a horizontal
+			 * line under them, we can merge. */
+			for (x = 0; x < gd->cells->w-1; x++)
+			{
+				cell_t *b = get_cell(gd->cells, x, y+1);
+				if (!plausibly_bordered_spanned_cell(gd->cells, x, y) || b->h_line)
+					break;
+			}
+			if (x == gd->cells->w-1)
+				goto merge_row;
 		}
-		if (x == gd->cells->w-1)
-			goto merge_row;
 		/* This requires all the pairs of cells in those 2 rows to be mergeable. */
 		for (x = 0; x < gd->cells->w-1; x++)
 		{
@@ -3818,7 +3821,7 @@ init_cell_regions(fz_context *ctx, cells_t *cells)
 
 
 static int
-find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
+find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content, const fz_table_hunt_options *opts)
 {
 	div_list xs = { 0 };
 	div_list ys = { 0 };
@@ -3908,7 +3911,7 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 		do
 		{
 			merge_columns(gd);
-			merge_rows(gd);
+			merge_rows(gd, opts);
 		}
 		while (remove_bordered_empty_cells(gd));
 
@@ -3944,7 +3947,7 @@ find_table(fz_context *ctx, grid_walker_data *gd, fz_stext_block *content)
 }
 
 int
-fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp)
+fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp, const fz_table_hunt_options *opts)
 {
 	grid_walker_data gd = { 0 };
 	int ret = 0;
@@ -3958,7 +3961,7 @@ fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bou
 
 	fz_try(ctx)
 	{
-		ret = find_table(ctx, &gd, page->first_block);
+		ret = find_table(ctx, &gd, page->first_block, opts);
 
 		*xposp = gd.xpos;
 		*yposp = gd.ypos;
@@ -4166,7 +4169,7 @@ table_size_cmp(const void *a_, const void *b_)
 
 /* Takes ownership of list, and frees before return. */
 static fz_stext_block *
-hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, float limit)
+hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_list *list, const fz_table_hunt_options *opts, float limit)
 {
 	int i, j, k, n;
 	fz_stext_block *last = NULL;
@@ -4185,7 +4188,7 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 		/* Look for tables in all the possible positions */
 		n = list->tables_len;
 		for (i = 0; i < n; i++)
-			list->tables[i].found = find_table(ctx, &list->tables[i].data, page->first_block);
+			list->tables[i].found = find_table(ctx, &list->tables[i].data, page->first_block, opts);
 
 		/* Cull the tables that weren't found. */
 		n = list->tables_len;
@@ -4390,9 +4393,9 @@ hunt_potential_tables(fz_context *ctx, fz_stext_page *page, fz_potential_table_l
 }
 
 void
-fz_table_hunt(fz_context *ctx, fz_stext_page *page)
+fz_table_hunt(fz_context *ctx, fz_stext_page *page, const fz_table_hunt_options *opts)
 {
-	fz_table_hunt_within_bounds(ctx, page, fz_infinite_rect);
+	fz_table_hunt_within_bounds(ctx, page, fz_infinite_rect, opts);
 }
 
 static void
@@ -4521,7 +4524,7 @@ push_segment_areas(fz_context *ctx, fz_potential_table_list *list, fz_stext_page
 }
 
 void
-fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const fz_table_hunt_options *opts)
 {
 	fz_potential_table_list *list;
 	fz_flotilla *flot = NULL;
@@ -4563,11 +4566,11 @@ fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	hunt_potential_tables(ctx, page, list, 0.3f/* Nasty heuristic constant! */);
+	hunt_potential_tables(ctx, page, list, opts, 0.3f/* Nasty heuristic constant! */);
 }
 
 fz_stext_block *
-fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds)
+fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const fz_table_hunt_options *opts)
 {
 	fz_potential_table_list *list;
 
@@ -4585,7 +4588,7 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list, 9999999.0f);
+	return hunt_potential_tables(ctx, page, list, opts, 9999999.0f);
 }
 
 fz_stext_grid_positions *
@@ -4603,7 +4606,7 @@ fz_clone_stext_grid_positions(fz_context *ctx, fz_stext_grid_positions *src)
 }
 
 fz_stext_block *
-fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit)
+fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit, const fz_table_hunt_options *opts)
 {
 	fz_potential_table_list *list;
 	fz_rect bounds;
@@ -4633,5 +4636,38 @@ fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_po
 		fz_rethrow(ctx);
 	}
 
-	return hunt_potential_tables(ctx, page, list, limit);
+	return hunt_potential_tables(ctx, page, list, opts, limit);
+}
+
+void
+fz_init_table_hunt_options(fz_context *ctx, fz_table_hunt_options *opts)
+{
+	memset(opts, 0, sizeof *opts);
+}
+
+fz_table_hunt_options *
+fz_parse_table_hunt_options(fz_context *ctx, fz_table_hunt_options *opts, const char *args)
+{
+	fz_options *options = fz_new_options(ctx, args);
+	fz_try(ctx)
+	{
+		fz_init_table_hunt_options(ctx, opts);
+		fz_apply_table_hunt_options(ctx, opts, options);
+		fz_throw_on_unused_options(ctx, options, "table hunt");
+	}
+	fz_always(ctx)
+		fz_drop_options(ctx, options);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return opts;
+}
+
+void
+fz_apply_table_hunt_options(fz_context *ctx, fz_table_hunt_options *opts, fz_options *args)
+{
+
+	fz_lookup_option_boolean(ctx, args, "vertically-collapse-bordered-cells", &opts->vertically_collapse_bordered_cells);
+
+	fz_validate_options(ctx, args, "table hunt");
 }

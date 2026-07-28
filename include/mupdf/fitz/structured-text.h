@@ -725,6 +725,39 @@ char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poi
 char *fz_copy_rectangle(fz_context *ctx, fz_stext_page *page, fz_rect area, int crlf);
 
 /**
+	Options for controlling table hunt.
+*/
+typedef struct
+{
+	int vertically_collapse_bordered_cells;
+} fz_table_hunt_options;
+
+enum {
+	/* Never collapse the contents of bordered cells vertically. */
+	FZ_TABLE_HUNT_VERTICAL_COLLAPSE_NO = 0,
+
+	/* Always collapse the contents of bordered cells vertically. */
+	FZ_TABLE_HUNT_VERTICAL_COLLAPSE_YES = 1
+};
+
+void fz_init_table_hunt_options(fz_context *ctx, fz_table_hunt_options *opts);
+
+/**
+	Parse table hunt options from a comma separated key-value
+	string.
+
+	This initialises the opts structure.
+*/
+fz_table_hunt_options *fz_parse_table_hunt_options(fz_context *ctx, fz_table_hunt_options *opts, const char *args);
+
+/**
+	Parse table hunt device options from an fz_options struct
+	into an already initialised opts structure.
+*/
+void fz_apply_table_hunt_options(fz_context *ctx, fz_table_hunt_options *opts, fz_options *options);
+
+
+/**
 	Options for creating structured text.
 */
 typedef struct fz_stext_options
@@ -732,6 +765,7 @@ typedef struct fz_stext_options
 	int flags;
 	float scale;
 	fz_rect clip;
+	fz_table_hunt_options table_hunt_options;
 } fz_stext_options;
 
 void fz_init_stext_options(fz_context *ctx, fz_stext_options *opts);
@@ -802,13 +836,13 @@ void fz_paragraph_break(fz_context *ctx, fz_stext_page *page);
 	Hunt for possible tables on a page, and update the stext with
 	information.
 */
-void fz_table_hunt(fz_context *ctx, fz_stext_page *page);
+void fz_table_hunt(fz_context *ctx, fz_stext_page *page, const fz_table_hunt_options *opts);
 
 /**
 	Hunt for possible tables within a specific rect on a page, and
 	update the stext with information.
 */
-void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
+void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const fz_table_hunt_options *opts);
 
 /**
 	Interpret the bounded contents of a given stext page as
@@ -826,7 +860,7 @@ void fz_table_hunt_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect b
 	the table.
 */
 fz_stext_block *
-fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds);
+fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, const fz_table_hunt_options *opts);
 
 /**
 	Interpret the contents of a given stext page that fall within
@@ -848,7 +882,7 @@ fz_find_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds
 	limit.
 */
 fz_stext_block *
-fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit);
+fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_positions *xpos, fz_stext_grid_positions *ypos, float limit, const fz_table_hunt_options *opts);
 
 /**
 	Try to guess at the table structure within given bounds.
@@ -862,7 +896,7 @@ fz_find_table_within_grid(fz_context *ctx, fz_stext_page *page, fz_stext_grid_po
 	freed.
 */
 int
-fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp);
+fz_propose_table_within_bounds(fz_context *ctx, fz_stext_page *page, fz_rect bounds, fz_stext_grid_positions **xposp, fz_stext_grid_positions **yposp, const fz_table_hunt_options *opts);
 
 
 /**

@@ -188,6 +188,8 @@ const char *fz_stext_options_usage =
 	"\tsegment: attempt to segment the page\n"
 	"\ttable-hunt: hunt for tables within a (segmented) page\n"
 	"\tresolution: resolution to render at\n"
+	"Also, the following options for table-hunt, which are currently experimental and subject to change without notice:\n"
+	"\tvertically-collapse-bordered-cells: if true, consider the contents of completely bordered super-cells as being vertically collapsable\n"
 	"\n";
 
 /* Find the current actualtext, if any. Will abort if dev == NULL. */
@@ -2068,7 +2070,7 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 		fz_paragraph_break(ctx, page);
 
 	if (tdev->opts.flags & FZ_STEXT_TABLE_HUNT)
-		fz_table_hunt(ctx, page);
+		fz_table_hunt(ctx, page, NULL);
 }
 
 static void
@@ -2114,6 +2116,7 @@ val_is_rect(const char *val, fz_rect *rp)
 void fz_init_stext_options(fz_context *ctx, fz_stext_options *opts)
 {
 	memset(opts, 0, sizeof *opts);
+	fz_init_table_hunt_options(ctx, &opts->table_hunt_options);
 
 	opts->flags |= FZ_STEXT_CLIP;
 	opts->scale = 1;
@@ -2202,6 +2205,8 @@ fz_apply_stext_options(fz_context *ctx, fz_stext_options *opts, fz_options *stri
 
 	if (fz_lookup_option_float(ctx, string, "resolution", &x))
 		opts->scale = x / 96.0f; /* HTML base resolution is 96ppi */
+
+	fz_apply_table_hunt_options(ctx, &opts->table_hunt_options, string);
 
 	fz_validate_options(ctx, string, "stext");
 }
