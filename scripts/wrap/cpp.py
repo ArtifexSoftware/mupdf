@@ -1156,8 +1156,8 @@ g_extra_declarations = textwrap.dedent(f'''
         fz_pixmap *fz_new_pixmap_from_display_list_culling_text_etc2(fz_context *ctx, fz_display_list *list, fz_matrix ctm, fz_colorspace *cs, int alpha, const std::vector<fz_rect>& rects, float borders);
 
         /** Swig-friendly wrapper for fz_find_table_within_grid(). */
-        fz_stext_block *fz_find_table_within_grid_floats(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit);
-        fz_stext_block *fz_find_table_within_grid_dividers(fz_context *ctx, fz_stext_page *page, const std::vector<fz_stext_grid_divider>& xs, const std::vector<fz_stext_grid_divider>& ys, float limit);
+        fz_stext_block *fz_find_table_within_grid_floats(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit, fz_table_hunt_options *opts);
+        fz_stext_block *fz_find_table_within_grid_dividers(fz_context *ctx, fz_stext_page *page, const std::vector<fz_stext_grid_divider>& xs, const std::vector<fz_stext_grid_divider>& ys, float limit, fz_table_hunt_options *opts);
         ''')
 
 g_extra_definitions = textwrap.dedent(f'''
@@ -1473,7 +1473,7 @@ g_extra_definitions = textwrap.dedent(f'''
         }}
 
         /** Swig-friendly wrapper for fz_find_table_within_grid(). */
-        fz_stext_block *fz_find_table_within_grid_floats(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit)
+        fz_stext_block *fz_find_table_within_grid_floats(fz_context *ctx, fz_stext_page *page, const std::vector<float>& xs, const std::vector<float>& ys, float limit, fz_table_hunt_options *opts)
 	{{
 		fz_stext_grid_positions *xpos = NULL;
 		fz_stext_grid_positions *ypos = NULL;
@@ -1506,7 +1506,7 @@ g_extra_definitions = textwrap.dedent(f'''
 				ypos->list[i].pos = ys[i];
 			}}
 
-			ret = fz_find_table_within_grid(ctx, page, xpos, ypos, limit);
+			ret = fz_find_table_within_grid(ctx, page, xpos, ypos, limit, opts);
 		}}
 		fz_always(ctx)
 		{{
@@ -1521,7 +1521,7 @@ g_extra_definitions = textwrap.dedent(f'''
 		return ret;
 	}}
 
-        fz_stext_block *fz_find_table_within_grid_dividers(fz_context *ctx, fz_stext_page *page, const std::vector<fz_stext_grid_divider>& xs, const std::vector<fz_stext_grid_divider>& ys, float limit)
+        fz_stext_block *fz_find_table_within_grid_dividers(fz_context *ctx, fz_stext_page *page, const std::vector<fz_stext_grid_divider>& xs, const std::vector<fz_stext_grid_divider>& ys, float limit, fz_table_hunt_options *opts)
 	{{
 		fz_stext_grid_positions *xpos = NULL;
 		fz_stext_grid_positions *ypos = NULL;
@@ -1558,7 +1558,7 @@ g_extra_definitions = textwrap.dedent(f'''
 			}}
 			ypos->max_uncertainty = max;
 
-			ret = fz_find_table_within_grid(ctx, page, xpos, ypos, limit);
+			ret = fz_find_table_within_grid(ctx, page, xpos, ypos, limit, opts);
 		}}
 		fz_always(ctx)
 		{{
