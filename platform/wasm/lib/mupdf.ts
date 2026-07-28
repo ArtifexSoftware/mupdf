@@ -623,21 +623,24 @@ function colorFromNumber(argb: number): Color {
 /* -------------------------------------------------------------------------- */
 
 type SearchFunction = (
-	display_list: any,
+	haystack: any,
 	needle: Pointer<"char">,
 	marks: Pointer<"int">,
 	hits: Pointer<"fz_quad">,
-	hit_max: number
+	hit_max: number,
+	options: Pointer<"char">,
 ) => number
 
-function runSearch(searchFun: SearchFunction, searchThis: number, needle: string, max_hits = 500) {
+function runSearch(searchFun: SearchFunction, haystack: number, needle: string, options: any) {
+	const max_hits = 500
 	checkType(needle, "string")
+	options = ensureOptions(options)
 	let hits = 0 as Pointer<"fz_quad">
 	let marks = 0 as Pointer<"int">
 	try {
 		hits = Malloc<"fz_quad">(32 * max_hits)
 		marks = Malloc<"int">(4 * max_hits)
-		let n = searchFun(searchThis as any, STRING(needle), marks, hits, max_hits)
+		let n = searchFun(haystack as any, STRING(needle), marks, hits, max_hits, STRING2(options))
 		let outer: Quad[][] = []
 		if (n > 0) {
 			let inner: Quad[] = []
@@ -1338,8 +1341,8 @@ export class DisplayList extends Userdata<"fz_display_list"> {
 		libmupdf._wasm_run_display_list(this.pointer, device.pointer, MATRIX(matrix))
 	}
 
-	search(needle: string, max_hits = 500) {
-		return runSearch(libmupdf._wasm_search_display_list, this.pointer, needle, max_hits)
+	search(needle: string, options: any) {
+		return runSearch(libmupdf._wasm_search_display_list, this.pointer, needle, options)
 	}
 }
 
@@ -1641,8 +1644,8 @@ export class StructuredText extends Userdata<"fz_stext_page"> {
 		return result
 	}
 
-	search(needle: string, max_hits = 500) {
-		return runSearch(libmupdf._wasm_search_stext_page, this.pointer, needle, max_hits)
+	search(needle: string, options: any) {
+		return runSearch(libmupdf._wasm_search_stext_page, this.pointer, needle, options)
 	}
 }
 
@@ -2408,8 +2411,8 @@ export class Page extends Userdata<"any_page"> {
 		libmupdf._wasm_delete_link(this.pointer, link.pointer)
 	}
 
-	search(needle: string, max_hits = 500) {
-		return runSearch(libmupdf._wasm_search_page, this.pointer, needle, max_hits)
+	search(needle: string, options: any) {
+		return runSearch(libmupdf._wasm_search_page, this.pointer, needle, options)
 	}
 
 }
