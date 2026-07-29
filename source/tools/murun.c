@@ -7772,6 +7772,8 @@ static void ffi_PDFDocument_addEmbeddedFile(js_State *J)
 	if (created >= 0) created /= 1000;
 	if (modified >= 0) modified /= 1000;
 
+	fz_var(ind);
+
 	fz_try(ctx)
 		ind = pdf_add_embedded_file(ctx, pdf, filename, mimetype, contents,
 			created, modified, add_checksum);
