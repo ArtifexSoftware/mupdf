@@ -1030,6 +1030,10 @@ fz_stext_remove_page_fill(fz_context *ctx, fz_stext_page *page)
 				iter.page->last_block = NULL;
 		}
 
+		iter.block->next = NULL;
+		iter.block->prev = NULL;
+		fz_release_stext_block_run_resources(ctx, iter.block);
+
 		dropped = 1;
 	}
 
