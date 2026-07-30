@@ -60,7 +60,7 @@ typedef struct {
 	float alpha;
 	fz_matrix ctm;
 	float xstep, ystep;
-	fz_irect area;
+	fz_rect area;
 	int flags;
 	int in_smask;
 } fz_draw_state;
@@ -2814,7 +2814,7 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, fz_rect area, fz_rect view,
 			state[1].id = id;
 			state[1].doc_id = doc_id;
 			state[1].encache = 0;
-			state[1].area = fz_irect_from_rect(area);
+			state[1].area = area;
 			state[1].ctm = ctm;
 			state[1].scissor = bbox;
 
@@ -2849,7 +2849,7 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, fz_rect area, fz_rect view,
 	state[1].id = id;
 	state[1].doc_id = doc_id;
 	state[1].encache = 1;
-	state[1].area = fz_irect_from_rect(area);
+	state[1].area = area;
 	state[1].ctm = ctm;
 	state[1].scissor = bbox;
 
@@ -2866,8 +2866,9 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	float xstep, ystep;
 	fz_matrix ttm, ctm, shapectm, gactm;
-	fz_irect area, scissor, tile_bbox;
-	fz_rect scissor_tmp, tile_tmp;
+	fz_irect tile_bbox;
+	fz_rect area;
+	fz_rect scissor, tile_tmp;
 	int x0, y0, x1, y1, x, y, extra_x, extra_y;
 	fz_draw_state *state;
 	fz_pixmap *dest = NULL;
@@ -2888,11 +2889,10 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	/* Fudge the scissor bbox a little to allow for inaccuracies in the
 	 * matrix inversion. */
 	ttm = fz_invert_matrix(ctm);
-	scissor_tmp = fz_rect_from_irect(state[0].scissor);
-	scissor_tmp = fz_expand_rect(scissor_tmp, 1);
-	scissor_tmp = fz_transform_rect(scissor_tmp, ttm);
-	scissor = fz_irect_from_rect(scissor_tmp);
-	area = fz_intersect_irect(area, scissor);
+	scissor = fz_rect_from_irect(state[0].scissor);
+	scissor = fz_expand_rect(scissor, 1);
+	scissor = fz_transform_rect(scissor, ttm);
+	area = fz_intersect_rect(area, scissor);
 
 	tile_bbox.x0 = state[1].dest->x;
 	tile_bbox.y0 = state[1].dest->y;
@@ -2914,10 +2914,10 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	extra_y = tile_tmp.y1 - tile_tmp.y0 - ystep;
 	if (extra_y < 0)
 		extra_y = 0;
-	x0 = floorf((area.x0 - tile_tmp.x0 - extra_x) / xstep);
-	y0 = floorf((area.y0 - tile_tmp.y0 - extra_y) / ystep);
-	x1 = ceilf((area.x1 - tile_tmp.x0 + extra_x) / xstep);
-	y1 = ceilf((area.y1 - tile_tmp.y0 + extra_y) / ystep);
+	x0 = floorf((area.x0-1 - tile_tmp.x0 - extra_x) / xstep);
+	y0 = floorf((area.y0-1 - tile_tmp.y0 - extra_y) / ystep);
+	x1 = ceilf((area.x1+1 - tile_tmp.x0 + extra_x) / xstep);
+	y1 = ceilf((area.y1+1 - tile_tmp.y0 + extra_y) / ystep);
 
 	ctm.e = state[1].dest->x;
 	ctm.f = state[1].dest->y;
