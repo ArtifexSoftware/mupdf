@@ -2502,12 +2502,16 @@ segment_finished(fz_context *ctx, split_path_data *sp)
 		}
 		if (rect)
 		{
+			if (sp->stroke)
+				bounds = fz_expand_rect(bounds, sp->stroke->linewidth/2);
 			add_vector(ctx, sp, bounds, FZ_STEXT_VECTOR_IS_RECTANGLE);
 			return;
 		}
 	}
 
 	/* We aren't a rectangle! */
+	if (sp->stroke)
+		bounds = fz_adjust_rect_for_stroke(ctx, bounds, sp->stroke, fz_identity);
 
 	if (sp->dev->flags & (FZ_STEXT_CLIP_RECT | FZ_STEXT_CLIP))
 		bounds = fz_intersect_rect(bounds, current_clip(ctx, sp->dev));
@@ -2668,7 +2672,12 @@ add_vectors_from_path(fz_context *ctx, fz_stext_page *page, fz_stext_device *tde
 		segment_finished(ctx, &sp);
 
 	/* And flush any leftovers (not a rect - by construction!) */
-	add_vector(ctx, &sp, sp.leftovers, 0);
+	if (!fz_is_empty_rect(sp.leftovers))
+	{
+		if (sp.stroke)
+			sp.leftovers = fz_adjust_rect_for_stroke(ctx, sp.leftovers, sp.stroke, fz_identity);
+		add_vector(ctx, &sp, sp.leftovers, 0);
+	}
 
 	return sp.rect_block;
 }
