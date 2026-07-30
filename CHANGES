@@ -49,6 +49,11 @@ List of changes in MuPDF 1.28
 	Many bug fixes, optimizations, security hardening fixes, and undefined
 	behavior code cleanups.
 
+	Building bindings now requires the pipcl package to be installed in the python environment, e.g.:
+		python -m venv venv
+		source venv/bin/activate
+		pip install pipcl
+		make c++ ; make python ; make csharp
 
 List of changes in MuPDF 1.27
 
