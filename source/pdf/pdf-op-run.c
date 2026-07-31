@@ -2073,7 +2073,9 @@ repaired:
 			if (!doc->struct_tree_repaired)
 			{
 				fz_free(ctx, line_a);
+				line_a = NULL;
 				fz_free(ctx, line_b);
+				line_b = NULL;
 				(void)pdf_check_structure_tree(ctx, doc);
 				goto repaired;
 			}
