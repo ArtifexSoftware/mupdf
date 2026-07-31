@@ -697,6 +697,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 				}
 				else
 				{
+					/* Additive spaces (so like RGB) */
 					unsigned char *dd = ddata;
 					const unsigned char *sd = sdata;
 					if (!sa)
@@ -705,12 +706,19 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 						{
 							for (x = dw; x > 0; x--)
 							{
+								/* Collect the components that remain unmapped. */
 								for (j = 0; j < n; j++)
 									colors[j] = mapped[j] ? 0 : sd[j] / 255.0f;
+								/* Map that color. */
 								cc.convert(ctx, &cc, colors, convert);
 
+								/* Add this color into the color we already have from the mapped components. */
 								for (j = 0; j < dc; j++)
-									dd[j] = fz_clampi(255 * convert[j], 0, 255);
+									if (convert[j] != 1)
+									{
+										int comp = (dd[j] - 255 + 255 * convert[j]);
+										dd[j] = fz_clampi(comp, 0, 255);
+									}
 								dd += dn;
 								sd += sn;
 							}
@@ -726,16 +734,27 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 							{
 								unsigned char a = sd[sc];
 								if (a == 0)
-									memset(dd, 0, dc);
+								{
+									//memset(dd, 0, dc);
+								}
 								else
 								{
 									float inva = 1.0f/a;
+									/* Collect the components that remain unmapped, and unpremultiply them. */
 									for (j = 0; j < n; j++)
 										colors[j] = mapped[j] ? 0 : sd[j] * inva;
+									/* Map that color. */
 									cc.convert(ctx, &cc, colors, convert);
 
+									/* Add this color into the color we already have from the mapped components. */
 									for (j = 0; j < dc; j++)
-										dd[j] = fz_clampi(a * convert[j], 0, a);
+									{
+										if (convert[j] != 1)
+										{
+											float comp = (dd[j] * inva - 1 + convert[j]);
+											dd[j] = fz_clampi(comp * a, 0, a);
+										}
+									}
 								}
 								dd += dn;
 								sd += sn;
