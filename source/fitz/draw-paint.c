@@ -1784,8 +1784,32 @@ template_span_3_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 			int t = sp[3];
 			if (t == 0)
 			{
-				dp += 3 + da; sp += 3 + sa;
-				continue;
+				/* At least 1 pixel has 0 alpha */
+				int w0 = w;
+				int w1 = w - 4;
+				if (w1 > 0)
+				{
+					/* If the next 4 are all zero, skip 4. */
+					while ((sp[7] | sp[11] | sp[15] | sp[19]) == 0)
+					{
+						sp += 16;
+						w1 -= 4;
+						if (w1 <= 0)
+							break;
+					}
+					w = w1 + 4;
+				}
+				/* Still at least 1 is zero. */
+				do
+				{
+					w--;
+					if (w == 0)
+						return;
+					sp += 4;
+				}
+				while ((t = sp[3]) == 0);
+				dp += (3+da)*(w0-w);
+				/* Fall through, because we know t is not 0 and w != 0. */
 			}
 			if (t != 255)
 			{
