@@ -2084,7 +2084,26 @@ static void
 paint_span_3_sa(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT sp, int sa, int n, int w, int alpha, const fz_overprint * FZ_RESTRICT eop)
 {
 	TRACK_FN();
-	template_span_3_general(dp, 0, sp, 1, w);
+
+	/*
+		Transparent leading runs are common when compositing an RGBA group
+		on an RGB destination. Skip them four pixels at a time, then retain
+		the existing painter unchanged for all remaining pixels.
+	*/
+	while (w >= 4 && (sp[3] | sp[7] | sp[11] | sp[15]) == 0)
+	{
+		sp += 16;
+		dp += 12;
+		w -= 4;
+	}
+	while (w > 0 && sp[3] == 0)
+	{
+		sp += 4;
+		dp += 3;
+		--w;
+	}
+	if (w > 0)
+		template_span_3_general(dp, 0, sp, 1, w);
 }
 
 static void
