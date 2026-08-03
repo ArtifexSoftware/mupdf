@@ -1738,24 +1738,17 @@ template_span_1_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 {
 	do
 	{
-		int t = (sa ? FZ_EXPAND(sp[1]): 256);
-		if (t == 0)
+		if (sa)
 		{
-			dp += 1 + da; sp += 1 + sa;
-		}
-		else
-		{
-			t = 256 - t;
+			int t = sp[1];
 			if (t == 0)
 			{
-				*dp++ = *sp++;
-				if (da)
-					*dp++ = (sa ? *sp : 255);
-				if (sa)
-					sp++;
+				dp += 1 + da; sp += 1 + sa;
+				continue;
 			}
-			else
+			if (t != 255)
 			{
+				t = 256 - FZ_EXPAND(t);
 				*dp = *sp + FZ_COMBINE(*dp, t);
 				sp++;
 				dp++;
@@ -1765,8 +1758,18 @@ template_span_1_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 					dp++;
 				}
 				sp++;
+				continue;
 			}
 		}
+		if (da && sa)
+			*(int16_t *)dp = *(const int16_t *)sp;
+		else
+		{
+			dp[0] = sp[0];
+			if (da)
+				dp[1] = 255;
+		}
+		dp += 1+da; sp += 1+sa;
 	}
 	while (--w);
 }
@@ -1776,30 +1779,17 @@ template_span_3_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 {
 	do
 	{
-		int t = (sa ? FZ_EXPAND(sp[3]) : 256);
-		if (t == 0)
+		if (sa)
 		{
-			dp += 3 + da; sp += 3 + sa;
-		}
-		else
-		{
-			t = 256 - t;
+			int t = sp[3];
 			if (t == 0)
 			{
-				if (da && sa)
-					*(int32_t *)dp = *(const int32_t *)sp;
-				else
-				{
-					dp[0] = sp[0];
-					dp[1] = sp[1];
-					dp[2] = sp[2];
-					if (da)
-						dp[3] = 255;
-				}
-				dp += 3+da; sp += 3+sa;
+				dp += 3 + da; sp += 3 + sa;
+				continue;
 			}
-			else
+			if (t != 255)
 			{
+				t = 256 - FZ_EXPAND(t);
 				/* sa != 0 as t != 0 */
 				*dp = *sp++ + FZ_COMBINE(*dp, t);
 				dp++;
@@ -1813,8 +1803,20 @@ template_span_3_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 					dp++;
 				}
 				sp++;
+				continue;
 			}
 		}
+		if (da && sa)
+			*(int32_t *)dp = *(const int32_t *)sp;
+		else
+		{
+			dp[0] = sp[0];
+			dp[1] = sp[1];
+			dp[2] = sp[2];
+			if (da)
+				dp[3] = 255;
+		}
+		dp += 3+da; sp += 3+sa;
 	}
 	while (--w);
 }
@@ -1824,26 +1826,17 @@ template_span_4_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 {
 	do
 	{
-		int t = (sa ? FZ_EXPAND(sp[4]) : 256);
-		if (t == 0)
+		if (sa)
 		{
-			dp += 4+da; sp += 4+sa;
-		}
-		else
-		{
-			t = 256 - t;
+			int t = sp[4];
 			if (t == 0)
 			{
-				dp[0] = sp[0];
-				dp[1] = sp[1];
-				dp[2] = sp[2];
-				dp[3] = sp[3];
-				if (da)
-					dp[4] = (sa ? sp[4] : 255);
-				dp += 4+da; sp += 4 + sa;
+				dp += 4+da; sp += 4+sa;
+				continue;
 			}
-			else
+			if (t != 255)
 			{
+				t = 256 - FZ_EXPAND(t);
 				/* sa != 0 as t != 0 */
 				*dp = *sp++ + FZ_COMBINE(*dp, t);
 				dp++;
@@ -1859,8 +1852,21 @@ template_span_4_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 					dp++;
 				}
 				sp++;
+				continue;
 			}
 		}
+		if (!sa && !da)
+			*(int32_t *)dp = *(const int32_t *)sp;
+		else
+		{
+			dp[0] = sp[0];
+			dp[1] = sp[1];
+			dp[2] = sp[2];
+			dp[3] = sp[3];
+			if (da)
+				dp[4] = (sa ? sp[4] : 255);
+		}
+		dp += 4+da; sp += 4+sa;
 	}
 	while (--w);
 }
@@ -1871,28 +1877,19 @@ template_span_N_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 {
 	do
 	{
-		int t = (sa ? FZ_EXPAND(sp[n1]) : 256);
-		if (t == 0)
+		int k;
+		if (sa)
 		{
-			dp += n1 + da; sp += n1 + sa;
-		}
-		else
-		{
-			t = 256 - t;
+			int t = sp[n1];
 			if (t == 0)
 			{
-				int k;
-				for (k = 0; k < n1; k++)
-					*dp++ = *sp++;
-				if (da)
-					*dp++ = (sa ? *sp : 255);
-				if (sa)
-					sp++;
+				dp += n1 + da; sp += n1 + sa;
+				continue;
 			}
-			else
+			if (t != 255)
 			{
+				t = 256 - FZ_EXPAND(t);
 				/* sa != 0, as t != 0 */
-				int k;
 				for (k = 0; k < n1; k++)
 				{
 					*dp = *sp + FZ_COMBINE(*dp, t);
@@ -1905,8 +1902,15 @@ template_span_N_general(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRICT 
 					dp++;
 				}
 				sp++;
+				continue;
 			}
 		}
+		for (k = 0; k < n1; k++)
+			*dp++ = *sp++;
+		if (da)
+			*dp++ = (sa ? *sp : 255);
+		if (sa)
+			sp++;
 	}
 	while (--w);
 }
@@ -1916,32 +1920,18 @@ template_span_N_general_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRI
 {
 	do
 	{
-		int t = (sa ? FZ_EXPAND(sp[n1]) : 256);
-		if (t == 0)
+		int k;
+		if (sa)
 		{
-			dp += n1 + da; sp += n1 + sa;
-		}
-		else
-		{
-			t = 256 - t;
+			int t = sp[n1];
 			if (t == 0)
 			{
-				int k;
-				for (k = 0; k < n1; k++)
-				{
-					if (fz_overprint_component(eop, k))
-						*dp = *sp;
-					dp++;
-					sp++;
-				}
-				if (da)
-					*dp++ = (sa ? *sp : 255);
-				if (sa)
-					sp++;
+				dp += n1 + da; sp += n1 + sa;
+				continue;
 			}
-			else
+			if (t != 255)
 			{
-				int k;
+				t = 256 - FZ_EXPAND(t);
 				/* sa can never be 0 here, as t != 0. */
 				for (k = 0; k < n1; k++)
 				{
@@ -1956,8 +1946,20 @@ template_span_N_general_op(byte * FZ_RESTRICT dp, int da, const byte * FZ_RESTRI
 					dp++;
 				}
 				sp++;
+				continue;
 			}
 		}
+		for (k = 0; k < n1; k++)
+		{
+			if (fz_overprint_component(eop, k))
+				*dp = *sp;
+			dp++;
+			sp++;
+		}
+		if (da)
+			*dp++ = (sa ? *sp : 255);
+		if (sa)
+			sp++;
 	}
 	while (--w);
 }
