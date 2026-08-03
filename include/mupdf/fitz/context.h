@@ -42,6 +42,7 @@ typedef struct fz_glyph_cache fz_glyph_cache;
 typedef struct fz_document_handler_context fz_document_handler_context;
 typedef struct fz_archive_handler_context fz_archive_handler_context;
 typedef struct fz_output fz_output;
+typedef struct fz_document fz_document;
 typedef struct fz_context fz_context;
 
 /**

@@ -24,7 +24,6 @@
 #define MUPDF_FITZ_DOCUMENT_H
 
 #include "mupdf/fitz/system.h"
-#include "mupdf/fitz/types.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/device.h"
@@ -34,6 +33,7 @@
 #include "mupdf/fitz/separation.h"
 #include "mupdf/fitz/archive.h"
 
+typedef struct fz_document fz_document;
 typedef struct fz_document_handler fz_document_handler;
 typedef struct fz_page fz_page;
 typedef intptr_t fz_bookmark;
@@ -50,15 +50,6 @@ typedef enum fz_box_type
 
 fz_box_type fz_box_type_from_string(const char *name);
 const char *fz_string_from_box_type(fz_box_type box);
-
-/**
-	Simple constructor for fz_locations.
-*/
-static inline fz_location fz_make_location(int chapter, int page)
-{
-	fz_location loc = { chapter, page };
-	return loc;
-}
 
 enum fz_layout_const
 {

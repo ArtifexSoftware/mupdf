@@ -26,12 +26,33 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
-#include "mupdf/fitz/types.h"
 
 typedef struct fz_link fz_link;
 typedef void (fz_link_set_rect_fn)(fz_context *ctx, fz_link *link, fz_rect rect);
 typedef void (fz_link_set_uri_fn)(fz_context *ctx, fz_link *link, const char *uri);
 typedef void (fz_link_drop_link_fn)(fz_context *ctx, fz_link *link);
+
+/**
+	Locations within the document are referred to in terms of
+	chapter and page, rather than just a page number. For some
+	documents (such as epub documents with large numbers of pages
+	broken into many chapters) this can make navigation much faster
+	as only the required chapter needs to be decoded at a time.
+*/
+typedef struct fz_location
+{
+	int chapter;
+	int page;
+} fz_location;
+
+/**
+	Simple constructor for fz_locations.
+*/
+static inline fz_location fz_make_location(int chapter, int page)
+{
+	fz_location loc = { chapter, page };
+	return loc;
+}
 
 /**
 	fz_link is a list of interactive links on a page.

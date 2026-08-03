@@ -24,7 +24,6 @@
 #define MUPDF_FITZ_STRUCTURED_TEXT_H
 
 #include "mupdf/fitz/system.h"
-#include "mupdf/fitz/types.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/font.h"

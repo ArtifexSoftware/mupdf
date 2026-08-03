@@ -27,7 +27,6 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/output.h"
 #include "mupdf/fitz/log.h"
-#include "mupdf/fitz/types.h"
 
 /**
 	Resource store

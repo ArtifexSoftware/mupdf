@@ -24,7 +24,6 @@
 #define MUPDF_FITZ_HYPHEN_H
 
 #include "mupdf/fitz/system.h"
-#include "mupdf/fitz/types.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/text.h"
 
