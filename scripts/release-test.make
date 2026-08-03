@@ -329,16 +329,16 @@ test-examples: make-examples pdfref17.pdf
 	/usr/bin/test d12a8b9cda4634aad371af5db4883a11 == $$(./build/release/searchtest 2>&1 | md5sum - | cut -d' ' -f1)
 
 make-python-build:
-	rm -rf venv && python -m venv venv && . venv/bin/activate && pip install pipcl && $(MAKE) -j2 python
+	$(MAKE) -j2 python
 
 make-python-with-tesseract-build:
-	rm -rf venv && python -m venv venv && . venv/bin/activate && pip install pipcl && $(MAKE) -j2 tesseract=yes python
+	$(MAKE) -j2 tesseract=yes python
 
 make-cplusplus-build:
-	rm -rf venv && python -m venv venv && . venv/bin/activate && pip install pipcl && $(MAKE) -j2 c++
+	$(MAKE) -j2 c++
 
 make-csharp-build:
-	rm -rf venv && python -m venv venv && . venv/bin/activate && pip install pipcl && $(MAKE) -j2 csharp
+	$(MAKE) -j2 csharp
 
 make-wasm-build:
 	$(MAKE) -j2 wasm
