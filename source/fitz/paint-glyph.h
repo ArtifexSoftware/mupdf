@@ -82,7 +82,7 @@ FUNCTION_NAME(NAME,N,NAME2,NAME3)(const unsigned char * FZ_RESTRICT colorbv,
 	const uint32_t color = *(const uint32_t *)colorbv;
 #endif
 #endif
-	TRACK_FN();
+	FZ_TRACK_FUNCTION();
 	while (h--)
 	{
 		int skip_xx, ww, len, extend;
