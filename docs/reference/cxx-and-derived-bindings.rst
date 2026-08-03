@@ -1473,6 +1473,13 @@ Non-standard API or implementation
         return None
     mupdf.fz_install_load_system_font_funcs(font_f, f_cjk, f_fallback)
 
+Limitations
+~~~~~~~~~~~
+* Due to limitations of swig, where enums are defined with a name,
+  and the name is also a function,
+  the enum values will not be visible.
+
+  For example `pdf_annot_type`.
 
 Making MuPDF function pointers call Python code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
