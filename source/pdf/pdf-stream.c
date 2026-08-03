@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -411,10 +411,8 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *file_stm, pdf_obj
 	if (filename)
 	{
 		if (doc->archive == NULL)
-		{
-			fz_warn(ctx, "Cannot open external file resource without an archive");
-			return NULL;
-		}
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot open external file resource without an archive");
+
 		filters = pdf_dict_get(ctx, stmobj, PDF_NAME(FFilter));
 		parm_name = PDF_NAME(FDecodeParms);
 		rstm = fz_open_archive_entry(ctx, doc->archive, filename);
