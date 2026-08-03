@@ -1878,7 +1878,7 @@ make_hough(fz_context *ctx, const fz_pixmap *src, fz_quad *corners)
 		int i;
 		for (i = 0; i < 270; i++)
 		{
-			float theta = i*M_PI/180;
+			float theta = i*FZ_PI/180;
 			sintable[i] = (int16_t)((1<<SINTABLE_SHIFT)*sinf(theta) + 0.5f);
 		}
 	}

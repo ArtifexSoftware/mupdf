@@ -2465,7 +2465,7 @@ pdf_write_line_caption(fz_context *ctx, pdf_annot *annot, fz_buffer *buf, fz_rec
 		if (tw + size > line_length)
 			top = 1;
 
-		tm = fz_rotate(atan2(dy, dx) * 180 / M_PI);
+		tm = fz_rotate(atan2(dy, dx) * 180 / FZ_PI);
 		tm.e = (a.x + b.x) / 2 - dx * (tw / 2);
 		tm.f = (a.y + b.y) / 2 - dy * (tw / 2);
 
