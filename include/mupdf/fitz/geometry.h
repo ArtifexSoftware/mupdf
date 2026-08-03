@@ -175,8 +175,6 @@ static inline void *fz_clampp(void *x, void *min, void *max)
 	return x < min ? min : x > max ? max : x;
 }
 
-#define DIV_BY_ZERO(a, b, min, max) (((a) < 0) ^ ((b) < 0) ? (min) : (max))
-
 /**
 	fz_point is a point in a two-dimensional space.
 */
