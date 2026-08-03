@@ -20,8 +20,8 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#ifndef MUPDF_FITZ_MATH_H
-#define MUPDF_FITZ_MATH_H
+#ifndef MUPDF_FITZ_GEOMETRY_H
+#define MUPDF_FITZ_GEOMETRY_H
 
 #include "mupdf/fitz/system.h"
 
