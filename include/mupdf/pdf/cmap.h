@@ -46,7 +46,7 @@ typedef struct pdf_mrange
 	unsigned int low, out;
 } pdf_mrange;
 
-typedef struct cmap_splay cmap_splay;
+typedef struct pdf_cmap_splay pdf_cmap_splay;
 
 typedef struct pdf_cmap
 {
@@ -78,7 +78,7 @@ typedef struct pdf_cmap
 	fz_list(int, dict);
 
 	int tree_top;
-	fz_list(cmap_splay, tree);
+	fz_list(pdf_cmap_splay, tree);
 } pdf_cmap;
 
 pdf_cmap *pdf_new_cmap(fz_context *ctx);

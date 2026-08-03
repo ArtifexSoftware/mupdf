@@ -120,7 +120,7 @@ pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned in
 	cmap->codespace_len ++;
 }
 
-struct cmap_splay {
+struct pdf_cmap_splay {
 	unsigned int low;
 	unsigned int high;
 	unsigned int out;
@@ -151,7 +151,7 @@ struct cmap_splay {
 */
 
 static void
-move_to_root(cmap_splay *tree, unsigned int x)
+move_to_root(pdf_cmap_splay *tree, unsigned int x)
 {
 	if (x == EMPTY)
 		return;
@@ -257,7 +257,7 @@ move_to_root(cmap_splay *tree, unsigned int x)
 
 static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 {
-	cmap_splay *tree = cmap->tree;
+	pdf_cmap_splay *tree = cmap->tree;
 	unsigned int parent;
 	unsigned int replacement;
 
@@ -383,7 +383,7 @@ static unsigned int delete_node(pdf_cmap *cmap, unsigned int current)
 
 #ifdef DUMP_SPLAY
 static void
-dump_splay(cmap_splay *tree, unsigned int node, int depth, const char *pre)
+dump_splay(pdf_cmap_splay *tree, unsigned int node, int depth, const char *pre)
 {
 	int i;
 
@@ -421,7 +421,7 @@ enum
 	RIGHT = 2
 };
 
-static void walk_splay(cmap_splay *tree, unsigned int node, void (*fn)(cmap_splay *, void *), void *arg)
+static void walk_splay(pdf_cmap_splay *tree, unsigned int node, void (*fn)(pdf_cmap_splay *, void *), void *arg)
 {
 	int from = TOP;
 
@@ -467,7 +467,7 @@ static void walk_splay(cmap_splay *tree, unsigned int node, void (*fn)(cmap_spla
 #ifdef CHECK_SPLAY
 
 static int
-tree_has_overlap(cmap_splay *tree, int node, unsigned int low, unsigned int high)
+tree_has_overlap(pdf_cmap_splay *tree, int node, unsigned int low, unsigned int high)
 {
 	if (tree[node].left != EMPTY)
 		if (tree_has_overlap(tree, tree[node].left, low, high))
@@ -479,9 +479,9 @@ tree_has_overlap(cmap_splay *tree, int node, unsigned int low, unsigned int high
 }
 
 static void
-do_check(cmap_splay *node, void *arg)
+do_check(pdf_cmap_splay *node, void *arg)
 {
-	cmap_splay *tree = arg;
+	pdf_cmap_splay *tree = arg;
 	unsigned int num = node - tree;
 	assert(!node->many || node->low == node->high);
 	assert(node->low <= node->high);
@@ -493,7 +493,7 @@ do_check(cmap_splay *node, void *arg)
 }
 
 static void
-check_splay(cmap_splay *tree, unsigned int node, int depth)
+check_splay(pdf_cmap_splay *tree, unsigned int node, int depth)
 {
 	if (node == EMPTY)
 		return;
@@ -509,7 +509,7 @@ static void
 add_range(fz_context *ctx, pdf_cmap *cmap, unsigned int low, unsigned int high, unsigned int out, int check_for_overlap, int many)
 {
 	int current;
-	cmap_splay *tree, *tr;
+	pdf_cmap_splay *tree, *tr;
 
 	if (low > high)
 	{
@@ -746,7 +746,7 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *valu
 }
 
 static void
-count_node_types(cmap_splay *node, void *arg)
+count_node_types(pdf_cmap_splay *node, void *arg)
 {
 	int *counts = (int *)arg;
 
@@ -759,7 +759,7 @@ count_node_types(cmap_splay *node, void *arg)
 }
 
 static void
-copy_node_types(cmap_splay *node, void *arg)
+copy_node_types(pdf_cmap_splay *node, void *arg)
 {
 	pdf_cmap *cmap = (pdf_cmap *)arg;
 
