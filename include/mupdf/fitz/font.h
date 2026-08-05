@@ -397,6 +397,16 @@ const unsigned char *fz_lookup_cjk_font_by_language(fz_context *ctx, const char 
 int fz_lookup_cjk_ordering_by_language(const char *name);
 
 /**
+	Attributes for a font.
+*/
+enum
+{
+	FZ_FONT_ATTR_BOLD = 1,
+	FZ_FONT_ATTR_ITALIC = 2,
+	FZ_FONT_ATTR_SERIF = 4,
+};
+
+/**
 	Search the builtin noto fonts for a match.
 	Whether a font is present or not will depend on the
 	configuration in which MuPDF is built.
@@ -408,9 +418,15 @@ int fz_lookup_cjk_ordering_by_language(const char *name);
 	len: Pointer to a place to receive the length of the discovered
 	font buffer.
 
+	subfont: Pointer to a place to receive the subfont number, or
+	NULL.
+
+	attr: Pointer to a place to receive the font attributes, or
+	NULL.
+
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int *len, int *subfont);
+const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int *len, int *subfont, int *attr);
 
 /**
 	Search the builtin noto fonts specific symbol fonts.

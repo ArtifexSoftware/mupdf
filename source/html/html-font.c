@@ -114,6 +114,12 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	if (best_font && best_score == 1 + 2 + 4)
 		return best_font;
 
+	// FIXME: Font matching logic is not right here. Should we check for
+	// user (system) fonts before we check for builtin ones to allow for
+	// users to override inbuilt ones? If we fail to find an exact stylistic
+	// match, we currently accept an inexact one before we look for an
+	// exact (or better) user (system) font.
+
 	// Try to load a perfect match.
 	data = fz_lookup_builtin_font(ctx, family, is_bold, is_italic, &size);
 	if (!data)

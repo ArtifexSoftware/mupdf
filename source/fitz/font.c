@@ -495,6 +495,20 @@ fz_font *fz_load_system_fallback_font(fz_context *ctx, int script, int language,
 	return font;
 }
 
+static int
+score_stylistic_match(int want_serif, int want_bold, int want_italic, int is_serif, int is_bold, int is_italic)
+{
+	int score = 0;
+
+	if (!!want_serif != !!is_serif)
+		score += 1;
+	if (!!want_bold != !!is_bold)
+		score += 2;
+	if (!!want_italic != !!is_italic)
+		score += 4;
+	return score;
+}
+
 fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
 {
 	fz_font **fontp;
@@ -533,12 +547,23 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 
 	if (!*fontp)
 	{
+		int user_score;
+		/* Try for a user registered fallback font. */
 		*fontp = fz_load_system_fallback_font(ctx, script, language, serif, bold, italic);
-		if (!*fontp)
+		/* This should only return a match if it matched script and language, but it might be
+		 * a 'fuzzy' stylistic match. Let's score that match. */
+		user_score = *fontp ? score_stylistic_match(serif, bold, italic, fz_font_is_serif(ctx, *fontp), fz_font_is_bold(ctx, *fontp), fz_font_is_italic(ctx, *fontp)) : 9999;
+		/* If the match wasn't perfect (or we didn't get one at all), then try for an inbuilt match. */
+		if (user_score != 0)
 		{
-			data = fz_lookup_noto_font(ctx, script, language, &size, &subfont);
-			if (data)
+			int attr, noto_score;
+			data = fz_lookup_noto_font(ctx, script, language, &size, &subfont, &attr);
+			noto_score = data ? score_stylistic_match(serif, bold, italic, attr & FZ_FONT_ATTR_SERIF, attr & FZ_FONT_ATTR_BOLD, attr & FZ_FONT_ATTR_ITALIC) : 9999;
+			/* If we found a noto font that had a better stylistic score than the user match, use that in preference. */
+			if (data && noto_score < user_score)
 			{
+				fz_drop_font(ctx, *fontp);
+				*fontp = NULL;
 				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, subfont, 0);
 				/* Noto fonts can be embedded. */
 				fz_set_font_embedding(ctx, *fontp, 1);
@@ -2131,7 +2156,6 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 			return *out_font = font, gid;
 	}
 
-#ifndef TOFU_CJK_LANG
 	if (script == UCDN_SCRIPT_HAN)
 	{
 		font = fz_load_fallback_font(ctx, script, FZ_LANG_zh_Hant, is_serif, is_bold, is_italic);
@@ -2163,7 +2187,6 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 				return *out_font = font, gid;
 		}
 	}
-#endif
 
 	font = fz_load_fallback_math_font(ctx);
 	if (font)
