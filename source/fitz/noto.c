@@ -164,7 +164,7 @@ static font_entry inbuilt_fonts[] =
 #undef FONT_SIZE
 
 static const unsigned char *
-search_by_script_lang_strict(int *size, int *subfont, int *attr, int script, int language)
+search_by_script_lang_strict(int *size, int *subfont, int *attr, int *font_index, int script, int language)
 {
 	/* Search in the inbuilt font table. */
 	font_entry *e;
@@ -173,6 +173,8 @@ search_by_script_lang_strict(int *size, int *subfont, int *attr, int script, int
 		*subfont = 0;
 	if (attr)
 		*attr = 0;
+	if (font_index)
+		*font_index = -1;
 
 	for (e = inbuilt_fonts; e->script != END_OF_DATA; e++)
 	{
@@ -185,6 +187,8 @@ search_by_script_lang_strict(int *size, int *subfont, int *attr, int script, int
 			*subfont = e->subfont;
 		if (attr)
 			*attr = e->attr;
+		if (font_index)
+			*font_index = e - inbuilt_fonts;
 		return e->data;
 	}
 
@@ -192,12 +196,12 @@ search_by_script_lang_strict(int *size, int *subfont, int *attr, int script, int
 }
 
 static const unsigned char *
-search_by_script_lang(int *size, int *subfont, int *attr, int script, int language)
+search_by_script_lang(int *size, int *subfont, int *attr, int *font_index, int script, int language)
 {
 	const unsigned char *result;
-	result = search_by_script_lang_strict(size, subfont, attr, script, language);
+	result = search_by_script_lang_strict(size, subfont, attr, font_index, script, language);
 	if (!result && language != FZ_LANG_UNSET)
-		result = search_by_script_lang_strict(size, subfont, attr, script, FZ_LANG_UNSET);
+		result = search_by_script_lang_strict(size, subfont, attr, font_index, script, FZ_LANG_UNSET);
 	return result;
 }
 
@@ -283,7 +287,7 @@ fz_lookup_cjk_font(fz_context *ctx, int ordering, int *size, int *subfont)
 	case FZ_ADOBE_GB: lang = FZ_LANG_zh_Hans; break;
 	case FZ_ADOBE_CNS: lang = FZ_LANG_zh_Hant; break;
 	}
-	return search_by_script_lang(size, subfont, NULL, UCDN_SCRIPT_HAN, lang);
+	return search_by_script_lang(size, subfont, NULL, NULL, UCDN_SCRIPT_HAN, lang);
 }
 
 int
@@ -315,43 +319,43 @@ fz_lookup_cjk_language(const char *lang)
 const unsigned char *
 fz_lookup_cjk_font_by_language(fz_context *ctx, const char *lang, int *size, int *subfont)
 {
-	return search_by_script_lang(size, subfont, NULL, UCDN_SCRIPT_HAN, fz_lookup_cjk_language(lang));
+	return search_by_script_lang(size, subfont, NULL, NULL, UCDN_SCRIPT_HAN, fz_lookup_cjk_language(lang));
 }
 
 const unsigned char *
-fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *subfont, int *attr)
+fz_lookup_noto_font(fz_context *ctx, int script, int language, int *size, int *subfont, int *attr, int *font_index)
 {
-	return search_by_script_lang(size, subfont, attr, script, language);
+	return search_by_script_lang(size, subfont, attr, font_index, script, language);
 }
 
 const unsigned char *
 fz_lookup_noto_math_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, NULL, MUPDF_SCRIPT_MATH, FZ_LANG_UNSET);
+	return search_by_script_lang(size, NULL, NULL, NULL, MUPDF_SCRIPT_MATH, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_music_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, NULL, MUPDF_SCRIPT_MUSIC, FZ_LANG_UNSET);
+	return search_by_script_lang(size, NULL, NULL, NULL, MUPDF_SCRIPT_MUSIC, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_symbol1_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, NULL, MUPDF_SCRIPT_SYMBOLS, FZ_LANG_UNSET);
+	return search_by_script_lang(size, NULL, NULL, NULL, MUPDF_SCRIPT_SYMBOLS, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_symbol2_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, NULL, MUPDF_SCRIPT_SYMBOLS2, FZ_LANG_UNSET);
+	return search_by_script_lang(size, NULL, NULL, NULL, MUPDF_SCRIPT_SYMBOLS2, FZ_LANG_UNSET);
 }
 
 const unsigned char *
 fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {
-	return search_by_script_lang(size, NULL, NULL, MUPDF_SCRIPT_EMOJI, FZ_LANG_UNSET);
+	return search_by_script_lang(size, NULL, NULL, NULL, MUPDF_SCRIPT_EMOJI, FZ_LANG_UNSET);
 }
 
 const unsigned char *

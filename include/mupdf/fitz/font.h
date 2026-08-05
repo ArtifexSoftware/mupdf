@@ -424,9 +424,12 @@ enum
 	attr: Pointer to a place to receive the font attributes, or
 	NULL.
 
+	index: Pointer to a place to receive the index of the found
+	found within the inbuilt table.
+
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int *len, int *subfont, int *attr);
+const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int *len, int *subfont, int *attr, int *index);
 
 /**
 	Search the builtin noto fonts specific symbol fonts.

@@ -305,9 +305,13 @@ struct fz_font_context
 	/* Cached fallback fonts */
 	fz_font *base14[14];
 	fz_font *cjk[4];
-	struct { fz_font *serif, *sans; } fallback[256];
+	struct {
+		// [SERIF][BOLD][ITALIC]
+		fz_font *font[2][2][2];
+	} fallback[256];
 	fz_font *symbol1, *symbol2, *math, *music, *boxes;
 	fz_font *emoji;
+	fz_font *notos[256];
 };
 
 #undef __FTERRORS_H__
@@ -410,9 +414,17 @@ void fz_drop_font_context(fz_context *ctx)
 			fz_drop_font(ctx, ctx->font->cjk[i]);
 		for (i = 0; i < (int)nelem(ctx->font->fallback); ++i)
 		{
-			fz_drop_font(ctx, ctx->font->fallback[i].serif);
-			fz_drop_font(ctx, ctx->font->fallback[i].sans);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[0][0][0]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[0][0][1]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[0][1][0]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[0][1][1]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[1][0][0]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[1][0][1]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[1][1][0]);
+			fz_drop_font(ctx, ctx->font->fallback[i].font[1][1][1]);
 		}
+		for (i = 0; i < (int)nelem(ctx->font->notos); ++i)
+			fz_drop_font(ctx, ctx->font->notos[i]);
 		fz_drop_font(ctx, ctx->font->symbol1);
 		fz_drop_font(ctx, ctx->font->symbol2);
 		fz_drop_font(ctx, ctx->font->math);
@@ -540,10 +552,7 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 			index = UCDN_LAST_SCRIPT + 5;
 	}
 
-	if (serif)
-		fontp = &ctx->font->fallback[index].serif;
-	else
-		fontp = &ctx->font->fallback[index].sans;
+	fontp = &ctx->font->fallback[index].font[!!serif][!!bold][!!italic];
 
 	if (!*fontp)
 	{
@@ -556,15 +565,20 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 		/* If the match wasn't perfect (or we didn't get one at all), then try for an inbuilt match. */
 		if (user_score != 0)
 		{
-			int attr, noto_score;
-			data = fz_lookup_noto_font(ctx, script, language, &size, &subfont, &attr);
+			int attr, noto_score, noto_index;
+			data = fz_lookup_noto_font(ctx, script, language, &size, &subfont, &attr, &noto_index);
 			noto_score = data ? score_stylistic_match(serif, bold, italic, attr & FZ_FONT_ATTR_SERIF, attr & FZ_FONT_ATTR_BOLD, attr & FZ_FONT_ATTR_ITALIC) : 9999;
 			/* If we found a noto font that had a better stylistic score than the user match, use that in preference. */
 			if (data && noto_score < user_score)
 			{
+				/* Drop our reference to the callback supplied font */
 				fz_drop_font(ctx, *fontp);
 				*fontp = NULL;
-				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, subfont, 0);
+				/* If we don't have an instance of this font, make one. */
+				if (ctx->font->notos[noto_index] == NULL)
+					ctx->font->notos[noto_index] = fz_new_font_from_memory(ctx, NULL, data, size, subfont, 0);
+				/* Return a reference to this instance. */
+				*fontp = fz_keep_font(ctx, ctx->font->notos[noto_index]);
 				/* Noto fonts can be embedded. */
 				fz_set_font_embedding(ctx, *fontp, 1);
 			}
