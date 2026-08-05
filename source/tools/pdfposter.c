@@ -43,8 +43,8 @@ static int usage(void)
 		"usage: mutool poster [options] input.pdf [output.pdf]\n"
 		"\t-p -\tpassword\n"
 		"\t-m -\tmargin (overlap) between pages (pts, or %%)\n"
-		"\t-x\tx decimation factor\n"
-		"\t-y\ty decimation factor\n"
+		"\t-x -\tx decimation factor\n"
+		"\t-y -\ty decimation factor\n"
 		"\t-r\tsplit right-to-left\n"
 		);
 	return 1;
