@@ -153,6 +153,22 @@ fz_strcasecmp(const char *a, const char *b)
 	}
 }
 
+static inline int fz_tolower_ascii(int c)
+{
+	if ((unsigned int)c - 'A' < 26)
+		return c | 32;
+	return c;
+}
+
+int
+fz_strcasecmp_ascii(const char *a, const char *b)
+{
+	const unsigned char *l = (void *)a, *r = (void *)b;
+	while (*l && *r && (*l == *r || fz_tolower_ascii(*l) == fz_tolower_ascii(*r)))
+		l++, r++;
+	return fz_tolower_ascii(*l) - fz_tolower_ascii(*r);
+}
+
 char *
 fz_strsep(char **stringp, const char *delim)
 {
