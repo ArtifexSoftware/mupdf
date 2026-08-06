@@ -204,6 +204,16 @@ char *fz_realpath(const char *path, char *resolved_path);
 int fz_strcasecmp(const char *a, const char *b);
 
 /**
+	Case insensitive (Ascii) string comparison.
+
+	This will accept UTF8 strings, and not corrupt them,
+	but won't do the case insensitive folding on non-ascii
+	characters, so will be slightly faster if you know you
+	are only comparing ascii chars.
+*/
+int fz_strcasecmp_ascii(const char *a, const char *b);
+
+/**
 	Case insensitive (UTF8) string comparison.
 
 	n = maximum number of bytes to read from either a or b.
