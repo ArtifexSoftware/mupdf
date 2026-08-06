@@ -22,6 +22,7 @@
 
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+#include "pdf-imp.h"
 
 #include <string.h>
 
@@ -417,8 +418,7 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 		{
 			pdf_obj *f = pdf_array_get(ctx, allfields, i);
 
-			while (pdf_dict_get(ctx, f, PDF_NAME(Parent)))
-				f = pdf_dict_get(ctx, f, PDF_NAME(Parent));
+			f = pdf_parent_root(ctx, f, NULL);
 
 			strip_stale_annot_refs(ctx, f, pagecount, page_object_nums);
 		}

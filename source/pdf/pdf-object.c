@@ -3779,125 +3779,43 @@ int pdf_obj_refs(fz_context *ctx, pdf_obj *obj)
 
 /* Convenience functions */
 
-/*
-	Uses Floyd's cycle finding algorithm, modified to avoid starting
-	the 'slow' pointer for a while.
+static pdf_obj *dgi(fz_context *ctx, pdf_obj *node, void *key_)
+{
+	pdf_obj *key = (pdf_obj *)key_;
 
-	https://www.geeksforgeeks.org/floyds-cycle-finding-algorithm/
-*/
+	return pdf_dict_get(ctx, node, key);
+}
+
 pdf_obj *
 pdf_dict_get_inheritable(fz_context *ctx, pdf_obj *start, pdf_obj *key)
 {
-	pdf_obj *node;
-	pdf_obj *slow;
-	int halfbeat;
-	int repaired = 0;
+	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgi, key);
+}
 
-retry_after_repair:
-	node = start;
-	slow = node;
-	halfbeat = 11; /* Don't start moving slow pointer for a while. */
-	while (node)
-	{
-		pdf_obj *val = pdf_dict_get(ctx, node, key);
-		if (val)
-			return val;
-		node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
-		if (node == slow)
-		{
-			if (repaired == 0)
-			{
-				repaired = 1;
-				pdf_repair_page_tree_parents(ctx, pdf_get_bound_document(ctx, start));
-				goto retry_after_repair;
-			}
-			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in resources");
-		}
-		if (--halfbeat == 0)
-		{
-			slow = pdf_dict_get(ctx, slow, PDF_NAME(Parent));
-			halfbeat = 2;
-		}
-	}
+static pdf_obj *dgpi(fz_context *ctx, pdf_obj *node, void *key_)
+{
+	const char *key = (const char *)key_;
 
-	return NULL;
-
+	return pdf_dict_getp(ctx, node, key);
 }
 
 pdf_obj *
 pdf_dict_getp_inheritable(fz_context *ctx, pdf_obj *start, const char *path)
 {
-	pdf_obj *node;
-	pdf_obj *slow;
-	int halfbeat;
-	int repaired = 0;
+	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgpi, fz_unconst(path));
+}
 
-retry_after_repair:
-	node = start;
-	slow = node;
-	halfbeat = 11; /* Don't start moving slow pointer for a while. */
-	while (node)
-	{
-		pdf_obj *val = pdf_dict_getp(ctx, node, path);
-		if (val)
-			return val;
-		node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
-		if (node == slow)
-		{
-			if (repaired == 0)
-			{
-				repaired = 1;
-				pdf_repair_page_tree_parents(ctx, pdf_get_bound_document(ctx, start));
-				goto retry_after_repair;
-			}
-			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in resources");
-		}
-		if (--halfbeat == 0)
-		{
-			slow = pdf_dict_get(ctx, slow, PDF_NAME(Parent));
-			halfbeat = 2;
-		}
-	}
+static pdf_obj *dgsi(fz_context *ctx, pdf_obj *node, void *key_)
+{
+	const char *key = (const char *)key_;
 
-	return NULL;
+	return pdf_dict_gets(ctx, node, key);
 }
 
 pdf_obj *
 pdf_dict_gets_inheritable(fz_context *ctx, pdf_obj *start, const char *key)
 {
-	pdf_obj *node;
-	pdf_obj *slow;
-	int halfbeat;
-	int repaired = 0;
-
-retry_after_repair:
-	node = start;
-	slow = node;
-	halfbeat = 11; /* Don't start moving slow pointer for a while. */
-	while (node)
-	{
-		pdf_obj *val = pdf_dict_gets(ctx, node, key);
-		if (val)
-			return val;
-		node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
-		if (node == slow)
-		{
-			if (repaired == 0)
-			{
-				repaired = 1;
-				pdf_repair_page_tree_parents(ctx, pdf_get_bound_document(ctx, start));
-				goto retry_after_repair;
-			}
-			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in resources");
-		}
-		if (--halfbeat == 0)
-		{
-			slow = pdf_dict_get(ctx, slow, PDF_NAME(Parent));
-			halfbeat = 2;
-		}
-	}
-
-	return NULL;
+	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgsi, fz_unconst(key));
 }
 
 
