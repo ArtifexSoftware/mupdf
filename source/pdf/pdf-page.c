@@ -22,6 +22,7 @@
 
 #include "mupdf/fitz.h"
 #include "pdf-annot-imp.h"
+#include "pdf-imp.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1484,6 +1485,16 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 	return (fz_page*)page;
 }
 
+static pdf_obj *
+adjust_count(fz_context *ctx, pdf_obj *parent, void *arg)
+{
+	int adj = (int)(intptr_t)arg;
+	int count = pdf_dict_get_int(ctx, parent, PDF_NAME(Count));
+	pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count + adj);
+
+	return NULL;
+}
+
 void
 pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 {
@@ -1497,12 +1508,7 @@ pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 		kids = pdf_dict_get(ctx, parent, PDF_NAME(Kids));
 		pdf_array_delete(ctx, kids, i);
 
-		while (parent)
-		{
-			int count = pdf_dict_get_int(ctx, parent, PDF_NAME(Count));
-			pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count - 1);
-			parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
-		}
+		pdf_walk_parent(ctx, parent, NULL, adjust_count, (void *)(intptr_t)-1);
 
 		/* Adjust page labels */
 		pdf_adjust_page_labels(ctx, doc, at, -1);
@@ -1620,12 +1626,7 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 		pdf_dict_put(ctx, page_ref, PDF_NAME(Parent), parent);
 
 		/* Adjust page counts */
-		while (parent)
-		{
-			count = pdf_dict_get_int(ctx, parent, PDF_NAME(Count));
-			pdf_dict_put_int(ctx, parent, PDF_NAME(Count), count + 1);
-			parent = pdf_dict_get(ctx, parent, PDF_NAME(Parent));
-		}
+		pdf_walk_parent(ctx, parent, NULL, adjust_count, (void *)(intptr_t)1);
 
 		/* Adjust page labels */
 		pdf_adjust_page_labels(ctx, doc, at, 1);

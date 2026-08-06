@@ -1004,7 +1004,6 @@ walk_page_tree(fz_context *ctx, pdf_obj *pages, pdf_cycle_list *cycle_up, pdf_ob
 	}
 }
 
-
 void pdf_repair_page_tree_parents(fz_context *ctx, pdf_document *doc)
 {
 	pdf_obj *pages = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME(Root)), PDF_NAME(Pages));
@@ -1013,4 +1012,81 @@ void pdf_repair_page_tree_parents(fz_context *ctx, pdf_document *doc)
 		return;
 
 	walk_page_tree(ctx, pages, NULL, NULL);
+}
+
+/*
+	Uses Floyd's cycle finding algorithm, modified to avoid starting
+	the 'slow' pointer for a while.
+
+	https://www.geeksforgeeks.org/floyds-cycle-finding-algorithm/
+*/
+pdf_obj *pdf_parent_root(fz_context *ctx, pdf_obj *start, void (*repair)(fz_context *, pdf_document *doc))
+{
+	pdf_obj *node, *slow, *parent;
+	int halfbeat;
+	int repaired = 0;
+
+retry_after_repair:
+	node = slow = start;
+	halfbeat = 11;
+
+	while ((parent = pdf_dict_get(ctx, node, PDF_NAME(Parent))) != NULL)
+	{
+		node = parent;
+		if (node == slow)
+		{
+			if (repaired == 0 && repair != NULL)
+			{
+				fz_warn(ctx, "cycle in parent chain");
+				repaired = 1;
+				repair(ctx, pdf_get_bound_document(ctx, start));
+				goto retry_after_repair;
+			}
+			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in parent chain");
+		}
+		if (--halfbeat == 0)
+		{
+			slow = pdf_dict_get(ctx, slow, PDF_NAME(Parent));
+			halfbeat = 2;
+		}
+	}
+
+	return node;
+}
+
+pdf_obj *pdf_walk_parent(fz_context *ctx, pdf_obj *start, void (*repair)(fz_context *, pdf_document *doc), pdf_obj *(*step)(fz_context *, pdf_obj *, void *), void *step_arg)
+{
+	pdf_obj *node, *slow;
+	int halfbeat;
+	int repaired = 0;
+
+retry_after_repair:
+	node = slow = start;
+	halfbeat = 11;
+
+	while (node)
+	{
+		pdf_obj *obj = step(ctx, node, step_arg);
+		if (obj)
+			return obj;
+		node = pdf_dict_get(ctx, node, PDF_NAME(Parent));
+		if (node == slow)
+		{
+			if (repaired == 0 && repair != NULL)
+			{
+				fz_warn(ctx, "cycle in parent chain");
+				repaired = 1;
+				repair(ctx, pdf_get_bound_document(ctx, start));
+				goto retry_after_repair;
+			}
+			fz_throw(ctx, FZ_ERROR_FORMAT, "cycle in parent chain");
+		}
+		if (--halfbeat == 0)
+		{
+			slow = pdf_dict_get(ctx, slow, PDF_NAME(Parent));
+			halfbeat = 2;
+		}
+	}
+
+	return NULL;
 }

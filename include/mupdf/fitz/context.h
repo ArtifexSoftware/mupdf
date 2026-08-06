@@ -1071,4 +1071,12 @@ fz_drop_imp16_aux(fz_context *ctx, void *p, int16_t *refs)
 	return 0;
 }
 
+static inline void *
+fz_unconst(const void *cp)
+{
+	union { void *p; const void *cp; } u;
+	u.cp = cp;
+	return u.p;
+}
+
 #endif
