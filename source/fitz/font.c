@@ -2400,9 +2400,14 @@ fz_extract_ttf_from_ttc(fz_context *ctx, fz_font *font)
 			fz_write_uint32_be(ctx, out, fz_read_uint32(ctx, stream)); /* checksum */
 			bd[i].offset = fz_read_uint32(ctx, stream);
 			fz_write_uint32_be(ctx, out, start_pos);
+			bd[i].length = fz_read_uint32(ctx, stream);
 			if (tag == CHR('h','e','a','d'))
+			{
+				if (bd[i].length < 12)
+					fz_throw(ctx, FZ_ERROR_FORMAT, "head block of font is illegally short");
 				csumpos = start_pos + 8;
-			fz_write_uint32_be(ctx, out, bd[i].length = fz_read_uint32(ctx, stream));
+			}
+			fz_write_uint32_be(ctx, out, bd[i].length);
 			start_pos += (bd[i].length + 3) & ~3;
 		}
 
