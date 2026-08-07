@@ -3802,7 +3802,7 @@ static pdf_obj *dgpi(fz_context *ctx, pdf_obj *node, void *key_)
 pdf_obj *
 pdf_dict_getp_inheritable(fz_context *ctx, pdf_obj *start, const char *path)
 {
-	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgpi, fz_unconst(path));
+	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgpi, (char *)path);
 }
 
 static pdf_obj *dgsi(fz_context *ctx, pdf_obj *node, void *key_)
@@ -3815,7 +3815,7 @@ static pdf_obj *dgsi(fz_context *ctx, pdf_obj *node, void *key_)
 pdf_obj *
 pdf_dict_gets_inheritable(fz_context *ctx, pdf_obj *start, const char *key)
 {
-	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgsi, fz_unconst(key));
+	return pdf_walk_parent(ctx, start, pdf_repair_page_tree_parents, dgsi, (char *)key);
 }
 
 
