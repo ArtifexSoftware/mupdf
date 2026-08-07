@@ -677,7 +677,7 @@ static const char *match_exact(const char *h, const char *n)
 	return NULL;
 }
 
-static const char *find_exact(fz_context *ctx, void *dummy, const char *s, const char *p, const char *needle, const char **endp)
+static const char *find_exact(fz_context *ctx, void *dummy, const char *s, const char *p, const char *needle, const char **endp, fz_cookie *cookie)
 {
 	const char *end;
 	while (p)
@@ -690,7 +690,7 @@ static const char *find_exact(fz_context *ctx, void *dummy, const char *s, const
 	return *endp = NULL, NULL;
 }
 
-static const char *find_rev_exact(fz_context *ctx, void *dummy, const char *s, const char *p, const char *needle, const char **endp)
+static const char *find_rev_exact(fz_context *ctx, void *dummy, const char *s, const char *p, const char *needle, const char **endp, fz_cookie *cookie)
 {
 	const char *end;
 	p = retreat_one_utf8(s, p);
@@ -705,7 +705,7 @@ static const char *find_rev_exact(fz_context *ctx, void *dummy, const char *s, c
 	return *endp = NULL, NULL;
 }
 
-static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const char *p, const char *needle, const char **endp)
+static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const char *p, const char *needle, const char **endp, fz_cookie *cookie)
 {
 	struct fz_regex **prog = (struct fz_regex **)arg;
 	struct fz_regmatch m;
@@ -721,12 +721,14 @@ static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const 
 		if (m.sub[0].ep - m.sub[0].sp > 0 && !is_marking_nonspacing(m.sub[0].ep))
 			return *endp = m.sub[0].ep, m.sub[0].sp;
 		p = advance_one_utf8(s, p);
+		if (cookie && cookie->abort)
+			break;
 	}
 
 	return *endp = NULL, NULL;
 }
 
-static const char *find_rev_regexp(fz_context *ctx, void *arg, const char *s, const char *p, const char *needle, const char **endp)
+static const char *find_rev_regexp(fz_context *ctx, void *arg, const char *s, const char *p, const char *needle, const char **endp, fz_cookie *cookie)
 {
 	/* This is pretty horrible.
 	 * We search from the start for a match; if we fail to find it, no match.
@@ -735,7 +737,7 @@ static const char *find_rev_regexp(fz_context *ctx, void *arg, const char *s, co
 	 */
 	const char *start, *later_end, *later_start;
 
-	start = find_regexp(ctx, arg, s, s, needle, endp);
+	start = find_regexp(ctx, arg, s, s, needle, endp, cookie);
 	if (start == NULL || (start - s) >= (p - s))
 	{
 		/* No match at all. */
@@ -746,7 +748,7 @@ static const char *find_rev_regexp(fz_context *ctx, void *arg, const char *s, co
 	/* Now look for a later one */
 	while (1)
 	{
-		later_start = find_regexp(ctx, arg, s, *endp, needle, &later_end);
+		later_start = find_regexp(ctx, arg, s, *endp, needle, &later_end, cookie);
 		if (later_start == NULL || (later_end - s) > (p - s))
 			return start;
 		start = later_start;
@@ -773,7 +775,7 @@ typedef struct
 	 * needle in the haystack (and *endp = one byte beyond
 	 * the last character included in the match).
 	 */
-	const char *(*find)(fz_context *ctx, void *find_arg, const char *haystack, const char *current, const char *needle, const char **endp);
+	const char *(*find)(fz_context *ctx, void *find_arg, const char *haystack, const char *current, const char *needle, const char **endp, fz_cookie *cookie);
 
 	/* find_rev: Search for the needle backwards in the haystack.
 	 *
@@ -782,7 +784,7 @@ typedef struct
 	 * needle in the haystack (and *endp = one byte beyond
 	 * the last character included in the match).
 	 */
-	const char *(*find_rev)(fz_context *ctx, void *find_arg, const char *haystack, const char *current, const char *needle, const char **endp);
+	const char *(*find_rev)(fz_context *ctx, void *find_arg, const char *haystack, const char *current, const char *needle, const char **endp, fz_cookie *cookie);
 
 	/* fin: Maybe NULL. If not, it will be called whenever the
 	 * search process has finished (after a successful init).
@@ -1694,7 +1696,7 @@ request_page(fz_context *ctx, fz_search *search, int seq, search_page *page)
 }
 
 static fz_search_result
-fz_search_imp(fz_context *ctx, fz_search *search, int direction)
+fz_search_imp(fz_context *ctx, fz_search *search, int direction, fz_cookie *cookie)
 {
 	fz_search_result result;
 	const char *spun_begin, *spun_end, *p;
@@ -1811,8 +1813,15 @@ restart:
 		search->combined_spun_haystack,
 		search->combined_spun_haystack + search->current_spun_pos,
 		search->spun_needle,
-		&spun_end
+		&spun_end,
+		cookie
 	);
+
+	if (cookie && cookie->abort)
+	{
+		result.reason = FZ_SEARCH_ABORT;
+		return result;
+	}
 
 	if (spun_begin && spun_end)
 	{
@@ -1908,12 +1917,22 @@ restart:
 
 fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search)
 {
-	return fz_search_imp(ctx, search, 1);
+	return fz_search_imp(ctx, search, 1, NULL);
 }
 
 fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search)
 {
-	return fz_search_imp(ctx, search, -1);
+	return fz_search_imp(ctx, search, -1, NULL);
+}
+
+fz_search_result fz_search_forwards_with_cookie(fz_context *ctx, fz_search *search, fz_cookie *cookie)
+{
+	return fz_search_imp(ctx, search, 1, cookie);
+}
+
+fz_search_result fz_search_backwards_with_cookie(fz_context *ctx, fz_search *search, fz_cookie *cookie)
+{
+	return fz_search_imp(ctx, search, -1, cookie);
 }
 
 void fz_feed_search(fz_context *ctx, fz_search *search, fz_stext_page *page, int seq)
@@ -1984,6 +2003,12 @@ void fz_drop_search(fz_context *ctx, fz_search *search)
 int
 fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options)
 {
+	return fz_match_stext_page_cb_with_cookie(ctx, page, needle, cb, opaque, options, NULL);
+}
+
+int
+fz_match_stext_page_cb_with_cookie(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options, fz_cookie *cookie)
+{
 	fz_search *search = fz_new_search(ctx, needle, options);
 	fz_search_result res;
 	fz_quad *quads = NULL;
@@ -1999,7 +2024,7 @@ fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle,
 
 		do
 		{
-			res = fz_search_forwards(ctx, search);
+			res = fz_search_forwards_with_cookie(ctx, search, cookie);
 			if (res.reason == FZ_SEARCH_MORE_INPUT)
 			{
 				fz_feed_search(ctx, search, NULL, res.u.seq_needed);
@@ -2022,7 +2047,7 @@ fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle,
 				hits++;
 			}
 		}
-		while (res.reason != FZ_SEARCH_COMPLETE);
+		while (res.reason != FZ_SEARCH_COMPLETE && res.reason != FZ_SEARCH_ABORT);
 	}
 	fz_always(ctx)
 	{
@@ -2091,6 +2116,12 @@ oldsearch_cb(fz_context *ctx, void *opaque, int num_quads, fz_quad *quads)
 int
 fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads)
 {
+	return fz_search_stext_page_with_cookie(ctx, page, needle, hit_mark, quads, max_quads, NULL);
+}
+
+int
+fz_search_stext_page_with_cookie(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads, fz_cookie *cookie)
+{
 	oldsearch_data data;
 	match2search_data md = { oldsearch_cb, &data };
 
@@ -2099,13 +2130,19 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, i
 	data.max_quads = max_quads;
 	data.fill = 0;
 	data.hit = 0;
-	(void)fz_match_stext_page_cb(ctx, page, needle, match2search, &md, FZ_SEARCH_IGNORE_CASE);
+	(void)fz_match_stext_page_cb_with_cookie(ctx, page, needle, match2search, &md, FZ_SEARCH_IGNORE_CASE, cookie);
 
 	return data.fill; /* Return the number of quads we have read */
 }
 
 int
 fz_match_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads, fz_search_options options)
+{
+	return fz_match_stext_page_with_cookie(ctx, page, needle, hit_mark, quads, max_quads, options, NULL);
+}
+
+int
+fz_match_stext_page_with_cookie(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads, fz_search_options options, fz_cookie *cookie)
 {
 	oldsearch_data data;
 	match2search_data md = { oldsearch_cb, &data };
@@ -2116,7 +2153,7 @@ fz_match_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, in
 	data.fill = 0;
 	data.hit = 0;
 
-	(void)fz_match_stext_page_cb(ctx, page, needle, match2search, &md, options);
+	(void)fz_match_stext_page_cb_with_cookie(ctx, page, needle, match2search, &md, options, cookie);
 
 	return data.fill; /* Return the number of quads we have read */
 }

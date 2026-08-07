@@ -657,6 +657,19 @@ void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page 
 int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max);
 
 /**
+	Search for occurrence of 'needle' in text page, with a cookie
+	to allow us to abort if required.
+	Case insensitive match.
+
+	Return the number of quads and store hit quads in the passed in
+	array.
+
+	NOTE: This is an experimental interface and subject to change
+	without notice.
+*/
+int fz_search_stext_page_with_cookie(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *quads, int max_quads, fz_cookie *cookie);
+
+/**
 	Callback function for use in searching.
 
 	Called with the list of quads that correspond to a single hit.
@@ -1057,7 +1070,10 @@ typedef enum fz_search_reason
 	FZ_SEARCH_MATCH = 1,
 
 	/* Search complete */
-	FZ_SEARCH_COMPLETE
+	FZ_SEARCH_COMPLETE = 2,
+
+	/* Search aborted via cookie */
+	FZ_SEARCH_ABORT = 3
 } fz_search_reason;
 
 typedef struct fz_search_quad
@@ -1124,6 +1140,32 @@ fz_search_result fz_search_forwards(fz_context *ctx, fz_search *search);
 fz_search_result fz_search_backwards(fz_context *ctx, fz_search *search);
 
 /**
+	Continue searching forwards for the next match.
+
+	As for fz_search_forwards, but with the ability to abort
+	long running searches by using an optional cookie. Currently,
+	only the 'abort' field in the cookie is used, but the rest
+	should be zero-inited for future compatibility.
+
+	NOTE: This is an experimental interface and subject to change
+	without notice.
+*/
+fz_search_result fz_search_forwards_with_cookie(fz_context *ctx, fz_search *search, fz_cookie *cookie);
+
+/**
+	Continue searching backwards for the next match.
+
+	As for fz_search_backwards, but with the ability to abort
+	long running searches by using an optional cookie. Currently,
+	only the 'abort' field in the cookie is used, but the rest
+	should be zero-inited for future compatibility.
+
+	NOTE: This is an experimental interface and subject to change
+	without notice.
+*/
+fz_search_result fz_search_backwards_with_cookie(fz_context *ctx, fz_search *search, fz_cookie *cookie);
+
+/**
 	Supply more stext to be searched; ownership of the stext page is
 	passed in.
 
@@ -1167,6 +1209,17 @@ void fz_drop_search(fz_context *ctx, fz_search *search);
 */
 int fz_match_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max, fz_search_options options);
 
+/*
+	As for fz_match_stext_page, but with the addition that an
+	optional cookie can be used to abort operation. Only the
+	abort field in the cookie is currently used, but the rest of
+	the structure should be zero inited for future compatibility.
+
+	NOTE: This is an experimental interface and subject to change
+	without notice.
+*/
+int fz_match_stext_page_with_cookie(fz_context *ctx, fz_stext_page *page, const char *needle, int *hit_mark, fz_quad *hit_bbox, int hit_max, fz_search_options options, fz_cookie *cookie);
+
 /**
 	Search for occurrence of 'needle' in text page.
 
@@ -1181,6 +1234,17 @@ int fz_match_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle
 	without notice.
 */
 int fz_match_stext_page_cb(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options);
+
+/*
+	As for fz_match_stext_page_cb, but with the addition that an
+	optional cookie can be used to abort operation. Only the
+	abort field in the cookie is currently used, but the rest of
+	the structure should be zero inited for future compatibility.
+
+	NOTE: This is an experimental interface and subject to change
+	without notice.
+*/
+int fz_match_stext_page_cb_with_cookie(fz_context *ctx, fz_stext_page *page, const char *needle, fz_match_callback_fn *cb, void *opaque, fz_search_options options, fz_cookie *cookie);
 
 /*
 	Allocator function to make a new STRUCT stext block to be used in
