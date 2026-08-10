@@ -337,10 +337,11 @@ int fz_is_page_range(fz_context *ctx, const char *s);
 const char *fz_parse_page_range(fz_context *ctx, const char *s, int *a, int *b, int n);
 
 /**
-	Unicode aware tolower and toupper functions.
+	Unicode aware tolower and toupper and isalpha functions.
 */
 int fz_tolower(int c);
 int fz_toupper(int c);
+int fz_isalpha(int c);
 
 /**
 	Bit unpacking.

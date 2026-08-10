@@ -93,6 +93,19 @@ fz_toupper(int c)
 	return c;
 }
 
+int
+fz_isalpha(int c)
+{
+	const int *p;
+	p = fz_ucd_bsearch(c, ucd_alpha2, nelem(ucd_alpha2)/2, 2);
+	if(p && c >= p[0] && c <= p[1])
+		return 1;
+	p = fz_ucd_bsearch(c, ucd_alpha1, nelem(ucd_alpha1), 1);
+	if(p && c == p[0])
+		return 1;
+	return 0;
+}
+
 size_t
 fz_strnlen(const char *s, size_t n)
 {

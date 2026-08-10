@@ -21,9 +21,7 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-
-#include "../thirdparty/mujs/regexp.h"
-
+#include "mupdf/fitz/regexp.h"
 #include "mupdf/ucdn.h"
 
 #include <string.h>
@@ -709,13 +707,13 @@ static const char *find_rev_exact(fz_context *ctx, void *dummy, const char *s, c
 
 static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const char *p, const char *needle, const char **endp)
 {
-	Reprog **prog = (Reprog **)arg;
-	Resub m;
+	struct fz_regex **prog = (struct fz_regex **)arg;
+	struct fz_regmatch m;
 
 	while (p)
 	{
 		int bol = (p == s) || (p[-1] == '\n');
-		int result = js_regexec(*prog, p, &m, (bol ? 0 : REG_NOTBOL) | REG_RUNAWAY);
+		int result = fz_regexec(ctx, *prog, p, &m, (bol ? 0 : REG_NOTBOL) | REG_RUNAWAY);
 		if (result < 0)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "regexec failure");
 		if (result == 1)
@@ -805,30 +803,22 @@ static const fz_match_finder simple_finder =
 static void
 init_regexp(fz_context *ctx, void *find_arg, const char *needle)
 {
-	Reprog **progp = (void *)find_arg;
-	const char *error;
-
-	*progp = js_regcomp(needle, REG_NEWLINE, &error);
-	if (*progp == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp: %s", error);
+	struct fz_regex **progp = (void *)find_arg;
+	*progp = fz_regcomp(ctx, needle, REG_NEWLINE);
 }
 
 static void
 init_regexp_insensitive(fz_context *ctx, void *find_arg, const char *needle)
 {
-	Reprog **progp = (void *)find_arg;
-	const char *error;
-
-	*progp = js_regcomp(needle, REG_NEWLINE | REG_ICASE, &error);
-	if (*progp == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp: %s", error);
+	struct fz_regex **progp = (void *)find_arg;
+	*progp = fz_regcomp(ctx, needle, REG_NEWLINE | REG_ICASE);
 }
 
 static void
 fin_regexp(fz_context *ctx, void *find_arg)
 {
-	Reprog **progp = (void *)find_arg;
-	js_regfree(*progp);
+	struct fz_regex **progp = (void *)find_arg;
+	fz_regfree(ctx, *progp);
 }
 
 static const fz_match_finder regexp_finder =
