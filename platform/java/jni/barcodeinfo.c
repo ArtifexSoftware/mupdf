@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Artifex Software, Inc.
+// Copyright (C) 2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -38,8 +38,7 @@ FUN(BarcodeInfo_toString)(JNIEnv *env, jobject self)
 	jcontents = (*env)->GetObjectField(env, self, fid_BarcodeInfo_contents);
 
 	contents = (*env)->GetStringUTFChars(env, jcontents, NULL);
-	if (!contents)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot not get UTF string");
+	if (!contents) jni_throw_run(env, "can not get contents UTF string");
 
 	fz_try(ctx)
 		str = fz_asprintf(ctx, "{ type = %d, contents = %s }",
@@ -47,7 +46,7 @@ FUN(BarcodeInfo_toString)(JNIEnv *env, jobject self)
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jcontents, contents);
 	fz_catch(ctx)
-		fz_rethrow(ctx);
+		jni_rethrow(env, ctx);
 
 	jstr = (*env)->NewStringUTF(env, str);
 	fz_free(ctx, str);
