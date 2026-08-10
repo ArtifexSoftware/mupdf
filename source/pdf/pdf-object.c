@@ -247,7 +247,7 @@ pdf_new_indirect(fz_context *ctx, pdf_document *doc, int64_t num, int gen)
 	pdf_obj_ref *obj;
 	if (num < 0 || num > PDF_MAX_OBJECT_NUMBER)
 	{
-		fz_warn(ctx, "invalid object number (%ld)", num);
+		fz_warn(ctx, "invalid object number (%d)", (int)num);
 		return PDF_NULL;
 	}
 	if (gen < 0 || gen > PDF_MAX_GEN_NUMBER)
