@@ -2889,6 +2889,9 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 		pdf_sync_open_pages(ctx, doc);
 
+		// mark incremental sections as having been saved
+		doc->num_incremental_sections = 0;
+
 		pdf_end_operation(ctx, doc);
 	}
 	fz_always(ctx)
