@@ -871,6 +871,9 @@ pdf_show_image_imp(fz_context *ctx, pdf_run_processor *pr, fz_image *image, fz_m
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	fz_color_params cp = gstate->fill.color_params;
 
+	if (!fz_is_valid_rect(bbox))
+		return;
+
 	if (image->has_intent)
 		cp.ri = image->intent;
 
@@ -987,6 +990,8 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			fz_closepath(ctx, path);
 
 		bbox = fz_bound_path(ctx, path, (dostroke ? gstate->stroke_state : NULL), gstate->ctm);
+		if (!fz_is_valid_rect(bbox))
+			dofill = dostroke = 0;
 
 		if (pr->super.hidden)
 			dostroke = dofill = 0;
@@ -1163,6 +1168,8 @@ pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int flush_clip)
 		tb = fz_transform_rect(pr->tos.text_bbox, gstate->ctm);
 		if (dostroke)
 			tb = fz_adjust_rect_for_stroke(ctx, tb, gstate->stroke_state, gstate->ctm);
+		if (!fz_is_valid_rect(tb))
+			dofill = dostroke = 0;
 
 		/* Don't bother sending a text group with nothing in it */
 		if (!text->head)
