@@ -208,11 +208,8 @@ static void
 drop_libarchive_archive(fz_context *ctx, fz_archive *arch_)
 {
 	fz_libarchive_archive *arch = (fz_libarchive_archive *)arch_;
-	int i;
 
 	archive_read_free(arch->archive);
-	for (i = 0; i < arch->entries_len; ++i)
-		fz_free(ctx, arch->entries[i]);
 	fz_free(ctx, arch->entries);
 	arch->archive = NULL;
 }
@@ -261,7 +258,7 @@ lookup_archive_entry(fz_context *ctx, fz_libarchive_archive *arch, const char *n
 
 	for (idx = 0; idx < arch->entries_len; idx++)
 	{
-		if (!strcmp(name, (const char *)arch->entries[idx]->name))
+		if (!strcmp(name, (const char *)arch->entries[idx].name))
 			return idx;
 	}
 
@@ -279,7 +276,7 @@ static const char *list_libarchive_entry(fz_context *ctx, fz_archive *arch_, int
 	fz_libarchive_archive *arch = (fz_libarchive_archive *)arch_;
 	if (idx < 0 || idx >= arch->entries_len)
 		return NULL;
-	return (const char *)arch->entries[idx]->name;
+	return (const char *)arch->entries[idx].name;
 }
 
 static int count_libarchive_entries(fz_context *ctx, fz_archive *arch_)
@@ -325,7 +322,7 @@ read_libarchive_entry(fz_context *ctx, fz_archive *arch_, const char *name)
 			fz_throw(ctx, FZ_ERROR_LIBRARY, "Failed to read archive entry header");
 
 		arch->current_entry_idx++;
-		size = arch->entries[idx]->len;
+		size = arch->entries[idx].len;
 		ubuf = fz_new_buffer(ctx, size);
 		ubuf->len = size;
 
