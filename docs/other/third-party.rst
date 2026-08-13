@@ -49,7 +49,7 @@ These are the third party libraries used by :title:`MuPDF`.
      - Deflate compression
      - zlib License
    * - `gumbo-parser`_
-     - 0.10.1 with patches
+     - 0.13.2 with upstream and local patches
      - HTML5 parser
      - Apache 2.0
    * - `brotli`_
@@ -112,7 +112,7 @@ These are the third party libraries used by :title:`MuPDF`.
 .. _Incompatible fork of lcms2: http://cgit.ghostscript.com/cgi-bin/cgit.cgi/thirdparty-lcms2.git/
 .. _openjpeg: http://www.openjpeg.org/
 .. _zlib: http://www.zlib.net/
-.. _gumbo-parser: https://github.com/google/gumbo-parser
+.. _gumbo-parser: https://codeberg.org/gumbo-parser/gumbo-parser.git
 .. _brotli: https://brotli.org/
 .. _FreeGLUT: http://freeglut.sourceforge.net/
 .. _curl: http://curl.haxx.se/

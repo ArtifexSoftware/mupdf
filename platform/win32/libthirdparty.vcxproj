@@ -429,6 +429,7 @@
     <ClCompile Include="..\..\thirdparty\freetype\src\type1\type1.c" />
     <ClCompile Include="..\..\thirdparty\gumbo-parser\src\attribute.c" />
     <ClCompile Include="..\..\thirdparty\gumbo-parser\src\char_ref.c" />
+    <ClCompile Include="..\..\thirdparty\gumbo-parser\src\char_ref_gperf.c" />
     <ClCompile Include="..\..\thirdparty\gumbo-parser\src\error.c" />
     <ClCompile Include="..\..\thirdparty\gumbo-parser\src\parser.c" />
     <ClCompile Include="..\..\thirdparty\gumbo-parser\src\string_buffer.c" />

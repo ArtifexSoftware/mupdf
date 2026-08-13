@@ -795,6 +795,9 @@
     <ClCompile Include="..\..\thirdparty\cmark-gfm\extensions\autoheaderid.c">
       <Filter>cmark-gfm\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\gumbo-parser\src\char_ref_gperf.c">
+      <Filter>gumbo-parser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h">
