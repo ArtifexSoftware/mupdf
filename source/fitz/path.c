@@ -2096,3 +2096,94 @@ fz_path_is_closed(fz_context *ctx, const fz_path *path)
 
 	return !arg.unclosed;
 }
+
+typedef struct
+{
+	fz_output *out;
+} dump_arg;
+
+static void
+dump_moveto(fz_context *ctx, void *arg, float x, float y)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g m ", x, y);
+}
+
+static void
+dump_lineto(fz_context *ctx, void *arg, float x, float y)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g l ", x, y);
+}
+
+static void
+dump_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g %g %g %g %g c ", x1, y1, x2, y2, x3, y3);
+}
+
+static void
+dump_closepath(fz_context *ctx, void *arg)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "h ");
+}
+
+static void
+dump_quadto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g %g %g q ", x1, y1, x2, y2);
+}
+
+static void
+dump_curvetov(fz_context *ctx, void *arg, float x2, float y2, float x3, float y3)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g %g %g v ", x2, y2, x3, y3);
+}
+
+static void
+dump_curvetoy(fz_context *ctx, void *arg, float x1, float y1, float x3, float y3)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g %g %g y ", x1, y1, x3, y3);
+}
+
+static void
+dump_rectto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2)
+{
+	dump_arg *dump = (dump_arg *)arg;
+	fz_write_printf(ctx, dump->out, "%g %g %g %g re ", x1, y1, x2, y2);
+}
+
+static const fz_path_walker dump_path_walker =
+{
+	dump_moveto,
+	dump_lineto,
+	dump_curveto,
+	dump_closepath,
+	dump_quadto,
+	dump_curvetov,
+	dump_curvetoy,
+	dump_rectto
+};
+
+void
+fz_dump_path(fz_context *ctx, const fz_path *path, fz_output *out)
+{
+	dump_arg arg = { 0 };
+
+	arg.out = out;
+
+	fz_write_printf(ctx, out, "[ ");
+	fz_walk_path(ctx, path, &dump_path_walker, &arg);
+	fz_write_printf(ctx, out, "]\n");
+}
+
+void
+fz_debug_path(fz_context *ctx, const fz_path *path)
+{
+	fz_dump_path(ctx, path, fz_stddbg(ctx));
+}

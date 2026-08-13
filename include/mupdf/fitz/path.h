@@ -486,5 +486,10 @@ int fz_path_is_rect_with_bounds(fz_context *ctx, const fz_path *path, fz_matrix 
 */
 int fz_path_is_closed(fz_context *ctx, const fz_path *path);
 
+/**
+	Handy debugging functions.
+*/
+void fz_dump_path(fz_context *ctx, const fz_path *path, fz_output *out);
+void fz_debug_path(fz_context *ctx, const fz_path *path);
 
 #endif
