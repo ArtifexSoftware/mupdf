@@ -969,6 +969,7 @@ pdfocr_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 	fz_free(ctx, writer->compbuf);
 	fz_free(ctx, writer->page);
 	fz_free(ctx, writer->xref);
+	fz_drop_pixmap(ctx, writer->skew_bitmap);
 	fz_drop_pixmap(ctx, writer->ocrbitmap);
 	ocr_fin(ctx, writer->tessapi);
 }
