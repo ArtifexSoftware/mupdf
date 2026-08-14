@@ -1202,6 +1202,7 @@ static void xml_from_gumbo(fz_context *ctx, struct parser *parser, GumboNode *no
 	case GUMBO_NODE_DOCUMENT:
 	case GUMBO_NODE_COMMENT:
 	case GUMBO_NODE_TEMPLATE:
+	case GUMBO_NODE_PROCESSING_INSTRUCTION:
 		break;
 	}
 }
