@@ -533,8 +533,8 @@ docs-markdown:
 
 docs-clean:
 	rm -rf build/docs
-	rm -rf build/venv-docs
-	rm -rf build/.doctrees
+	rm -rf build/sphinx-venv
+	rm -rf build/sphinx-doctrees
 
 install-docs-html: docs
 	mkdir -p $(DESTDIR)$(docdir)
