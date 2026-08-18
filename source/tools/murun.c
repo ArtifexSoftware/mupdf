@@ -4262,7 +4262,7 @@ static void ffi_Document_resolveLink(js_State *J)
 
 	if (js_isuserdata(J, 1, "fz_link"))
 	{
-		fz_link *link = js_touserdata(J, 0, "fz_link");
+		fz_link *link = js_touserdata(J, 1, "fz_link");
 		uri = link->uri;
 	}
 	else
@@ -4285,7 +4285,7 @@ static void ffi_Document_resolveLinkDestination(js_State *J)
 
 	if (js_isuserdata(J, 1, "fz_link"))
 	{
-		fz_link *link = js_touserdata(J, 0, "fz_link");
+		fz_link *link = js_touserdata(J, 1, "fz_link");
 		uri = link->uri;
 	}
 	else
