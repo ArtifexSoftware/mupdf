@@ -652,11 +652,11 @@ endif
 #
 VENV_FLAG ?= --venv
 c++-%: shared-%
-	./scripts/mupdfwrap.py $(VENV_FLAG) -d $(OUT) -b 01
+	PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/mupdfwrap.py $(VENV_FLAG) -d $(OUT) -b 01
 python-%: c++-%
-	./scripts/mupdfwrap.py $(VENV_FLAG) -d $(OUT) -b 23
+	PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/mupdfwrap.py $(VENV_FLAG) -d $(OUT) -b 23
 csharp-%: c++-%
-	./scripts/mupdfwrap.py $(VENV_FLAG) -d $(OUT) -b --csharp 23
+	PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/mupdfwrap.py $(VENV_FLAG) -d $(OUT) -b --csharp 23
 
 # Installs of C, C++, Python and C# shared libraries
 #
