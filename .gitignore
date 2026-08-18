@@ -11,7 +11,6 @@ generated/resources/fonts/han
 generated/resources/fonts/noto
 generated/resources/fonts/sil
 tags
-cscope.*
 node_modules
 docs/generated
 docs/_static/generated
@@ -36,11 +35,10 @@ user.make
 *.so
 *.dll
 DerivedData
-.venv
 
 # PyMuPDF generated build files
-__pycache__
 platform/c++
+platform/csharp
 platform/python
 
 platform/java/local.properties
