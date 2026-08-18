@@ -715,7 +715,7 @@ static const char *find_regexp(fz_context *ctx, void *arg, const char *s, const 
 	while (p)
 	{
 		int bol = (p == s) || (p[-1] == '\n');
-		int result = js_regexec(*prog, p, &m, bol ? 0 : REG_NOTBOL);
+		int result = js_regexec(*prog, p, &m, (bol ? 0 : REG_NOTBOL) | REG_RUNAWAY);
 		if (result < 0)
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "regexec failure");
 		if (result == 1)
@@ -806,20 +806,22 @@ static void
 init_regexp(fz_context *ctx, void *find_arg, const char *needle)
 {
 	Reprog **progp = (void *)find_arg;
+	const char *error;
 
-	*progp = js_regcomp(needle, REG_NEWLINE, NULL);
+	*progp = js_regcomp(needle, REG_NEWLINE, &error);
 	if (*progp == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp failure");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp: %s", error);
 }
 
 static void
 init_regexp_insensitive(fz_context *ctx, void *find_arg, const char *needle)
 {
 	Reprog **progp = (void *)find_arg;
+	const char *error;
 
-	*progp = js_regcomp(needle, REG_NEWLINE | REG_ICASE, NULL);
+	*progp = js_regcomp(needle, REG_NEWLINE | REG_ICASE, &error);
 	if (*progp == NULL)
-		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp failure");
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "regcomp: %s", error);
 }
 
 static void
