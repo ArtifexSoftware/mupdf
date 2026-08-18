@@ -924,7 +924,7 @@ try:
 finally:
     del sys.path[0]
 
-autovenv.enter()
+autovenv.enter(venv_prefix="build/mupdfwrap-autovenv")
 
 # Install/import pipcl. We don't pass 'pipcl' to above call to autovenv.enter()
 # because this would do `pip install pipcl`, which seems to fail if we are
@@ -3071,7 +3071,7 @@ def main2():
             elif arg in ('--venv' '--venv-force-reinstall'):
                 force_reinstall = ' --force-reinstall' if arg == '--venv-force-reinstall' else ''
                 assert venv_arg_i == 1, f'If specified, {arg} should be the first argument. {venv_arg_i=}'
-                venv = f'venv-mupdfwrap-{state.python_version()}-{state.cpu_name()}'
+                venv = f'build/mupdfwrap-venv-{state.python_version()}-{state.cpu_name()}'
                 # Oddly, shlex.quote(sys.executable), which puts the name
                 # inside single quotes, doesn't work - we get error `The
                 # filename, directory name, or volume label syntax is
