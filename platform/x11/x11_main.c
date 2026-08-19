@@ -376,8 +376,6 @@ void wincopyfile(pdfapp_t *app, char *source, char *target)
 
 static void cleanup(pdfapp_t *app)
 {
-	fz_context *ctx = app->ctx;
-
 	pdfapp_close(app);
 
 	XDestroyWindow(xdpy, xwin);
@@ -392,8 +390,6 @@ static void cleanup(pdfapp_t *app)
 	XFreeGC(xdpy, xgc);
 
 	XCloseDisplay(xdpy);
-
-	fz_drop_context(ctx);
 }
 
 static int winresolution(void)
@@ -1213,13 +1209,14 @@ int main(int argc, char **argv)
 		}
 
 		cleanup(&gapp);
-
 	}
 	fz_catch(ctx)
 	{
 		fz_report_error(ctx);
+		fz_drop_context(ctx);
 		return 1;
 	}
 
+	fz_drop_context(ctx);
 	return 0;
 }
