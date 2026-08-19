@@ -3,18 +3,6 @@
 C API
 =====
 
-.. raw:: html
+The C API can be found `in another castle`_.
 
-    <style>
-        .toc-drawer {
-            display: none;
-        }
-        .main .content {
-            min-width: calc(100% - 6em) !important;
-            padding: 0 3em !important;
-        }
-    </style>
-
-    <div>
-        <iframe style="width: 100%; height: 90vh; border: none; padding:0; margin:0;" src="../../../_static/generated/c/html/index.html"></iframe>
-    </div>
+.. _in another castle: https://docs.mupdf.com/heads/master/c

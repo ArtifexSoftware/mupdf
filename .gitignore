@@ -12,8 +12,6 @@ generated/resources/fonts/noto
 generated/resources/fonts/sil
 tags
 node_modules
-docs/generated
-docs/_static/generated
 
 # Editor and file browser turds:
 *~
