@@ -179,7 +179,7 @@ def enter(*,
 
     # Get command to enter venv.
     if platform.system() == 'Windows':
-        venv_enter = f'{venv_name}\\Scripts\\activate'
+        venv_enter = f'"{venv_name}\\Scripts\\activate"'
     else:
         venv_enter = f'. {venv_name}/bin/activate'
 
