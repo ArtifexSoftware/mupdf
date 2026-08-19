@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -892,6 +892,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-b -\temulate progressive loading (kbps)\n");
 #endif
 	fprintf(stderr, "\t-v\tshow version\n");
+	fprintf(stderr, "\t-f\tstart in fullscreen mode\n");
 	exit(1);
 }
 
@@ -930,7 +931,7 @@ int main(int argc, char **argv)
 
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:Xb:c:v")) != -1)
+	while ((c = fz_getopt(argc, argv, "Ip:r:A:C:W:H:S:U:Xb:c:vf")) != -1)
 	{
 		switch (c)
 		{
@@ -951,6 +952,7 @@ int main(int argc, char **argv)
 		case 'X': gapp.publisher_css = 0; break;
 		case 'b': kbps = fz_atoi(fz_optarg); break;
 		case 'v': version(); break;
+		case 'f': gapp.fullscreen = 1; break;
 		default: usage(argv[0]); break;
 		}
 	}
@@ -997,6 +999,9 @@ int main(int argc, char **argv)
 		FD_ZERO(&fds);
 
 		signal(SIGHUP, signal_handler);
+
+		if (gapp.fullscreen)
+			winfullscreen(&gapp, 1);
 
 		while (!closing)
 		{
