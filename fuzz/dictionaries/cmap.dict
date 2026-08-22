@@ -1,0 +1,61 @@
+# CMap (Character Map) dictionary for fuzzing
+
+# CMap keywords
+"/CIDInit"
+"/ProcSet"
+"findresource"
+"begin"
+"end"
+"def"
+"defineresource"
+"pop"
+
+# CMap structure
+"/CMapType"
+"/CMapName"
+"/CIDSystemInfo"
+"/Registry"
+"/Ordering"
+"/Supplement"
+"/WMode"
+"/UIDOffset"
+"/XUID"
+
+# CMap operators
+"begincmap"
+"endcmap"
+"begincodespacerange"
+"endcodespacerange"
+"beginbfchar"
+"endbfchar"
+"beginbfrange"
+"endbfrange"
+"begincidchar"
+"endcidchar"
+"begincidrange"
+"endcidrange"
+"beginnotdefchar"
+"endnotdefchar"
+"beginnotdefrange"
+"endnotdefrange"
+"usecmap"
+"usefont"
+
+# Common encodings
+"(Adobe)"
+"(Identity)"
+"(Japan1)"
+"(Korea1)"
+"(CNS1)"
+"(GB1)"
+"(UCS)"
+
+# Hex values
+"<0000>"
+"<FFFF>"
+"<00>"
+"<FF>"
+"<0020>"
+"<007E>"
+"<4E00>"
+"<9FFF>"
