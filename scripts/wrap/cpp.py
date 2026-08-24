@@ -1175,7 +1175,7 @@ g_extra_definitions = textwrap.dedent(f'''
             int e2 = fz_lookup_metadata(ctx, doc, key, buf, e);
             assert(e2 == e);
             std::string ret = buf;
-            free(buf);
+            fz_free(ctx, buf);
             return ret;
         }}
 
@@ -1192,7 +1192,7 @@ g_extra_definitions = textwrap.dedent(f'''
             int e2 = pdf_lookup_metadata(ctx, doc, key, buf, e);
             assert(e2 == e);
             std::string ret = buf;
-            free(buf);
+            fz_free(ctx, buf);
             return ret;
         }}
 
