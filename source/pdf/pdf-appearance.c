@@ -1620,6 +1620,14 @@ add_required_fonts(fz_context *ctx, pdf_document *doc, pdf_obj *res_font,
 		case UCDN_SCRIPT_BOPOMOFO: add_bopomofo = 1; break;
 		case UCDN_SCRIPT_HAN: add_han = 1; break;
 		}
+
+		// halfwidth and fullwidth forms
+		if (c >= 0xff01 && c <= 0xffee)
+			add_han = 1;
+
+		// cjk symbols and punctuation
+		if (c >= 0x3000 && c <= 0x303f)
+			add_han = 1;
 	}
 
 	if (add_han)
@@ -1746,6 +1754,15 @@ static int next_text_walk(fz_context *ctx, struct text_walk_state *state)
 
 	state->n = fz_chartorune(&state->u, state->text);
 	script = ucdn_get_script(state->u);
+
+	// halfwidth and fullwidth forms
+	if (state->u >= 0xff01 && state->u <= 0xffee)
+		script = UCDN_SCRIPT_HAN;
+
+	// cjk symbols and punctuation
+	if (state->u >= 0x3000 && state->u <= 0x303f)
+		script = UCDN_SCRIPT_HAN;
+
 	if (script == UCDN_SCRIPT_COMMON || script == UCDN_SCRIPT_INHERITED)
 		script = state->last_script;
 	state->last_script = script;
@@ -2382,6 +2399,14 @@ static int text_needs_rich_layout(fz_context *ctx, const char *s)
 			script == UCDN_SCRIPT_BOPOMOFO ||
 			script == UCDN_SCRIPT_HAN
 		)
+			continue;
+
+		// halfwidth and fullwidth forms
+		if (c >= 0xff01 && c <= 0xffee)
+			continue;
+
+		// cjk symbols and punctuation
+		if (c >= 0x3000 && c <= 0x303f)
 			continue;
 
 		return 1;
