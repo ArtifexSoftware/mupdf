@@ -26,6 +26,7 @@
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/geometry.h"
+#include "mupdf/fitz/crypt.h"
 
 typedef struct fz_font_context fz_font_context;
 typedef struct fz_hyph_context fz_hyph_context;
@@ -872,7 +873,7 @@ struct fz_context
 
 	/* unshared contexts */
 	fz_aa_context aa;
-	uint16_t seed48[7];
+	fz_chacha20 seed;
 #if FZ_ENABLE_ICC
 	int icc_enabled;
 #endif

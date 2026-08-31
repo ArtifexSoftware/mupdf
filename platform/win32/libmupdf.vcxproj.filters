@@ -138,6 +138,9 @@
     <ClCompile Include="..\..\source\fitz\crypt-arc4.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\crypt-chacha20.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\fitz\crypt-md5.c">
       <Filter>fitz</Filter>
     </ClCompile>
