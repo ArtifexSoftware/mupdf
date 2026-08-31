@@ -26,6 +26,7 @@
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/geometry.h"
+#include "mupdf/fitz/crypt.h"
 
 
 #ifndef FZ_VERBOSE_EXCEPTIONS
@@ -907,7 +908,7 @@ struct fz_context
 
 	/* unshared contexts */
 	fz_aa_context aa;
-	uint16_t seed48[7];
+	fz_chacha20 seed;
 #if FZ_ENABLE_ICC
 	int icc_enabled;
 #endif
