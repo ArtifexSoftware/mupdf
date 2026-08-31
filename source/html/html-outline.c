@@ -159,12 +159,25 @@ find_first_content(fz_html_box *box)
 }
 
 static float
+find_flow_top(fz_html_flow *node)
+{
+	// try to find next "real" element
+	while (node->type == FLOW_ANCHOR && node->next)
+		node = node->next;
+	// an image flow node's coordinates are the top left corner
+	if (node->type == FLOW_IMAGE)
+		return node->y;
+	// and everything else is the baseline
+	return node->y - node->h * 0.8f;
+}
+
+static float
 find_flow_target(fz_html_flow *flow, const char *id)
 {
 	while (flow)
 	{
 		if (flow->box->id && !strcmp(id, flow->box->id))
-			return flow->y;
+			return find_flow_top(flow);
 		flow = flow->next;
 	}
 	return -1;
@@ -180,7 +193,7 @@ find_box_target(fz_html_box *box, const char *id)
 		{
 			fz_html_flow *flow = find_first_content(box);
 			if (flow)
-				return flow->y;
+				return find_flow_top(flow);
 			return box->s.layout.y;
 		}
 		if (box->type == BOX_FLOW)
