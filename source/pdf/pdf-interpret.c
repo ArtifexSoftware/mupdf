@@ -1595,6 +1595,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 									csi->stack[0] = pdf_to_real(ctx, o);
 									pdf_array_delete(ctx, csi->obj, n-1);
 									pdf_process_keyword(ctx, proc, csi, stm, buf->scratch);
+									break; /* keep parsing the rest of the array */
 								}
 							}
 						}
