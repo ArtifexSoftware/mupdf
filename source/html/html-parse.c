@@ -2224,13 +2224,35 @@ xml_to_boxes(fz_context *ctx,
 		{
 			if (metadata)
 			{
+				char *author = NULL, *first_name, *last_name;
+
 				node = fz_xml_find(root, "FictionBook");
 				node = fz_xml_find_down(node, "description");
 				node = fz_xml_find_down(node, "title-info");
 				node2 = fz_xml_find_down(node, "book-title");
 				metadata->title = collect_text(ctx, g.pool, node2);
-				node2 = fz_xml_find_down(node, "author");
-				metadata->author = collect_text(ctx, g.pool, node2);
+
+				for (node2 = fz_xml_find_down(node, "author"); node2; node2 = fz_xml_find_next(node2, "author"))
+				{
+					first_name = collect_text(ctx, g.pool, fz_xml_find_down(node2, "first-name"));
+					last_name = collect_text(ctx, g.pool, fz_xml_find_down(node2, "last-name"));
+					if (first_name && last_name)
+					{
+						if (author)
+							author = fz_pool_asprintf(ctx, g.pool, "%s, %s %s", author, first_name, last_name);
+						else
+							author = fz_pool_asprintf(ctx, g.pool, "%s %s", first_name, last_name);
+					}
+					else
+					{
+						if (author)
+							author = fz_pool_asprintf(ctx, g.pool, "%s, %s", author, collect_text(ctx, g.pool, node2));
+						else
+							author = collect_text(ctx, g.pool, node2);
+					}
+				}
+				metadata->author = author;
+
 				node2 = fz_xml_find_down(node, "annotation");
 				metadata->subject = collect_text(ctx, g.pool, node2);
 			}
