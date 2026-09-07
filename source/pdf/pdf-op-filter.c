@@ -693,8 +693,8 @@ done_SC:
 						}
 						else
 						{
+							/* We change the leading that we've sent, but we keep the pending one as specified! */
 							gstate->sent.text.leading = -ty;
-							gstate->pending.text.leading = -ty;
 							if (p->super.chain->op_TD)
 								p->super.chain->op_TD(ctx, p->super.chain, tx, ty);
 							goto sorted;
