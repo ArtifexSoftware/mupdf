@@ -2543,9 +2543,9 @@ pdf_filter_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *
 	if (p->options->culler)
 	{
 		fz_matrix ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
-		fz_rect r = { 0, 0, 1, 1 };
+		fz_rect r;
 		ctm = fz_concat(ctm, p->transform);
-		fz_bound_shade(ctx, shade, ctm);
+		r = fz_bound_shade(ctx, shade, ctm);
 		r = fz_transform_rect(r, ctm);
 
 		if (p->options->culler(ctx, p->options->opaque, r, FZ_CULL_SHADING))
