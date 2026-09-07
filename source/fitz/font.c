@@ -763,6 +763,9 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	char namebuf[sizeof(font->name)];
 	fz_ascdesc_source ascdesc_src = FZ_ASCDESC_FROM_FONT;
 
+	if (index < 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Font index must be non-negative");
+
 	fz_keep_freetype(ctx);
 
 	fz_ft_lock(ctx);
