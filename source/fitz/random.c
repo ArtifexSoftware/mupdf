@@ -29,7 +29,11 @@
 #else
 #include <sys/time.h> // for gettimeofday()
 #include <stdlib.h> // for srandom(), random(), arc4random_buf()
+#ifdef __APPLE__
+#include <sys/random.h> // for getentropy()
+#else
 #include <unistd.h> // for getentropy()
+#endif
 #endif
 
 #ifdef _WIN32
