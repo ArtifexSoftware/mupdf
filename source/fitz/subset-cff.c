@@ -1146,9 +1146,9 @@ overflow:
 				int i;
 				ATLEAST(1);
 				i = (int)stack[sp-1];
-				ATLEAST(i+1);
 				if (i < 0 || i > sp-1)
 					i = 0;
+				ATLEAST(i+1);
 				stack[sp-1] = stack[sp-2-i];
 				break;
 			}
@@ -1160,7 +1160,7 @@ overflow:
 				N = stack[sp-2];
 				if (N == 0)
 					break;
-				if (N < 0)
+				if (N < 0 || N >= INT_MAX-2)
 					fz_throw(ctx, FZ_ERROR_FORMAT, "Invalid roll");
 				ATLEAST(2+N);
 				if (J < 0)
