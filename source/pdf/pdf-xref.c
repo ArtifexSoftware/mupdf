@@ -3463,6 +3463,10 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 			}
 		}
 
+		if (shared_obj_count_page1 > shared_obj_count_total)
+			fz_throw(ctx, FZ_ERROR_FORMAT,
+				"malformed hint stream (page1 shared count exceeds total)");
+
 		doc->hint_shared = fz_realloc_array(ctx, doc->hint_shared, shared_obj_count_total+1, pdf_hint_shared);
 		memset(doc->hint_shared, 0, sizeof(*doc->hint_shared) * (shared_obj_count_total+1));
 
