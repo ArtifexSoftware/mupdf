@@ -226,7 +226,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 				else
 				{
 					if (type ? !pdf_name_eq(ctx, type, PDF_NAME(Page)) : !pdf_dict_get(ctx, kid, PDF_NAME(MediaBox)))
-						fz_warn(ctx, "non-page object in page tree (%s)", pdf_to_name(ctx, type));
+						fz_warn(ctx, "non-page object in page tree");
 					if (*skip == 0)
 					{
 						if (parentp) *parentp = node;
@@ -290,7 +290,7 @@ pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle)
 			doc->use_page_tree_map = 0;
 			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
 			fz_report_error(ctx);
-			fz_warn(ctx, "Page tree load failed. Falling back to slow lookup");
+			fz_warn(ctx, "page tree load failed; falling back to slow lookup");
 		}
 	}
 
@@ -406,7 +406,7 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *page)
 		{
 			doc->use_page_tree_map = 0;
 			fz_report_error(ctx);
-			fz_warn(ctx, "Page tree load failed. Falling back to slow lookup.");
+			fz_warn(ctx, "page tree load failed; falling back to slow lookup");
 		}
 	}
 
