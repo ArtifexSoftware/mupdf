@@ -29,7 +29,7 @@
 /* default page size */
 #define DEF_WIDTH 612
 #define DEF_HEIGHT 792
-#define DEF_FONTSIZE 12
+#define DEF_FONTSIZE 16
 
 #define MAX_USE_DEPTH 100
 
@@ -241,7 +241,7 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 
 		if (cx_att) cx = svg_parse_length(cx_att, local_state.viewbox_w, local_state.fontsize);
 		if (cy_att) cy = svg_parse_length(cy_att, local_state.viewbox_h, local_state.fontsize);
-		if (r_att) r = svg_parse_length(r_att, local_state.viewbox_size, 12);
+		if (r_att) r = svg_parse_length(r_att, local_state.viewbox_size, local_state.fontsize);
 
 		if (r > 0)
 		{
@@ -1811,7 +1811,7 @@ svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *de
 	state.viewbox_h = DEF_HEIGHT;
 	state.viewbox_size = sqrtf(DEF_WIDTH*DEF_WIDTH + DEF_HEIGHT*DEF_HEIGHT) / sqrtf(2);
 
-	state.fontsize = 12;
+	state.fontsize = DEF_FONTSIZE;
 
 	state.opacity = 1;
 
