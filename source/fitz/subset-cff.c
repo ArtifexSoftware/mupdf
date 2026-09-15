@@ -1210,6 +1210,7 @@ overflow:
 			double d;
 			int n;
 			int k = 1;
+			int nkp1; /* n * (k+1) */
 			/* Reads a single operand, n, then consumes a further n*(k+1), producing n.
 			 * k is supposed to be the "number of regions for which variation adjustment
 			 * deltas are defined". "This value is determined by the ItemVariationData
@@ -1219,10 +1220,10 @@ overflow:
 			ATLEAST(1);
 			d = stack[sp-1];
 			n = (int)d;
-			if (d != n || n < 0 || sp < n*(k+1))
+			if (d != n || n < 0 || k == INT_MAX || fz_ckd_mul_int(&nkp1, n, k+1) || nkp1 == INT_MAX || sp < 1 + nkp1)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "Illegal n value in charstring blend operation");
-			/* net, we lose 1+n*k operands. */
-			sp -= 1 + n*k;
+			/* net, we lose 1+n*(k+1) operands. */
+			sp -= 1 + nkp1;
 			break;
 		}
 		case 29: /* callgsubr */
