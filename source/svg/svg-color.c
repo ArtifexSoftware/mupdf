@@ -205,15 +205,14 @@ static int ishex(int chr)
 	return 0;
 }
 
-void
-svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
+static int
+svg_parse_simple_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb, float *opacity)
 {
 	int i, l, m, r, cmp;
 	size_t n;
 
-	rgb[0] = 0.0f;
-	rgb[1] = 0.0f;
-	rgb[2] = 0.0f;
+	if (!str)
+		return 0;
 
 	/* Crack hex-coded RGB */
 
@@ -227,7 +226,7 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			rgb[0] = (unhex(str[0]) * 16 + unhex(str[0])) / 255.0f;
 			rgb[1] = (unhex(str[1]) * 16 + unhex(str[1])) / 255.0f;
 			rgb[2] = (unhex(str[2]) * 16 + unhex(str[2])) / 255.0f;
-			return;
+			return 1;
 		}
 
 		if (n >= 6)
@@ -235,10 +234,14 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			rgb[0] = (unhex(str[0]) * 16 + unhex(str[1])) / 255.0f;
 			rgb[1] = (unhex(str[2]) * 16 + unhex(str[3])) / 255.0f;
 			rgb[2] = (unhex(str[4]) * 16 + unhex(str[5])) / 255.0f;
-			return;
+			return 1;
 		}
 
-		return;
+		rgb[0] = 0.0f;
+		rgb[1] = 0.0f;
+		rgb[2] = 0.0f;
+
+		return 1;
 	}
 
 	/* rgb(X,Y,Z) -- whitespace allowed around numbers */
@@ -249,6 +252,10 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 		char numberbuf[50];
 
 		str = str + 4;
+
+		rgb[0] = 0.0f;
+		rgb[1] = 0.0f;
+		rgb[2] = 0.0f;
 
 		for (i = 0; i < 3; i++)
 		{
@@ -274,7 +281,50 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 			}
 		}
 
-		return;
+		return 1;
+	}
+
+	else if (strstr(str, "rgba("))
+	{
+		int numberlen = 0;
+		char numberbuf[50];
+
+		str = str + 5;
+
+		rgb[0] = 0.0f;
+		rgb[1] = 0.0f;
+		rgb[2] = 0.0f;
+
+		for (i = 0; i < 3; i++)
+		{
+			while (svg_is_whitespace_or_comma(*str))
+				str ++;
+
+			if (svg_is_digit(*str))
+			{
+				float *res;
+				numberlen = 0;
+				while (svg_is_digit(*str) && numberlen < (int)sizeof(numberbuf) - 1)
+					numberbuf[numberlen++] = *str++;
+				numberbuf[numberlen] = 0;
+
+				if (i == 3)
+					res = opacity;
+				else
+					res = &rgb[i];
+				if (*str == '%')
+				{
+					str ++;
+					*res = fz_atof(numberbuf) / 100.0f;
+				}
+				else
+				{
+					*res = fz_atof(numberbuf) / 255.0f;
+				}
+			}
+		}
+
+		return 1;
 	}
 
 	/* TODO: parse icc-profile(X,Y,Z,W) syntax */
@@ -306,14 +356,476 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb)
 				rgb[0] = svg_predefined_colors[m].red / 255.0f;
 				rgb[1] = svg_predefined_colors[m].green / 255.0f;
 				rgb[2] = svg_predefined_colors[m].blue / 255.0f;
-				return;
+				return 1;
 			}
 		}
 	}
+
+	return 0;
+}
+
+static float
+my_atof(const char *str)
+{
+	float f;
+
+	if (str == NULL)
+		return 0;
+
+	f = fz_atof(str);
+
+	if (strchr(str, '%'))
+		f /= 100;
+
+	return f;
+}
+
+static const char *
+find_style_value(const char *p, const char *m)
+{
+	size_t lm = strlen(m);
+
+	if (!p)
+		return NULL;
+
+	while (*p)
+	{
+		while (*p && svg_is_whitespace(*p))
+			p++;
+		if (!strncmp(p, m, lm))
+		{
+			p += lm;
+			while (*p && svg_is_whitespace(*p))
+				p++;
+			if (*p == ':')
+			{
+				p++;
+				while (*p && svg_is_whitespace(*p))
+					p++;
+				return p;
+			}
+		}
+		while (*p && *p != ';')
+			p++;
+		if (*p)
+			p++;
+	}
+
+	return NULL;
 }
 
 static int
-svg_parse_color_from_style_string(fz_context *ctx, svg_document *doc, const char *p, float color[3])
+svg_parse_stop_color_from_style(fz_context *ctx, svg_document *doc, const char *p, float *color, float *opacity)
+{
+	char buf[100];
+	const char *e;
+
+	if (p == NULL)
+		return 0;
+
+	p = find_style_value(p, "stop-color");
+	if (p == NULL)
+		return 0;
+	for (e = p; *e != 0 && *e != ';'; e++)
+	{}
+	if (e > p+sizeof(buf)-1)
+		e = p+sizeof(buf)-1;
+	memcpy(buf, p, e-p);
+	buf[e-p] = 0;
+	return svg_parse_simple_color(ctx, doc, buf, color, opacity);
+}
+
+static int
+svg_parse_stop_opacity_from_style(fz_context *ctx, const char *p, float *opacity)
+{
+	if (p == NULL)
+		return 0;
+
+	p = find_style_value(p, "stop-opacity");
+	if (p == NULL)
+		return 0;
+	*opacity = my_atof(p);
+	return 1;
+}
+
+static fz_xml *
+find_local_url(fz_context *ctx, svg_document *doc, const char *str)
+{
+	fz_xml *found;
+	const char *match = str;
+
+	if (match == NULL)
+		return NULL;
+
+	while (svg_is_whitespace(*match))
+		match ++;
+	if (*match != '#')
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Non-local URL in SVG");
+
+	found = fz_tree_lookup(ctx, doc->idmap, match + 1);
+	if (found == NULL)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "Url '%s' not found", str);
+
+	return found;
+}
+
+static fz_xml *
+find_url(fz_context *ctx, svg_document *doc, const char *str)
+{
+	char *match;
+	const char *e;
+	fz_xml *ret;
+
+	if (strncmp(str, "url(", 4))
+		return NULL;
+
+	str += 4;
+
+	e = str;
+	while (*e && *e != ')')
+		e++;
+
+	match = fz_malloc(ctx, e-str+1);
+	memcpy(match, str, e-str);
+	match[e-str] = 0;
+
+	fz_try(ctx)
+		ret = find_local_url(ctx, doc, match);
+	fz_always(ctx)
+		fz_free(ctx, match);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return ret;
+}
+
+static float
+interp(float a, float b, float pos)
+{
+	return ((b-a)*pos + a);
+}
+
+static void
+interp_fill(float *function, int o1, float *rgba1, int o2, float *rgba2)
+{
+	int n;
+	int d = o2 - o1;
+	float fd = (float)d;
+
+	function += o1 * 4;
+
+	for (n = 0; n < d; n++)
+	{
+		float pos = n / fd;
+		*function++ = interp(rgba1[0], rgba2[0], pos);
+		*function++ = interp(rgba1[1], rgba2[1], pos);
+		*function++ = interp(rgba1[2], rgba2[2], pos);
+		*function++ = interp(rgba1[3], rgba2[3], pos);
+	}
+}
+
+static void fill_function_from_stops(fz_context *ctx, svg_document *doc, float *function, fz_xml *node)
+{
+	fz_xml *n;
+	int o;
+	int i;
+	float prev_rgba[4];
+	int stops = 0;
+
+	n = fz_xml_find_down(node, "stop");
+	if (n == NULL)
+		return;
+
+	o = 0;
+	for (; n != NULL; n = fz_xml_find_next(n, "stop"))
+	{
+		float offset = my_atof(fz_xml_att(n, "offset"));
+		float rgba[4] = { 0, 0, 0, 1 };
+		char *style = fz_xml_att(n, "style");
+		char *opacity = fz_xml_att(n, "stop-opacity");
+		int o2;
+
+		if (opacity)
+			rgba[3] = fz_atof(opacity);
+		else
+			svg_parse_stop_opacity_from_style(ctx, style, &rgba[3]);
+
+		if (!svg_parse_simple_color(ctx, doc, fz_xml_att(n, "stop-color"), rgba, &rgba[3]))
+		{
+			if (!svg_parse_stop_color_from_style(ctx, doc, style, rgba, &rgba[3]) && opacity != 0)
+				continue; /* If we can't get a stop color from somewhere, ignore it. */
+		}
+
+		if (offset < 0)
+			offset = 0;
+		if (offset > 1)
+			offset = 1;
+		o2 = (int)((offset * 255) + 0.5f);
+		if (o2 < o)
+			o2 = o;
+
+		for (i = 0; i < 4; i++)
+			rgba[i] = fz_clamp(rgba[i], 0, 1);
+
+		/* Fill in up to offset */
+		if (stops == 0)
+			memcpy(prev_rgba, rgba, 4 * sizeof(float));
+		interp_fill(function, o, prev_rgba, o2, rgba);
+		memcpy(prev_rgba, rgba, 4 * sizeof(float));
+		o = o2;
+		stops++;
+	}
+
+	if (stops != 0)
+		interp_fill(function, o, prev_rgba, 256, prev_rgba);
+}
+
+typedef struct
+{
+	float x1, y1, x2, y2;
+	int obb;
+	fz_matrix tfm;
+	float function[4*256];
+} linear_gradient;
+
+static void parse_linear_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, linear_gradient *lg, int depth)
+{
+	const char *x1s = fz_xml_att(url, "x1");
+	const char *y1s = fz_xml_att(url, "y1");
+	const char *x2s = fz_xml_att(url, "x2");
+	const char *y2s = fz_xml_att(url, "y2");
+	const char *gu = fz_xml_att(url, "gradientUnits");
+	const char *gt = fz_xml_att(url, "gradientTransform");
+
+	fz_xml *xlink = find_local_url(ctx, doc, fz_xml_att_alt(url, "xlink:href", "href"));
+
+	if (depth > 10)
+	{
+		fz_warn(ctx, "Cycle in linear gradients - rendering may be incorrect");
+		return;
+	}
+
+	if (xlink)
+		parse_linear_gradient(ctx, doc, xlink, lg, depth+1);
+
+	if (x1s)
+		lg->x1 = my_atof(x1s);
+	if (y1s)
+		lg->y1 = my_atof(y1s);
+	if (x2s)
+		lg->x2 = my_atof(x2s);
+	if (y2s)
+		lg->y2 = my_atof(y2s);
+
+	if (gt)
+		lg->tfm = svg_parse_transform(ctx, doc, gt, fz_identity);
+
+	if (gu)
+		lg->obb = !strcmp(gu, "objectBoundingBox");
+
+	fill_function_from_stops(ctx, doc, lg->function, url);
+}
+
+typedef struct
+{
+	float fx, fy, fr, cx, cy, r;
+	int obb;
+	fz_matrix tfm;
+	float function[4*256];
+} radial_gradient;
+
+static void
+init_function(float *function)
+{
+	int i;
+
+	for (i = 0; i < 1024; i += 4)
+	{
+		function[i] = 0;
+		function[i+1] = 0;
+		function[i+2] = 0;
+		function[i+3] = 1;
+	}
+}
+
+static void parse_radial_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, radial_gradient *rg, int depth)
+{
+	const char *fxs = fz_xml_att(url, "fx");
+	const char *fys = fz_xml_att(url, "fy");
+	const char *frs = fz_xml_att(url, "fr");
+	const char *cxs = fz_xml_att(url, "cx");
+	const char *cys = fz_xml_att(url, "cy");
+	const char *rs = fz_xml_att(url, "r");
+	const char *gu = fz_xml_att(url, "gradientUnits");
+	const char *gt = fz_xml_att(url, "gradientTransform");
+
+	fz_xml *xlink = find_local_url(ctx, doc, fz_xml_att_alt(url, "xlink:href", "href"));
+
+	if (depth > 10)
+	{
+		fz_warn(ctx, "Cycle in radial gradients - rendering may be incorrect");
+		return;
+	}
+
+	if (xlink)
+		parse_radial_gradient(ctx, doc, xlink, rg, depth+1);
+
+	if (fxs)
+		rg->fx = my_atof(fxs);
+	if (fys)
+		rg->fy = my_atof(fys);
+	if (frs)
+		rg->fr = my_atof(frs);
+	if (cxs)
+		rg->cx = my_atof(cxs);
+	if (cys)
+		rg->cy = my_atof(cys);
+	if (rs)
+		rg->r = my_atof(rs);
+
+	if (gt)
+		rg->tfm = svg_parse_transform(ctx, doc, gt, fz_identity);
+
+	if (gu)
+		rg->obb = !strcmp(gu, "objectBoundingBox");
+
+	fill_function_from_stops(ctx, doc, rg->function, url);
+}
+
+static void
+svg_parse_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, svg_material *mat)
+{
+	char *tag = fz_xml_tag(url);
+
+	if (tag && !strcmp(tag, "linearGradient"))
+	{
+		fz_shade *shade = NULL;
+		linear_gradient lg = { 0 };
+		lg.x2 = 1;
+		lg.tfm = fz_identity;
+		lg.obb = 1;
+
+		init_function(lg.function);
+		parse_linear_gradient(ctx, doc, url, &lg, 0);
+
+		fz_var(shade);
+
+		fz_try(ctx)
+		{
+			shade = fz_malloc_struct(ctx, fz_shade);
+			FZ_INIT_STORABLE(shade, 1, fz_drop_shade_imp);
+			shade->type = FZ_LINEAR;
+			shade->use_background = 0;
+			shade->matrix = lg.tfm;
+			shade->bbox = fz_infinite_rect;
+
+			shade->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+
+			shade->u.l_or_r.coords[0][0] = lg.x1;
+			shade->u.l_or_r.coords[0][1] = lg.y1;
+			shade->u.l_or_r.coords[1][0] = lg.x2;
+			shade->u.l_or_r.coords[1][1] = lg.y2;
+
+			shade->u.l_or_r.extend[0] = 1;
+			shade->u.l_or_r.extend[1] = 1;
+			shade->u.l_or_r.use_obb = lg.obb;
+
+			shade->function_stride = 3 + 1; /* RGB + Alpha */
+			shade->function = Memento_label(fz_calloc(ctx, 256 * shade->function_stride, sizeof(float)), "shade samples");
+			memcpy(shade->function, lg.function, sizeof(lg.function));
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_shade(ctx, shade);
+			fz_rethrow(ctx);
+		}
+
+		mat->type = SVG_MATERIAL_SHADE;
+		mat->u.shade = shade;
+	}
+	else if (tag && !strcmp(tag, "radialGradient"))
+	{
+		fz_shade *shade = NULL;
+		radial_gradient rg = { 0 };
+		rg.cx = 0.5f;
+		rg.cy = 0.5f;
+		rg.r = 0.5f;
+		rg.fx = 0.5f; /* default value ? */
+		rg.fy = 0.5f; /* default value ? */
+		rg.fr = 0;
+		rg.tfm = fz_identity;
+		rg.obb = 1;
+
+		init_function(rg.function);
+		parse_radial_gradient(ctx, doc, url, &rg, 0);
+
+		fz_var(shade);
+
+		fz_try(ctx)
+		{
+			shade = fz_malloc_struct(ctx, fz_shade);
+			FZ_INIT_STORABLE(shade, 1, fz_drop_shade_imp);
+			shade->type = FZ_RADIAL;
+			shade->use_background = 0;
+			shade->matrix = rg.tfm;
+			shade->bbox = fz_infinite_rect;
+
+			shade->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+
+			shade->u.l_or_r.coords[0][0] = rg.fx;
+			shade->u.l_or_r.coords[0][1] = rg.fy;
+			shade->u.l_or_r.coords[0][2] = rg.fr;
+			shade->u.l_or_r.coords[1][0] = rg.cx;
+			shade->u.l_or_r.coords[1][1] = rg.cy;
+			shade->u.l_or_r.coords[1][2] = rg.r;
+
+			shade->u.l_or_r.extend[0] = 1;
+			shade->u.l_or_r.extend[1] = 1;
+			shade->u.l_or_r.use_obb = rg.obb;
+
+			shade->function_stride = 3 + 1; /* RGB + Alpha */
+			shade->function = Memento_label(fz_calloc(ctx, 256 * shade->function_stride, sizeof(float)), "shade samples");
+			memcpy(shade->function, rg.function, sizeof(rg.function));
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_shade(ctx, shade);
+			fz_rethrow(ctx);
+		}
+
+		mat->type = SVG_MATERIAL_SHADE;
+		mat->u.shade = shade;
+	}
+}
+
+void
+svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, svg_material *mat, float *opacity)
+{
+	if (!strcmp(str, "inherit"))
+		return;
+
+	svg_drop_material(ctx, mat);
+
+	if (!strcmp(str, "none"))
+		return;
+
+	if (svg_parse_simple_color(ctx, doc, str, mat->u.color, opacity))
+	{
+		mat->type = SVG_MATERIAL_COLOR;
+		return;
+	}
+
+	else if (strstr(str, "url("))
+	{
+		svg_parse_gradient(ctx, doc, find_url(ctx, doc, str), mat);
+
+		return;
+	}
+
+}
+
+static void
+svg_parse_color_from_style_string(fz_context *ctx, svg_document *doc, const char *p, svg_material *mat, float *opacity)
 {
 	char buf[100], *e;
 	while (*p && svg_is_whitespace(*p))
@@ -322,24 +834,24 @@ svg_parse_color_from_style_string(fz_context *ctx, svg_document *doc, const char
 	e = strchr(buf, ';');
 	if (e)
 		*e = 0;
-	if (!strcmp(buf, "none"))
-		return 0;
-	svg_parse_color(ctx, doc, buf, color);
-	return 1;
+	svg_parse_color(ctx, doc, buf, mat, opacity);
 }
 
 void
 svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
-	int *fill_is_set, float fill[3],
-	int *stroke_is_set, float stroke[3])
+	svg_material *fill_mat, float *fill_opacity, svg_material *stroke_mat, float *stroke_opacity)
 {
 	const char *p;
 
 	p = strstr(str, "fill:");
 	if (p)
-		*fill_is_set = svg_parse_color_from_style_string(ctx, doc, p+5, fill);
+	{
+		svg_parse_color_from_style_string(ctx, doc, p+5, fill_mat, fill_opacity);
+	}
 
 	p = strstr(str, "stroke:");
 	if (p)
-		*stroke_is_set = svg_parse_color_from_style_string(ctx, doc, p+7, stroke);
+	{
+		svg_parse_color_from_style_string(ctx, doc, p+7, stroke_mat, stroke_opacity);
+	}
 }

@@ -46,12 +46,10 @@ typedef struct svg_state
 	float opacity;
 
 	int fill_rule;
-	int fill_is_set;
-	float fill_color[3];
-	float fill_opacity;
+	svg_material fill_mat;
+	svg_material stroke_mat;
 
-	int stroke_is_set;
-	float stroke_color[3];
+	float fill_opacity;
 	float stroke_opacity;
 
 	const char *font_family;
@@ -87,34 +85,68 @@ static void svg_pop_use(fz_context *ctx, svg_document *doc)
 static void svg_begin_state(fz_context *ctx, svg_state *child, const svg_state *parent)
 {
 	memcpy(child, parent, sizeof(svg_state));
+	if (child->fill_mat.type == SVG_MATERIAL_SHADE)
+		fz_keep_shade(ctx, child->fill_mat.u.shade);
+	if (child->stroke_mat.type == SVG_MATERIAL_SHADE)
+		fz_keep_shade(ctx, child->stroke_mat.u.shade);
 	child->stroke = fz_clone_stroke_state(ctx, parent->stroke);
 }
 
 static void svg_end_state(fz_context *ctx, svg_state *child)
 {
+	if (child->fill_mat.type == SVG_MATERIAL_SHADE)
+		fz_drop_shade(ctx, child->fill_mat.u.shade);
+	if (child->stroke_mat.type == SVG_MATERIAL_SHADE)
+		fz_drop_shade(ctx, child->stroke_mat.u.shade);
 	fz_drop_stroke_state(ctx, child->stroke);
+}
+
+void
+svg_drop_material(fz_context *ctx, svg_material *mat)
+{
+	if (mat->type == SVG_MATERIAL_SHADE)
+		fz_drop_shade(ctx, mat->u.shade);
+
+	mat->type = SVG_MATERIAL_NONE;
 }
 
 static void svg_fill(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
 	float opacity = state->opacity * state->fill_opacity;
-	if (path)
-		fz_fill_path(ctx, dev, path, state->fill_rule, state->transform, fz_device_rgb(ctx), state->fill_color, opacity, fz_default_color_params);
+
+	if (!path)
+		return;
+
+	if (state->fill_mat.type == SVG_MATERIAL_COLOR)
+		fz_fill_path(ctx, dev, path, state->fill_rule, state->transform, fz_device_rgb(ctx), state->fill_mat.u.color, opacity, fz_default_color_params);
+	if (state->fill_mat.type == SVG_MATERIAL_SHADE)
+	{
+		fz_clip_path(ctx, dev, path, state->fill_rule, state->transform, fz_infinite_rect);
+		fz_fill_shade(ctx, dev, state->fill_mat.u.shade, state->transform, state->fill_opacity, fz_default_color_params);
+		fz_pop_clip(ctx, dev);
+	}
 }
 
 static void svg_stroke(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
 	float opacity = state->opacity * state->stroke_opacity;
-	if (path)
-		fz_stroke_path(ctx, dev, path, state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_color, opacity, fz_default_color_params);
+	if (!path)
+		return;
+
+	if (state->stroke_mat.type == SVG_MATERIAL_COLOR)
+		fz_stroke_path(ctx, dev, path, state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_mat.u.color, opacity, fz_default_color_params);
+	if (state->stroke_mat.type == SVG_MATERIAL_SHADE)
+	{
+		fz_clip_stroke_path(ctx, dev, path, state->stroke, state->transform, fz_infinite_rect);
+		fz_fill_shade(ctx, dev, state->stroke_mat.u.shade, state->transform, state->stroke_opacity, fz_default_color_params);
+		fz_pop_clip(ctx, dev);
+	}
 }
 
 static void svg_draw_path(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
 {
-	if (state->fill_is_set)
-		svg_fill(ctx, dev, doc, path, state);
-	if (state->stroke_is_set)
-		svg_stroke(ctx, dev, doc, path, state);
+	svg_fill(ctx, dev, doc, path, state);
+	svg_stroke(ctx, dev, doc, path, state);
 }
 
 /*
@@ -333,13 +365,13 @@ svg_run_line(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 		if (x2_att) x2 = svg_parse_length(x2_att, local_state.viewbox_w, local_state.fontsize);
 		if (y2_att) y2 = svg_parse_length(y2_att, local_state.viewbox_h, local_state.fontsize);
 
-		if (local_state.stroke_is_set)
-		{
-			path = fz_new_path(ctx);
-			fz_moveto(ctx, path, x1, y1);
-			fz_lineto(ctx, path, x2, y2);
-			svg_stroke(ctx, dev, doc, path, &local_state);
-		}
+		if (local_state.stroke_mat.type == SVG_MATERIAL_NONE)
+			break;
+
+		path = fz_new_path(ctx);
+		fz_moveto(ctx, path, x1, y1);
+		fz_lineto(ctx, path, x2, y2);
+		svg_stroke(ctx, dev, doc, path, &local_state);
 	}
 	fz_always(ctx)
 	{
@@ -427,11 +459,11 @@ svg_run_polyline(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *nod
 	{
 		svg_parse_common(ctx, doc, node, &local_state);
 
-		if (local_state.stroke_is_set)
-		{
-			path = svg_parse_polygon_imp(ctx, doc, node, 0);
-			svg_stroke(ctx, dev, doc, path, &local_state);
-		}
+		if (local_state.stroke_mat.type == SVG_MATERIAL_NONE)
+			break;
+
+		path = svg_parse_polygon_imp(ctx, doc, node, 0);
+		svg_stroke(ctx, dev, doc, path, &local_state);
 	}
 	fz_always(ctx)
 	{
@@ -1077,9 +1109,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	/* Dirty hack scans of CSS style */
 	if (style_att)
 	{
-		svg_parse_color_from_style(ctx, doc, style_att,
-			&state->fill_is_set, state->fill_color,
-			&state->stroke_is_set, state->stroke_color);
+		svg_parse_color_from_style(ctx, doc, style_att, &state->fill_mat, &state->fill_opacity, &state->stroke_mat, &state->stroke_opacity);
 	}
 
 	if (transform_att)
@@ -1103,15 +1133,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 
 	if (fill_att)
 	{
-		if (!strcmp(fill_att, "none"))
-		{
-			state->fill_is_set = 0;
-		}
-		else
-		{
-			state->fill_is_set = 1;
-			svg_parse_color(ctx, doc, fill_att, state->fill_color);
-		}
+		svg_parse_color(ctx, doc, fill_att, &state->fill_mat, &state->fill_opacity);
 	}
 
 	if (fill_opacity_att)
@@ -1127,15 +1149,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 
 	if (stroke_att)
 	{
-		if (!strcmp(stroke_att, "none"))
-		{
-			state->stroke_is_set = 0;
-		}
-		else
-		{
-			state->stroke_is_set = 1;
-			svg_parse_color(ctx, doc, stroke_att, state->stroke_color);
-		}
+		svg_parse_color(ctx, doc, stroke_att, &state->stroke_mat, &state->stroke_opacity);
 	}
 
 	if (stroke_opacity_att)
@@ -1592,20 +1606,38 @@ svg_run_text_string(fz_context *ctx, fz_device *dev, fz_matrix trm, const char *
 
 		trm = fz_show_string(ctx, text, font, trm, s, 0, 0, FZ_BIDI_LTR, FZ_LANG_UNSET);
 
-		if (state->fill_is_set)
+		switch (state->fill_mat.type)
+		{
+		case SVG_MATERIAL_COLOR:
 			fz_fill_text(ctx, dev, text,
 				state->transform,
-				fz_device_rgb(ctx), state->fill_color,
+				fz_device_rgb(ctx), state->fill_mat.u.color,
 				state->opacity,
 				fz_default_color_params);
-		if (state->stroke_is_set)
+			break;
+		case SVG_MATERIAL_SHADE:
+			/* FIXME */
+			break;
+		default:
+			break;
+		}
+		switch (state->stroke_mat.type)
+		{
+		case SVG_MATERIAL_COLOR:
 			fz_stroke_text(ctx, dev, text,
 				state->stroke,
 				state->transform,
-				fz_device_rgb(ctx), state->stroke_color,
+				fz_device_rgb(ctx), state->stroke_mat.u.color,
 				state->opacity,
 				fz_default_color_params);
-		if (!state->fill_is_set && !state->stroke_is_set)
+			break;
+		case SVG_MATERIAL_SHADE:
+			/* FIXME */
+			break;
+		default:
+			break;
+		}
+		if (state->fill_mat.type == SVG_MATERIAL_NONE && state->stroke_mat.type == SVG_MATERIAL_NONE)
 			fz_ignore_text(ctx, dev, text, state->transform);
 	}
 	fz_always(ctx)
@@ -1817,16 +1849,11 @@ svg_run_document(fz_context *ctx, svg_document *doc, fz_xml *root, fz_device *de
 
 	state.fill_rule = 0;
 
-	state.fill_is_set = 1;
-	state.fill_color[0] = 0;
-	state.fill_color[1] = 0;
-	state.fill_color[2] = 0;
+	state.fill_mat.type = SVG_MATERIAL_COLOR;
+	memset(state.fill_mat.u.color, 0, sizeof(float) * 3);
 	state.fill_opacity = 1;
 
-	state.stroke_is_set = 0;
-	state.stroke_color[0] = 0;
-	state.stroke_color[1] = 0;
-	state.stroke_color[2] = 0;
+	state.stroke_mat.type = SVG_MATERIAL_NONE;
 	state.stroke_opacity = 1;
 
 	state.font_family = "serif";

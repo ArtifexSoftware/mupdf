@@ -146,6 +146,9 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, const char *str, fz_matr
 	float args[6];
 	int nargs;
 
+	if (str == NULL)
+		return transform;
+
 	nargs = 0;
 	keywordlen = 0;
 

@@ -77,6 +77,7 @@ typedef struct fz_shade
 		{
 			int extend[2];
 			float coords[2][3]; /* (x,y,r) twice */
+			int use_obb;
 		} l_or_r;
 		struct
 		{

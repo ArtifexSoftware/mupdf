@@ -44,6 +44,24 @@ struct svg_document
 	char base_uri[2048];
 };
 
+typedef enum
+{
+	SVG_MATERIAL_NONE,
+	SVG_MATERIAL_COLOR,
+	SVG_MATERIAL_SHADE
+} svg_material_type;
+
+typedef struct
+{
+	svg_material_type type;
+	union {
+		float color[3];
+		fz_shade *shade;
+	} u;
+} svg_material;
+
+void svg_drop_material(fz_context *ctx, svg_material *mat);
+
 const char *svg_lex_number(float *fp, const char *str);
 float svg_parse_number(const char *str, float min, float max, float inherit);
 float svg_parse_number_from_style(fz_context *ctx, svg_document *doc, const char *string, const char *name, float number);
@@ -59,8 +77,8 @@ float svg_parse_length(const char *str, float percent, float font_size);
 float svg_parse_angle(const char *str);
 
 void svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
-	int *fill_is_set, float fill[3], int *stroke_is_set, float stroke[3]);
-void svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, float *rgb);
+	svg_material *fill, float *fill_opacity, svg_material *stroke, float *stroke_opacity);
+void svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, svg_material *mat, float *opacity);
 fz_matrix svg_parse_transform(fz_context *ctx, svg_document *doc, const char *str, fz_matrix transform);
 
 int svg_is_whitespace_or_comma(int c);
