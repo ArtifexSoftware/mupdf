@@ -133,6 +133,7 @@ typedef struct
 	int maybe_bullet;
 	fz_point lag_pen;
 	fz_matrix trm;
+	float lag_size;
 	int lastchar;
 	fz_stext_line *lastline;
 	int lastbidi;
@@ -775,7 +776,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	int new_line = 1;
 	int add_space = 0;
 	fz_point dir, ndir, p, q;
-	float size;
+	float size, cur_size;
 	fz_point delta;
 	float spacing = 0;
 	float base_offset = 0;
@@ -798,7 +799,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	dir = fz_transform_vector(dir, trm);
 	ndir = fz_normalize_vector(dir);
 
-	size = fz_matrix_expansion(trm);
+	cur_size = fz_matrix_expansion(trm);
+	size = dev->lag_size > 0 ? fz_min(dev->lag_size, cur_size) : cur_size;
 
 	/* We need to identify where glyphs 'start' (p) and 'stop' (q).
 	 * Each glyph holds its 'start' position, and the next glyph in the
@@ -1045,6 +1047,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	dev->lastbidi = bidi;
 	dev->lastline = cur_line;
 	dev->lag_pen = p;
+	dev->lag_size = cur_size;
 	dev->pen = q;
 
 	dev->trm = trm;
