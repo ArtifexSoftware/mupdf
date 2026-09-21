@@ -1489,8 +1489,17 @@ int_in_singleton_or_array(fz_context *ctx, pdf_obj *k, int id)
 		for (i = 0; i < n; i++)
 		{
 			pdf_obj *o = pdf_array_get(ctx, k, i);
-			if (pdf_is_int(ctx, o) && pdf_to_int(ctx, o) == id)
-				return 1;
+			if (pdf_is_int(ctx, o))
+			{
+				if (pdf_to_int(ctx, o) == id)
+					return 1;
+			}
+			else
+			{
+				pdf_obj *mcid = pdf_dict_get(ctx, o, PDF_NAME(MCID));
+				if (pdf_is_int(ctx, mcid) && pdf_to_int(ctx, mcid) == id)
+					return 1;
+			}
 		}
 	}
 
