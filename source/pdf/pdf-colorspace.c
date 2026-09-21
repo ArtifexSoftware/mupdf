@@ -727,7 +727,7 @@ pdf_add_colorspace(fz_context *ctx, pdf_document *doc, fz_colorspace *cs)
 	if (fz_colorspace_is_indexed(ctx, cs))
 		return pdf_add_indexed_colorspace(ctx, doc, cs);
 
-	if (fz_colorspace_is_icc(ctx, cs))
+	if (!fz_colorspace_is_device(ctx, cs) && fz_colorspace_is_icc(ctx, cs))
 		return pdf_add_icc_colorspace(ctx, doc, cs);
 
 	switch (fz_colorspace_type(ctx, cs))
