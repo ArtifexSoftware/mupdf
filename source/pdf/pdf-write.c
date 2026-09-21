@@ -712,7 +712,8 @@ static void preloadobjstms(fz_context *ctx, pdf_document *doc)
 static int is_bitmap_stream(fz_context *ctx, pdf_obj *obj, size_t len, int *w, int *h)
 {
 	pdf_obj *bpc;
-	pdf_obj *cs;
+	pdf_obj *csobj;
+	fz_colorspace *cs = NULL;
 	int stride;
 	if (pdf_dict_get(ctx, obj, PDF_NAME(Subtype)) != PDF_NAME(Image))
 		return 0;
@@ -727,15 +728,28 @@ static int is_bitmap_stream(fz_context *ctx, pdf_obj *obj, size_t len, int *w, i
 	}
 	else
 	{
+		int isbitmap = 0;
+
 		bpc = pdf_dict_get(ctx, obj, PDF_NAME(BitsPerComponent));
 		if (!pdf_is_int(ctx, bpc))
 			return 0;
 		if (pdf_to_int(ctx, bpc) != 1)
 			return 0;
-		cs = pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace));
-		if (!pdf_name_eq(ctx, cs, PDF_NAME(DeviceGray)))
+		csobj = pdf_dict_get(ctx, obj, PDF_NAME(ColorSpace));
+		if (!csobj)
 			return 0;
-		return 1;
+		fz_var(cs);
+		fz_try(ctx)
+		{
+			cs = pdf_load_colorspace(ctx, csobj);
+			if (fz_colorspace_n(ctx, cs) == 1)
+				isbitmap = 1;
+		}
+		fz_always(ctx)
+			fz_drop_colorspace(ctx, cs);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		return isbitmap;
 	}
 }
 
