@@ -926,8 +926,8 @@ use_sub_char(fz_context *ctx, cff_t *cff, int code)
 	usage_list_add(ctx, &cff->extra_gids_to_keep, gid);
 }
 
-#define ATLEAST(n) if (sp < n) goto atleast_fail;
-#define POP(n) if (sp < n) goto atleast_fail;
+#define ATLEAST(n) if (sp < n) goto atleast_fail
+#define POP(n) do { if (sp < n) goto atleast_fail; sp -= n; } while (0)
 #define PUSH(n) \
 do { if (sp + n > (int)(sizeof(stack)/sizeof(*stack))) fz_throw(ctx, FZ_ERROR_FORMAT, "Stack overflow"); sp += n; } while (0)
 
