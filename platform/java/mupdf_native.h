@@ -6620,10 +6620,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_asPNG
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    asJPEG
- * Signature: (IZ)Lcom/artifex/mupdf/fitz/Buffer;
+ * Signature: (II)Lcom/artifex/mupdf/fitz/Buffer;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_asJPEG
-  (JNIEnv *, jobject, jint, jboolean);
+  (JNIEnv *, jobject, jint, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap

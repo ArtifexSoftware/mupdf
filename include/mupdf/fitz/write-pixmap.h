@@ -33,6 +33,13 @@
 #include "mupdf/fitz/image.h"
 #include "mupdf/fitz/writer.h"
 
+enum fz_cmyk_jpeg_method
+{
+	FZ_CMYK_JPEG_NON_INVERTED,
+	FZ_CMYK_JPEG_INVERTED,
+	FZ_CMYK_JPEG_TO_RGB
+};
+
 /**
 	PCL output
 */
@@ -287,7 +294,7 @@ fz_buffer *fz_new_buffer_from_image_as_pkm(fz_context *ctx, fz_image *image, fz_
 fz_buffer *fz_new_buffer_from_image_as_pnm(fz_context *ctx, fz_image *image, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_image_as_pam(fz_context *ctx, fz_image *image, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_image_as_psd(fz_context *ctx, fz_image *image, fz_color_params color_params);
-fz_buffer *fz_new_buffer_from_image_as_jpeg(fz_context *ctx, fz_image *image, fz_color_params color_params, int quality, int invert_cmyk);
+fz_buffer *fz_new_buffer_from_image_as_jpeg(fz_context *ctx, fz_image *image, fz_color_params color_params, int quality, enum fz_cmyk_jpeg_method cmyk_method);
 fz_buffer *fz_new_buffer_from_image_as_jpx(fz_context *ctx, fz_image *image, fz_color_params color_params, int quality);
 
 /**
@@ -301,7 +308,7 @@ fz_buffer *fz_new_buffer_from_pixmap_as_pkm(fz_context *ctx, fz_pixmap *pixmap, 
 fz_buffer *fz_new_buffer_from_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params);
 fz_buffer *fz_new_buffer_from_pixmap_as_psd(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params);
-fz_buffer *fz_new_buffer_from_pixmap_as_jpeg(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params, int quality, int invert_cmyk);
+fz_buffer *fz_new_buffer_from_pixmap_as_jpeg(fz_context *ctx, fz_pixmap *pixmap, fz_color_params color_params, int quality, enum fz_cmyk_jpeg_method cmyk_method);
 fz_buffer *fz_new_buffer_from_pixmap_as_jpx(fz_context *ctx, fz_pixmap *pix, fz_color_params color_params, int quality);
 
 /**

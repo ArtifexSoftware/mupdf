@@ -5262,11 +5262,11 @@ static void ffi_Pixmap_asJPEG(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_pixmap *pixmap = ffi_topixmap(J, 0);
 	int quality = js_isdefined(J, 1) ? js_tointeger(J, 1) : 90;
-	int invert_cmyk = js_isdefined(J, 1) ? js_toboolean(J, 1) : 0;
+	int cmyk_method = js_isdefined(J, 1) ? js_tonumber(J, 1) : 2;
 	fz_buffer *buf = NULL;
 
 	fz_try(ctx)
-		buf = fz_new_buffer_from_pixmap_as_jpeg(ctx, pixmap, fz_default_color_params, quality, invert_cmyk);
+		buf = fz_new_buffer_from_pixmap_as_jpeg(ctx, pixmap, fz_default_color_params, quality, cmyk_method);
 	fz_catch(ctx)
 		rethrow(J);
 

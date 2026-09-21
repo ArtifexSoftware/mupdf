@@ -301,19 +301,19 @@ Instance methods
 
 		var buffer = pixmap.asPAM()
 
-.. method:: Pixmap.prototype.asJPEG(quality, invert_cmyk)
+.. method:: Pixmap.prototype.asJPEG(quality, cmyk_method)
 
 	Returns a buffer of this pixmap as a JPEG.
 	Note, if this pixmap has an alpha channel then an exception will be thrown.
 
 	:param number quality: Desired compression quality, between ``0`` and ``100``.
-	:param boolean invert_cmyk: How to handle polarity in :term:`CMYK JPEG` images.
+	:param number cmyk_method: How to handle polarity in :term:`CMYK JPEG` images (0: non-inverted, 1: inverted, 2: convert to RGB).
 
 	:returns: `Buffer`
 
 	.. code-block::
 
-		var buffer = pixmap.asJPEG(80, false)
+		var buffer = pixmap.asJPEG(80, 2)
 
 .. method:: Pixmap.prototype.decodeBarcode(rotate)
 

@@ -1455,8 +1455,8 @@ export class Pixmap extends Userdata<"fz_pixmap"> {
 		}
 	}
 
-	asJPEG(quality: number, invert_cmyk=false) {
-		let buf = libmupdf._wasm_new_buffer_from_pixmap_as_jpeg(this.pointer, quality, invert_cmyk)
+	asJPEG(quality: number, cmyk_method=2) {
+		let buf = libmupdf._wasm_new_buffer_from_pixmap_as_jpeg(this.pointer, quality, cmyk_method)
 		try {
 			return fromBuffer(buf)
 		} finally {

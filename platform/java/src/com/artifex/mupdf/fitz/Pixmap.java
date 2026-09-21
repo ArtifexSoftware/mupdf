@@ -79,7 +79,7 @@ public class Pixmap
 	}
 
 	public native Buffer asPNG();
-	public native Buffer asJPEG(int quality, boolean invertCMYK);
+	public native Buffer asJPEG(int quality, int cmyk_method);
 	public native Buffer asPAM();
 	public native Buffer asPNM();
 	public native Buffer asPBM();

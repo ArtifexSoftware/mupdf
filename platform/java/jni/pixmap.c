@@ -119,7 +119,7 @@ FUN(Pixmap_asPNG)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Pixmap_asJPEG)(JNIEnv *env, jobject self, jint quality, jboolean invert_cmyk)
+FUN(Pixmap_asJPEG)(JNIEnv *env, jobject self, jint quality, jint cmyk_method)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
@@ -128,7 +128,7 @@ FUN(Pixmap_asJPEG)(JNIEnv *env, jobject self, jint quality, jboolean invert_cmyk
 	if (!ctx || !pixmap) return NULL;
 
 	fz_try(ctx)
-		buf = fz_new_buffer_from_pixmap_as_jpeg(ctx, pixmap, fz_default_color_params, quality, invert_cmyk);
+		buf = fz_new_buffer_from_pixmap_as_jpeg(ctx, pixmap, fz_default_color_params, quality, cmyk_method);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
