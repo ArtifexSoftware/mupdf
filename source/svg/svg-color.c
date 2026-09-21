@@ -728,7 +728,6 @@ svg_parse_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, svg_material
 
 			shade->u.l_or_r.extend[0] = 1;
 			shade->u.l_or_r.extend[1] = 1;
-			shade->u.l_or_r.use_obb = lg.obb;
 
 			shade->function_stride = 3 + 1; /* RGB + Alpha */
 			shade->function = Memento_label(fz_calloc(ctx, 256 * shade->function_stride, sizeof(float)), "shade samples");
@@ -741,7 +740,8 @@ svg_parse_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, svg_material
 		}
 
 		mat->type = SVG_MATERIAL_SHADE;
-		mat->u.shade = shade;
+		mat->u.s.shade = shade;
+		mat->u.s.use_obb = lg.obb;
 	}
 	else if (tag && !strcmp(tag, "radialGradient"))
 	{
@@ -781,7 +781,6 @@ svg_parse_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, svg_material
 
 			shade->u.l_or_r.extend[0] = 1;
 			shade->u.l_or_r.extend[1] = 1;
-			shade->u.l_or_r.use_obb = rg.obb;
 
 			shade->function_stride = 3 + 1; /* RGB + Alpha */
 			shade->function = Memento_label(fz_calloc(ctx, 256 * shade->function_stride, sizeof(float)), "shade samples");
@@ -794,7 +793,8 @@ svg_parse_gradient(fz_context *ctx, svg_document *doc, fz_xml *url, svg_material
 		}
 
 		mat->type = SVG_MATERIAL_SHADE;
-		mat->u.shade = shade;
+		mat->u.s.shade = shade;
+		mat->u.s.use_obb = rg.obb;
 	}
 }
 

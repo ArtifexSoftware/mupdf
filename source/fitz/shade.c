@@ -163,13 +163,6 @@ fz_process_shade_type2(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	p0.y = shade->u.l_or_r.coords[0][1];
 	p1.x = shade->u.l_or_r.coords[1][0];
 	p1.y = shade->u.l_or_r.coords[1][1];
-	if (shade->u.l_or_r.use_obb)
-	{
-		p0.x = (scissor.x1 - scissor.x0) * p0.x + scissor.x0;
-		p0.y = (scissor.y1 - scissor.y0) * p0.y + scissor.y0;
-		p1.x = (scissor.x1 - scissor.x0) * p1.x + scissor.x0;
-		p1.y = (scissor.y1 - scissor.y0) * p1.y + scissor.y0;
-	}
 	dir.x = p0.y - p1.y;
 	dir.y = p1.x - p0.x;
 	p0 = fz_transform_point(p0, ctm);
@@ -290,7 +283,7 @@ fz_paint_annulus(fz_context *ctx, fz_matrix ctm,
 }
 
 static void
-fz_process_shade_type3(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter, fz_rect scissor)
+fz_process_shade_type3(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
 {
 	fz_point p0, p1;
 	float r0, r1;
@@ -305,17 +298,6 @@ fz_process_shade_type3(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_
 	p1.x = shade->u.l_or_r.coords[1][0];
 	p1.y = shade->u.l_or_r.coords[1][1];
 	r1 = shade->u.l_or_r.coords[1][2];
-	if (shade->u.l_or_r.use_obb)
-	{
-		float w = (scissor.x1 - scissor.x0);
-		float h = (scissor.y1 - scissor.y0);
-		p0.x = w * p0.x + scissor.x0;
-		p0.y = h * p0.y + scissor.y0;
-		r0 = fz_min(w, h) * r0;
-		p1.x = w * p1.x + scissor.x0;
-		p1.y = h * p1.y + scissor.y0;
-		r1 = fz_min(w, h) * r1;
-	}
 
 	/* number of segments for a half-circle */
 	count = 4 * sqrtf(fz_matrix_expansion(ctm) * fz_max(r0, r1));
@@ -1014,7 +996,7 @@ fz_process_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_rect scisso
 	else if (shade->type == FZ_LINEAR)
 		fz_process_shade_type2(ctx, shade, ctm, &painter, scissor);
 	else if (shade->type == FZ_RADIAL)
-		fz_process_shade_type3(ctx, shade, ctm, &painter, scissor);
+		fz_process_shade_type3(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE4)
 		fz_process_shade_type4(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE5)

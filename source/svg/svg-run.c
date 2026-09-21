@@ -86,18 +86,18 @@ static void svg_begin_state(fz_context *ctx, svg_state *child, const svg_state *
 {
 	memcpy(child, parent, sizeof(svg_state));
 	if (child->fill_mat.type == SVG_MATERIAL_SHADE)
-		fz_keep_shade(ctx, child->fill_mat.u.shade);
+		fz_keep_shade(ctx, child->fill_mat.u.s.shade);
 	if (child->stroke_mat.type == SVG_MATERIAL_SHADE)
-		fz_keep_shade(ctx, child->stroke_mat.u.shade);
+		fz_keep_shade(ctx, child->stroke_mat.u.s.shade);
 	child->stroke = fz_clone_stroke_state(ctx, parent->stroke);
 }
 
 static void svg_end_state(fz_context *ctx, svg_state *child)
 {
 	if (child->fill_mat.type == SVG_MATERIAL_SHADE)
-		fz_drop_shade(ctx, child->fill_mat.u.shade);
+		fz_drop_shade(ctx, child->fill_mat.u.s.shade);
 	if (child->stroke_mat.type == SVG_MATERIAL_SHADE)
-		fz_drop_shade(ctx, child->stroke_mat.u.shade);
+		fz_drop_shade(ctx, child->stroke_mat.u.s.shade);
 	fz_drop_stroke_state(ctx, child->stroke);
 }
 
@@ -105,9 +105,32 @@ void
 svg_drop_material(fz_context *ctx, svg_material *mat)
 {
 	if (mat->type == SVG_MATERIAL_SHADE)
-		fz_drop_shade(ctx, mat->u.shade);
+		fz_drop_shade(ctx, mat->u.s.shade);
 
 	mat->type = SVG_MATERIAL_NONE;
+}
+
+static fz_matrix
+obb_transform(fz_context *ctx, fz_path *path, fz_matrix ctm, fz_shade *shade)
+{
+	/* This took me a while to figure out, and it'll probably confuse me again in future if I don't document it.
+	 *
+	 * When we run a shade it makes local_tfm = fz_concat(shade->transform, ctm)
+	 * It then maps the end points of the gradient through local_tfm. So: endpoint . local_ctm = (x, y)
+	 * We want to 'adjust' the ctm, so that the overall effect is as if the endpoint had been defined in userspace
+	 * rather than the unit square.
+	 * So effectively we'd like to do: endpoint . obb_adjust . shade->transform . ctm
+	 * But matrix multiplication is not commutative, so that's hard. But that's equivalent to doing:
+	 *    endpoint . shade->transform . invert(shade->transform). obb_adjust . shade->transform . ctm
+	 * So if we pass in ctm' = invert(shade->transform). obb_adjust . shade->transform . ctm
+	 * rather than ctm we should get the desired effect.
+	 */
+
+	fz_rect bounds = fz_bound_path(ctx, path, NULL, fz_identity);
+	fz_matrix obb_adjust = fz_concat(fz_scale(bounds.x1 - bounds.x0, bounds.y1 - bounds.y0), fz_translate(bounds.x0, bounds.y0));
+	fz_matrix inv = fz_invert_matrix(shade->matrix);
+
+	return fz_concat(fz_concat(inv, obb_adjust), shade->matrix);
 }
 
 static void svg_fill(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path *path, svg_state *state)
@@ -121,8 +144,11 @@ static void svg_fill(fz_context *ctx, fz_device *dev, svg_document *doc, fz_path
 		fz_fill_path(ctx, dev, path, state->fill_rule, state->transform, fz_device_rgb(ctx), state->fill_mat.u.color, opacity, fz_default_color_params);
 	if (state->fill_mat.type == SVG_MATERIAL_SHADE)
 	{
+		fz_matrix tfm = state->transform;
 		fz_clip_path(ctx, dev, path, state->fill_rule, state->transform, fz_infinite_rect);
-		fz_fill_shade(ctx, dev, state->fill_mat.u.shade, state->transform, state->fill_opacity, fz_default_color_params);
+		if (state->fill_mat.u.s.use_obb)
+			tfm = obb_transform(ctx, path, state->transform, state->fill_mat.u.s.shade);
+		fz_fill_shade(ctx, dev, state->fill_mat.u.s.shade, tfm, state->fill_opacity, fz_default_color_params);
 		fz_pop_clip(ctx, dev);
 	}
 }
@@ -137,8 +163,11 @@ static void svg_stroke(fz_context *ctx, fz_device *dev, svg_document *doc, fz_pa
 		fz_stroke_path(ctx, dev, path, state->stroke, state->transform, fz_device_rgb(ctx), state->stroke_mat.u.color, opacity, fz_default_color_params);
 	if (state->stroke_mat.type == SVG_MATERIAL_SHADE)
 	{
+		fz_matrix tfm = state->transform;
 		fz_clip_stroke_path(ctx, dev, path, state->stroke, state->transform, fz_infinite_rect);
-		fz_fill_shade(ctx, dev, state->stroke_mat.u.shade, state->transform, state->stroke_opacity, fz_default_color_params);
+		if (state->stroke_mat.u.s.use_obb)
+			tfm = obb_transform(ctx, path, state->transform, state->stroke_mat.u.s.shade);
+		fz_fill_shade(ctx, dev, state->stroke_mat.u.s.shade, tfm, state->stroke_opacity, fz_default_color_params);
 		fz_pop_clip(ctx, dev);
 	}
 }

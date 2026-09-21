@@ -56,7 +56,11 @@ typedef struct
 	svg_material_type type;
 	union {
 		float color[3];
-		fz_shade *shade;
+		struct
+		{
+			fz_shade *shade;
+			int use_obb;
+		} s;
 	} u;
 } svg_material;
 
