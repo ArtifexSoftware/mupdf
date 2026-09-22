@@ -1677,7 +1677,7 @@ find_macroman_string(const char *s)
 	int comparison;
 
 	l = 0;
-	r = nelem(macroman);
+	r = nelem(macroman)-1;
 	while (l <= r)
 	{
 		m = (l + r) >> 1;
