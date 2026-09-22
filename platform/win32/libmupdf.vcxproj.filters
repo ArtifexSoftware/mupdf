@@ -1055,5 +1055,8 @@
     <ClInclude Include="..\..\include\mupdf\fitz\list.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\fitz\fitz-imp.h">
+      <Filter>fitz</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
