@@ -359,3 +359,44 @@ svg_parse_string_from_style(fz_context *ctx, svg_document *doc, const char *styl
 	fz_strlcpy(buf, value, buf_size);
 	return buf;
 }
+
+static void
+svg_apply_css_match(fz_context *ctx, fz_pool *pool, fz_xml *node, fz_css_match *match)
+{
+	const char *att;
+	char val[100];
+	int i;
+	for (i = 0; i < SVG_NUM_PROPERTIES; ++i)
+	{
+		if (match->spec[i] >= 0)
+		{
+			att = fz_css_property_name_in_svg(i);
+			if (!fz_xml_att(node, att))
+				fz_xml_add_att(ctx, pool, node, att, fz_string_from_css_value(ctx, val, sizeof val, match->value[i]));
+		}
+	}
+}
+
+void
+svg_apply_css_cascade(fz_context *ctx, fz_pool *pool, fz_css *css, fz_xml *node)
+{
+	fz_css_match match;
+	fz_xml *down;
+
+	while (node)
+	{
+		// NOTE: we don't inherit CSS attributes like in HTML; since we
+		// apply them to the matching elements and use SVG's normal
+		// attribute inheritance. Therefore we leave the "up" match NULL.
+
+		fz_match_css_in_svg(ctx, &match, NULL, css, node);
+
+		svg_apply_css_match(ctx, pool, node, &match);
+
+		down = fz_xml_down(node);
+		if (down)
+			svg_apply_css_cascade(ctx, pool, css, down);
+
+		node = fz_xml_next(node);
+	}
+}

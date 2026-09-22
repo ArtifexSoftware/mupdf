@@ -29,16 +29,6 @@ typedef struct fz_html_font_face fz_html_font_face;
 typedef struct fz_html_box fz_html_box;
 typedef struct fz_html_flow fz_html_flow;
 typedef struct fz_css_style_splay fz_css_style_splay;
-
-typedef struct fz_css fz_css;
-typedef struct fz_css_rule fz_css_rule;
-typedef struct fz_css_match fz_css_match;
-typedef struct fz_css_style fz_css_style;
-
-typedef struct fz_css_selector fz_css_selector;
-typedef struct fz_css_condition fz_css_condition;
-typedef struct fz_css_property fz_css_property;
-typedef struct fz_css_value fz_css_value;
 typedef struct fz_css_number fz_css_number;
 typedef struct fz_css_color fz_css_color;
 
@@ -75,56 +65,7 @@ enum
 	CSS_URI,
 };
 
-struct fz_css
-{
-	fz_pool *pool;
-	fz_css_rule *rule;
-};
-
-struct fz_css_rule
-{
-	fz_css_selector *selector;
-	fz_css_property *declaration;
-	fz_css_rule *next;
-	int loaded;
-};
-
-struct fz_css_selector
-{
-	char *name;
-	int combine;
-	fz_css_condition *cond;
-	fz_css_selector *left;
-	fz_css_selector *right;
-	fz_css_selector *next;
-};
-
-struct fz_css_condition
-{
-	int type;
-	char *key;
-	char *val;
-	fz_css_condition *next;
-};
-
-struct fz_css_property
-{
-	int name;
-	fz_css_value *value;
-	short spec;
-	short important;
-	fz_css_property *next;
-};
-
-struct fz_css_value
-{
-	int type;
-	char *data;
-	fz_css_value *args; /* function arguments */
-	fz_css_value *next;
-};
-
-enum
+enum fz_css_property_name
 {
 	PRO_BACKGROUND_COLOR,
 	PRO_BORDER_BOTTOM_COLOR,
@@ -196,7 +137,7 @@ enum
 	PRO_WORD_SPACING,
 
 	/* Number of real properties. */
-	NUM_PROPERTIES,
+	HTML_NUM_PROPERTIES,
 
 	/* Short-hand properties (always expanded when applied, never used as is): */
 	PRO_BACKGROUND,
@@ -214,12 +155,9 @@ enum
 	PRO_PADDING,
 };
 
-struct fz_css_match
-{
-	fz_css_match *up;
-	short spec[NUM_PROPERTIES];
-	fz_css_value *value[NUM_PROPERTIES];
-};
+#if HTML_NUM_PROPERTIES > FZ_MAX_CSS_PROPS
+#error "FZ_MAX_CSS_PROPS is too small!"
+#endif
 
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL, DIS_TABLE_COLGROUP, DIS_TABLE_COL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
@@ -576,14 +514,6 @@ struct fz_html_flow
 };
 
 
-fz_css *fz_new_css(fz_context *ctx);
-void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file);
-fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source);
-void fz_drop_css(fz_context *ctx, fz_css *css);
-void fz_debug_css(fz_context *ctx, fz_css *css);
-const char *fz_css_property_name(int name);
-
-void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node, int pseudo, int publisher_css);
 void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
 
 int fz_get_css_match_display(fz_css_match *node);

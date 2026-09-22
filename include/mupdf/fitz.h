@@ -83,6 +83,7 @@ extern "C" {
 #include "mupdf/fitz/outline.h"
 #include "mupdf/fitz/document.h"
 
+#include "mupdf/fitz/css.h"
 #include "mupdf/fitz/html.h"
 
 #include "mupdf/fitz/util.h"

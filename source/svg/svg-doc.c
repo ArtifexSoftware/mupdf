@@ -107,6 +107,50 @@ svg_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *b
 	return -1;
 }
 
+static void
+svg_load_css(fz_context *ctx, fz_css *css, fz_xml *node)
+{
+	fz_xml *down;
+	while (node)
+	{
+		if (fz_xml_is_tag(node, "style"))
+		{
+			char *s = fz_new_text_from_xml(ctx, node);
+			fz_try(ctx)
+				fz_parse_css_in_svg(ctx, css, s, "<style>");
+			fz_always(ctx)
+				fz_free(ctx, s);
+			fz_catch(ctx)
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
+				fz_report_error(ctx);
+				fz_warn(ctx, "ignoring inline stylesheet");
+			}
+		}
+
+		down = fz_xml_down(node);
+		if (down)
+			svg_load_css(ctx, css, down);
+
+		node = fz_xml_next(node);
+	}
+}
+
+static void
+svg_apply_css(fz_context *ctx, fz_xml *node)
+{
+	fz_css *css = fz_new_css(ctx);
+	fz_try(ctx)
+	{
+		svg_load_css(ctx, css, node);
+		svg_apply_css_cascade(ctx, fz_xml_pool(node), css, node);
+	}
+	fz_always(ctx)
+		fz_drop_css(ctx, css);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
 static fz_document *
 svg_open_document_with_xml(fz_context *ctx, fz_xml_doc *xmldoc, fz_xml *xml, const char *base_uri, fz_archive *zip)
 {
@@ -131,6 +175,7 @@ svg_open_document_with_xml(fz_context *ctx, fz_xml_doc *xmldoc, fz_xml *xml, con
 			svg_build_id_map(ctx, doc, fz_xml_root(xmldoc));
 		else
 			svg_build_id_map(ctx, doc, doc->root);
+		svg_apply_css(ctx, xml);
 	}
 	fz_catch(ctx)
 	{
@@ -162,6 +207,7 @@ svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf, const char *base_
 		doc->xml = fz_parse_xml(ctx, buf, 0);
 		doc->root = fz_xml_root(doc->xml);
 		svg_build_id_map(ctx, doc, doc->root);
+		svg_apply_css(ctx, doc->root);
 	}
 	fz_catch(ctx)
 	{

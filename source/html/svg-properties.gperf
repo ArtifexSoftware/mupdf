@@ -1,0 +1,27 @@
+struct css_property_info;
+%define hash-function-name svg_property_hash
+%define lookup-function-name svg_property_lookup
+%define word-array-name svg_property_list
+%global-table
+%struct-type
+%%
+fill,SVG_ATT_FILL
+fill-opacity,SVG_ATT_FILL_OPACITY
+fill-rule,SVG_ATT_FILL_RULE
+font-family,SVG_ATT_FONT_FAMILY
+font-size,SVG_ATT_FONT_SIZE
+font-style,SVG_ATT_FONT_STYLE
+font-weight,SVG_ATT_FONT_WEIGHT
+height,SVG_ATT_HEIGHT
+opacity,SVG_ATT_OPACITY
+stop-color,SVG_ATT_STOP_COLOR
+stop-opacity,SVG_ATT_STOP_OPACITY
+stroke,SVG_ATT_STROKE
+stroke-linecap,SVG_ATT_STROKE_LINECAP
+stroke-linejoin,SVG_ATT_STROKE_LINEJOIN
+stroke-miterlimit,SVG_ATT_STROKE_MITERLIMIT
+stroke-opacity,SVG_ATT_STROKE_OPACITY
+stroke-width,SVG_ATT_STROKE_WIDTH
+text-anchor,SVG_ATT_TEXT_ANCHOR
+transform,SVG_ATT_TRANSFORM
+width,SVG_ATT_WIDTH

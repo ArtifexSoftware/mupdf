@@ -323,7 +323,11 @@ generate: source/pdf/js/util.js.h
 source/html/css-properties.h: source/html/css-properties.gperf
 	$(QUIET_GEN) gperf > $@ $<
 
+source/html/svg-properties.h: source/html/svg-properties.gperf
+	$(QUIET_GEN) gperf > $@ $<
+
 generate: source/html/css-properties.h
+generate: source/html/svg-properties.h
 
 # --- Library ---
 

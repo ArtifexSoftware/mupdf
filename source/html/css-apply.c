@@ -21,7 +21,9 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-#include "html-imp.h"
+
+#include "../html/html-imp.h"
+#include "../svg/svg-imp.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -1042,7 +1044,17 @@ add_property(fz_css_match *match, int name, fz_css_value *value, int spec)
 		return;
 	}
 
-	if (name < NUM_PROPERTIES && match->spec[name] <= spec)
+	if (name < FZ_MAX_CSS_PROPS && match->spec[name] <= spec)
+	{
+		match->value[name] = value;
+		match->spec[name] = spec;
+	}
+}
+
+static void
+add_property_in_svg(fz_css_match *match, int name, fz_css_value *value, int spec)
+{
+	if (name < FZ_MAX_CSS_PROPS && match->spec[name] <= spec)
 	{
 		match->value[name] = value;
 		match->spec[name] = spec;
@@ -1059,7 +1071,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css
 	int i;
 
 	match->up = up;
-	for (i = 0; i < NUM_PROPERTIES; ++i)
+	for (i = 0; i < HTML_NUM_PROPERTIES; ++i)
 	{
 		match->spec[i] = -1;
 		match->value[i] = NULL;
@@ -1106,6 +1118,59 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css
 }
 
 void
+fz_match_css_in_svg(fz_context *ctx, fz_css_match *match, fz_css_match *up, fz_css *css, fz_xml *node)
+{
+	fz_css_rule *rule;
+	fz_css_selector *sel;
+	fz_css_property *prop;
+	const char *s;
+	int i;
+
+	match->up = up;
+	for (i = 0; i < SVG_NUM_PROPERTIES; ++i)
+	{
+		match->spec[i] = -1;
+		match->value[i] = NULL;
+	}
+
+	for (rule = css->rule; rule; rule = rule->next)
+	{
+		sel = rule->selector;
+		while (sel)
+		{
+			if (match_selector(sel, node, 0))
+			{
+				for (prop = rule->declaration; prop; prop = prop->next)
+					add_property_in_svg(match, prop->name, prop->value, selector_specificity(sel, prop->important));
+				break;
+			}
+			sel = sel->next;
+		}
+	}
+
+	s = fz_xml_att(node, "style");
+	if (s)
+	{
+		fz_try(ctx)
+		{
+			prop = fz_parse_css_properties_in_svg(ctx, css->pool, s);
+			while (prop)
+			{
+				add_property_in_svg(match, prop->name, prop->value, INLINE_SPECIFICITY);
+				prop = prop->next;
+			}
+			/* We can "leak" the property here, since it is freed along with the pool allocator. */
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
+			fz_report_error(ctx);
+			fz_warn(ctx, "ignoring style attribute");
+		}
+	}
+}
+
+void
 fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css)
 {
 	fz_css_rule *rule;
@@ -1114,7 +1179,7 @@ fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css)
 	int i;
 
 	match->up = NULL;
-	for (i = 0; i < NUM_PROPERTIES; ++i)
+	for (i = 0; i < HTML_NUM_PROPERTIES; ++i)
 	{
 		match->spec[i] = -1;
 		match->value[i] = NULL;
@@ -2247,7 +2312,14 @@ fz_css_enlist(fz_context *ctx, const fz_css_style *style, fz_css_style_splay **t
 
 static void print_value(fz_css_value *val)
 {
-	printf("%s", val->data);
+	if (val->type == CSS_URI)
+		printf("url(%s)", val->data);
+	else if (val->type == CSS_HASH)
+		printf("#%s", val->data);
+	else if (val->type == CSS_HASH)
+		printf("\"%s\"", val->data);
+	else
+		printf("%s", val->data);
 	if (val->args)
 	{
 		printf("(");
@@ -2261,9 +2333,12 @@ static void print_value(fz_css_value *val)
 	}
 }
 
-static void print_property(fz_css_property *prop)
+static void print_property(fz_css_property *prop, int svg)
 {
-	printf("\t%s: ", fz_css_property_name(prop->name));
+	if (svg)
+		printf("\t%s: ", fz_css_property_name_in_svg(prop->name));
+	else
+		printf("\t%s: ", fz_css_property_name(prop->name));
 	print_value(prop->value);
 	if (prop->important)
 		printf(" !important");
@@ -2307,7 +2382,7 @@ static void print_selector(fz_css_selector *sel)
 	}
 }
 
-static void print_rule(fz_css_rule *rule)
+static void print_rule(fz_css_rule *rule, int svg)
 {
 	fz_css_selector *sel;
 	fz_css_property *prop;
@@ -2323,7 +2398,7 @@ static void print_rule(fz_css_rule *rule)
 	printf("\n{\n");
 	for (prop = rule->declaration; prop; prop = prop->next)
 	{
-		print_property(prop);
+		print_property(prop, svg);
 	}
 	printf("}\n");
 }
@@ -2334,7 +2409,18 @@ fz_debug_css(fz_context *ctx, fz_css *css)
 	fz_css_rule *rule = css->rule;
 	while (rule)
 	{
-		print_rule(rule);
+		print_rule(rule, 0);
+		rule = rule->next;
+	}
+}
+
+void
+fz_debug_css_in_svg(fz_context *ctx, fz_css *css)
+{
+	fz_css_rule *rule = css->rule;
+	while (rule)
+	{
+		print_rule(rule, 1);
 		rule = rule->next;
 	}
 }

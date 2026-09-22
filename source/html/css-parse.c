@@ -21,16 +21,33 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-#include "html-imp.h"
+
+#include "../html/html-imp.h"
+#include "../svg/svg-imp.h"
 
 #include <string.h>
 
 #include "css-properties.h"
+#undef TOTAL_KEYWORDS
+#undef MIN_WORD_LENGTH
+#undef MAX_WORD_LENGTH
+#undef MIN_HASH_VALUE
+#undef MAX_HASH_VALUE
+
+#include "svg-properties.h"
+#undef TOTAL_KEYWORDS
+#undef MIN_WORD_LENGTH
+#undef MAX_WORD_LENGTH
+#undef MIN_HASH_VALUE
+#undef MAX_HASH_VALUE
+
+typedef struct css_property_info *(*lookup_fn)(register const char *str, register size_t len);
 
 struct lexbuf
 {
 	fz_context *ctx;
 	fz_pool *pool;
+	lookup_fn lookup;
 	const unsigned char *start;
 	const unsigned char *s;
 	const char *file;
@@ -187,9 +204,9 @@ static fz_css_condition *fz_new_css_condition(fz_context *ctx, fz_pool *pool, in
 	return cond;
 }
 
-static fz_css_property *fz_new_css_property(fz_context *ctx, fz_pool *pool, const char *name, fz_css_value *value, int spec)
+static fz_css_property *fz_new_css_property(fz_context *ctx, fz_pool *pool, lookup_fn lookup, const char *name, fz_css_value *value, int spec)
 {
-	struct css_property_info *info = css_property_lookup(name, strlen(name));
+	struct css_property_info *info = lookup(name, strlen(name));
 	if (info)
 	{
 		fz_css_property *prop = fz_pool_alloc(ctx, pool, sizeof *prop);
@@ -237,10 +254,11 @@ static void css_lex_next(struct lexbuf *buf)
 	buf->lookahead = EOF;
 }
 
-static void css_lex_init(fz_context *ctx, struct lexbuf *buf, fz_pool *pool, const char *s, const char *file)
+static void css_lex_init(fz_context *ctx, struct lexbuf *buf, fz_pool *pool, const char *s, const char *file, lookup_fn lookup)
 {
 	buf->ctx = ctx;
 	buf->pool = pool;
+	buf->lookup = lookup;
 	buf->s = (const unsigned char *)s;
 	buf->lookahead = EOF;
 	buf->start = buf->s;
@@ -729,7 +747,7 @@ static fz_css_property *parse_declaration(struct lexbuf *buf)
 
 	if (buf->lookahead != CSS_KEYWORD)
 		fz_css_error(buf, "expected keyword in property");
-	p = fz_new_css_property(buf->ctx, buf->pool, buf->string, NULL, 0);
+	p = fz_new_css_property(buf->ctx, buf->pool, buf->lookup, buf->string, NULL, 0);
 	next(buf);
 
 	white(buf);
@@ -1182,10 +1200,28 @@ const char *fz_css_property_name(int key)
 	return name;
 }
 
+const char *fz_css_property_name_in_svg(int key)
+{
+	const char *name = "unknown";
+	size_t i;
+	for (i = 0; i < nelem(svg_property_list); ++i)
+		if (*svg_property_list[i].name && svg_property_list[i].key == key)
+			name = svg_property_list[i].name;
+	return name;
+}
+
 fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, pool, source, "<inline>");
+	css_lex_init(ctx, &buf, pool, source, "<inline>", css_property_lookup);
+	next(&buf);
+	return parse_declaration_list(&buf);
+}
+
+fz_css_property *fz_parse_css_properties_in_svg(fz_context *ctx, fz_pool *pool, const char *source)
+{
+	struct lexbuf buf;
+	css_lex_init(ctx, &buf, pool, source, "<inline>", svg_property_lookup);
 	next(&buf);
 	return parse_declaration_list(&buf);
 }
@@ -1193,7 +1229,56 @@ fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const c
 void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, css->pool, source, file);
+	css_lex_init(ctx, &buf, css->pool, source, file, css_property_lookup);
 	next(&buf);
 	css->rule = parse_stylesheet(&buf, css->rule);
+}
+
+void fz_parse_css_in_svg(fz_context *ctx, fz_css *css, const char *source, const char *file)
+{
+	struct lexbuf buf;
+	css_lex_init(ctx, &buf, css->pool, source, file, svg_property_lookup);
+	next(&buf);
+	css->rule = parse_stylesheet(&buf, css->rule);
+}
+
+char *
+fz_string_from_css_value(fz_context *ctx, char *buf, int size, fz_css_value *value)
+{
+	char tmp[100];
+	buf[0] = 0;
+	while (value)
+	{
+		if (value->type == CSS_URI)
+		{
+			fz_strlcat(buf, "url(", size);
+			fz_strlcat(buf, value->data, size);
+			fz_strlcat(buf, ")", size);
+		}
+		else if (value->type == CSS_HASH)
+		{
+			fz_strlcat(buf, "#", size);
+			fz_strlcat(buf, value->data, size);
+		}
+		else if (value->type == CSS_STRING)
+		{
+			fz_strlcat(buf, "\"", size);
+			// FIXME: we should really escape the string values
+			// here, but nothing we use it for so far will need it.
+			fz_strlcat(buf, value->data, size);
+			fz_strlcat(buf, "\"", size);
+		}
+		else
+		{
+			fz_strlcat(buf, value->data, size);
+		}
+		if (value->args)
+		{
+			fz_strlcat(buf, "(", size);
+			fz_strlcat(buf, fz_string_from_css_value(ctx, tmp, sizeof tmp, value->args), size);
+			fz_strlcat(buf, ")", size);
+		}
+		value = value->next;
+	}
+	return buf;
 }

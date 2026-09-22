@@ -25,6 +25,7 @@ memento.*		spaces
 
 # Generated source files:
 source/html/css-properties.h	spaces
+source/html/svg-properties.h	spaces
 
 # iOS project files:
 *.xib			spaces
