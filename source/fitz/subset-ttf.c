@@ -457,6 +457,7 @@ subset_name_table(fz_context *ctx, ttf_t *ttf, fz_stream *stm)
 	d = t->data;
 
 	fz_var(new_name_data);
+	fz_var(pl);
 
 	fz_try(ctx)
 	{
