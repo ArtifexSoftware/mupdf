@@ -1,9 +1,15 @@
 # .readthedocs.yaml
 # Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html
+
 
 # Required
 version: 2
+
+# https://github.com/readthedocs/readthedocs.org/issues/7883
+# Since readthedocs doesn't support separate configuration and source directories,
+# we need to add a pre_build step to copy conf.py (and associated files) to the
+# source directory.
 
 # Set the version of Python and other tools you might need
 build:
@@ -12,6 +18,10 @@ build:
     python: latest
   apt_packages:
     - graphviz
+  jobs:
+    pre_build:
+      - cp -rf scripts/sphinx/conf.py docs/
+      - cp -rf scripts/sphinx/_static docs/
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -20,4 +30,4 @@ sphinx:
 # Optionally declare the Python requirements required to build your docs
 python:
   install:
-    - requirements: docs/requirements.txt
+    - requirements: scripts/sphinx/requirements.txt

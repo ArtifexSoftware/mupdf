@@ -20,17 +20,17 @@ Activate the environment by sourcing the activation script:
 
 In this environment run pip to install Sphinx and all the required modules.
 
-	pip install -r docs/requirements.txt
+	pip install -r scripts/sphinx/requirements.txt
 
 ## Building HTML documentation
 
 Within the virtual environment you can now build the documentation:
 
-	sphinx-build docs build/docs
+	sphinx-build -c scripts/sphinx docs build/sphinx-html
 
 To do a fresh rebuild (in case files in the `_static` folder or the toc structure has changed):
 
-	sphinx-build -E -a docs build/docs
+	sphinx-build -c scripts/sphinx -E -a docs build/sphinx-html
 
 ## Live edit HTML documentation
 
@@ -38,11 +38,11 @@ You can use [Sphinx Autobuild](https://pypi.org/project/sphinx-autobuild/) to re
 the documentation on changes, with hot reloading in the browser.
 
 	pip install sphinx-autobuild
-	sphinx-autobuild --open-browser docs build/docs
+	sphinx-autobuild -c scripts/sphinx --open-browser docs build/sphinx-html
 
 ## Using the Makefile targets
 
 We also have makefile targets and helper scripts to perform the above tasks:
 
-	make docs
-	make docs-live
+	make shpinx
+	make shpinx-live

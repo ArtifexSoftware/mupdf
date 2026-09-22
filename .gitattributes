@@ -16,6 +16,7 @@ Make*			makefile
 *.vcxproj		spaces
 *.vcxproj.filters	spaces
 bin2coff.xml		spaces
+*.yaml			spaces
 
 # Documentation files:
 *.txt			spaces

@@ -526,17 +526,14 @@ install-docs:
 
 install: install-libs install-apps install-docs
 
-docs:
-	bash scripts/build-docs.sh
+sphinx:
+	bash scripts/sphinx/build-html.sh
 
-docs-live:
-	bash scripts/build-docs-live.sh
+sphinx-live:
+	bash scripts/sphinx/build-html-live.sh
 
-docs-markdown:
-	bash scripts/build-docs-markdown.sh
-
-docs-clean:
-	rm -rf build/docs
+sphinx-clean:
+	rm -rf build/sphinx-html
 	rm -rf build/sphinx-venv
 	rm -rf build/sphinx-doctrees
 
