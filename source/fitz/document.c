@@ -647,8 +647,8 @@ fz_drop_document(fz_context *ctx, fz_document *doc)
 	}
 }
 
-static void
-fz_ensure_layout(fz_context *ctx, fz_document *doc)
+void
+fz_ensure_styled(fz_context *ctx, fz_document *doc)
 {
 	/* Note: deprecated use of global fz_use_document_css and fz_user_css */
 	if (doc && doc->style && doc->did_style == FZ_STYLE_NEEDS_DEFAULT)
@@ -661,6 +661,13 @@ fz_ensure_layout(fz_context *ctx, fz_document *doc)
 		doc->style(ctx, doc);
 		doc->did_style = FZ_STYLE_APPLIED;
 	}
+
+}
+
+static void
+fz_ensure_layout(fz_context *ctx, fz_document *doc)
+{
+	fz_ensure_styled(ctx, doc);
 
 	if (doc && doc->layout && doc->did_layout == FZ_LAYOUT_NEEDS_UPDATE)
 	{

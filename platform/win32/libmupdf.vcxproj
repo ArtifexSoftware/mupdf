@@ -1388,6 +1388,7 @@
     <ClInclude Include="..\..\source\fitz\deskew_neon.h" />
     <ClInclude Include="..\..\source\fitz\deskew_sse.h" />
     <ClInclude Include="..\..\source\fitz\draw-imp.h" />
+    <ClInclude Include="..\..\source\fitz\fitz-imp.h" />
     <ClInclude Include="..\..\source\fitz\font-table.h" />
     <ClInclude Include="..\..\source\fitz\glyph-imp.h" />
     <ClInclude Include="..\..\source\fitz\glyphbox.h" />
