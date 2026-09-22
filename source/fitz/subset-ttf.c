@@ -1095,6 +1095,9 @@ glyph_used(fz_context *ctx, ttf_t *ttf, fz_buffer *glyf, uint16_t i)
 		return;
 	if (offset > UINT32_MAX - 2 || offset+2 > glyf->len)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
+	/* loca is only checked at the end */
+	if (len > glyf->len - offset)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "Corrupt glyf data");
 	data = glyf->data + offset;
 	if ((int16_t)get16(data) >= 0)
 		return; /* Single glyph - no dependencies */
