@@ -256,7 +256,7 @@ template_solid_color_4_da(byte * FZ_RESTRICT dp, int n, int w, const byte * FZ_R
 			dp[1] = FZ_BLEND(color[1], dp[1], sa);
 			dp[2] = FZ_BLEND(color[2], dp[2], sa);
 			dp[3] = FZ_BLEND(color[3], dp[3], sa);
-			dp[4] = FZ_BLEND(255, dp[5], sa);
+			dp[4] = FZ_BLEND(255, dp[4], sa);
 			dp += 5;
 		}
 		while (--w);
