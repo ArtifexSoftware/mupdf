@@ -1433,3 +1433,16 @@ char *fz_new_text_from_xml(fz_context *ctx, fz_xml *root)
 	s[i] = 0;
 	return s;
 }
+
+fz_pool *fz_xml_pool(fz_xml *xml)
+{
+	if (xml == NULL)
+		return NULL;
+
+	/* If we've been given a node mid-tree, run up to the root to find
+	 * the doc node. */
+	while (xml->up)
+		xml = xml->up;
+
+	return xml->u.doc.pool;
+}

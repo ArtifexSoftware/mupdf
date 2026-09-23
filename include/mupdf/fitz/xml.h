@@ -262,6 +262,11 @@ fz_xml *fz_xml_find_next_dfs_top(fz_xml *item, const char *tag, const char *att,
 char *fz_new_text_from_xml(fz_context *ctx, fz_xml *root);
 
 /**
+	Return the pool associated with a given XML tree.
+*/
+fz_pool *fz_xml_pool(fz_xml *xml);
+
+/**
 	DOM-like functions for html in xml.
 */
 

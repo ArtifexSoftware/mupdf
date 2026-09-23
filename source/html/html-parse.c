@@ -2421,7 +2421,7 @@ fz_parse_html_tree(fz_context *ctx,
 	xml = parse_to_xml(ctx, buf, try_xml, try_html5);
 
 	if (flavor == FZ_HTML_FLAVOR_MOBI)
-		patch_mobi_html(ctx, xml->u.doc.pool, fz_xml_root(xml));
+		patch_mobi_html(ctx, fz_xml_pool(xml), fz_xml_root(xml));
 
 	fz_try(ctx)
 		xml_to_boxes(ctx, set, zip, base_uri, user_css, xml, tree, metadata, flavor, publisher_css,
