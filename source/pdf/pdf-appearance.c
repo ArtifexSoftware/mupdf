@@ -21,7 +21,6 @@
 // CA 94129, USA, for further information.
 
 #include "mupdf/fitz.h"
-#include "../fitz/context-imp.h"
 #include "pdf-annot-imp.h"
 #include "mupdf/ucdn.h"
 
