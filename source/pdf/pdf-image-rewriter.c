@@ -23,8 +23,6 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
-#include "../fitz/pixmap-imp.h"
-
 #include <string.h>
 #include <math.h>
 
