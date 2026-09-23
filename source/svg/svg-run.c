@@ -1099,9 +1099,6 @@ svg_parse_viewbox(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *s
 	}
 }
 
-static const char *linecap_table[] = { "butt", "round", "square" };
-static const char *linejoin_table[] = { "miter", "round", "bevel" };
-
 /* parse transform and presentation attributes */
 static void
 svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state)
@@ -1111,8 +1108,6 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	char *transform_att = fz_xml_att(node, "transform");
 
 	char *font_size_att = fz_xml_att(node, "font-size");
-
-	char *style_att = fz_xml_att(node, "style");
 
 	// TODO: clip, clip-path, clip-rule
 
@@ -1136,11 +1131,6 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	// TODO: mask
 
 	/* Dirty hack scans of CSS style */
-	if (style_att)
-	{
-		svg_parse_color_from_style(ctx, doc, style_att, &state->fill_mat, &state->fill_opacity, &state->stroke_mat, &state->stroke_opacity);
-	}
-
 	if (transform_att)
 	{
 		state->transform = svg_parse_transform(ctx, doc, transform_att, state->transform);
@@ -1149,10 +1139,6 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	if (font_size_att)
 	{
 		state->fontsize = svg_parse_length(font_size_att, state->fontsize, state->fontsize);
-	}
-	else
-	{
-		state->fontsize = svg_parse_number_from_style(ctx, doc, style_att, "font-size", state->fontsize);
 	}
 
 	if (opacity_att)
@@ -1191,10 +1177,6 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 		else
 			stroke->linewidth = svg_parse_length(stroke_width_att, state->viewbox_size, state->fontsize);
 	}
-	else
-	{
-		stroke->linewidth = svg_parse_number_from_style(ctx, doc, style_att, "stroke-width", state->stroke->linewidth);
-	}
 
 	if (stroke_linecap_att)
 	{
@@ -1204,11 +1186,6 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 			stroke->start_cap = FZ_LINECAP_ROUND;
 		if (!strcmp(stroke_linecap_att, "square"))
 			stroke->start_cap = FZ_LINECAP_SQUARE;
-	}
-	else
-	{
-		stroke->start_cap = svg_parse_enum_from_style(ctx, doc, style_att, "stroke-linecap",
-			nelem(linecap_table), linecap_table, stroke->start_cap);
 	}
 
 	stroke->dash_cap = stroke->start_cap;
@@ -1223,11 +1200,6 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 		if (!strcmp(stroke_linejoin_att, "bevel"))
 			stroke->linejoin = FZ_LINEJOIN_BEVEL;
 	}
-	else
-	{
-		stroke->linejoin = svg_parse_enum_from_style(ctx, doc, style_att, "stroke-linejoin",
-			nelem(linejoin_table), linejoin_table, stroke->linejoin);
-	}
 
 	if (stroke_miterlimit_att)
 	{
@@ -1236,16 +1208,11 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 		else
 			stroke->miterlimit = svg_parse_length(stroke_miterlimit_att, state->viewbox_size, state->fontsize);
 	}
-	else
-	{
-		stroke->miterlimit = svg_parse_number_from_style(ctx, doc, style_att, "stroke-miterlimit", state->stroke->miterlimit);
-	}
 }
 
 static void
 svg_parse_font_attributes(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *state, char *buf, int buf_size)
 {
-	char *style_att = fz_xml_att(node, "style");
 	char *font_family_att = fz_xml_att(node, "font-family");
 	char *font_weight_att = fz_xml_att(node, "font-weight");
 	char *font_style_att = fz_xml_att(node, "font-style");
@@ -1253,8 +1220,6 @@ svg_parse_font_attributes(fz_context *ctx, svg_document *doc, fz_xml *node, svg_
 
 	if (font_family_att)
 		fz_strlcpy(buf, font_family_att, buf_size);
-	else
-		svg_parse_string_from_style(ctx, doc, style_att, "font-family", buf, buf_size, state->font_family);
 	state->font_family = buf;
 
 	if (font_weight_att)
@@ -1263,14 +1228,6 @@ svg_parse_font_attributes(fz_context *ctx, svg_document *doc, fz_xml *node, svg_
 		if (!strcmp(font_weight_att, "bold")) state->is_bold = 1;
 		if (!strcmp(font_weight_att, "bolder")) state->is_bold = 1;
 	}
-	else
-	{
-		static const char *is_bold_table[] = {
-			"normal", "100", "200", "300", "400", "bold", "bolder", "500", "600", "700", "800", "900"
-		};
-		state->is_bold = svg_parse_enum_from_style(ctx, doc, style_att, "font-weight",
-			nelem(is_bold_table), is_bold_table, state->is_bold ? 5 : 0) >= 5;
-	}
 
 	if (font_style_att)
 	{
@@ -1278,28 +1235,12 @@ svg_parse_font_attributes(fz_context *ctx, svg_document *doc, fz_xml *node, svg_
 		if (!strcmp(font_style_att, "italic")) state->is_italic = 1;
 		if (!strcmp(font_style_att, "oblique")) state->is_italic = 1;
 	}
-	else
-	{
-		static const char *is_italic_table[] = {
-			"normal", "italic", "oblique"
-		};
-		state->is_italic = svg_parse_enum_from_style(ctx, doc, style_att, "font-style",
-			nelem(is_italic_table), is_italic_table, state->is_italic) >= 1;
-	}
 
 	if (text_anchor_att)
 	{
 		state->text_anchor = 0;
 		if (!strcmp(text_anchor_att, "middle")) state->text_anchor = 1;
 		if (!strcmp(text_anchor_att, "end")) state->text_anchor = 2;
-	}
-	else
-	{
-		static const char *text_anchor_table[] = {
-			"start", "middle", "end"
-		};
-		state->text_anchor = svg_parse_enum_from_style(ctx, doc, style_att, "text-anchor",
-			nelem(text_anchor_table), text_anchor_table, state->text_anchor);
 	}
 }
 

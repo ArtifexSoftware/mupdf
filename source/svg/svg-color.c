@@ -380,74 +380,6 @@ my_atof(const char *str)
 	return f;
 }
 
-static const char *
-find_style_value(const char *p, const char *m)
-{
-	size_t lm = strlen(m);
-
-	if (!p)
-		return NULL;
-
-	while (*p)
-	{
-		while (*p && svg_is_whitespace(*p))
-			p++;
-		if (!strncmp(p, m, lm))
-		{
-			p += lm;
-			while (*p && svg_is_whitespace(*p))
-				p++;
-			if (*p == ':')
-			{
-				p++;
-				while (*p && svg_is_whitespace(*p))
-					p++;
-				return p;
-			}
-		}
-		while (*p && *p != ';')
-			p++;
-		if (*p)
-			p++;
-	}
-
-	return NULL;
-}
-
-static int
-svg_parse_stop_color_from_style(fz_context *ctx, svg_document *doc, const char *p, float *color, float *opacity)
-{
-	char buf[100];
-	const char *e;
-
-	if (p == NULL)
-		return 0;
-
-	p = find_style_value(p, "stop-color");
-	if (p == NULL)
-		return 0;
-	for (e = p; *e != 0 && *e != ';'; e++)
-	{}
-	if (e > p+sizeof(buf)-1)
-		e = p+sizeof(buf)-1;
-	memcpy(buf, p, e-p);
-	buf[e-p] = 0;
-	return svg_parse_simple_color(ctx, doc, buf, color, opacity);
-}
-
-static int
-svg_parse_stop_opacity_from_style(fz_context *ctx, const char *p, float *opacity)
-{
-	if (p == NULL)
-		return 0;
-
-	p = find_style_value(p, "stop-opacity");
-	if (p == NULL)
-		return 0;
-	*opacity = my_atof(p);
-	return 1;
-}
-
 static fz_xml *
 find_local_url(fz_context *ctx, svg_document *doc, const char *str)
 {
@@ -541,20 +473,14 @@ static void fill_function_from_stops(fz_context *ctx, svg_document *doc, float *
 	{
 		float offset = my_atof(fz_xml_att(n, "offset"));
 		float rgba[4] = { 0, 0, 0, 1 };
-		char *style = fz_xml_att(n, "style");
 		char *opacity = fz_xml_att(n, "stop-opacity");
 		int o2;
 
 		if (opacity)
 			rgba[3] = fz_atof(opacity);
-		else
-			svg_parse_stop_opacity_from_style(ctx, style, &rgba[3]);
 
 		if (!svg_parse_simple_color(ctx, doc, fz_xml_att(n, "stop-color"), rgba, &rgba[3]))
-		{
-			if (!svg_parse_stop_color_from_style(ctx, doc, style, rgba, &rgba[3]) && opacity != 0)
-				continue; /* If we can't get a stop color from somewhere, ignore it. */
-		}
+			continue; /* If we can't get a stop color from somewhere, ignore it. */
 
 		if (offset < 0)
 			offset = 0;
@@ -822,36 +748,4 @@ svg_parse_color(fz_context *ctx, svg_document *doc, const char *str, svg_materia
 		return;
 	}
 
-}
-
-static void
-svg_parse_color_from_style_string(fz_context *ctx, svg_document *doc, const char *p, svg_material *mat, float *opacity)
-{
-	char buf[100], *e;
-	while (*p && svg_is_whitespace(*p))
-		++p;
-	fz_strlcpy(buf, p, sizeof buf);
-	e = strchr(buf, ';');
-	if (e)
-		*e = 0;
-	svg_parse_color(ctx, doc, buf, mat, opacity);
-}
-
-void
-svg_parse_color_from_style(fz_context *ctx, svg_document *doc, const char *str,
-	svg_material *fill_mat, float *fill_opacity, svg_material *stroke_mat, float *stroke_opacity)
-{
-	const char *p;
-
-	p = strstr(str, "fill:");
-	if (p)
-	{
-		svg_parse_color_from_style_string(ctx, doc, p+5, fill_mat, fill_opacity);
-	}
-
-	p = strstr(str, "stroke:");
-	if (p)
-	{
-		svg_parse_color_from_style_string(ctx, doc, p+7, stroke_mat, stroke_opacity);
-	}
 }
