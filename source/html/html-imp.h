@@ -25,8 +25,6 @@
 
 #include "mupdf/fitz.h"
 
-#include "../fitz/xml-imp.h"
-
 typedef struct fz_html_font_face fz_html_font_face;
 typedef struct fz_html_box fz_html_box;
 typedef struct fz_html_flow fz_html_flow;

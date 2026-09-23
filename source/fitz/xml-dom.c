@@ -20,17 +20,9 @@
 // Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco,
 // CA 94129, USA, for further information.
 
-#include "html-imp.h"
+#include "xml-imp.h"
 
 #include "string.h"
-
-fz_xml *fz_story_document(fz_context *ctx, fz_story *story)
-{
-	if (story == NULL || story->dom == NULL)
-		return NULL;
-
-	return story->dom;
-}
 
 fz_xml *fz_dom_body(fz_context *ctx, fz_xml *dom)
 {

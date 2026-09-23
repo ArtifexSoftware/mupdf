@@ -1214,6 +1214,7 @@
     <ClCompile Include="..\..\source\fitz\util.c" />
     <ClCompile Include="..\..\source\fitz\writer.c" />
     <ClCompile Include="..\..\source\fitz\xml.c" />
+    <ClCompile Include="..\..\source\fitz\xml-dom.c" />
     <ClCompile Include="..\..\source\fitz\zip.c" />
     <ClCompile Include="..\..\source\html\css-apply.c" />
     <ClCompile Include="..\..\source\html\css-parse.c" />
@@ -1228,7 +1229,6 @@
     <ClCompile Include="..\..\source\html\office.c" />
     <ClCompile Include="..\..\source\html\story-writer.c" />
     <ClCompile Include="..\..\source\html\txt.c" />
-    <ClCompile Include="..\..\source\html\xml-dom.c" />
     <ClCompile Include="..\..\source\pdf\pdf-af.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
     <ClCompile Include="..\..\source\pdf\pdf-appearance.c" />

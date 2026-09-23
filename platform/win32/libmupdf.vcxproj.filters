@@ -432,6 +432,9 @@
     <ClCompile Include="..\..\source\fitz\xml.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\xml-dom.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\fitz\zip.c">
       <Filter>fitz</Filter>
     </ClCompile>
@@ -626,9 +629,6 @@
     </ClCompile>
     <ClCompile Include="..\..\source\reflow\reflow-doc.c">
       <Filter>reflow</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\source\html\xml-dom.c">
-      <Filter>html</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\html\mobi.c">
       <Filter>html</Filter>

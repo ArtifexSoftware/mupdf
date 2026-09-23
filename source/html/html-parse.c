@@ -2532,6 +2532,14 @@ restore_warnings(fz_context *ctx, warning_save *save)
 	fz_set_warning_callback(ctx, save->old, save->arg);
 }
 
+fz_xml *fz_story_document(fz_context *ctx, fz_story *story)
+{
+	if (story == NULL || story->dom == NULL)
+		return NULL;
+
+	return story->dom;
+}
+
 fz_story *
 fz_new_story(fz_context *ctx, fz_buffer *buf, const char *user_css, float em, fz_archive *zip)
 {
