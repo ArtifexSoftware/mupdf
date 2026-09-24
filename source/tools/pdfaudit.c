@@ -1768,6 +1768,8 @@ walk(fz_context *ctx, walk_stack_t *ws, int n, obj_info_t *oi, pdf_obj *obj, aud
 		if (type != AUDIT_UNKNOWN)
 		{
 			int num = pdf_obj_parent_num(ctx, obj);
+			if (num < 0 || num >= n)
+				goto pop;
 			oi[num].type = type;
 		}
 
