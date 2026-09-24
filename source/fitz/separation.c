@@ -828,6 +828,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 		{
 			const char *name;
 			int state = sep_state(dseps, i);
+			int soff;
 
 			map[i] = -1;
 			if (state != FZ_SEPARATION_SPOT)
@@ -835,6 +836,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 			name = dseps->name[i];
 			if (name == NULL)
 				continue;
+			soff = 0;
 			for (j = 0; j < sseps_n; j++)
 			{
 				const char *sname;
@@ -845,15 +847,22 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 				sname = sseps->name[j];
 				if (sname && !strcmp(name, sname))
 				{
-					map[i] = j;
+					map[i] = soff;
 					unmapped--;
 					mapped[j] = 1;
 					break;
 				}
+				soff++;
 			}
 		}
 		if (sa)
-			map[i] = sseps_n;
+		{
+			int soff = 0;
+			for (j = 0; j < sseps_n; j++)
+				if (sep_state(sseps, j) == FZ_SEPARATION_SPOT)
+					soff++;
+			map[i] = soff;
+		}
 		/* map[i] is now defined for all 0 <= i < dseps_n+sa */
 
 		/* Now we need to make d[i] = map[i] < 0 : 0 ? s[map[i]] */
@@ -880,19 +889,17 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 		 * remain unmapped? */
 		if (unmapped)
 		{
-			int m;
 			/* Still need to handle mapping 'lost' spots down to process colors */
-			for (i = -1, m = 0; m < sseps_n; m++)
+			for (i = 0; i < sseps_n; i++)
 			{
 				float convert[FZ_MAX_COLORS];
 
-				if (mapped[m])
+				if (mapped[i])
 					continue;
-				if (fz_separation_current_behavior(ctx, sseps, m) != FZ_SEPARATION_SPOT)
+				if (fz_separation_current_behavior(ctx, sseps, i) != FZ_SEPARATION_SPOT)
 					continue;
-				i++;
-				/* Src spot m (the i'th one) is not mapped. We need to convert that down. */
-				fz_separation_equivalent(ctx, sseps, m, dst->colorspace, convert, proof_cs, color_params);
+				/* Src spot i is not mapped. We need to convert that down. */
+				fz_separation_equivalent(ctx, sseps, i, dst->colorspace, convert, proof_cs, color_params);
 
 				if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
 				{
