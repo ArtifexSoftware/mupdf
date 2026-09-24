@@ -2869,11 +2869,12 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_irect tile_bbox;
 	fz_rect area;
 	fz_rect scissor, tile_tmp;
-	int x0, y0, x1, y1, x, y, extra_x, extra_y;
+	int x0, y0, x1, y1, x, y, extra_x, extra_y, aa_bits, abandon;
 	fz_draw_state *state;
 	fz_pixmap *dest = NULL;
 	fz_pixmap *shape = NULL;
 	fz_pixmap *group_alpha = NULL;
+	float threshold;
 
 	if (dev->stack_len == 1)
 		fz_throw(ctx, FZ_ERROR_ARGUMENT, "unexpected end tile");
@@ -2885,6 +2886,40 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	ystep = state[1].ystep;
 	area = state[1].area;
 	ctm = state[1].ctm;
+
+	/* Malicious authors, might give us xstep and ystep as being ludicrously
+	 * small, in an attempt to cause a DOS. We have to be careful here as
+	 * this is permitted by the spec. The approach taken here is based upon
+	 * the following observation: in the absence of AA, repeating a tile
+	 * with an xstep/ystep change (in destination space) of less than 1 pixel
+	 * cannot make a meaningful visible difference.
+	 *
+	 * We therefore look at the difference caused by xstep/ystep, and if it
+	 * is too small, we attempt to double them until just before that would
+	 * cause a noticeable difference. */
+	abandon = 0;
+	aa_bits = fz_graphics_aa_level(ctx);
+	if (aa_bits > 8)
+		aa_bits = 1;
+	threshold = 1.0f/(1<<((aa_bits+1)>>1));
+	for (x = 0; x < 128; x++)
+	{
+		ttm = fz_pre_translate(ctm, xstep, 0);
+		if (fabsf(ttm.e - ctm.e) > threshold || fabsf(ttm.f - ctm.f) > threshold)
+			break;
+		xstep *= 2;
+	}
+	if (x == 128)
+		abandon = xstep = 1;
+	for (y = 0; y < 128; y++)
+	{
+		ttm = fz_pre_translate(ctm, 0, ystep);
+		if (fabsf(ttm.e - ctm.e) > threshold || fabsf(ttm.f - ctm.f) > threshold)
+			break;
+		ystep *= 2;
+	}
+	if (y == 128)
+		abandon = ystep = 1;
 
 	/* Fudge the scissor bbox a little to allow for inaccuracies in the
 	 * matrix inversion. */
@@ -2953,6 +2988,9 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 
 	fz_try(ctx)
 	{
+		if (abandon)
+			break;
+
 		dest = fz_new_pixmap_from_pixmap(ctx, state[1].dest, NULL);
 
 		shape = fz_new_pixmap_from_pixmap(ctx, state[1].shape, NULL);
