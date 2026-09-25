@@ -1,0 +1,25 @@
+# Archive format magic bytes for fuzzing
+
+# ZIP
+"PK\x03\x04"
+"PK\x05\x06"
+"PK\x01\x02"
+"PK\x07\x08"
+
+# TAR
+"ustar"
+"ustar\x00"
+"ustar  \x00"
+
+# GZIP
+"\x1f\x8b"
+
+# Common filenames in archives
+"mimetype"
+"META-INF/"
+"container.xml"
+"content.opf"
+"toc.ncx"
+"nav.xhtml"
+"[Content_Types].xml"
+"_rels/.rels"
