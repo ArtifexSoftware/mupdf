@@ -95,10 +95,13 @@ void fz_memrnd(fz_context *ctx, unsigned char *data, int len)
 		// Android before 9.0 does not have getentropy(), but does have
 		// arc4random_buf that sources from /dev/urandom.
 		arc4random_buf(entropy, sizeof entropy);
+#elif (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 25))
+		// gnu libc before 2.25 has neither getentropy, getrandom, nor arc4random...
+		getentropy_fallback(entropy, sizeof entropy);
 #else
 		if (getentropy(entropy, sizeof entropy) < 0)
 			getentropy_fallback(entropy, sizeof entropy);
-#endif /* EMSCRIPTEN */
+#endif
 
 		fz_chacha20_init(&ctx->seed, entropy, entropy + 32, 0);
 	}
