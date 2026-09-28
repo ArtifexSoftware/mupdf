@@ -62,6 +62,8 @@ void *fz_extend_list_imp(fz_context *ctx, void **list, int *list_len, int *list_
 	uint8_t *p;
 	int new_len;
 
+	if (n < 0)
+		fz_throw(ctx, FZ_ERROR_LIMIT, "Cannot extend a list by a negative amount");
 	if (fz_ckd_add_int(&new_len, len, n))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "integer overflow when expanding array");
 

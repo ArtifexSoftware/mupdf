@@ -948,7 +948,11 @@ load_footnotes(fz_context *ctx, fz_archive *arch, fz_xml *rels, doc_info *info, 
 		{
 			int n = fz_atoi(fz_xml_att(pos, "w:id"));
 
-			if (n >= 0)
+			if (n < 0 || n >= INT_MAX)
+			{
+				fz_warn(ctx, "Footnote %d out of range", n);
+			}
+			else
 			{
 				str = collate_t_content(ctx, pos);
 				if (str)
