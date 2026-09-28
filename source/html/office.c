@@ -510,6 +510,11 @@ show_shared_string(fz_context *ctx, fz_xml *v, doc_info *info)
 	doc_escape(ctx, info->out, info->shared_strings[n]);
 }
 
+/* Google docs maxes columns out at ZZZ = 18278.
+ * Excel (and similar) max out at XFD = 16384.
+ */
+#define MAX_GOOGLE_DOC_COLUMN 18278
+
 static int
 col_from_label(const char *label)
 {
@@ -532,6 +537,8 @@ col_from_label(const char *label)
 	do
 	{
 		col = 26 * col + (*label++) - 'A' + base;
+		if (col > MAX_GOOGLE_DOC_COLUMN)
+			return 0;
 		base += len;
 		len *= 26;
 	}
