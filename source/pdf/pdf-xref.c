@@ -2384,7 +2384,7 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf
 			if (!entry->obj)
 				entry->obj = pdf_keep_obj(ctx, *page);
 
-			if (doc->linear_page_refs[doc->linear_page_num] == NULL)
+			if (doc->linear_page_num < doc->linear_page_count && doc->linear_page_refs[doc->linear_page_num] == NULL)
 				doc->linear_page_refs[doc->linear_page_num] = pdf_new_indirect(ctx, doc, num, gen);
 		}
 		else
@@ -2420,7 +2420,7 @@ pdf_load_hinted_page(fz_context *ctx, pdf_document *doc, int pagenum)
 	if (!doc->hints_loaded || !doc->linear_page_refs)
 		return;
 
-	if (doc->linear_page_refs[pagenum])
+	if (pagenum < 0 || pagenum >= doc->linear_page_count || doc->linear_page_refs[pagenum])
 		return;
 
 	fz_var(page);
