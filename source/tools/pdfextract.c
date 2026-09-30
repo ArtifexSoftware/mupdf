@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2024 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -255,14 +255,18 @@ static void savefile(pdf_obj *fs)
 	char namebuf[100];
 	pdf_filespec_params params;
 	fz_buffer *buf;
-	const char *ext;
+	const char *ext = NULL;
 
 	pdf_get_filespec_params(ctx, fs, &params);
 
 	buf = pdf_load_embedded_file_contents(ctx, fs);
+	if (!buf)
+		return;
+
 	fz_try(ctx)
 	{
-		ext = strrchr(params.filename, '.');
+		if (params.filename)
+			ext = strrchr(params.filename, '.');
 		if (!ext)
 			ext = ".dat";
 		fz_snprintf(namebuf, sizeof(namebuf), "file-%04d%s", pdf_to_num(ctx, fs), ext);
