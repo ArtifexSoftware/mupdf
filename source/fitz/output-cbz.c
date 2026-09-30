@@ -174,10 +174,18 @@ pixmap_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 }
 
 static void
+pixmap_close_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
+	fz_close_output(ctx, wri->out);
+}
+
+static void
 pixmap_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
 	fz_drop_pixmap(ctx, wri->pixmap);
+	fz_drop_output(ctx, wri->out);
 	fz_free(ctx, wri->path);
 }
 
@@ -212,7 +220,7 @@ fz_new_pixmap_writer(fz_context *ctx, const char *path, const char *options,
 fz_document_writer *fz_new_pixmap_writer_with_output(fz_context *ctx, fz_output *out, const char *options, int n,
 	void (*write)(fz_context *ctx, fz_output *out, fz_pixmap *pix))
 {
-	fz_pixmap_writer *wri = fz_new_derived_document_writer(ctx, fz_pixmap_writer, pixmap_begin_page, pixmap_end_page, NULL, pixmap_drop_writer);
+	fz_pixmap_writer *wri = fz_new_derived_document_writer(ctx, fz_pixmap_writer, pixmap_begin_page, pixmap_end_page, pixmap_close_writer, pixmap_drop_writer);
 
 	fz_try(ctx)
 	{
