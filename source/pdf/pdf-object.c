@@ -3203,13 +3203,32 @@ int pdf_obj_is_singleton(fz_context *ctx, pdf_obj *obj)
 	The whole containing hierarchy is moved to the incremental xref section, so
 	to be later written out as an incremental file update.
 */
-void
-pdf_set_obj_parent(fz_context *ctx, pdf_obj *obj, int num)
+typedef struct parent_chain
+{
+	pdf_obj *obj;
+	struct parent_chain *next;
+} parent_chain;
+
+static void
+pdf_set_obj_parent_aux(fz_context *ctx, pdf_obj *obj, int num, parent_chain *top, parent_chain *bot, int step)
 {
 	int n, i;
+	parent_chain next;
 
 	if (obj < PDF_LIMIT)
 		return;
+
+	if (obj == top->obj)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "circular PDF object detected");
+
+	bot->next = &next;
+	next.obj = obj;
+
+	if (--step == 0)
+	{
+		top = top->next;
+		step = 2;
+	}
 
 	switch (obj->kind)
 	{
@@ -3217,15 +3236,27 @@ pdf_set_obj_parent(fz_context *ctx, pdf_obj *obj, int num)
 		ARRAY(obj)->parent_num = num;
 		n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)
-			pdf_set_obj_parent(ctx, pdf_array_get(ctx, obj, i), num);
+			pdf_set_obj_parent_aux(ctx, pdf_array_get(ctx, obj, i), num, top, &next, step);
 		break;
 	case PDF_DICT:
 		DICT(obj)->parent_num = num;
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
-			pdf_set_obj_parent(ctx, pdf_dict_get_val(ctx, obj, i), num);
+			pdf_set_obj_parent_aux(ctx, pdf_dict_get_val(ctx, obj, i), num, top, &next, step);
 		break;
 	}
+
+	/* Completely unnecessary NULLing to silence gcc
+	 * from warning about the use of a local variable.
+	 * A pox upon all 'smart' compiler writers. */
+	bot->next = NULL;
+}
+
+void
+pdf_set_obj_parent(fz_context *ctx, pdf_obj *obj, int num)
+{
+	parent_chain chain = { NULL, NULL };
+	pdf_set_obj_parent_aux(ctx, obj, num, &chain, &chain, 1);
 }
 
 int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj)
@@ -3265,7 +3296,7 @@ struct fmt
 	int gen;
 };
 
-static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj);
+static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj, parent_chain *top, parent_chain *bot, int step);
 
 static inline int iswhite(int ch)
 {
@@ -3474,7 +3505,7 @@ static void fmt_name(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	fmt->sep = 1;
 }
 
-static void fmt_array(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
+static void fmt_array(fz_context *ctx, struct fmt *fmt, pdf_obj *obj, parent_chain *top, parent_chain *bot, int step)
 {
 	int i, n;
 
@@ -3482,7 +3513,7 @@ static void fmt_array(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	if (fmt->tight) {
 		fmt_putc(ctx, fmt, '[');
 		for (i = 0; i < n; i++) {
-			fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i));
+			fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i), top, bot, step);
 		}
 		fmt_putc(ctx, fmt, ']');
 	}
@@ -3496,7 +3527,7 @@ static void fmt_array(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 			} else {
 				fmt_putc(ctx, fmt, ' ');
 			}
-			fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i));
+			fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i), top, bot, step);
 		}
 		fmt->indent --;
 		fmt_putc(ctx, fmt, ' ');
@@ -3513,7 +3544,7 @@ static int is_signature(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
-static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
+static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj, parent_chain *top, parent_chain *bot, int step)
 {
 	int i, n;
 	pdf_obj *key, *val;
@@ -3531,12 +3562,12 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 		if (type)
 		{
 			pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME(Subtype));
-			fmt_obj(ctx, fmt, PDF_NAME(Type));
-			fmt_obj(ctx, fmt, type);
+			fmt_obj(ctx, fmt, PDF_NAME(Type), top, bot, step);
+			fmt_obj(ctx, fmt, type, top, bot, step);
 			if (subtype)
 			{
-				fmt_obj(ctx, fmt, PDF_NAME(Subtype));
-				fmt_obj(ctx, fmt, subtype);
+				fmt_obj(ctx, fmt, PDF_NAME(Subtype), top, bot, step);
+				fmt_obj(ctx, fmt, subtype, top, bot, step);
 				skip |= 2; /* Skip Subtype */
 			}
 			skip |= 1; /* Skip Type */
@@ -3554,14 +3585,14 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 					continue;
 			}
 			val = pdf_dict_get_val(ctx, obj, i);
-			fmt_obj(ctx, fmt, key);
+			fmt_obj(ctx, fmt, key, top, bot, step);
 			if (key == PDF_NAME(Contents) && is_signature(ctx, obj))
 			{
 				pdf_crypt *crypt = fmt->crypt;
 				fz_try(ctx)
 				{
 					fmt->crypt = NULL;
-					fmt_obj(ctx, fmt, val);
+					fmt_obj(ctx, fmt, val, top, bot, step);
 				}
 				fz_always(ctx)
 					fmt->crypt = crypt;
@@ -3569,7 +3600,7 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 					fz_rethrow(ctx);
 			}
 			else
-				fmt_obj(ctx, fmt, val);
+				fmt_obj(ctx, fmt, val, top, bot, step);
 		}
 
 		fmt_puts(ctx, fmt, ">>");
@@ -3582,7 +3613,7 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 			key = pdf_dict_get_key(ctx, obj, i);
 			val = pdf_dict_get_val(ctx, obj, i);
 			fmt_indent(ctx, fmt);
-			fmt_obj(ctx, fmt, key);
+			fmt_obj(ctx, fmt, key, top, bot, step);
 			fmt_putc(ctx, fmt, ' ');
 			if (!pdf_is_indirect(ctx, val) && pdf_is_array(ctx, val))
 				fmt->indent ++;
@@ -3592,7 +3623,7 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 				fz_try(ctx)
 				{
 					fmt->crypt = NULL;
-					fmt_obj(ctx, fmt, val);
+					fmt_obj(ctx, fmt, val, top, bot, step);
 				}
 				fz_always(ctx)
 					fmt->crypt = crypt;
@@ -3600,7 +3631,7 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 					fz_rethrow(ctx);
 			}
 			else
-				fmt_obj(ctx, fmt, val);
+				fmt_obj(ctx, fmt, val, top, bot, step);
 			fmt_putc(ctx, fmt, '\n');
 			if (!pdf_is_indirect(ctx, val) && pdf_is_array(ctx, val))
 				fmt->indent --;
@@ -3611,8 +3642,9 @@ static void fmt_dict(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 	}
 }
 
-static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
+static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj, parent_chain *top, parent_chain *bot, int step)
 {
+	parent_chain next;
 	char buf[256];
 
 	if (obj == PDF_NULL)
@@ -3672,15 +3704,37 @@ static void fmt_obj(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 			fmt_hex(ctx, fmt, obj);
 		else
 			fmt_str(ctx, fmt, obj);
+		return;
 	}
 	else if (pdf_is_name(ctx, obj))
+	{
 		fmt_name(ctx, fmt, obj);
-	else if (pdf_is_array(ctx, obj))
-		fmt_array(ctx, fmt, obj);
+		return;
+	}
+
+	if (obj == top->obj)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "circularity with PDF object");
+
+	bot->next = &next;
+	next.obj = obj;
+
+	if (--step == 0)
+	{
+		top = top->next;
+		step = 2;
+	}
+
+	if (pdf_is_array(ctx, obj))
+		fmt_array(ctx, fmt, obj, top, &next, step);
 	else if (pdf_is_dict(ctx, obj))
-		fmt_dict(ctx, fmt, obj);
+		fmt_dict(ctx, fmt, obj, top, &next, step);
 	else
 		fmt_puts(ctx, fmt, "<unknown object>");
+
+	/* Completely unnecessary NULLing to silence gcc
+	 * from warning about the use of a local variable.
+	 * A pox upon all 'smart' compiler writers. */
+	bot->next = NULL;
 }
 
 static char *
@@ -3715,7 +3769,8 @@ pdf_sprint_encrypted_obj(fz_context *ctx, char *buf, size_t cap, size_t *len, pd
 
 	fz_try(ctx)
 	{
-		fmt_obj(ctx, &fmt, obj);
+		parent_chain top = { NULL, NULL };
+		fmt_obj(ctx, &fmt, obj, &top, &top, 1);
 		if (sep)
 			*sep = fmt.sep;
 		fmt.sep = 0;
