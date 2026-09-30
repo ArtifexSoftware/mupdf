@@ -4196,6 +4196,7 @@ free_char_list(fz_context *ctx, char_list *c)
 	for (i = c->list_len-1; i >= 0; i--)
 		fz_free(ctx, c->list[i]);
 	fz_free(ctx, c->list);
+	c->list = NULL;
 	c->list_len = 0;
 	c->list_cap = 0;
 }
