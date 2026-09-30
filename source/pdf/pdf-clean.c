@@ -105,6 +105,24 @@ pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_ob
 		n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
 		{
+			/* Type 3 fonts can have resources in. They can be inherited from the
+			 * page they are in, and when we filter the type3 we insert them
+			 * locally. This can produce a circular reference within the object.
+			 * To avoid this, we ensure here that all Type3 font are themselves
+			 * in the form of a reference.
+			 */
+			pdf_obj *font = pdf_dict_get_val(ctx, obj, i);
+			if (font && !pdf_is_indirect(ctx, font) && pdf_dict_get(ctx, font, PDF_NAME(Subtype)) == PDF_NAME(Type3))
+			{
+				pdf_obj *name = pdf_dict_get_key(ctx, obj, i);
+				int fontobjnum = pdf_create_object(ctx, doc);
+				pdf_update_object(ctx, doc, fontobjnum, font);
+				pdf_dict_put_indirect(ctx, obj, name, fontobjnum);
+				i = 0; /* Restart the loop as pdf_dict_put_drop might have caused the ordering to change. */
+			}
+		}
+		for (i = 0; i < n; i++)
+		{
 			pdf_obj *font = pdf_dict_get_val(ctx, obj, i);
 			if (font && pdf_dict_get(ctx, font, PDF_NAME(Subtype)) == PDF_NAME(Type3))
 			{
