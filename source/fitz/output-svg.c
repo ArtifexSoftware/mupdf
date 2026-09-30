@@ -88,6 +88,13 @@ svg_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 }
 
 static void
+svg_close_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_svg_writer *wri = (fz_svg_writer*)wri_;
+	fz_close_output(ctx, wri->out);
+}
+
+static void
 svg_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	fz_svg_writer *wri = (fz_svg_writer*)wri_;
@@ -98,7 +105,7 @@ svg_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 fz_document_writer *
 fz_new_svg_writer(fz_context *ctx, const char *path, const char *args)
 {
-	fz_svg_writer *wri = fz_new_derived_document_writer(ctx, fz_svg_writer, svg_begin_page, svg_end_page, NULL, svg_drop_writer);
+	fz_svg_writer *wri = fz_new_derived_document_writer(ctx, fz_svg_writer, svg_begin_page, svg_end_page, svg_close_writer, svg_drop_writer);
 	fz_try(ctx)
 	{
 		fz_parse_svg_device_options(ctx, &wri->opts, args);
@@ -115,7 +122,7 @@ fz_new_svg_writer(fz_context *ctx, const char *path, const char *args)
 fz_document_writer *
 fz_new_svg_writer_with_output(fz_context *ctx, fz_output *out, const char *args)
 {
-	fz_svg_writer *wri = fz_new_derived_document_writer(ctx, fz_svg_writer, svg_begin_page, svg_end_page, NULL, svg_drop_writer);
+	fz_svg_writer *wri = fz_new_derived_document_writer(ctx, fz_svg_writer, svg_begin_page, svg_end_page, svg_close_writer, svg_drop_writer);
 	fz_try(ctx)
 	{
 		fz_parse_svg_device_options(ctx, &wri->opts, args);
