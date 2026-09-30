@@ -1636,7 +1636,7 @@ hexlen(const char *data)
 }
 
 static fz_css_color
-hash_color(const char *data)
+hash_color(const char *data, fz_css_color initial)
 {
 	int r, g, b, a;
 	size_t n = hexlen(data);
@@ -1671,8 +1671,7 @@ hash_color(const char *data)
 	}
 	else
 	{
-		r = g = b = 0;
-		a = 255;
+		return initial;
 	}
 	return make_color(r, g, b, a);
 }
@@ -1686,7 +1685,7 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 	if (value->type == CSS_HASH)
 	{
 hex_color:
-		return hash_color(value->data);
+		return hash_color(value->data, initial);
 	}
 
 	if (value->type == '(' && !strcmp(value->data, "rgb"))
@@ -1729,16 +1728,16 @@ hex_color:
 }
 
 fz_css_color
-fz_css_color_from_string(const char *str)
+fz_css_color_from_string(const char *str, fz_css_color initial)
 {
 	const fz_css_color *named;
 
 	if (*str == '#')
-		return hash_color(str+1);
+		return hash_color(str+1, initial);
 	named = lookup_named_color(str);
 	if (named)
 		return *named;
-	return hash_color(str);
+	return hash_color(str, initial);
 }
 
 static fz_css_color

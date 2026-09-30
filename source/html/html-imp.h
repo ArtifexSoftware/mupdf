@@ -520,7 +520,7 @@ int fz_get_css_match_display(fz_css_match *node);
 const char *fz_get_css_match_content(fz_css_match *match);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
 void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
-fz_css_color fz_css_color_from_string(const char *str);
+fz_css_color fz_css_color_from_string(const char *str, fz_css_color initial);
 
 /*
 	Lookup style in the splay tree, returning a pointer

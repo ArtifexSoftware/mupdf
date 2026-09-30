@@ -1079,7 +1079,7 @@ apply_attributes_as_styles(fz_context *ctx, fz_css_style *style, fz_xml *node)
 
 	att = fz_xml_att(node, "bgcolor");
 	if (att)
-		style->background_color = fz_css_color_from_string(att);
+		style->background_color = fz_css_color_from_string(att, style->background_color);
 
 	att = fz_xml_att(node, "border");
 	if (att)
