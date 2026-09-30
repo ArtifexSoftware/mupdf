@@ -32,13 +32,14 @@ FUN(StructuredText_finalize)(JNIEnv *env, jobject self)
 	fz_drop_stext_page(ctx, text);
 }
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jobjectArray JNICALL
 FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle, jint style)
 {
 	fz_context *ctx = get_context(env);
 	fz_stext_page *text = from_StructuredText(env, self);
 	const char *needle = NULL;
 	search_state state = { env, NULL, 0 };
+	jobject jsample = NULL;
 
 	if (!ctx || !text) return NULL;
 	if (!jneedle) jni_throw_arg(env, "needle must not be null");
@@ -59,7 +60,8 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle, jint styl
 	if (state.error)
 		return NULL;
 
-	return (*env)->CallObjectMethod(env, state.hits, mid_ArrayList_toArray);
+	jsample = (*env)->NewObjectArray(env, 0, cls_ArrayOfQuad, NULL);
+	return (*env)->CallObjectMethod(env, state.hits, mid_ArrayList_toArray, jsample);
 }
 
 JNIEXPORT jobject JNICALL
