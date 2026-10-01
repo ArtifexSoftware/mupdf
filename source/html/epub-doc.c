@@ -887,13 +887,130 @@ epub_parse_nav(fz_context *ctx, epub_document *doc, const char *path)
 		fz_rethrow(ctx);
 }
 
+static int my_isspace(char c)
+{
+	if (c <= 32 || c == 127 || (unsigned char)c == 160)
+		return 1;
+	return 0;
+}
+
+static size_t
+strlenish(const char *s)
+{
+	size_t z = 0;
+
+	if (s == 0)
+		return 0;
+
+	/* Skip any prefix of whitespace */
+	while (*s && my_isspace(*s))
+		s++;
+
+	while (1)
+	{
+		/* Non whitespace is counted as normal */
+		while (*s && !my_isspace(*s))
+			s++, z++;
+
+		/* If that ends the string, then stop. */
+		if (*s == 0)
+			break;
+
+		/* Skip any whitespace. */
+		while (*s && my_isspace(*s))
+			s++;
+
+		/* If that ends the string, then stop. */
+		if (*s == 0)
+			break;
+
+		/* Count that as a single space. */
+		z++;
+	}
+
+	return z;
+}
+
+static char *
+strcpyish(char *d, const char *s)
+{
+	char *d0 = d;
+
+	/* Skip any prefix of whitespace */
+	while (*s && my_isspace(*s))
+		s++;
+
+	while (1)
+	{
+		/* Non whitespace is copied as normal */
+		while (*s && !my_isspace(*s))
+			*d++ = *s++;
+
+		/* If that ends the string, then stop. */
+		if (*s == 0)
+			break;
+
+		/* Skip any whitespace. */
+		while (*s && my_isspace(*s))
+			s++;
+
+		/* If that ends the string, then stop. */
+		if (*s == 0)
+			break;
+
+		/* Count that as a single space. */
+		*d++ = 32;
+	}
+	*d = 0;
+
+	return d0;
+}
+
+static char *
+strdupish(fz_context *ctx, const char *s)
+{
+	if (s == NULL)
+		return NULL;
+	return strcpyish(fz_malloc(ctx, strlenish(s)+1), s);
+}
+
 static char *
 find_metadata(fz_context *ctx, fz_xml *metadata, char *key)
 {
-	char *text = fz_xml_text(fz_xml_down(fz_xml_find_down(metadata, key)));
-	if (text)
-		return fz_strdup(ctx, text);
-	return NULL;
+	char *result = NULL;
+
+	fz_var(result);
+
+	fz_try(ctx)
+	{
+		for (metadata = fz_xml_find_down(metadata, key); metadata != NULL; metadata = fz_xml_find_next(metadata, key))
+		{
+			char *text = fz_xml_text(fz_xml_down(metadata));
+
+			if (!text || text[0] == 0)
+				continue;
+
+			if (result == NULL)
+			{
+				result = strdupish(ctx, text);
+			}
+			else
+			{
+				size_t z1 = strlen(result);
+				size_t z = z1 + strlenish(text) + 3 + 1;
+				result = fz_realloc(ctx, result, z);
+				memcpy(result+z1, " / ", 3);
+				strcpyish(result+z1+3, text);
+			}
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, result);
+		fz_rethrow(ctx);
+	}
+
+	return result;
 }
 
 static fz_buffer *
