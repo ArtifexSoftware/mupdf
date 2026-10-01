@@ -1257,7 +1257,8 @@ fz_new_pixmap_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsign
 
 	for (y = 0; y < h; y++)
 	{
-		memcpy(s, sp + y * span, w);
+		if (w)
+			memcpy(s, sp + y * span, w);
 		s += stride;
 	}
 
