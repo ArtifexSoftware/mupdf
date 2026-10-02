@@ -2079,7 +2079,8 @@ pdf_drop_document_imp(fz_context *ctx, fz_document *doc_)
 void
 pdf_drop_document(fz_context *ctx, pdf_document *doc)
 {
-	fz_drop_document(ctx, &doc->super);
+	if (doc)
+		fz_drop_document(ctx, &doc->super);
 }
 
 pdf_document *
