@@ -876,8 +876,6 @@ fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image)
 		mime = "data:image/png;base64,";
 	}
 
-
-	buf = fz_new_buffer_from_image_as_png(ctx, image, fz_default_color_params);
 	fz_try(ctx)
 	{
 		fz_write_string(ctx, out, mime);
