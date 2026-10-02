@@ -774,7 +774,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	int new_line = 1;
 	int add_space = 0;
 	fz_point dir, ndir, p, q;
-	float size, cur_size;
+	float size, lag_size;
 	fz_point delta;
 	float spacing = 0;
 	float base_offset = 0;
@@ -797,8 +797,10 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	dir = fz_transform_vector(dir, trm);
 	ndir = fz_normalize_vector(dir);
 
-	cur_size = fz_matrix_expansion(trm);
-	size = dev->lag_size > 0 ? fz_min(dev->lag_size, cur_size) : cur_size;
+	size = fz_matrix_expansion(trm);
+	/* lag_size is the minimum of the current chars size, and the previous chars
+	 * size. We use this when considering baseline deviations. */
+	lag_size = dev->lag_size > 0 ? fz_min(dev->lag_size, size) : size;
 
 	/* We need to identify where glyphs 'start' (p) and 'stop' (q).
 	 * Each glyph holds its 'start' position, and the next glyph in the
@@ -894,7 +896,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		 * baseline we are, together with how far along the baseline
 		 * we are from the expected position. */
 		spacing = (ndir.x * delta.x + ndir.y * delta.y) / size;
-		base_offset = (-ndir.y * delta.x + ndir.x * delta.y) / size;
+		base_offset = (-ndir.y * delta.x + ndir.x * delta.y) / lag_size;
 
 		/* Only a small amount off the baseline - we'll take this */
 		if (fabsf(base_offset) < BASE_MAX_DIST)
@@ -1045,7 +1047,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	dev->lastbidi = bidi;
 	dev->lastline = cur_line;
 	dev->lag_pen = p;
-	dev->lag_size = cur_size;
+	dev->lag_size = size;
 	dev->pen = q;
 
 	dev->trm = trm;
