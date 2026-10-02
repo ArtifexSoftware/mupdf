@@ -36,6 +36,7 @@ typedef struct
 	fz_stream *jpegtables;
 	fz_stream *curr_stm;
 	fz_context *ctx;
+	jmp_buf jb;
 	int color_transform;
 	int invert_cmyk; /* has inverted CMYK polarity */
 	int init;
@@ -46,7 +47,6 @@ typedef struct
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_source_mgr srcmgr;
 	struct jpeg_error_mgr errmgr;
-	jmp_buf jb;
 	char msg[JMSG_LENGTH_MAX];
 
 	unsigned char buffer[4096];
