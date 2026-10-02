@@ -69,6 +69,7 @@ struct fz_regex {
 };
 
 struct cstate {
+	jmp_buf kaboom;
 	Reprog *prog;
 	Renode *pstart, *pend;
 
@@ -83,7 +84,6 @@ struct cstate {
 	int yymin, yymax;
 
 	const char *error;
-	jmp_buf kaboom;
 
 	Reclass cclass[REG_MAXCLASS];
 };
@@ -835,7 +835,8 @@ Reprog *fz_regcomp(fz_context *ctx, const char *pattern, int cflags)
 	struct cstate g;
 	Renode *node;
 	Reinst *split, *jump;
-	int i, n;
+	int i;
+	size_t n;
 
 	g.pstart = NULL;
 	g.prog = NULL;
