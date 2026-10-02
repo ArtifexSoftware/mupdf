@@ -355,6 +355,8 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 
 	fz_try(ctx)
 	{
+		fz_unlock(ctx, FZ_LOCK_GLYPHCACHE);
+		locked = 0;
 		if (is_ft_font)
 		{
 			val = fz_render_ft_glyph(ctx, font, gid, subpix_ctm, aa);
@@ -370,16 +372,14 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 			 * we insert ours to find one already there, we
 			 * abandon ours, and use the one there already.
 			 */
-			fz_unlock(ctx, FZ_LOCK_GLYPHCACHE);
-			locked = 0;
 			val = fz_render_t3_glyph(ctx, font, gid, subpix_ctm, model, scissor, aa);
-			fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
-			locked = 1;
 		}
 		else
 		{
 			fz_warn(ctx, "assert: uninitialized font structure");
 		}
+		fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
+		locked = 1;
 		if (val && do_cache)
 		{
 			if (val->w < MAX_GLYPH_SIZE && val->h < MAX_GLYPH_SIZE)
