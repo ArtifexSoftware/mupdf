@@ -1820,6 +1820,7 @@ restart:
 	if (cookie && cookie->abort)
 	{
 		result.reason = FZ_SEARCH_ABORT;
+		result.u.match = NULL;
 		return result;
 	}
 
