@@ -897,7 +897,8 @@ static fz_pixmap *
 pfm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, const unsigned char *e, int onlymeta, int rgb, const unsigned char **out)
 {
 	fz_pixmap *pix = NULL;
-	size_t w, h, n, size;
+	int w, h, n;
+	size_t size;
 
 	fz_var(pix);
 
@@ -927,7 +928,7 @@ pfm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p,
 	{
 		float *samples = NULL;
 		float *sample;
-		size_t x, y, k;
+		int x, y, k;
 
 		sample = samples = fz_malloc(ctx, size);
 		fz_try(ctx)
