@@ -3386,7 +3386,7 @@ static void draw_logo(fz_context *ctx, fz_path *path)
 	fz_lineto(ctx, path, 95.25f, 117.749f);
 	fz_curveto(ctx, path, 105.75f, 108.749f, 114.0f, 105.749f, 125.25f, 105.749f);
 	fz_closepath(ctx, path);
-};
+}
 
 static float logo_color[3] = { (float)0xa4 / (float)0xFF, (float)0xca / (float)0xFF, (float)0xf5 / (float)0xFF };
 
