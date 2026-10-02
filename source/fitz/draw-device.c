@@ -44,6 +44,13 @@
 //#define DUMP_STACK_CHANGES
 
 enum {
+	/* For packing purposes */
+	FZ_BLEND_MODEMASK = 15,
+	FZ_BLEND_ISOLATED = 16,
+	FZ_BLEND_KNOCKOUT = 32
+};
+
+enum {
 	FZ_DRAWDEV_FLAGS_TYPE3 = 1,
 };
 
