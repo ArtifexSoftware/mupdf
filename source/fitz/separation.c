@@ -786,7 +786,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *src, fz_pixmap *
 		 * that into RGB.  We handle that case here. */
 		if (fz_colorspace_is_subtractive(ctx, src->colorspace) &&
 			!fz_colorspace_is_subtractive(ctx, dst->colorspace) &&
-			src->seps > 0 &&
+			ss > 0 &&
 			fz_compare_separations(ctx, dst->seps, src->seps))
 		{
 			/* Converting from CMYK + Spots -> RGB with a change in spots. */
