@@ -1868,6 +1868,9 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 		pdf_read_xref_sections(ctx, doc, fz_tell(ctx, doc->file), 0);
 
 		doc->linear_page_count = pdf_dict_get_int(ctx, dict, PDF_NAME(N));
+		if (doc->linear_page_count <= 0)
+			fz_throw(ctx, FZ_ERROR_FORMAT, "no linear pages");
+
 		doc->linear_page_refs = fz_realloc_array(ctx, doc->linear_page_refs, doc->linear_page_count, pdf_obj *);
 		memset(doc->linear_page_refs, 0, doc->linear_page_count * sizeof(pdf_obj*));
 		doc->linear_obj = dict;
