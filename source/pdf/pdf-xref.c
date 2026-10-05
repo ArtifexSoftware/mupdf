@@ -1874,11 +1874,12 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 		doc->linear_page_refs = fz_realloc_array(ctx, doc->linear_page_refs, doc->linear_page_count, pdf_obj *);
 		memset(doc->linear_page_refs, 0, doc->linear_page_count * sizeof(pdf_obj*));
 		doc->linear_obj = dict;
+		dict = NULL;
 		doc->linear_pos = fz_tell(ctx, doc->file);
-		doc->linear_page1_obj_num = pdf_dict_get_int(ctx, dict, PDF_NAME(O));
+		doc->linear_page1_obj_num = pdf_dict_get_int(ctx, doc->linear_obj, PDF_NAME(O));
 		doc->linear_page_refs[0] = pdf_new_indirect(ctx, doc, doc->linear_page1_obj_num, 0);
 		doc->linear_page_num = 0;
-		hint = pdf_dict_get(ctx, dict, PDF_NAME(H));
+		hint = pdf_dict_get(ctx, doc->linear_obj, PDF_NAME(H));
 		doc->hint_object_offset = pdf_array_get_int(ctx, hint, 0);
 		doc->hint_object_length = pdf_array_get_int(ctx, hint, 1);
 
