@@ -326,6 +326,7 @@ post_skew_write_header(fz_context *ctx, pdfocr_band_writer *writer, int w, int h
 
 	/* Always round the width of ocrbitmap up to a multiple of 4. */
 	writer->ocrbitmap = fz_new_pixmap(ctx, NULL, (w+3)&~3, h, NULL, 0);
+	writer->ocrbitmap->w = w;
 	fz_set_pixmap_resolution(ctx, writer->ocrbitmap, xres, yres);
 
 	/* Send the Page Object */
@@ -447,15 +448,15 @@ post_skew_write_band(fz_context *ctx, pdfocr_band_writer *writer, int stride, in
 
 	/* Copy strip to ocrbitmap, converting if required. */
 	d = writer->ocrbitmap->samples;
-	d += band_start*w;
+	d += band_start*writer->ocrbitmap->stride;
 	if (n == 1)
 	{
 		for (y = band_height; y > 0; y--)
 		{
 			memcpy(d, sp, w);
-			if (writer->ocrbitmap->w - w)
-				memset(d + w, 0, writer->ocrbitmap->w - w);
-			d += writer->ocrbitmap->w;
+			if (writer->ocrbitmap->stride - w)
+				memset(d + w, 0, writer->ocrbitmap->stride - w);
+			d += writer->ocrbitmap->stride;
 		}
 	}
 	else
@@ -467,7 +468,7 @@ post_skew_write_band(fz_context *ctx, pdfocr_band_writer *writer, int stride, in
 				*d++ = (sp[0] + 2*sp[1] + sp[2] + 2)>>2;
 				sp += 3;
 			}
-			for (x = writer->ocrbitmap->w - w; x > 0; x--)
+			for (x = writer->ocrbitmap->stride - w; x > 0; x--)
 				*d++ = 0;
 		}
 	}
