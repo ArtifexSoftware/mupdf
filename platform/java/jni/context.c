@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -53,7 +53,11 @@ static const fz_locks_context locks =
 {
 	NULL, /* user */
 	lock,
-	unlock
+	unlock,
+	NULL,
+	NULL,
+	NULL,
+	NULL
 };
 
 static void fin_base_context(JNIEnv *env)
