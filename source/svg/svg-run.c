@@ -1407,6 +1407,13 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 	char *y_att = fz_xml_att(root, "y");
 	char *w_att = fz_xml_att(root, "width");
 	char *h_att = fz_xml_att(root, "height");
+	fz_buffer *buf = NULL;
+	fz_image *img = NULL;
+	fz_matrix orient;
+	char path[2048];
+
+	fz_var(buf);
+	fz_var(img);
 
 	svg_begin_state(ctx, &local_state, inherit_state);
 	fz_try(ctx)
@@ -1414,17 +1421,9 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		svg_parse_common(ctx, doc, root, &local_state);
 		if (x_att) x = svg_parse_length(x_att, local_state.viewbox_w, local_state.fontsize);
 		if (y_att) y = svg_parse_length(y_att, local_state.viewbox_h, local_state.fontsize);
-		if (w_att) w = svg_parse_length(w_att, local_state.viewbox_w, local_state.fontsize);
-		if (h_att) h = svg_parse_length(h_att, local_state.viewbox_h, local_state.fontsize);
-
-		if (w <= 0 || h <= 0)
-			break; // out of try-catch
 
 		if (!href_att)
 			break; // out of try-catch
-
-		local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
-		local_state.transform = fz_concat(fz_scale(w, h), local_state.transform);
 
 		if (!strncmp(href_att, jpeg_uri, strlen(jpeg_uri)))
 			data = href_att + strlen(jpeg_uri);
@@ -1434,75 +1433,68 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 			data = NULL;
 		if (data)
 		{
-			fz_image *img = NULL;
-			fz_buffer *buf;
-
-			fz_var(img);
-
 			buf = fz_new_buffer_from_base64(ctx, data, 0);
-			fz_try(ctx)
-			{
-				fz_matrix orient;
-				img = fz_new_image_from_buffer(ctx, buf);
-				orient = fz_image_orientation_matrix(ctx, img);
-				local_state.transform = fz_concat(orient, local_state.transform);
-				fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
-			}
-			fz_always(ctx)
-			{
-				fz_drop_buffer(ctx, buf);
-				fz_drop_image(ctx, img);
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-				fz_report_error(ctx);
-				fz_warn(ctx, "svg: ignoring embedded image '%s'", href_att);
-			}
 		}
 		else if (doc->zip)
 		{
-			char path[2048];
-			fz_buffer *buf = NULL;
-			fz_image *img = NULL;
-
-			fz_var(buf);
-			fz_var(img);
-
 			fz_strlcpy(path, doc->base_uri, sizeof path);
 			fz_strlcat(path, "/", sizeof path);
 			fz_strlcat(path, href_att, sizeof path);
 			fz_urldecode(path);
 
-			fz_try(ctx)
-			{
-				fz_matrix orient;
-				buf = fz_read_archive_entry(ctx, doc->zip, path);
-				img = fz_new_image_from_buffer(ctx, buf);
-				orient = fz_image_orientation_matrix(ctx, img);
-				local_state.transform = fz_concat(orient, local_state.transform);
-				fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
-			}
-			fz_always(ctx)
-			{
-				fz_drop_buffer(ctx, buf);
-				fz_drop_image(ctx, img);
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-				fz_report_error(ctx);
-				fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
-			}
+			buf = fz_read_archive_entry(ctx, doc->zip, path);
 		}
 		else
 		{
 			fz_warn(ctx, "svg: ignoring external image '%s'", href_att);
 		}
+		if (!buf)
+			break;
 
+		img = fz_new_image_from_buffer(ctx, buf);
+		orient = fz_image_orientation_matrix(ctx, img);
+
+		if (w_att && strcmp(w_att, "auto") != 0)
+		{
+			w = svg_parse_length(w_att, local_state.viewbox_w, local_state.fontsize);
+			if (h_att && strcmp(h_att, "auto") != 0)
+				h = svg_parse_length(h_att, local_state.viewbox_h, local_state.fontsize);
+			else
+			{
+				/* Derive h from w and aspect ratio */
+				if (img->w)
+					h = w * img->h / img->w;
+			}
+		}
+		else if (h_att && strcmp(h_att, "auto") != 0)
+		{
+			h = svg_parse_length(h_att, local_state.viewbox_h, local_state.fontsize);
+			/* Derive w from h and aspect ratio */
+			if (img->h)
+				w = h * img->w / img->h;
+		}
+		else if (img->w > 0 && img->h > 0)
+		{
+			/* In the absence of either a width or height tag, we are supposed to
+			 * assume the 'native' pixel sizes, with no scaling to fit. */
+			w = img->w;
+			h = img->h;
+		}
+
+		if (w <= 0 || h <= 0)
+			break; // out of try-catch
+		local_state.transform = fz_concat(fz_translate(x, y), local_state.transform);
+		local_state.transform = fz_concat(fz_scale(w, h), local_state.transform);
+
+		local_state.transform = fz_concat(orient, local_state.transform);
+		fz_fill_image(ctx, dev, img, local_state.transform, 1, fz_default_color_params);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_image(ctx, img);
 		svg_end_state(ctx, &local_state);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
