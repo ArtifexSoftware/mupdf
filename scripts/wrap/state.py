@@ -358,7 +358,7 @@ class BuildDirs:
             swig_version='none'
         else:
             m = re.search( 'SWIG Version (.+)', t)
-            swig_version = m.group(1)
+            swig_version = m.group(1).strip()
         self.mupdfcpp_swig_i    = lambda language: f'{self.dir_mupdf}/platform/{language}/mupdfcpp_swig-python{platform.python_version()}-swig{swig_version}{Py_LIMITED_API_infix}{nogil_infix}.i'
         self.mupdfcpp_swig_cpp  = lambda language: self.mupdfcpp_swig_i(language) + '.cpp'
 
