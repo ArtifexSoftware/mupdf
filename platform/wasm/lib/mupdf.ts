@@ -256,16 +256,11 @@ interface Log {
 
 var $libmupdf_log: Log | null = null
 
-declare global {
-	function $libmupdf_log_error(message: Pointer<"char">): void
-	function $libmupdf_log_warning(message: Pointer<"char">): void
-}
-
-globalThis.$libmupdf_log_error = function (message) {
+libmupdf.$libmupdf_log_error = function (message) {
 	$libmupdf_log?.error?.(fromString(message))
 }
 
-globalThis.$libmupdf_log_warning = function (message) {
+libmupdf.$libmupdf_log_warning = function (message) {
 	$libmupdf_log?.warning?.(fromString(message))
 }
 
@@ -4167,12 +4162,6 @@ export class PDFWidget extends PDFAnnotation {
 
 /* We need a certain level of ugliness to allow callbacks from C to JS */
 
-declare global {
-	function $libmupdf_stm_close(ptr: number): void
-	function $libmupdf_stm_seek(ptr: number, pos: number, offset: number, whence: number): number
-	function $libmupdf_stm_read(ptr: number, pos: number, addr: number, size: number): number
-}
-
 interface StreamHandle {
 	fileSize(): number,
 	read(memory: Uint8Array, offset: number, length: number, position: number): number,
@@ -4182,7 +4171,7 @@ interface StreamHandle {
 var $libmupdf_stm_id = 0
 var $libmupdf_stm_table: Map<number,StreamHandle> = new Map()
 
-globalThis.$libmupdf_stm_close = function (id: number) {
+libmupdf.$libmupdf_stm_close = function (id: number) {
 	let handle = $libmupdf_stm_table.get(id)
 	if (handle) {
 		handle.close()
@@ -4192,7 +4181,7 @@ globalThis.$libmupdf_stm_close = function (id: number) {
 	throw new Error("invalid file handle")
 }
 
-globalThis.$libmupdf_stm_seek = function (id: number, pos: number, offset: number, whence: number) {
+libmupdf.$libmupdf_stm_seek = function (id: number, pos: number, offset: number, whence: number) {
 	let handle = $libmupdf_stm_table.get(id)
 	if (handle) {
 		if (whence === 0)
@@ -4210,7 +4199,7 @@ globalThis.$libmupdf_stm_seek = function (id: number, pos: number, offset: numbe
 	throw new Error("invalid file handle")
 }
 
-globalThis.$libmupdf_stm_read = function (id: number, pos: number, addr: number, size: number) {
+libmupdf.$libmupdf_stm_read = function (id: number, pos: number, addr: number, size: number) {
 	let handle = $libmupdf_stm_table.get(id)
 	if (handle) {
 		return handle.read(libmupdf.HEAPU8, addr, size, pos)
@@ -4231,11 +4220,7 @@ export class Stream extends Userdata<"fz_stream"> {
 
 var $libmupdf_load_font_file_js: (name: string, script: string, bold: boolean, italic: boolean) => Font | null
 
-declare global {
-	function $libmupdf_load_font_file(name: Pointer<"char">, script: Pointer<"char">, bold: boolean, italic: boolean): Pointer<"fz_font">
-}
-
-globalThis.$libmupdf_load_font_file = function (name, script, bold, italic) {
+libmupdf.$libmupdf_load_font_file = function (name, script, bold, italic) {
 	if ($libmupdf_load_font_file_js) {
 		var font = $libmupdf_load_font_file_js(fromString(name), fromString(script), bold, italic)
 		if (font) {
@@ -4291,13 +4276,7 @@ var $libmupdf_path_table: Map<number,PathWalker> = new Map()
 var $libmupdf_text_id = 0
 var $libmupdf_text_table: Map<number,TextWalker> = new Map()
 
-declare global {
-	var $libmupdf_path_walk: any
-	var $libmupdf_text_walk: any
-	var $libmupdf_device: any
-}
-
-globalThis.$libmupdf_path_walk = {
+libmupdf.$libmupdf_path_walk = {
 	moveto(id: number, x: number, y: number): void {
 		$libmupdf_path_table.get(id)?.moveTo?.(x, y)
 	},
@@ -4314,7 +4293,7 @@ globalThis.$libmupdf_path_walk = {
 
 var $libmupdf_text_font: Font | null = null
 
-globalThis.$libmupdf_text_walk = {
+libmupdf.$libmupdf_text_walk = {
 	begin_span(
 		id: number,
 		font: Pointer<"fz_font">,
@@ -4360,7 +4339,7 @@ globalThis.$libmupdf_text_walk = {
 	},
 }
 
-globalThis.$libmupdf_device = {
+libmupdf.$libmupdf_device = {
 	drop_device(id: number): void {
 		$libmupdf_device_table.get(id)?.drop?.()
 		$libmupdf_device_table.delete(id)

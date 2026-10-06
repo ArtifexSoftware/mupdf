@@ -21,6 +21,15 @@ interface Libmupdf {
 	HEAPU32: Uint32Array,
 	HEAPF32: Float32Array,
 	HEAPF64: Float64Array,
+	$libmupdf_log_error(message: Pointer<"char">): void,
+	$libmupdf_log_warning(message: Pointer<"char">): void,
+	$libmupdf_stm_close(ptr: number): void,
+	$libmupdf_stm_seek(ptr: number, pos: number, offset: number, whence: number): number,
+	$libmupdf_stm_read(ptr: number, pos: number, addr: number, size: number): number,
+	$libmupdf_load_font_file(name: Pointer<"char">, script: Pointer<"char">, bold: boolean, italic: boolean): Pointer<"fz_font">,
+	$libmupdf_path_walk: any,
+	$libmupdf_text_walk: any,
+	$libmupdf_device: any,
 `)
 
 const TYPE = {
