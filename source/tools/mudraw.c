@@ -419,12 +419,6 @@ static struct {
 	fz_page *page;
 	int interptime;
 	fz_separations *seps;
-
-#if FZ_ENABLE_PDF
-	char *pdfout_path;
-	pdf_document *pdfout;
-#endif
-	fz_output *out;
 } bgprint;
 
 static struct {
@@ -718,15 +712,27 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, fz_m
 static void worker_thread(void *arg);
 #endif
 
-static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps, void *pdfout_, fz_output *out_)
+static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *fname, int bg, fz_separations *seps)
 {
 	fz_rect mediabox;
 	fz_device *dev = NULL;
+	char output_path[512];
 
 	fz_var(dev);
 
 	if (output_file_per_page)
+	{
+		fz_format_output_path(ctx, output_path, sizeof output_path, output, pagenum);
+
+#if FZ_ENABLE_PDF
+		if (output_format == OUT_PDF)
+			pdfout = pdf_create_document(ctx);
+		else
+#endif
+			out = fz_new_output_with_path(ctx, output_path, 0);
+
 		file_level_headers(ctx);
+	}
 
 	if (list)
 		mediabox = fz_bound_display_list(ctx, list);
@@ -748,9 +754,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		fz_try(ctx)
 		{
-			fz_write_printf(ctx, out_, "<page number=\"%d\" mediabox=\"%g %g %g %g\">\n",
+			fz_write_printf(ctx, out, "<page number=\"%d\" mediabox=\"%g %g %g %g\">\n",
 				pagenum, tmediabox.x0, tmediabox.y0, tmediabox.x1, tmediabox.y1);
-			dev = fz_new_trace_device(ctx, out_);
+			dev = fz_new_trace_device(ctx, out);
 			apply_kill_switch(dev);
 			if (output_format == OUT_OCR_TRACE)
 			{
@@ -772,7 +778,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_close_device(ctx, pre_ocr_dev);
 			fz_drop_device(ctx, pre_ocr_dev);
 			pre_ocr_dev = NULL;
-			fz_write_printf(ctx, out_, "</page>\n");
+			fz_write_printf(ctx, out, "</page>\n");
 		}
 		fz_always(ctx)
 		{
@@ -797,17 +803,17 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			ctm = fz_pre_scale(fz_rotate(rotation), zoom, zoom);
 			tmediabox = fz_transform_rect(mediabox, ctm);
 
-			fz_write_printf(ctx, out_, "<page mediabox=\"%g %g %g %g\">\n",
+			fz_write_printf(ctx, out, "<page mediabox=\"%g %g %g %g\">\n",
 					tmediabox.x0, tmediabox.y0, tmediabox.x1, tmediabox.y1);
 
-			dev = fz_new_xmltext_device(ctx, out_);
+			dev = fz_new_xmltext_device(ctx, out);
 			apply_kill_switch(dev);
 			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
 				fz_run_display_list(ctx, list, dev, ctm, fz_infinite_rect, cookie);
 			else
 				fz_run_page(ctx, page, dev, ctm, cookie);
-			fz_write_printf(ctx, out_, "</page>\n");
+			fz_write_printf(ctx, out, "</page>\n");
 			fz_close_device(ctx, dev);
 		}
 		fz_always(ctx)
@@ -843,7 +849,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 				fz_run_page(ctx, page, dev, ctm, cookie);
 			fz_close_device(ctx, dev);
-			fz_write_printf(ctx, out_, "<page bbox=\"%R\" mediabox=\"%R\" />\n", &bbox, &tmediabox);
+			fz_write_printf(ctx, out, "<page bbox=\"%R\" mediabox=\"%R\" />\n", &bbox, &tmediabox);
 		}
 		fz_always(ctx)
 		{
@@ -922,7 +928,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			pre_ocr_dev = NULL;
 			if (output_format == OUT_STEXT_XML || output_format == OUT_OCR_STEXT_XML)
 			{
-				fz_print_stext_page_as_xml(ctx, out_, text, pagenum);
+				fz_print_stext_page_as_xml(ctx, out, text, pagenum);
 			}
 			else if (output_format == OUT_STEXT_JSON || output_format == OUT_OCR_STEXT_JSON)
 			{
@@ -930,27 +936,27 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				if (first || output_file_per_page)
 					first = 0;
 				else
-					fz_write_string(ctx, out_, ",");
-				fz_print_stext_page_as_json(ctx, out_, text, 1);
+					fz_write_string(ctx, out, ",");
+				fz_print_stext_page_as_json(ctx, out, text, 1);
 			}
 			else if (output_format == OUT_HTML || output_format == OUT_OCR_HTML)
 			{
-				fz_print_stext_page_as_html(ctx, out_, text, pagenum);
+				fz_print_stext_page_as_html(ctx, out, text, pagenum);
 			}
 			else if (output_format == OUT_XHTML || output_format == OUT_OCR_XHTML)
 			{
-				fz_print_stext_page_as_xhtml(ctx, out_, text, pagenum);
+				fz_print_stext_page_as_xhtml(ctx, out, text, pagenum);
 			}
 			else if (output_format == OUT_TEXT || output_format == OUT_OCR_TEXT)
 			{
-				fz_print_stext_page_as_text(ctx, out_, text);
-				fz_write_string(ctx, out_, "\f\n");
+				fz_print_stext_page_as_text(ctx, out, text);
+				fz_write_string(ctx, out, "\f\n");
 			}
 			else if (output_format == OUT_TEXT_FLAT)
 			{
 				/* FIXME: At some point, we could get the flatten options from options maybe? */
 				buf = fz_new_buffer_from_flattened_stext_page(ctx, text, FZ_TEXT_FLATTEN_ALL, NULL);
-				fz_write_buffer(ctx, out_, buf);
+				fz_write_buffer(ctx, out, buf);
 			}
 		}
 		fz_always(ctx)
@@ -981,7 +987,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			 * when writing PDFs. Rotation is taken care of by the pdf_add_page call. */
 			pdf_obj *page_obj;
 
-			dev = pdf_page_write(ctx, pdfout_, mediabox, &resources, &contents);
+			dev = pdf_page_write(ctx, pdfout, mediabox, &resources, &contents);
 			apply_kill_switch(dev);
 			fz_throw_on_unused_options(ctx, user_options, "device");
 			if (list)
@@ -992,8 +998,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 
-			page_obj = pdf_add_page(ctx, pdfout_, mediabox, rotation, resources, contents);
-			pdf_insert_page(ctx, pdfout_, -1, page_obj);
+			page_obj = pdf_add_page(ctx, pdfout, mediabox, rotation, resources, contents);
+			pdf_insert_page(ctx, pdfout, -1, page_obj);
 			pdf_drop_obj(ctx, page_obj);
 		}
 		fz_always(ctx)
@@ -1028,7 +1034,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 			fz_apply_svg_device_options(ctx, &opts, user_options);
 
-			dev = fz_new_svg_device_with_options(ctx, out_, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, &opts);
+			dev = fz_new_svg_device_with_options(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, &opts);
 			apply_kill_switch(dev);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -1196,28 +1202,28 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			if (output_format != OUT_NONE)
 			{
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
-					bander = fz_new_pnm_band_writer(ctx, out_);
+					bander = fz_new_pnm_band_writer(ctx, out);
 				else if (output_format == OUT_PAM)
-					bander = fz_new_pam_band_writer(ctx, out_);
+					bander = fz_new_pam_band_writer(ctx, out);
 				else if (output_format == OUT_PNG)
-					bander = fz_new_png_band_writer(ctx, out_);
+					bander = fz_new_png_band_writer(ctx, out);
 				else if (output_format == OUT_PBM)
-					bander = fz_new_pbm_band_writer(ctx, out_);
+					bander = fz_new_pbm_band_writer(ctx, out);
 				else if (output_format == OUT_PKM)
-					bander = fz_new_pkm_band_writer(ctx, out_);
+					bander = fz_new_pkm_band_writer(ctx, out);
 				else if (output_format == OUT_PS)
-					bander = fz_new_ps_band_writer(ctx, out_);
+					bander = fz_new_ps_band_writer(ctx, out);
 				else if (output_format == OUT_PSD)
-					bander = fz_new_psd_band_writer(ctx, out_);
+					bander = fz_new_psd_band_writer(ctx, out);
 				else if (output_format == OUT_PWG)
 				{
 					fz_pwg_options opts;
 					fz_init_pwg_options(ctx, &opts);
 					fz_apply_pwg_options(ctx, &opts, user_options);
 					if (out_cs == CS_MONO)
-						bander = fz_new_mono_pwg_band_writer(ctx, out_, &opts);
+						bander = fz_new_mono_pwg_band_writer(ctx, out, &opts);
 					else
-						bander = fz_new_pwg_band_writer(ctx, out_, &opts);
+						bander = fz_new_pwg_band_writer(ctx, out, &opts);
 				}
 				else if (output_format == OUT_PCL)
 				{
@@ -1225,9 +1231,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					fz_init_pcl_options(ctx, &opts);
 					fz_apply_pcl_options(ctx, &opts, user_options);
 					if (out_cs == CS_MONO)
-						bander = fz_new_mono_pcl_band_writer(ctx, out_, &opts);
+						bander = fz_new_mono_pcl_band_writer(ctx, out, &opts);
 					else
-						bander = fz_new_color_pcl_band_writer(ctx, out_, &opts);
+						bander = fz_new_color_pcl_band_writer(ctx, out, &opts);
 				}
 				if (bander)
 				{
@@ -1267,7 +1273,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 #if FZ_ENABLE_JPX
 					if (output_format == OUT_J2K)
 					{
-						fz_write_pixmap_as_jpx(ctx, out_, pix, 80);
+						fz_write_pixmap_as_jpx(ctx, out, pix, 80);
 					}
 #else
 					fz_throw(ctx, FZ_ERROR_GENERIC, "JPX support disabled");
@@ -1410,6 +1416,24 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	if (!quiet || showfeatures || showtime || showmd5)
 		fprintf(stderr, "\n");
 
+	if (output_file_per_page)
+	{
+#if FZ_ENABLE_PDF
+		if (output_format == OUT_PDF)
+		{
+			pdf_save_document(ctx, pdfout, output_path, NULL);
+			pdf_drop_document(ctx, pdfout);
+			pdfout = NULL;
+		}
+		else
+#endif
+		{
+			fz_close_output(ctx, out);
+			fz_drop_output(ctx, out);
+			out = NULL;
+		}
+	}
+
 	if (lowmemory)
 		fz_empty_store(ctx);
 
@@ -1442,7 +1466,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_cookie cookie = { 0 };
 	fz_separations *seps = NULL;
 	const char *features = "";
-	char output_path[512];
 
 	fz_var(list);
 	fz_var(dev);
@@ -1452,18 +1475,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	start = (showtime ? gettime() : 0);
 
 	if (output_file_per_page)
-	{
 		bgprint_flush();
-
-		fz_format_output_path(ctx, output_path, sizeof output_path, output, pagenum);
-
-#if FZ_ENABLE_PDF
-		if (output_format == OUT_PDF)
-			pdfout = pdf_create_document(ctx);
-		else
-#endif
-			out = fz_new_output_with_path(ctx, output_path, 0);
-	}
 
 	fz_try(ctx)
 	{
@@ -1554,22 +1566,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				bgprint.pagenum = pagenum;
 				bgprint.interptime = start;
 				bgprint.error = 0;
-				if (output_file_per_page)
-				{
-#if FZ_ENABLE_PDF
-					if (output_format == OUT_PDF)
-					{
-						bgprint.pdfout_path = fz_strdup(ctx, output_path);
-						bgprint.pdfout = pdfout;
-						pdfout = NULL;
-					}
-					else
-#endif
-					{
-						bgprint.out = out;
-						out = NULL;
-					}
-				}
 #ifndef DISABLE_MUTHREADS
 				mu_trigger_semaphore(&bgprint.start);
 #endif
@@ -1577,24 +1573,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		else
 		{
-			void *localpdfout = NULL;
-#if FZ_ENABLE_PDF
-			localpdfout = pdfout;
-#endif
 			if (!quiet || showfeatures || showtime || showmd5)
 				fprintf(stderr, "page %s %d%s", filename, pagenum, features);
-			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps, localpdfout, out);
-		}
-
-		if (output_file_per_page)
-		{
-#if FZ_ENABLE_PDF
-			if (output_format == OUT_PDF && pdfout)
-				pdf_save_document(ctx, pdfout, output_path, NULL);
-			else
-#endif
-			if (out)
-				fz_close_output(ctx, out);
+			dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps);
 		}
 	}
 	fz_always(ctx)
@@ -1603,22 +1584,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_drop_display_list(ctx, list);
 		fz_drop_separations(ctx, seps);
 		fz_drop_page(ctx, page);
-		if (output_file_per_page)
-		{
-#if FZ_ENABLE_PDF
-			if (output_format == OUT_PDF && pdfout)
-			{
-				pdf_drop_document(ctx, pdfout);
-				pdfout = NULL;
-			}
-			else
-#endif
-			if (out)
-			{
-				fz_drop_output(ctx, out);
-				out = NULL;
-			}
-		}
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
@@ -1842,22 +1807,11 @@ static void bgprint_worker(void *arg)
 		DEBUG_THREADS(("BGPrint woken for pagenum %d\n", pagenum));
 		if (pagenum >= 0)
 		{
-			void *localpdfout = NULL;
-#if FZ_ENABLE_PDF
-			localpdfout = bgprint.pdfout;
-#endif
 			int start = gettime();
 			memset(&cookie, 0, sizeof(cookie));
 			fz_try(bgprint.ctx)
 			{
-				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps, localpdfout, bgprint.out);
-#if FZ_ENABLE_PDF
-				if (bgprint.pdfout_path && bgprint.pdfout)
-					pdf_save_document(bgprint.ctx, bgprint.pdfout, bgprint.pdfout_path, NULL);
-				else
-#endif
-				if (bgprint.out)
-					fz_close_output(bgprint.ctx, bgprint.out);
+				dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps);
 				DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
 			}
 			fz_always(bgprint.ctx)
@@ -1865,14 +1819,6 @@ static void bgprint_worker(void *arg)
 				fz_drop_display_list(bgprint.ctx, bgprint.list);
 				fz_drop_separations(bgprint.ctx, bgprint.seps);
 				fz_drop_page(bgprint.ctx, bgprint.page);
-				fz_drop_output(bgprint.ctx, bgprint.out);
-				bgprint.out = NULL;
-#if FZ_ENABLE_PDF
-				pdf_drop_document(bgprint.ctx, bgprint.pdfout);
-				bgprint.pdfout = NULL;
-				fz_free(bgprint.ctx, bgprint.pdfout_path);
-				bgprint.pdfout_path = NULL;
-#endif
 			}
 			fz_catch(bgprint.ctx)
 			{
