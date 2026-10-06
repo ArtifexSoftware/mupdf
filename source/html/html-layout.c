@@ -4419,7 +4419,10 @@ static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 	if (restart)
 	{
 		if (restart->start == box)
+		{
+			draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm);
 			restart->start = NULL;
+		}
 		if (restart->end == box)
 			return 1;
 	}
@@ -4430,27 +4433,22 @@ static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 	/* Are we skipping? */
 	skipping = (restart && restart->start != NULL);
 
-	/* Only draw the content if it's visible */
-	if (box->style->visibility == V_VISIBLE)
+	/* Only draw the content if it's visible, and we're not skipping it. */
+	if (box->style->visibility == V_VISIBLE && !skipping)
 	{
 		int suppress;
 
-		/* We draw the background rectangle regardless if we are skipping or not, because
-		 * we might find the end-of-skip point inside this box. If there is no content
-		 * then the box height will be 0, so nothing will be drawn. */
 		if (y1 > y0)
 			draw_rect(ctx, dev, ctm, page_top, box->style->background_color, x0, y0 - cell_padding_top, x1, y1 + cell_padding_bot);
 
-		if (!skipping)
-		{
-			/* Draw a selection of borders. */
-			/* If we are restarting, don't do the bottom one yet. */
-			suppress = restart ? (1<<B) : 0;
-			do_borders(ctx, dev, ctm, page_top, box, suppress);
+		/* Draw a selection of borders. */
+		/* If we are in restarting mode, don't do the bottom one yet, as that
+		 * might not be on this page. */
+		suppress = restart ? (1<<B) : 0;
+		do_borders(ctx, dev, ctm, page_top, box, suppress);
 
-			if (box->list_item)
-				draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
-		}
+		if (box->list_item)
+			draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
 	}
 
 	for (child = box->down; child; child = child->next)
@@ -4462,26 +4460,12 @@ static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 		}
 	}
 
-	if (box->style->visibility == V_VISIBLE && restart && restart->start == NULL)
+	if (box->style->visibility == V_VISIBLE && /* visible*/
+		restart && restart->start == NULL && /* in restarting mode, and no longer skipping */
+		!stopped) /* we haven't stopped yet */
 	{
-		/* We didn't draw (at least some of) the borders on the way down,
-		 * because we were in restart mode. */
-
-		/* We never want to draw the top one. Either it will have been drawn
-		 * before, or we were skipping at that point. */
-		int suppress = (1<<T);
-
-		/* If we were skipping, and we're not any more, better draw in the
-		 * left and right ones we missed. */
-		suppress += (skipping && restart->start == NULL) ? 0 : ((1<<L) + (1<<R));
-
-		/* If we've stopped now, don't do the bottom one either. */
-		suppress += stopped ? (1<<B) : 0;
-
-		/* FIXME: background color? list mark is probably OK as we only want
-		 * it once. */
-
-		do_borders(ctx, dev, ctm, page_top, box, suppress);
+		/* We need to draw the bottom border. */
+		do_borders(ctx, dev, ctm, page_top, box, (1<<T) | (1<<L) | (1<<R));
 	}
 
 	return stopped;
@@ -4502,7 +4486,10 @@ static int draw_table_row(fz_context *ctx, fz_html_box *box, float page_top, flo
 	if (restart)
 	{
 		if (restart->start == box)
+		{
+			draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm);
 			restart->start = NULL;
+		}
 		if (restart->end == box)
 			return 1;
 	}
