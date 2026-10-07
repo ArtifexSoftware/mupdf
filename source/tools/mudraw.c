@@ -1146,25 +1146,22 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 
 #ifndef DISABLE_MUTHREADS
-			if (num_workers < bands && max_num_workers >= bands)
+			if (num_workers < bands && num_workers < max_num_workers)
 			{
-				int i;
-				int fail = 0;
-				for (i = num_workers; i < fz_mini(bands, max_num_workers); ++i)
+				for (; num_workers < fz_mini(bands, max_num_workers); ++num_workers)
 				{
-					workers[i].ctx = fz_clone_context(ctx);
-					workers[i].num = i;
-					fail |= mu_create_semaphore(&workers[i].start);
-					fail |= mu_create_semaphore(&workers[i].stop);
-					printf("create worker_thread %d\n", i);
-					fail |= mu_create_thread(&workers[i].thread, worker_thread, &workers[i]);
-					if (!fail)
-						num_workers++;
-				}
-				if (fail)
-				{
-					fprintf(stderr, "worker startup failed\n");
-					exit(1);
+					int fail;
+					workers[num_workers].ctx = fz_clone_context(ctx);
+					workers[num_workers].num = num_workers;
+					fail = mu_create_semaphore(&workers[num_workers].start);
+					fail |= mu_create_semaphore(&workers[num_workers].stop);
+					printf("create worker_thread %d\n", num_workers);
+					fail |= mu_create_thread(&workers[num_workers].thread, worker_thread, &workers[num_workers]);
+					if (fail)
+					{
+						fprintf(stderr, "worker startup failed\n");
+						exit(1);
+					}
 				}
 			}
 
