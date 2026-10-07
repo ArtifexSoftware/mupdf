@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="201.14" height="91.859" viewBox="0 0 133.046 60.761">
+<path fill="none" stroke="#000" stroke-width="10" d="M5 5h64.652"/>
+<path fill="none" stroke="#fff" d="M5 5h64.652"/>
+<circle cx="69.652" cy="5" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<circle cx="5" cy="5" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<path fill="none" stroke="#000" stroke-linecap="round" stroke-width="10" d="M5 30h64.652"/>
+<path fill="none" stroke="#fff" d="M5 30h64.652"/>
+<circle cx="69.652" cy="30" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<circle cx="5" cy="30" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<path fill="none" stroke="#000" stroke-linecap="square" stroke-width="10" d="M5 55h64.652"/>
+<path fill="none" stroke="#fff" d="M5 55h64.652"/>
+<circle cx="69.652" cy="55" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<circle cx="5" cy="55" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<text x="78.425" y="8.62" stroke-width=".265" font-family="Times" font-size="10.583" font-weight="400" letter-spacing="0" word-spacing="0">
+<tspan x="78.425" y="8.62">Butt cap</tspan>
+<tspan x="78.425" y="33.421">Round cap</tspan>
+<tspan x="78.425" y="58.221">Square cap</tspan>
+</text>
+</svg>

@@ -45,7 +45,6 @@ release = version = get_mupdf_version()
 extensions = [
 	"myst_parser",
 	"sphinx.ext.graphviz",
-	"sphinxcontrib.imagesvg",
 	"sphinxcontrib.googleanalytics",
 ]
 
@@ -105,8 +104,8 @@ html_show_copyright = True
 
 html_static_path = [ "_static" ]
 html_css_files = [ "custom.css" ]
-html_logo = "_static/mupdf-sidebar-logo.webp"
-html_favicon = "_static/favicon.ico"
+html_logo = "_static/mupdf-logo.svg"
+html_favicon = "_static/mupdf-logo.svg"
 
 html_theme_options = {
 	"footer_icons": [

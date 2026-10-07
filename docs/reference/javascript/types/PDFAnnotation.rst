@@ -906,9 +906,8 @@ Callout
 Callouts are used with FreeText annotations and
 allow for a graphical line to point to an area on a page.
 
-.. image:: /images/callout-annot.png
-		  :alt: Callout annotation
-		  :width: 100%
+.. image:: /images/annots/callout-annot.webp
+	:alt: Callout annotation
 
 .. method:: PDFAnnotation.prototype.hasCallout()
 
@@ -1265,9 +1264,8 @@ In a PDF line leaders refer to two lines at the ends of the line annotation,
 oriented perpendicular to the line itself. These are common in technical
 drawings when illustrating distances.
 
-.. image:: /images/leader-lines.png
-		  :alt: Leader lines explained
-		  :width: 100%
+.. image:: /images/annots/leader-lines.webp
+	:alt: Leader lines explained
 
 .. method:: PDFAnnotation.prototype.setLineLeader(v)
 
@@ -1353,9 +1351,8 @@ drawings when illustrating distances.
 
 	Setting a point of [0, 0] removes the caption offset.
 
-	.. image:: /images/offset-caption.png
-		  :alt: Offset caption explained
-		  :width: 100%
+	.. image:: /images/annots/offset-caption.webp
+		:alt: Offset caption explained
 
 	:param Point point: A point specifying the offset of the caption text from its normal position.
 

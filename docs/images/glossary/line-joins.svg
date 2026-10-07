@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="201.174" height="223.444" viewBox="0 0 133.068 147.799">
+<path fill="none" stroke="#000" stroke-width="10" d="M3.762 44.505 36.088 7.59l32.325 36.915"/>
+<path fill="none" stroke="#fff" d="M3.762 44.505 36.088 7.59l32.325 36.916"/>
+<circle cx="36.088" cy="7.589" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<path fill="none" stroke="#000" stroke-linejoin="round" stroke-width="10" d="M3.762 94.505 36.088 57.59l32.325 36.915"/>
+<path fill="none" stroke="#fff" d="M3.762 94.505 36.088 57.59l32.325 36.916"/>
+<circle cx="36.088" cy="57.589" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<path fill="none" stroke="#000" stroke-linejoin="bevel" stroke-width="10" d="m3.762 144.505 32.326-36.915 32.325 36.915"/>
+<path fill="none" stroke="#fff" d="m3.762 144.505 32.326-36.916 32.325 36.916"/>
+<circle cx="36.088" cy="107.589" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216" paint-order="markers stroke fill"/>
+<text x="80.194" y="17.667" font-family="Times" font-size="10.583">
+<tspan x="80.194" y="17.667">Miter join</tspan>
+<tspan x="80.194" y="72.827">Round join</tspan>
+<tspan x="80.194" y="127.988">Bevel join</tspan>
+</text>
+</svg>

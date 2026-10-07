@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="480" height="360" viewBox="0 0 240 180">
+<defs>
+<linearGradient id="a">
+<stop offset="0" stop-color="red"/>
+<stop offset=".157" stop-color="#ffd500"/>
+<stop offset=".319" stop-color="#5f0"/>
+<stop offset=".5" stop-color="#00ff7f"/>
+<stop offset=".66" stop-color="#0af"/>
+<stop offset=".83" stop-color="#2a00ff"/>
+<stop offset="1" stop-color="#c900c9"/>
+</linearGradient>
+<linearGradient xlink:href="#a" id="c" x1="10.502" x2="156.77" y1="109.094" y2="109.094" gradientTransform="matrix(1.19643 0 0 1.1504 -11.569 -38.002)" gradientUnits="userSpaceOnUse"/>
+<linearGradient xlink:href="#a" id="e" x1="10.502" x2="156.77" y1="109.094" y2="109.094" gradientTransform="matrix(1.19643 0 0 1.1504 -11.569 -38.002)" gradientUnits="userSpaceOnUse"/>
+<linearGradient xlink:href="#a" id="d" x1="10.502" x2="156.77" y1="109.094" y2="109.094" gradientTransform="matrix(1.19643 0 0 1.1504 -11.569 -38.002)" gradientUnits="userSpaceOnUse"/>
+<linearGradient xlink:href="#a" id="b" x1="10.502" x2="156.77" y1="109.094" y2="109.094" gradientTransform="matrix(1.19643 0 0 1.1504 -11.569 -38.002)" gradientUnits="userSpaceOnUse"/>
+</defs>
+<g paint-order="markers stroke fill" transform="translate(45.466 83.494)scale(.41747)">
+<path fill="url(#b)" d="M0 0h175v175H0z"/>
+<circle cx="62.5" cy="112.5" r="50" fill="#404040" fill-opacity=".5"/>
+<path fill="#404040" fill-opacity=".5" d="M112.5 62.5a50 50 0 0 0-25.004 6.7 50 50 0 0 1 25.004 43.3 50 50 0 0 1-25 43.301 50 50 0 0 0 25 6.7 50 50 0 0 0 50-50 50 50 0 0 0-50-50"/>
+<path fill="#404040" fill-opacity=".5" d="M112.5 12.5a50 50 0 0 0-50 50 50 50 0 0 1 24.997 6.7 50 50 0 0 1 25.003-6.7 50 50 0 0 1 43.3 25.004 50 50 0 0 0 6.7-25.004 50 50 0 0 0-50-50" style="mix-blend-mode:normal"/>
+<path fill="#404040" fill-opacity=".5" d="M62.5 12.5a50 50 0 0 0-50 50 50 50 0 0 0 6.716 25.027A50 50 0 0 1 62.5 62.5a50 50 0 0 1 24.996-43.3A50 50 0 0 0 62.5 12.5"/>
+</g>
+<g paint-order="markers stroke fill" transform="translate(128.96)scale(.41747)">
+<path fill="#fff" d="M0 0h175v175H0z"/>
+<path fill="url(#c)" d="M0 0v175h175V0Zm62.5 12.5a50 50 0 0 1 25.047 6.733A50 50 0 0 1 112.5 12.5a50 50 0 0 1 50 50 50 50 0 0 1-6.733 24.953A50 50 0 0 1 162.5 112.5a50 50 0 0 1-50 50 50 50 0 0 1-25-6.761 50 50 0 0 1-25 6.761 50 50 0 0 1-50-50 50 50 0 0 1 6.761-25 50 50 0 0 1-6.761-25 50 50 0 0 1 50-50"/>
+<circle cx="62.5" cy="62.5" r="50" fill="#404040" fill-opacity=".5"/>
+<circle cx="112.5" cy="62.5" r="50" fill="#404040" fill-opacity=".5" style="mix-blend-mode:normal"/>
+<circle cx="112.5" cy="112.5" r="50" fill="#404040" fill-opacity=".5"/>
+<circle cx="62.5" cy="112.5" r="50" fill="#404040" fill-opacity=".5"/>
+</g>
+<g paint-order="markers stroke fill" transform="translate(128.96 83.494)scale(.41747)">
+<path fill="url(#d)" d="M0 0h175v175H0z"/>
+<circle cx="62.5" cy="62.5" r="50" fill="#404040" fill-opacity=".5"/>
+<circle cx="112.5" cy="62.5" r="50" fill="#404040" fill-opacity=".5" style="mix-blend-mode:normal"/>
+<circle cx="112.5" cy="112.5" r="50" fill="#404040" fill-opacity=".5"/>
+<circle cx="62.5" cy="112.5" r="50" fill="#404040" fill-opacity=".5"/>
+</g>
+<g paint-order="markers stroke fill" transform="translate(45.466)scale(.41747)">
+<path fill="#fff" d="M0 0h175v175H0z"/>
+<path fill="url(#e)" d="M0 0v175h175V0Zm62.5 12.5a50 50 0 0 1 25.047 6.733A50 50 0 0 1 112.5 12.5a50 50 0 0 1 50 50 50 50 0 0 1-6.733 24.953A50 50 0 0 1 162.5 112.5a50 50 0 0 1-50 50 50 50 0 0 1-25-6.761 50 50 0 0 1-25 6.761 50 50 0 0 1-50-50 50 50 0 0 1 6.761-25 50 50 0 0 1-6.761-25 50 50 0 0 1 50-50"/>
+<circle cx="62.5" cy="62.5" r="50" fill="#9f9f9f"/>
+<circle cx="112.5" cy="62.5" r="50" fill="#9f9f9f" style="mix-blend-mode:normal"/>
+<circle cx="112.5" cy="112.5" r="50" fill="#9f9f9f"/>
+<circle cx="62.5" cy="112.5" r="50" fill="#9f9f9f"/>
+</g>
+<text x="9.792" y="40.588" font-family="Times" font-size="7.056" transform="translate(-4.534)">
+<tspan x="9.792" y="40.588">Isolated</tspan>
+</text>
+<text x="3.85" y="122.874" font-family="Times" font-size="7.056" transform="translate(-4.534)">
+<tspan x="3.85" y="122.874">Non-isolated</tspan>
+</text>
+<text x="70.615" y="172.403" font-family="Times" font-size="7.056" transform="translate(-4.534)">
+<tspan x="70.615" y="172.403">Knockout</tspan>
+</text>
+<text x="145.352" y="172.403" font-family="Times" font-size="7.056" transform="translate(-4.534)">
+<tspan x="145.352" y="172.403">Non-knockout</tspan>
+</text>
+</svg>

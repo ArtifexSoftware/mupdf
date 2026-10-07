@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340.211" height="224.278" viewBox="0 0 90.014 59.34">
+<path fill="#fff" d="M.081.081h89.933V59.34H.081z" paint-order="markers stroke fill"/>
+<g transform="translate(-287.285 -126.854)">
+<circle cx="178.591" cy="-299.677" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" paint-order="markers stroke fill" transform="rotate(90)"/>
+<circle cx="161.404" cy="-368.425" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" paint-order="markers stroke fill" transform="rotate(90)"/>
+<circle cx="134.314" cy="-313.969" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" paint-order="markers stroke fill" transform="rotate(90)"/>
+<path fill="none" stroke="#000" stroke-width=".7" d="m299.578 178.665.066-.214c13.705-44.418 68.78-17.081 68.78-17.081"/>
+<text x="287.044" y="185.097" stroke-width=".265" font-family="Noto Serif" font-size="4.233">
+<tspan x="287.044" y="185.097">Current point</tspan>
+</text>
+<text x="309.333" y="130.071" stroke-width=".265" font-family="Noto Serif" font-size="4.233">
+<tspan x="309.333" y="130.071">(cx, cy)</tspan>
+</text>
+<text x="363.003" y="168.317" stroke-width=".265" font-family="Noto Serif" font-size="4.233">
+<tspan x="363.003" y="168.317">(ex, ey)</tspan>
+</text>
+<path fill="none" stroke="#000" stroke-dasharray="1.4,.7" stroke-width=".7" d="M314.01 134.626 299.8 178.57"/>
+</g>
+</svg>

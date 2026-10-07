@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340.978" height="213.321" viewBox="0 0 90.217 56.441">
+<path fill="#fff" d="M.081.081h90.136v56.36H.081z"/>
+<g transform="translate(-286.556 -57.28)">
+<circle cx="106.117" cy="-298.948" r="1.609" fill="#070000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="88.931" cy="-367.696" r="1.609" fill="#070000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="77.253" cy="-304.123" r="1.609" fill="#070000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="64.86" cy="-332.374" r="1.609" fill="#070000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<path fill="none" stroke="#000" stroke-width=".7" d="M298.849 106.192s4.749-28.416 16.055-33.366c16.856-7.38 52.788 16.15 52.788 16.15"/>
+<text x="286.315" y="112.624" font-family="Times" font-size="4.233">
+<tspan x="286.315" y="112.624">Current point</tspan>
+</text>
+<text x="296.361" y="71.452" font-family="Times" font-size="4.233">
+<tspan x="296.361" y="71.452">(x1, y1)</tspan>
+</text>
+<text x="324.756" y="60.497" font-family="Times" font-size="4.233">
+<tspan x="324.756" y="60.497">(x2, y2)</tspan>
+</text>
+<text x="362.274" y="95.844" font-family="Times" font-size="4.233">
+<tspan x="362.274" y="95.844">(x3, y3)</tspan>
+</text>
+<path fill="none" stroke="#000" stroke-dasharray="1.4,.7" stroke-width=".7" d="m367.839 89.039-35.442-23.997m-28.246 12.446-5.313 28.519"/>
+</g>
+</svg>

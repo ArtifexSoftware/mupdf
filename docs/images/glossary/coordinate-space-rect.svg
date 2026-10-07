@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280" viewBox="0 0 280 280">
+<defs>
+<marker id="a" markerHeight="1" markerWidth="1" orient="auto-start-reverse" overflow="visible" preserveAspectRatio="xMidYMid" refX="0" refY="0" viewBox="0 0 1 1">
+<path fill="context-stroke" fill-rule="evenodd" stroke="context-stroke" stroke-width=".5pt" d="M2.885 0-1.44 2.5v-5Z"/>
+</marker>
+</defs>
+<path fill="red" stroke-linecap="round" stroke-width="2" d="M25 35h150v100H25z"/>
+<path fill="none" stroke="#000" stroke-linecap="round" stroke-width="2" marker-end="url(#a)" marker-start="url(#a)" d="M230 35H25v205"/>
+<text x="18.475" y="265.958" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18" font-weight="400">
+<tspan x="18.475" y="265.958">Y</tspan>
+</text>
+<text x="243.574" y="40.958" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18" font-weight="400">
+<tspan x="243.574" y="40.958">X</tspan>
+</text>
+<text x="7.756" y="24.491" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18" font-weight="400">
+<tspan x="7.756" y="24.491">(0,0)</tspan>
+</text>
+</svg>

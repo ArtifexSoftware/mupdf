@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340.211" height="226.659" viewBox="0 0 90.014 59.97">
+<path fill="#fff" d="M.081.081h89.933V59.97H.081z"/>
+<g transform="translate(-290.349 -196.45)">
+<circle cx="248.817" cy="-302.741" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="231.631" cy="-371.489" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="204.368" cy="-356.262" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<path fill="none" stroke="#000" stroke-width=".7" d="M302.642 248.892s53.258-44.911 68.946-17.356l.023.04"/>
+<text x="290.108" y="255.324" font-family="Times" font-size="4.233" >
+<tspan x="290.108" y="255.324" >Current point</tspan>
+</text>
+<text x="349.642" y="199.668" font-family="Times" font-size="4.233">
+<tspan x="349.642" y="199.668" >(cx, cy)</tspan>
+</text>
+<text x="366.067" y="238.544" font-family="Times" font-size="4.233">
+<tspan x="366.067" y="238.544" >(ex, ey)</tspan>
+</text>
+<path fill="none" stroke="#000" stroke-dasharray="1.4,.7" stroke-width=".7" d="m356.288 204.417 15.49 27.517"/>
+</g>
+</svg>

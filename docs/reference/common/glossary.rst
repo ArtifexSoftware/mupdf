@@ -21,9 +21,8 @@ Glossary
 		on blend modes
 		<https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G12.12449365>`_.
 
-		.. imagesvg:: ../../images/blendmodes.svg
-			:tagtype: object
-			:width: 75%
+		.. image:: /images/glossary/blendmodes.svg
+			:align: center
 
 	File specification
 
@@ -56,9 +55,8 @@ Glossary
 		and
 		`knockout <https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G12.1689478>`_.
 
-		.. imagesvg:: ../../images/knockout-isolated.svg
-			:tagtype: object
-			:width: 75%
+		.. image:: /images/glossary/knockout-isolated.svg
+			:align: center
 
 	Winding
 	Non-zero Winding Number Rule
@@ -81,9 +79,8 @@ Glossary
 		<https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G9.1849678>`_
 		for details.
 
-		.. imagesvg:: ../../images/line-caps.svg
-			:tagtype: object
-			:width: 75%
+		.. image:: /images/glossary/line-caps.svg
+			:align: center
 
 	Line Join Style
 
@@ -93,9 +90,8 @@ Glossary
 		Join Styles <https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G9.1849699>`_
 		for details.
 
-		.. imagesvg:: ../../images/line-joins.svg
-			:tagtype: object
-			:width: 50%
+		.. image:: /images/glossary/line-joins.svg
+			:align: center
 
 	Miter Limit
 
@@ -108,9 +104,8 @@ Glossary
 		<https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#G9.3859627>`_
 		for details.
 
-		.. imagesvg:: ../../images/miter-limit.svg
-			:tagtype: object
-			:width: 75%
+		.. image:: /images/glossary/miter-limit.svg
+			:align: center
 
 	QuadPoint
 
@@ -173,9 +168,8 @@ Glossary
 		The example uses black line color, with both none and
 		blue interior color.
 
-		.. imagesvg:: ../../images/line-ending-styles.svg
-			:tagtype: object
-			:width: 75%
+		.. image:: /images/glossary/line-ending-styles.svg
+			:align: center
 
 	Border Style
 

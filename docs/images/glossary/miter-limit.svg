@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="350" height="105" viewBox="0 0 233.333 70">
+<g transform="translate(6.348 14.626)">
+<path fill="none" stroke="#000" stroke-width="10" d="M-1.253 44.505 31.073 7.59l32.325 36.915"/>
+<path fill="none" stroke="#fff" d="M-1.253 44.505 31.073 7.59l32.325 36.916"/>
+<circle cx="31.073" cy="7.589" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216"/>
+</g>
+<g transform="translate(6.348 12.112)">
+<path fill="none" stroke="#000" stroke-width="10" d="m125.876 51.27 11.441-43.658 11.441 43.657"/>
+<path fill="none" stroke="#fff" stroke-linejoin="bevel" d="m125.876 51.27 11.441-43.658 11.441 43.657"/>
+<circle cx="137.317" cy="7.612" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216"/>
+</g>
+<g transform="translate(6.348 12.089)">
+<path fill="none" stroke="#000" stroke-width="10" d="m75.53 52.614 18.56-42.489 18.56 43.657"/>
+<path fill="none" stroke="#fff" stroke-linejoin="bevel" d="m75.53 52.614 18.56-42.489 18.56 43.657"/>
+<circle cx="94.091" cy="10.125" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216"/>
+</g>
+<g transform="translate(6.348 12.112)">
+<path fill="none" stroke="#000" stroke-width="10" d="M162.24 50.598 172.966 6.94l10.729 43.658"/>
+<path fill="none" stroke="#fff" stroke-linejoin="bevel" d="M162.24 50.598 172.966 6.94l10.729 43.658"/>
+<circle cx="172.967" cy="7.612" r=".892" fill="#ededed" stroke="#f2f2f2" stroke-linecap="square" stroke-miterlimit="6.4" stroke-width=".216"/>
+</g>
+<path fill="none" stroke="red" stroke-width=".25" d="M8.598 29.786h28.838M8.655 14.595h28.838m-20.825-.023v15.24m1.04-16.335-2.035 2.035m2.035 13.196-2.034 2.035"/>
+<text x="2.64" y="23.019" font-family="Times" font-size="10.583">
+<tspan x="2.64" y="23.019">Miter</tspan>
+</text>
+<path fill="none" stroke="red" stroke-width=".2" d="M179.339 40.038h28.838m-28.838-22.141h28.838m-10.384-.023v22.128m1.04-23.222-2.034 2.034m2.034 20.176-2.034 2.034"/>
+<text x="198.46" y="28.747" font-family="Times" font-size="10.583">
+<tspan x="198.46" y="27.747">Limited</tspan>
+<tspan x="198.46" y="37.554">miter</tspan>
+</text>
+</svg>

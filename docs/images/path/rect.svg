@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="244.996" height="177.779" viewBox="0 0 64.822 47.037">
+<path fill="#fff" d="M.081.081h64.66v46.875H.081z"/>
+<g transform="translate(-298.418 -275.24)">
+<circle cx="283.643" cy="-303.35" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="313.643" cy="-303.35" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="313.643" cy="-353.35" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="283.643" cy="-353.35" r="1.609" fill="#020000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<text x="298.177" y="278.507" font-family="Times" font-size="4.233">
+<tspan x="298.177" y="278.507">(x1, y1)</tspan>
+</text>
+<text x="347.141" y="278.458" font-family="Times" font-size="4.233">
+<tspan x="347.141" y="278.458">(x2, y1)</tspan>
+</text>
+<text x="348.821" y="320.762" font-family="Times" font-size="4.233">
+<tspan x="348.821" y="320.762">(x2, y2)</tspan>
+</text>
+<text x="298.642" y="321.262" font-family="Times" font-size="4.233">
+<tspan x="298.642" y="321.262">(x1, y2)</tspan>
+</text>
+<path fill="none" stroke="#000" stroke-width=".7" d="M303.21 283.744h50.218l-.047 29.987-50.19-.239.065-29.77"/>
+<path fill="#020000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".7" d="m328.191 283.628-1.16.669-1.16.67v-2.679l1.16.669z"/>
+<path stroke="#000" stroke-miterlimit="6.4" stroke-width=".7" d="m327.584 313.536 1.16-.669 1.16-.67v2.679l-1.16-.669z"/>
+<path fill="#020000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".7" d="m353.556 297.704-.669-1.16-.67-1.16h2.679l-.669 1.16z"/>
+<path stroke="#000" stroke-miterlimit="6.4" stroke-width=".7" d="m303.163 296.571.669 1.16.67 1.16h-2.679l.669-1.16z"/>
+</g>
+</svg>

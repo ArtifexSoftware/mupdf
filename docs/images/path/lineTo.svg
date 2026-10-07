@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="323.094" height="100.109" viewBox="0 0 85.485 26.487">
+<path fill="#fff" d="M.081.081h85.404v26.406H.081z"/>
+<g transform="translate(-278.9 -15.598)">
+<circle cx="34.482" cy="-291.291" r="1.609" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<circle cx="17.295" cy="-360.039" r="1.609" fill="#010000" stroke="#000" stroke-miterlimit="6.4" stroke-width=".175" transform="rotate(90)"/>
+<text x="278.658" y="40.988" font-family="Noto Serif" font-size="4.233">
+<tspan x="278.658" y="40.988">Current point</tspan>
+</text>
+<text x="354.617" y="24.208" font-family="Noto Serif" font-size="4.233">
+<tspan x="354.617" y="24.208">(x, y)</tspan>
+</text>
+<path fill="none" stroke="#000" stroke-width=".7" d="m291.266 34.407 68.922-17.036"/>
+</g>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="280" viewBox="0 0 560 280">
+<defs>
+<marker id="a" markerHeight="1" markerWidth="1" orient="auto-start-reverse" overflow="visible" preserveAspectRatio="xMidYMid" refX="0" refY="0" viewBox="0 0 1 1">
+<path fill="context-stroke" fill-rule="evenodd" stroke="context-stroke" stroke-width="1pt" d="m5.77 0-8.65 5V-5Z" transform="scale(.5)"/>
+</marker>
+</defs>
+<path fill="none" fill-opacity=".5" stroke="#000" stroke-linecap="round" stroke-width="2" marker-end="url(#a)" marker-start="url(#a)" d="M235 245H30V40"/>
+<path fill="none" fill-opacity=".5" stroke="#000" stroke-linecap="round" stroke-width="2" marker-end="url(#a)" marker-start="url(#a)" d="M515 40H310v205"/>
+<text x="530" y="50" fill="none" fill-opacity=".5" stroke="#000" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="16px" font-weight="400" text-anchor="middle"/>
+<text x="23.475" y="25.958" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="23.475" y="25.958">Y</tspan>
+</text>
+<text x="303.475" y="270.958" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="303.475" y="270.958">Y</tspan>
+</text>
+<text x="528.574" y="45.958" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="528.574" y="45.958">X</tspan>
+</text>
+<text x="248.574" y="250.958" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="248.574" y="250.958">X</tspan>
+</text>
+<text x="7.756" y="264.491" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="7.756" y="264.491">(0,0)</tspan>
+</text>
+<text x="287.756" y="29.491" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="287.756" y="29.491">(0,0)</tspan>
+</text>
+<text x="61.628" y="204.194" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="61.628" y="204.194">PDF coordinate space</tspan>
+</text>
+<text x="345" y="85" stroke-linecap="round" stroke-width="2" font-family="Times" font-size="18px" font-weight="400">
+<tspan x="345" y="85">MuPDF coordinate space</tspan>
+</text>
+</svg>

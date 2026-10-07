@@ -60,9 +60,8 @@ Instance methods
 	Append operation drawing a cubic Bézier curve from the current point
 	to (x3, y3) using (x1, y1) and (x2, y2) as control points.
 
-	.. imagesvg:: ../../../images/curveTo.svg
-	   :tagtype: object
-	   :width: 50%
+	.. image:: /images/path/curveTo.svg
+		:align: center
 
 	:param number x1: X1 coordinate.
 	:param number y1: Y1 coordinate.
@@ -81,9 +80,8 @@ Instance methods
 	to (ex, ey) using the current point and (cx, cy) as control points.
 	Will be converted to `Path.prototype.curveTo()` when appended to this Path.
 
-	.. imagesvg:: ../../../images/curveToV.svg
-	   :tagtype: object
-	   :width: 50%
+	.. image:: /images/path/curveToV.svg
+		:align: center
 
 	:param number cx: CX coordinate.
 	:param number cy: CY coordinate.
@@ -100,9 +98,8 @@ Instance methods
 	to (ex, ey) using the (cx, cy) and (ex, ey) as control points. Will be
 	converted to `Path.prototype.curveTo()` when appended to this Path.
 
-	.. imagesvg:: ../../../images/curveToY.svg
-	   :tagtype: object
-	   :width: 50%
+	.. image:: /images/path/curveToY.svg
+		:align: center
 
 	:param number cx: CX coordinate.
 	:param number cy: CY coordinate.
@@ -142,9 +139,8 @@ Instance methods
 	Append operation drawing a straight line from the current point to the
 	given point.
 
-	.. imagesvg:: ../../../images/lineTo.svg
-	   :tagtype: object
-	   :width: 50%
+	.. image:: /images/path/lineTo.svg
+		:align: center
 
 	:param number x: X coordinate.
 	:param number y: Y coordinate.
@@ -177,9 +173,8 @@ Instance methods
 		lineto(x1, y2)
 		closePath()
 
-	.. imagesvg:: ../../../images/rect.svg
-	   :tagtype: object
-	   :width: 50%
+	.. image:: /images/path/rect.svg
+		:align: center
 
 	:param number x1: X1 coordinate.
 	:param number y1: Y1 coordinate.

@@ -4,7 +4,7 @@ In PDF, the origin (0, 0) of a page is located at its bottom-left
 corner. In MuPDF, the origin of a page is located at its top-left
 corner.
 
-![Coordinate Space](/images/img-coordinate-space.webp)
+![](/images/glossary/coordinate-space.svg)
 
 The exact coordinate of the page's corner may not always be (0, 0) but
 is defined by its CropBox in relation to the MediaBox.
@@ -22,11 +22,11 @@ larger than 1/72").
 
 In MuPDF interfaces we use the MuPDF coordinate space.
 
-	var rectangle = [0,0,200,200]
+	var rectangle = [0,0,150,100]
 
 Results in:
 
-![Rectangle](/images/200x200-rect.webp)
+![](/images/glossary/coordinate-space-rect.svg)
 
 ## Working at the PDF object level
 
@@ -36,7 +36,7 @@ the PDF coordinates as the PDF file expects them.
 
 	var contents = document.addStream(`
 		q                       % Save graphics state
-		200 0 0 200 10 10 cm    % Scale and translate to position image
+		150 0 0 100 10 10 cm    % Scale and translate to position image
 		/Image1 Do              % Fill image
 		Q                       % Restore graphics state
 	`)

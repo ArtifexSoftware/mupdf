@@ -26,8 +26,8 @@ basic drawing operation corresponding to that of the function name.
 	curve from the current point to (x3, y3) using (x1, y1) and (x2, y2)
 	as control points.
 
-	.. imagesvg:: ../../../images/curveTo.svg
-	   :tagtype: object
+	.. image:: /images/path/curveTo.svg
+		:align: center
 
 	:param number x1: X1 coordinate.
 	:param number y1: Y1 coordinate.
@@ -41,8 +41,8 @@ basic drawing operation corresponding to that of the function name.
 	Called when `Path.prototype.walk()` encounters an operation drawing a straight
 	line from the current point to the given point.
 
-	.. imagesvg:: ../../../images/lineTo.svg
-	   :tagtype: object
+	.. image:: /images/path/lineTo.svg
+		:align: center
 
 	:param number x: X coordinate.
 	:param number y: Y coordinate.
