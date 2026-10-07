@@ -3454,6 +3454,8 @@ color_eq(fz_css_color a, fz_css_color b)
 	return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
 }
 
+static const fz_css_color transparent = { 0, 0, 0, 0 };
+
 static fz_css_color
 find_inline_background_color(fz_context *ctx, fz_html_box *box)
 {
@@ -4395,7 +4397,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 
 static int draw_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart);
 
-static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart)
+static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart, fz_css_color bg1, fz_css_color bg2)
 {
 	fz_html_box *child;
 	float x0, y0, x1, y1;
@@ -4439,7 +4441,12 @@ static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 		int suppress;
 
 		if (y1 > y0)
-			draw_rect(ctx, dev, ctm, page_top, box->style->background_color, x0, y0 - cell_padding_top, x1, y1 + cell_padding_bot);
+		{
+			if (bg1.a > 0)
+				draw_rect(ctx, dev, ctm, page_top, bg1, x0, y0 - cell_padding_top, x1, y1 + cell_padding_bot);
+			if (bg2.a > 0)
+				draw_rect(ctx, dev, ctm, page_top, bg2, x0, y0 - cell_padding_top, x1, y1 + cell_padding_bot);
+		}
 
 		/* Draw a selection of borders. */
 		/* If we are in restarting mode, don't do the bottom one yet, as that
@@ -4504,6 +4511,22 @@ static int draw_table_row(fz_context *ctx, fz_html_box *box, float page_top, flo
 	return 0;
 }
 
+static fz_html_box *find_table_row(fz_html_box *box)
+{
+	while (box && box->type != BOX_TABLE_ROW)
+		box = box->up;
+	return box;
+}
+
+static int draw_table_cell(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart)
+{
+	/* Table cells draw table row's background color as well as their own */
+	fz_html_box *row = find_table_row(box);
+	if (row)
+		return draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf, restart, row->style->background_color, box->style->background_color);
+	return draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf, restart, transparent, box->style->background_color);
+}
+
 static int draw_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, hb_buffer_t *hb_buf, fz_html_restarter *restart)
 {
 	int ret = 0;
@@ -4520,12 +4543,17 @@ static int draw_box(fz_context *ctx, fz_html_box *box, float page_top, float pag
 		else if (draw_table_row(ctx, box, page_top, page_bot, dev, ctm, hb_buf, restart))
 			ret = 1;
 		break;
-	case BOX_TABLE:
 	case BOX_TABLE_CELL:
+		if (restart && restart->end == box)
+			ret = 1;
+		else if (draw_table_cell(ctx, box, page_top, page_bot, dev, ctm, hb_buf, restart))
+			ret = 1;
+		break;
+	case BOX_TABLE:
 	case BOX_BLOCK:
 		if (restart && restart->end == box)
 			ret = 1;
-		else if (draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf, restart))
+		else if (draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf, restart, box->style->background_color, transparent))
 			ret = 1;
 		break;
 	case BOX_FLOW:
