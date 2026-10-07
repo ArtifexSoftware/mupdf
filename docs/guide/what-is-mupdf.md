@@ -30,7 +30,7 @@ There is also limited support for reading Office format documents.
 
 ## Command Line Tools
 
-The command line tools are all gathered into one umbrella command: [`mutool`](../tools/mutool.rst).
+The command line tools are all gathered into one umbrella command: [`mutool`](../tools/mutool.md).
 This swiss army knife has a lot of sub-commands for performing different
 tasks on PDF documents.
 
@@ -42,10 +42,10 @@ This is an entirely visual conversion; metadata and other non-visible content wi
 These two tools provide this functionality. They both use the same conversion under the hood, but provide
 separate sets of command line options to fit different use cases.
 
-[`mutool draw`](../tools/mutool-draw.rst)
+[`mutool draw`](../tools/mutool-draw.md)
 : Render or convert a document into various image formats, with lots of fine-grained control over the rendering.
 
-[`mutool convert`](../tools/mutool-convert.rst)
+[`mutool convert`](../tools/mutool-convert.md)
 : Batch convert a document into another document format. Easy to use, with only a few options.
 
 See [document writer options](../reference/common/document-writer-options.md) and
@@ -54,44 +54,44 @@ control the conversion behavior.
 
 ### Extraction
 
-[`mutool draw`](../tools/mutool-draw.rst) can also be used to extract detailed textual information in XML or JSON format:
+[`mutool draw`](../tools/mutool-draw.md) can also be used to extract detailed textual information in XML or JSON format:
 
 	mutool draw [-O stext-options] -o output.stext input.pdf
 	mutool draw [-O stext-options] -o output.stext.json input.pdf
 
 See [stext-options](../reference/common/stext-options.md) for a description of the available structured text extraction options.
 
-PDF files often have images, fonts, and other embedded files. These can be extracted with [`mutool extract`](../tools/mutool-extract.rst).
+PDF files often have images, fonts, and other embedded files. These can be extracted with [`mutool extract`](../tools/mutool-extract.md).
 
 ### PDF Manipulation
 
 MuPDF has a large toolset for manipulating PDF files on the command line.
 
-[`mutool show`](../tools/mutool-show.rst)
+[`mutool show`](../tools/mutool-show.md)
 : A tool for displaying the internal objects in a PDF file, useful for inspecting the file structure and to debug problematic files.
 
-[`mutool clean`](../tools/mutool-clean.rst)
+[`mutool clean`](../tools/mutool-clean.md)
 : Rewrite a PDF file. Used to fix broken files; or to make a PDF file human editable.
 
-[`mutool create`](../tools/mutool-create.rst)
+[`mutool create`](../tools/mutool-create.md)
 : Assemble a new PDF file from a text file with graphics commands.
 
-[`mutool merge`](../tools/mutool-merge.rst)
+[`mutool merge`](../tools/mutool-merge.md)
 : Merge pages from multiple input files into a new PDF.
 
-[`mutool poster`](../tools/mutool-poster.rst)
+[`mutool poster`](../tools/mutool-poster.md)
 : Split large pages of a PDF file into smaller pieces that can be printed on a smaller
 paper size. These can then be assembled into a large poster after printing.
 
-[`mutool run`](../tools/mutool-run.rst)
-: Run Javascript programs using the MuPDF library with [`mutool run`](../tools/mutool-run.rst).
+[`mutool run`](../tools/mutool-run.md)
+: Run Javascript programs using the MuPDF library with [`mutool run`](../tools/mutool-run.md).
 See the library section below for ways to use MuPDF from other programming languages.
 
 ## Viewers
 
 ### Desktop
 
-For Linux, Windows and MacOS there are two viewer applications. The main viewer [`mupdf-gl`](../tools/mupdf-gl.rst)
+For Linux, Windows and MacOS there are two viewer applications. The main viewer [`mupdf-gl`](../tools/mupdf-gl.md)
 has many features such as a table of contents sidebar, full unicode search, annotation editing, and redaction.
 On systems where this viewer cannot be built, the older legacy viewers (mupdf-x11, mupdf-win32) are still supported.
 
