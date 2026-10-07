@@ -7,9 +7,9 @@ SearchResult
 
 A SearchResult has properties describing the current state of a `Search`:
 
-	* does it need more pages?
-	* has it found a search?
-	* did it reach the end of the document?
+* does it need more pages?
+* has it found a search?
+* did it reach the end of the document?
 
 Constructors
 ------------
