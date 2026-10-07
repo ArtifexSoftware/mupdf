@@ -24,16 +24,26 @@
 
 #include <string.h>
 
+// enable feature test macro to increase chance of getentropy availability
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
+
 #ifdef _WIN32
 #include <windows.h> // for GetSystemTime and CryptGenRandom
 #else
+
 #include <sys/time.h> // for gettimeofday()
 #include <stdlib.h> // for srandom(), random(), arc4random_buf()
+
 #ifdef __APPLE__
 #include <sys/random.h> // for getentropy()
+#elif __UCLIBC__
+#include <sys/random.h> // for getrandom()
 #else
 #include <unistd.h> // for getentropy()
 #endif
+
 #endif
 
 #ifdef _WIN32
@@ -78,35 +88,66 @@ void fz_memrnd(fz_context *ctx, unsigned char *data, int len)
 {
 #ifdef CLUSTER
 	memset(data, 0x55, len);
-#else
+	return;
+#endif
+
 	// (Re-)initialize chacha20 stream cipher on first invocation,
 	// or when the counter wraps around.
 	if (ctx->seed.s[12] == 0)
 	{
 		unsigned char entropy[44];
 
-#if defined(_WIN32)
-		if (getentropy_win32(entropy, sizeof entropy))
+		#if defined(_WIN32)
+		{
+			if (getentropy_win32(entropy, sizeof entropy))
+				getentropy_fallback(entropy, sizeof entropy);
+		}
+
+		#elif defined(EMSCRIPTEN)
+		{
+			// __wasi_random_get is not yet widely supported, so we can't call getentropy
 			getentropy_fallback(entropy, sizeof entropy);
-#elif defined(EMSCRIPTEN)
-		// __wasi_random_get is not yet widely supported, so we can't call getentropy
-		getentropy_fallback(entropy, sizeof entropy);
-#elif defined(__ANDROID__) && (__ANDROID_API__ < 28)
-		// Android before 9.0 does not have getentropy(), but does have
-		// arc4random_buf that sources from /dev/urandom.
-		arc4random_buf(entropy, sizeof entropy);
-#elif (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 25))
-		// gnu libc before 2.25 has neither getentropy, getrandom, nor arc4random...
-		getentropy_fallback(entropy, sizeof entropy);
-#else
-		if (getentropy(entropy, sizeof entropy) < 0)
+		}
+
+		#elif defined(__ANDROID__) && (__ANDROID_API__ < 28)
+		{
+			// Android before 9.0 does not have getentropy(), but does have
+			// arc4random_buf that sources from /dev/urandom.
+			arc4random_buf(entropy, sizeof entropy);
+		}
+
+		#elif defined(__UCLIBC__)
+		{
+			// uClibc supports getrandom if on linux (starting with v1.0.2)
+			#if __UCLIBC_LINUX_SPECIFIC__
+			{
+				if (getrandom(entropy, sizeof entropy, 0) < 0)
+					getentropy_fallback(entropy, sizeof entropy);
+			}
+			#else
+			{
+				getentropy_fallback(entropy, sizeof entropy);
+			}
+			#endif
+		}
+
+		#elif defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 25))
+		{
+			// gnu libc before 2.25 has neither getentropy, getrandom, nor arc4random...
 			getentropy_fallback(entropy, sizeof entropy);
-#endif
+		}
+
+		#else
+		{
+			if (getentropy(entropy, sizeof entropy) < 0)
+				getentropy_fallback(entropy, sizeof entropy);
+		}
+
+		#endif
 
 		fz_chacha20_init(&ctx->seed, entropy, entropy + 32, 0);
 	}
 
 	memset(data, 0, len);
 	fz_chacha20_encrypt(&ctx->seed, data, data, len);
-#endif /* CLUSTER */
 }
