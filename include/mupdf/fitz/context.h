@@ -239,9 +239,6 @@ typedef struct fz_locks_context
 
 	void *(*create_external_mutex)(void *user);
 	void (*destroy_external_mutex)(void *user, void *external_mutex);
-
-	void (*set_tls_context)(void *user, fz_context *);
-	fz_context *(*get_tls_context)(void *user);
 } fz_locks_context;
 
 enum fz_lock_id {

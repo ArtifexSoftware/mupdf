@@ -257,15 +257,7 @@ static void mudraw_unlock(void *user, int lock)
 
 static fz_locks_context mudraw_locks =
 {
-	NULL, mudraw_lock, mudraw_unlock,
-	NULL, NULL,
-#ifdef MU_THREAD_HAS_TLS
-	mu_set_tls_context,
-	mu_get_tls_context
-#else
-	NULL,
-	NULL
-#endif
+	NULL, mudraw_lock, mudraw_unlock
 };
 
 static void fin_mudraw_locks(void)
@@ -280,8 +272,6 @@ static fz_locks_context *init_mudraw_locks(void)
 {
 	int i;
 	int failed = 0;
-
-	mu_init_tls();
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
 		failed |= mu_create_mutex(&mutexes[i]);
