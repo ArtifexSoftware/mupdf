@@ -1823,8 +1823,8 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if, l
                     m_locks.unlock = unlock;
                     m_locks.create_external_mutex = {'create_mutex' if locking else 'nullptr'};
                     m_locks.destroy_external_mutex = {'destroy_mutex' if locking else 'nullptr'};
-                    m_locks.set_tls_context = {'set_tls_context' if locking else 'nullptr'};
-                    m_locks.get_tls_context = {'get_tls_context' if locking else 'nullptr'};
+                    //m_locks.set_tls_context = {'set_tls_context' if locking else 'nullptr'};
+                    //m_locks.get_tls_context = {'get_tls_context' if locking else 'nullptr'};
                     m_ctx = nullptr;
                     bool multithreaded = true;
                     const char* s = getenv( "MUPDF_mt_ctx");
@@ -1893,14 +1893,14 @@ def make_internal_functions( namespace, out_h, out_cpp, refcheck_if, trace_if, l
                         //std::cerr << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "(): " << " freeing " << mutex << "\\n";
                         delete (std::recursive_mutex*) mutex;
                     }}
-                    static void set_tls_context(void *user, fz_context *)
-                    {{
+                    //static void set_tls_context(void *user, fz_context *)
+                    //{{
                         // Nothing to do.
-                    }}
-                    static fz_context* get_tls_context(void *)
-                    {{
+                    //}}
+                    //static fz_context* get_tls_context(void *)
+                    //{{
                         return {rename.internal("context_get")}();
-                    }}
+                    //}}
 
                     '''),
                 '    ')
