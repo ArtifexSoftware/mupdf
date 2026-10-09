@@ -4065,6 +4065,9 @@ draw_skipped_bg_and_borders(fz_context *ctx, fz_html_box *box, float page_top, f
 
 	draw_skipped_bg_and_borders(ctx, box->up, page_top, page_bot, dev, ctm);
 
+	if (!fz_html_box_has_boxes(box))
+		return;
+
 	/* We always want to draw our background color. */
 	padding = box->u.block.padding;
 	cell_padding_top = box->type == BOX_TABLE_CELL ? box->u.block.margin[T] : 0;
