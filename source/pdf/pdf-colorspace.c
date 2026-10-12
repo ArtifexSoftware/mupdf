@@ -415,7 +415,35 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj, pdf_cycle_list *cycle_up)
 			else if (pdf_name_eq(ctx, name, PDF_NAME(CalCMYK)))
 				return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME(Lab)))
-				return fz_keep_colorspace(ctx, fz_device_lab(ctx));
+			{
+				float wp[3] = FZ_DEFAULT_LAB_WHITEPOINT;
+				float bp[3] = FZ_DEFAULT_LAB_BLACKPOINT;
+				float range[4] = FZ_DEFAULT_LAB_RANGE;
+				pdf_obj *d = pdf_array_get(ctx, obj, 1);
+				pdf_obj *o = pdf_dict_get(ctx, d, PDF_NAME(Range));
+				if (pdf_is_array(ctx, o))
+				{
+					range[0] = pdf_array_get_real(ctx, o, 0);
+					range[1] = pdf_array_get_real(ctx, o, 1);
+					range[2] = pdf_array_get_real(ctx, o, 2);
+					range[3] = pdf_array_get_real(ctx, o, 3);
+				}
+				o = pdf_dict_get(ctx, d, PDF_NAME(WhitePoint));
+				if (pdf_is_array(ctx, o))
+				{
+					wp[0] = pdf_array_get_real(ctx, o, 0);
+					wp[1] = pdf_array_get_real(ctx, o, 1);
+					wp[2] = pdf_array_get_real(ctx, o, 2);
+				}
+				o = pdf_dict_get(ctx, d, PDF_NAME(BlackPoint));
+				if (pdf_is_array(ctx, o))
+				{
+					bp[0] = pdf_array_get_real(ctx, o, 0);
+					bp[1] = pdf_array_get_real(ctx, o, 1);
+					bp[2] = pdf_array_get_real(ctx, o, 2);
+				}
+				return fz_new_lab_colorspace(ctx, range, wp, bp);
+			}
 
 			else
 			{

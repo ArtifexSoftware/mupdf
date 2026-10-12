@@ -399,6 +399,11 @@ fz_new_colorspace(fz_context *ctx, enum fz_colorspace_type type, int flags, int 
 		cs->flags = flags;
 		cs->n = n;
 		cs->name = Memento_label(fz_strdup(ctx, name ? name : "UNKNOWN"), "cs_name");
+		if (cs->type == FZ_COLORSPACE_LAB)
+		{
+			static const float drange[4] = FZ_DEFAULT_LAB_RANGE;
+			memcpy(cs->lab_range, drange, sizeof(drange));
+		}
 	}
 	fz_catch(ctx)
 	{
@@ -623,8 +628,8 @@ fz_clamp_color(fz_context *ctx, fz_colorspace *cs, const float *in, float *out)
 	if (cs->type == FZ_COLORSPACE_LAB)
 	{
 		out[0] = fz_clamp(in[0], 0, 100);
-		out[1] = fz_clamp(in[1], -128, 127);
-		out[2] = fz_clamp(in[2], -128, 127);
+		out[1] = fz_clamp(in[1], cs->lab_range[0], cs->lab_range[1]);
+		out[2] = fz_clamp(in[2], cs->lab_range[2], cs->lab_range[3]);
 	}
 	else if (cs->type == FZ_COLORSPACE_INDEXED)
 	{
@@ -951,6 +956,16 @@ static void separation_via_base(fz_context *ctx, fz_color_converter *cc, const f
 	cc->convert_via(ctx, cc, base, dst);
 }
 
+static void
+icc_transform_color_lab(fz_context *ctx, fz_color_converter *cc, const float *src, float *dst)
+{
+	float clipped_src[3];
+	clipped_src[0] = src[0];
+	clipped_src[1] = fz_clamp(src[1], cc->ss->lab_range[0], cc->ss->lab_range[1]);
+	clipped_src[2] = fz_clamp(src[2], cc->ss->lab_range[2], cc->ss->lab_range[3]);
+	fz_icc_transform_color(ctx, cc, clipped_src, dst);
+}
+
 static void indexed_via_separation_via_base(fz_context *ctx, fz_color_converter *cc, const float *src, float *dst)
 {
 	fz_colorspace *ss = cc->ss_via;
@@ -1005,7 +1020,10 @@ fz_init_process_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colo
 		fz_try(ctx)
 		{
 			cc->link = fz_find_icc_link(ctx, ss, 0, ds, 0, is, params, 1, 0, 0);
-			cc->convert = fz_icc_transform_color;
+			if (ss->type == FZ_COLORSPACE_LAB)
+				cc->convert = icc_transform_color_lab;
+			else
+				cc->convert = fz_icc_transform_color;
 		}
 		fz_catch(ctx)
 		{
@@ -1256,6 +1274,8 @@ template_convert_lab(fz_context *ctx, const fz_pixmap *src, fz_pixmap *dst, fz_c
 				srcv[1] = s[1] - 128;
 				srcv[2] = s[2] - 128;
 			}
+			srcv[1] = fz_clamp(srcv[1], src_cs->lab_range[0], src_cs->lab_range[1]);
+			srcv[2] = fz_clamp(srcv[2], src_cs->lab_range[2], src_cs->lab_range[3]);
 			s += src_n;
 
 			cc.convert(ctx, &cc, srcv, dstv);
@@ -2017,4 +2037,41 @@ void fz_colorspace_digest(fz_context *ctx, fz_colorspace *cs, unsigned char dige
 #else
 	fz_throw(ctx, FZ_ERROR_UNSUPPORTED, "ICC support disabled");
 #endif
+}
+
+fz_colorspace *
+fz_new_lab_colorspace(fz_context *ctx, float range[4], float whitepoint[3], float blackpoint[3])
+{
+	static const float drange[4] = FZ_DEFAULT_LAB_RANGE;
+/* Blackpoint and whitepoint are currently ignored */
+#ifdef CURRENTLY_IGNORED
+	static const float dwp[3] = FZ_DEFAULT_LAB_WHITEPOINT;
+	static const float dbp[3] = FZ_DEFAULT_LAB_BLACKPOINT;
+#endif
+	if (memcmp(range, drange, sizeof(drange))
+#ifdef CURRENTLY_IGNORED
+		|| memcmp(wp, dwp, sizeof(dwp) || memcmp(bp, dbp, sizeof(dbp))
+#endif
+		)
+	{
+		fz_buffer *labbuf = fz_new_buffer_from_shared_data(ctx, resources_icc_lab_icc, resources_icc_lab_icc_len);
+		fz_colorspace *lab = NULL;
+
+		fz_var(lab);
+
+		fz_try(ctx)
+			lab = fz_new_icc_colorspace(ctx, FZ_COLORSPACE_LAB, 0, "Lab", labbuf);
+		fz_always(ctx)
+			fz_drop_buffer(ctx, labbuf);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+
+		lab->lab_range[0] = range[0];
+		lab->lab_range[1] = range[1];
+		lab->lab_range[2] = range[2];
+		lab->lab_range[3] = range[3];
+
+		return lab;
+	}
+	return fz_keep_colorspace(ctx, fz_device_lab(ctx));
 }

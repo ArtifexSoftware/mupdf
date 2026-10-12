@@ -330,6 +330,27 @@ void fz_clamp_color(fz_context *ctx, fz_colorspace *cs, const float *in, float *
 */
 void fz_convert_color(fz_context *ctx, fz_colorspace *ss, const float *sv, fz_colorspace *ds, float *dv, fz_colorspace *is, fz_color_params params);
 
+/* LAB space handling. */
+
+#define FZ_DEFAULT_LAB_WHITEPOINT { 0.9642f, 1.0f, 0.8249f }
+#define FZ_DEFAULT_LAB_BLACKPOINT { 0, 0, 0 }
+#define FZ_DEFAULT_LAB_RANGE { -100, 100, -100, 100 }
+
+/**
+	Return a reference to an LAB colorspace with the given
+	properties.
+
+	This might be a reference to an existing one, or to a new
+	one.
+
+	@note: Currently whitepoint and blackpoint are ignored.
+	Use the default values above to ensure code will work in
+	the future.
+*/
+fz_colorspace *
+fz_new_lab_colorspace(fz_context *ctx, float range[4], float whitepoint[3], float blackpoint[3]);
+
+
 /* Default (fallback) colorspace handling */
 
 /**
@@ -420,6 +441,7 @@ struct fz_colorspace
 	int flags;
 	int n;
 	char *name;
+	float lab_range[4];
 	union {
 #if FZ_ENABLE_ICC
 		struct {
