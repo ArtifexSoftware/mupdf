@@ -1219,8 +1219,10 @@ svg_parse_font_attributes(fz_context *ctx, svg_document *doc, fz_xml *node, svg_
 	char *text_anchor_att = fz_xml_att(node, "text-anchor");
 
 	if (font_family_att)
+	{
 		fz_strlcpy(buf, font_family_att, buf_size);
-	state->font_family = buf;
+		state->font_family = buf;
+	}
 
 	if (font_weight_att)
 	{
