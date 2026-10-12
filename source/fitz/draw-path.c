@@ -1131,7 +1131,7 @@ fz_dash_lineto(fz_context *ctx, struct sctx *s, float bx, float by, int from_bez
 	float total, used, ratio, tail;
 	float ax, ay;
 	float mx, my;
-	float old_bx = 0, old_by = 0;
+	float old_bx = bx, old_by = by;
 	float n;
 	int dash_cap = s->stroke->dash_cap;
 
@@ -1151,8 +1151,6 @@ fz_dash_lineto(fz_context *ctx, struct sctx *s, float bx, float by, int from_bez
 		{
 			/* Entirely off screen */
 			tail = total;
-			old_bx = bx;
-			old_by = by;
 			goto adjust_for_tail;
 		}
 		ax = s->rect.x0;	/* d > 0, dx > 0 */
@@ -1164,8 +1162,6 @@ fz_dash_lineto(fz_context *ctx, struct sctx *s, float bx, float by, int from_bez
 		{
 			/* Entirely off screen */
 			tail = total;
-			old_bx = bx;
-			old_by = by;
 			goto adjust_for_tail;
 		}
 		ax = s->rect.x1;	/* d < 0, dx < 0 */
@@ -1184,9 +1180,7 @@ a_moved_horizontally:	/* d and dx have the same sign */
 		if (by < s->rect.y0)
 		{
 			/* Entirely off screen */
-			tail = total;
-			old_bx = bx;
-			old_by = by;
+			tail = total + used; /* Add back in the 'used' section that we have already removed from total. */
 			goto adjust_for_tail;
 		}
 		ay = s->rect.y0;	/* d > 0, dy > 0 */
@@ -1197,9 +1191,7 @@ a_moved_horizontally:	/* d and dx have the same sign */
 		if (by > s->rect.y1)
 		{
 			/* Entirely off screen */
-			tail = total;
-			old_bx = bx;
-			old_by = by;
+			tail = total + used; /* Add back in the 'used' section that we have already removed from total. */
 			goto adjust_for_tail;
 		}
 		ay = s->rect.y1;	/* d < 0, dy < 0 */
@@ -1260,15 +1252,11 @@ a_moved_vertically:	/* d and dy have the same sign */
 	}
 	else if ((d = bx - s->rect.x0) < 0)
 	{
-		old_bx = bx;
-		old_by = by;
 		bx = s->rect.x0;	/* d < 0, dx < 0 */
 		goto b_moved_horizontally;
 	}
 	else if (d > 0 && (d = (bx - s->rect.x1)) > 0)
 	{
-		old_bx = bx;
-		old_by = by;
 		bx = s->rect.x1;	/* d > 0, dx > 0 */
 b_moved_horizontally:	/* d and dx have the same sign */
 		assert((d > 0 && dx > 0) || (d < 0 && dx < 0));
@@ -1286,16 +1274,12 @@ b_moved_horizontally:	/* d and dx have the same sign */
 	}
 	else if ((d = by - s->rect.y0) < 0)
 	{
-		old_bx = bx;
-		old_by = by;
 		by = s->rect.y0;	/* d < 0, dy < 0 */
 		goto b_moved_vertically;
 	}
 	else if (d > 0 && (d = (by - s->rect.y1)) > 0)
 	{
 		float t;
-		old_bx = bx;
-		old_by = by;
 		by = s->rect.y1;	/* d > 0, dy > 0 */
 b_moved_vertically:	/* d and dy have the same sign */
 		assert((d > 0 && dy > 0) || (d < 0 && dy < 0));
