@@ -488,6 +488,12 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, fz_matrix ctm,
 					is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset, bidi_level);
 					if (*is == ';')
 						is ++;
+					else
+					{
+						// stop parsing Indices on errors
+						fz_warn(ctx, "ignoring invalid Glyphs.Indices mapping");
+						is = NULL;
+					}
 				}
 
 				if (bidi_level & 1)
