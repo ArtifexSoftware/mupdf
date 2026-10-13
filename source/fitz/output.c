@@ -336,47 +336,92 @@ fz_new_output_with_file_ptr(fz_context *ctx, FILE *file)
 	return out;
 }
 
+typedef struct fz_buffer_state { fz_buffer *buffer; size_t pos; } fz_buffer_state;
+
 static void
 buffer_write(fz_context *ctx, void *opaque, const void *data, size_t len)
 {
-	fz_buffer *buffer = opaque;
+	fz_buffer_state *state = opaque;
+	fz_buffer *buffer = state->buffer;
+	if (state->pos < buffer->len)
+	{
+		size_t avail = buffer->len - state->pos;
+		if (avail > len)
+			avail = len;
+		memcpy(buffer->data + state->pos, data, avail);
+		state->pos += avail;
+		data += avail;
+		len -= avail;
+	}
 	fz_append_data(ctx, buffer, data, len);
+	state->pos += len;
 }
 
 static void
 buffer_seek(fz_context *ctx, void *opaque, int64_t off, int whence)
 {
-	fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot seek in buffer: %s", strerror(errno));
+	fz_buffer_state *state = opaque;
+	fz_buffer *buffer = state->buffer;
+	int64_t pos = 0;
+	if (whence == SEEK_CUR)
+		pos = state->pos + off;
+	else if (whence == SEEK_END)
+		pos = buffer->len + off;
+	else
+		pos = off;
+	if (pos < 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot seek behind beginning of buffer");
+	if ((int)(pos - buffer->len) < 0)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "cannot seek beyond limit of memory");
+	if (pos > (int64_t)buffer->len)
+		fz_append_byte_n(ctx, buffer, 0, pos - buffer->len);
+	state->pos = pos;
 }
 
 static int64_t
 buffer_tell(fz_context *ctx, void *opaque)
 {
-	fz_buffer *buffer = opaque;
-	return (int64_t)buffer->len;
+	fz_buffer_state *state = opaque;
+	return (int64_t)state->pos;
 }
 
 static void
 buffer_drop(fz_context *ctx, void *opaque)
 {
-	fz_buffer *buffer = opaque;
+	fz_buffer_state *state = opaque;
+	fz_buffer *buffer = state->buffer;
 	fz_drop_buffer(ctx, buffer);
+	fz_free(ctx, state);
 }
 
 static void
 buffer_reset(fz_context *ctx, void *opaque)
 {
-	fz_buffer *buffer = opaque;
+	fz_buffer_state *state = opaque;
+	fz_buffer *buffer = state->buffer;
 	fz_clear_buffer(ctx, buffer);
+	state->pos = 0;
 }
 
 fz_output *
 fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
-	fz_output *out = fz_new_output(ctx, 0, fz_keep_buffer(ctx, buf), buffer_write, NULL, buffer_drop);
-	out->seek = buffer_seek;
-	out->tell = buffer_tell;
-	out->reset = buffer_reset;
+	fz_buffer_state *state = fz_malloc_struct(ctx, fz_buffer_state);
+	fz_output *out = NULL;
+	fz_try(ctx)
+	{
+		out = fz_new_output(ctx, 0, state, buffer_write, NULL, buffer_drop);
+		out->seek = buffer_seek;
+		out->tell = buffer_tell;
+		out->reset = buffer_reset;
+		state->buffer = fz_keep_buffer(ctx, buf);
+		state->pos = buf->len;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, state);
+		fz_rethrow(ctx);
+	}
 	return out;
 }
 
