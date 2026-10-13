@@ -1,6 +1,8 @@
 import * as mupdf from "mupdf"
 
 var Q = JSON.stringify
+var repr = Q
+var print = console.log
 
 var pathPrinter = {
 	moveTo: function (x,y) { print("moveTo", x, y) },
@@ -100,7 +102,7 @@ var traceDevice = {
 		print("endLayer")
 	},
 	beginStructure: function (structure, raw, uid) {
-		print("beginStructure", structure, raw, uiw)
+		print("beginStructure", structure, raw, uid)
 	},
 	endStructure: function () {
 		print("endStructure")
@@ -126,10 +128,10 @@ var traceDevice = {
 	},
 }
 
-if (scriptArgs.length != 2)
+if (process.argv.length != 4)
 	print("usage: mutool run trace-device.js document.pdf pageNumber")
 else {
-	var doc = mupdf.Document.openDocument(scriptArgs[0]);
-	var page = doc.loadPage(parseInt(scriptArgs[1])-1);
-	page.run(traceDevice, mupdf.Matrix.identity);
+	var doc = mupdf.Document.openDocument(process.argv[2]);
+	var page = doc.loadPage(parseInt(process.argv[3])-1);
+	page.run(new mupdf.Device(traceDevice), mupdf.Matrix.identity);
 }
