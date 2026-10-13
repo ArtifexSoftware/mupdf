@@ -185,6 +185,7 @@ void fz_append_base64_buffer(fz_context *ctx, fz_buffer *out, fz_buffer *data, i
 void fz_append_data(fz_context *ctx, fz_buffer *buf, const void *data, size_t len);
 void fz_append_string(fz_context *ctx, fz_buffer *buf, const char *data);
 void fz_append_byte(fz_context *ctx, fz_buffer *buf, int c);
+void fz_append_byte_n(fz_context *ctx, fz_buffer *buf, int c, int n);
 void fz_append_rune(fz_context *ctx, fz_buffer *buf, int c);
 
 void fz_append_uint32_le(fz_context *ctx, fz_buffer *buf, uint32_t x);
