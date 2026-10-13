@@ -301,10 +301,10 @@ static size_t
 skip_language_code_utf8(const unsigned char *s, size_t n, size_t i)
 {
 	/* skip language escape codes */
-	if (i + 3 <= n && s[i] == 27 && s[i+3])
-		return 3;
-	else if (i + 5 <= n && s[i] == 27 && s[i+5] == 27)
-		return 5;
+	if (i + 4 <= n && s[i] == 27 && s[i+3] == 27)
+		return 4;
+	else if (i + 6 <= n && s[i] == 27 && s[i+5] == 27)
+		return 6;
 	return 0;
 }
 
