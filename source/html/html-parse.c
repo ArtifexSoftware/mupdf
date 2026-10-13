@@ -1300,24 +1300,40 @@ static fz_html_box *gen2_table_cell(fz_context *ctx, struct genstate *g, fz_html
 
 static void gen2_image_common(fz_context *ctx, struct genstate *g, fz_html_box *root_box, fz_xml *node, fz_image *img, int display, fz_css_style *style)
 {
+	fz_css_style local_style = *style;
 	fz_html_box *img_block_box;
 	fz_html_box *img_inline_box;
+
+	int w, h;
+	const char *w_att = fz_xml_att(node, "width");
+	const char *h_att = fz_xml_att(node, "height");
+
+	if (w_att && (w = fz_atoi(w_att)) > 0)
+	{
+		local_style.width.value = w;
+		local_style.width.unit = strchr(w_att, '%') ? N_PERCENT : N_LENGTH;
+	}
+	if (h_att && (h = fz_atoi(h_att)) > 0)
+	{
+		local_style.height.value = h;
+		local_style.height.unit = strchr(h_att, '%') ? N_PERCENT : N_LENGTH;
+	}
 
 	if (display == DIS_INLINE || display == DIS_INLINE_BLOCK)
 	{
 		root_box = find_inline_context(ctx, g, root_box);
-		img_inline_box = new_box(ctx, g, node, BOX_INLINE, style);
+		img_inline_box = new_box(ctx, g, node, BOX_INLINE, &local_style);
 		append_box(ctx, root_box, img_inline_box);
 		generate_image(ctx, img_inline_box, img, g);
 	}
 	else
 	{
 		root_box = find_block_context(ctx, root_box);
-		img_block_box = new_box(ctx, g, node, BOX_BLOCK, style);
+		img_block_box = new_box(ctx, g, node, BOX_BLOCK, &local_style);
 		append_box(ctx, root_box, img_block_box);
 
 		root_box = find_inline_context(ctx, g, img_block_box);
-		img_inline_box = new_box(ctx, g, NULL, BOX_INLINE, style);
+		img_inline_box = new_box(ctx, g, NULL, BOX_INLINE, &local_style);
 		append_box(ctx, root_box, img_inline_box);
 		generate_image(ctx, img_inline_box, img, g);
 	}
@@ -1328,25 +1344,8 @@ static void gen2_image_html(fz_context *ctx, struct genstate *g, fz_html_box *ro
 	const char *src = fz_xml_att(node, "src");
 	if (src)
 	{
-		fz_css_style local_style = *style;
-		fz_image *img;
-		int w, h;
-		const char *w_att = fz_xml_att(node, "width");
-		const char *h_att = fz_xml_att(node, "height");
-
-		if (w_att && (w = fz_atoi(w_att)) > 0)
-		{
-			local_style.width.value = w;
-			local_style.width.unit = strchr(w_att, '%') ? N_PERCENT : N_LENGTH;
-		}
-		if (h_att && (h = fz_atoi(h_att)) > 0)
-		{
-			local_style.height.value = h;
-			local_style.height.unit = strchr(h_att, '%') ? N_PERCENT : N_LENGTH;
-		}
-
-		img = load_html_image(ctx, g->zip, g->base_uri, src);
-		gen2_image_common(ctx, g, root_box, node, img, display, &local_style);
+		fz_image *img = load_html_image(ctx, g->zip, g->base_uri, src);
+		gen2_image_common(ctx, g, root_box, node, img, display, style);
 	}
 }
 
