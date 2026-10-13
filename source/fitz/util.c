@@ -1037,6 +1037,30 @@ fz_sanitize_jpeg_buffer(fz_context *ctx, fz_buffer *in)
 	return out;
 }
 
+fz_buffer *
+fz_parse_data_uri_with_media_type(fz_context *ctx, const char *uri, const char *accept_mimetype)
+{
+	const char *p = uri;
+	if (strncmp(p, "data:", 5))
+		return NULL;
+	p += 5;
+	if (strncmp(p, accept_mimetype, strlen(accept_mimetype)))
+		return NULL;
+	p += strlen(accept_mimetype);
+	while (*p)
+	{
+		if (!strncmp(p, ";base64,", 8))
+			return fz_new_buffer_from_base64(ctx, p+8, 0);
+		if (*p == ',')
+		{
+			p = fz_decode_uri_component(ctx, p+1);
+			return fz_new_buffer_from_data(ctx, p, strlen(p));
+		}
+		++p;
+	}
+	return NULL;
+}
+
 void
 fz_append_image_as_data_uri(fz_context *ctx, fz_buffer *out, fz_image *image)
 {

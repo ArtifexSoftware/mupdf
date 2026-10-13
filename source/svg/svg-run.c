@@ -1399,10 +1399,6 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 {
 	svg_state local_state;
 	float x=0, y=0, w=0, h=0;
-	const char *data;
-
-	static const char *jpeg_uri = "data:image/jpeg;base64,";
-	static const char *png_uri = "data:image/png;base64,";
 
 	char *href_att = fz_xml_att_alt(root, "xlink:href", "href");
 	char *x_att = fz_xml_att(root, "x");
@@ -1427,15 +1423,13 @@ svg_run_image(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, 
 		if (!href_att)
 			break; // out of try-catch
 
-		if (!strncmp(href_att, jpeg_uri, strlen(jpeg_uri)))
-			data = href_att + strlen(jpeg_uri);
-		else if (!strncmp(href_att, png_uri, strlen(png_uri)))
-			data = href_att + strlen(png_uri);
-		else
-			data = NULL;
-		if (data)
+		if (!strncmp(href_att, "data:", 5))
 		{
-			buf = fz_new_buffer_from_base64(ctx, data, 0);
+			buf = fz_parse_data_uri_with_media_type(ctx, href_att, "image/jpeg");
+			if (!buf)
+				buf = fz_parse_data_uri_with_media_type(ctx, href_att, "image/png");
+			if (!buf)
+				fz_warn(ctx, "svg: ignoring data-uri image '%s'", href_att);
 		}
 		else if (doc->zip)
 		{
