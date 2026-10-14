@@ -1041,6 +1041,7 @@ fz_buffer *
 fz_parse_data_uri_with_media_type(fz_context *ctx, const char *uri, const char *accept_mimetype)
 {
 	const char *p = uri;
+	char *data = NULL;
 	if (strncmp(p, "data:", 5))
 		return NULL;
 	p += 5;
@@ -1053,8 +1054,8 @@ fz_parse_data_uri_with_media_type(fz_context *ctx, const char *uri, const char *
 			return fz_new_buffer_from_base64(ctx, p+8, 0);
 		if (*p == ',')
 		{
-			p = fz_decode_uri_component(ctx, p+1);
-			return fz_new_buffer_from_data(ctx, p, strlen(p));
+			data = fz_decode_uri_component(ctx, p+1);
+			return fz_new_buffer_from_data(ctx, (unsigned char*)data, strlen(p));
 		}
 		++p;
 	}
