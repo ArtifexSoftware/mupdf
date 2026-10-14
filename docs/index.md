@@ -3,14 +3,11 @@
 > This is the MuPDF documentation archive.
 > For a more user friendly version, head on over to [mupdf.readthedocs.io](https://mupdf.readthedocs.io/).
 
-[The MuPDF project documentation](sphinx/index.md)
-: This is the general documentation for the MuPDF project and its various language bindings.
+- [General documentation](sphinx/index.md) for the MuPDF project and its various language bindings.
 
-[MuPDF Explored](explored/index.md)
-: An in depth exploration of MuPDF by Robin Watts.
+- [The C Library Reference](c/index.md)
 
-[The C library interface](c/index.md)
-: This is the low level C library documentation.
+- [MuPDF Explored](explored/index.md) -- an in depth exploration of MuPDF by Robin Watts.
 
 Copyright 2004-2026 [Artifex](https://artifex.com/)
 

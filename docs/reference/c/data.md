@@ -1,4 +1,4 @@
-# Buffers & Streams
+# Data
 
 ## Buffers
 
@@ -27,6 +27,12 @@ There are many ways to create a buffer. Some create a buffer shared immutable da
 
 `fz_buffer *fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size);`
 :	Create a buffer containing the decoded `BASE64` data.
+
+`size_t fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap);`
+:	Returns the length of the buffer and datap is set to point to the data. Treat datap as a read-only view of the buffer data.
+
+`size_t fz_buffer_extract(fz_context *ctx, fz_buffer *buf, unsigned char **datap);`
+:	Returns the length of the buffer and datap is set to point to the data. No data remains in the buffer, an the caller must now free datap.
 
 Sometimes you want to create buffers piece by piece by appending strings or other data to it, while dynamically growing the underlying storage.
 
@@ -192,6 +198,8 @@ The usual suspects are available, as well as functions to write integers of vari
 `int64_t fz_tell_output(fz_context *ctx, fz_output *out);`
 :	Tell the current write location of the output stream.
 
+There are many functions to write formatted as well as raw data:
+
 	void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t size);
 	void fz_write_string(fz_context *ctx, fz_output *out, const char *s);
 	void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
@@ -211,34 +219,3 @@ Output streams can be chained together to add encryption, compression, and encod
 	fz_output *fz_new_asciihex_output(fz_context *ctx, fz_output *chain);
 	fz_output *fz_new_deflate_output(fz_context *ctx, fz_output *chain, int effort, int no_header);
 	fz_output *fz_new_rle_output(fz_context *ctx, fz_output *chain);
-
-## File Archives
-
-The archive structure is a read-only collection of files. This is typically a Zip file or directory on disk, but other formats are also supported.
-
-	typedef struct { internal } fz_archive;
-
-	void fz_drop_archive(fz_context *ctx, fz_archive *arch);
-
-	int fz_is_directory(fz_context *ctx, const char *path);
-
-	fz_archive *fz_open_directory(fz_context *ctx, const char *path);
-	fz_archive *fz_open_archive(fz_context *ctx, const char *filename);
-	fz_archive *fz_open_archive_with_stream(fz_context *ctx, fz_stream *file);
-
-	int fz_count_archive_entries(fz_context *ctx, fz_archive *arch);
-	const char *fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx);
-
-	int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
-	fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
-	fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
-
-We can also create new Zip archives.
-
-	typedef struct { internal } fz_zip_writer;
-
-	fz_zip_writer *fz_new_zip_writer(fz_context *ctx, const char *filename);
-	fz_zip_writer *fz_new_zip_writer_with_output(fz_context *ctx, fz_output *out);
-	void fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buffer *buf, int compress);
-	void fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip);
-	void fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip);

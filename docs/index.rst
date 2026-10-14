@@ -47,6 +47,7 @@ use from `Artifex Software, Inc <https://artifex.com/?utm_source=rtd-mupdf&utm_m
 
 	reference/common/index
 	reference/c/index
+	reference/c/api
 	reference/javascript/index
 	reference/cxx-and-derived-bindings
 

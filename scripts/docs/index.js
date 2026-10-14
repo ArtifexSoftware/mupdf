@@ -66,7 +66,7 @@ all_tags = all_tags.filter(tag => {
 	return true
 })
 
-print("# MuPDF API Index")
+print("# MuPDF C Library Index")
 print("")
 
 print("## Files")

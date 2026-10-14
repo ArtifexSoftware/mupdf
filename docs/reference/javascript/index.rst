@@ -1,5 +1,5 @@
-Javascript Library
-==================
+Javascript Reference
+====================
 
 .. toctree::
 	:maxdepth: 2
