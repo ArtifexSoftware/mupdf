@@ -2153,7 +2153,7 @@ static void layout_table_row(fz_context *ctx, layout_data *ld, table_grid *grid,
 	float x = row->s.layout.x;
 	float y;
 	float saved_bounds[4];
-	float row_height;
+	float row_height = 0; /* Silence stupid compilers */
 	float em = row->s.layout.em;
 	int fixed_height = 0;
 	table_cell *tcell;
