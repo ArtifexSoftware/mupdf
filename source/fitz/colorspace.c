@@ -956,6 +956,7 @@ static void separation_via_base(fz_context *ctx, fz_color_converter *cc, const f
 	cc->convert_via(ctx, cc, base, dst);
 }
 
+#if FZ_ENABLE_ICC
 static void
 icc_transform_color_lab(fz_context *ctx, fz_color_converter *cc, const float *src, float *dst)
 {
@@ -965,6 +966,7 @@ icc_transform_color_lab(fz_context *ctx, fz_color_converter *cc, const float *sr
 	clipped_src[2] = fz_clamp(src[2], cc->ss->lab_range[2], cc->ss->lab_range[3]);
 	fz_icc_transform_color(ctx, cc, clipped_src, dst);
 }
+#endif
 
 static void indexed_via_separation_via_base(fz_context *ctx, fz_color_converter *cc, const float *src, float *dst)
 {
@@ -2042,6 +2044,7 @@ void fz_colorspace_digest(fz_context *ctx, fz_colorspace *cs, unsigned char dige
 fz_colorspace *
 fz_new_lab_colorspace(fz_context *ctx, float range[4], float whitepoint[3], float blackpoint[3])
 {
+#if FZ_ENABLE_ICC
 	static const float drange[4] = FZ_DEFAULT_LAB_RANGE;
 /* Blackpoint and whitepoint are currently ignored */
 #ifdef CURRENTLY_IGNORED
@@ -2073,5 +2076,6 @@ fz_new_lab_colorspace(fz_context *ctx, float range[4], float whitepoint[3], floa
 
 		return lab;
 	}
+#endif
 	return fz_keep_colorspace(ctx, fz_device_lab(ctx));
 }
