@@ -384,7 +384,7 @@ fz_append_string(fz_context *ctx, fz_buffer *buf, const char *data)
 }
 
 void
-fz_append_byte_n(fz_context *ctx, fz_buffer *buf, int c, int n)
+fz_append_byte_n(fz_context *ctx, fz_buffer *buf, int c, size_t n)
 {
 	if (buf->len + n > buf->cap)
 		fz_ensure_buffer(ctx, buf, buf->len + n);
