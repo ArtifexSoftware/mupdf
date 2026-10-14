@@ -339,10 +339,11 @@ fz_new_output_with_file_ptr(fz_context *ctx, FILE *file)
 typedef struct fz_buffer_state { fz_buffer *buffer; size_t pos; } fz_buffer_state;
 
 static void
-buffer_write(fz_context *ctx, void *opaque, const void *data, size_t len)
+buffer_write(fz_context *ctx, void *opaque, const void *vdata, size_t len)
 {
 	fz_buffer_state *state = opaque;
 	fz_buffer *buffer = state->buffer;
+	const char *data = vdata;
 	if (state->pos < buffer->len)
 	{
 		size_t avail = buffer->len - state->pos;

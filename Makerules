@@ -5,7 +5,7 @@ ifeq ($(OS),)
   OS := $(shell uname)
 endif
 
-WARNING_CFLAGS := -Wall -Wsign-compare -Wshadow
+WARNING_CFLAGS := -Wall -Wsign-compare -Wshadow -Wpointer-arith
 
 # Feature configuration options
 
