@@ -4054,7 +4054,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 }
 
 static void
-draw_skipped_bg_and_borders(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm)
+draw_skipped_bg_and_borders(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, fz_matrix ctm, int first_entry)
 {
 	float x0, y0, x1, y1;
 	float *padding;
@@ -4063,7 +4063,7 @@ draw_skipped_bg_and_borders(fz_context *ctx, fz_html_box *box, float page_top, f
 	if (!box)
 		return;
 
-	draw_skipped_bg_and_borders(ctx, box->up, page_top, page_bot, dev, ctm);
+	draw_skipped_bg_and_borders(ctx, box->up, page_top, page_bot, dev, ctm, first_entry && box->up->down == box);
 
 	if (!fz_html_box_has_boxes(box))
 		return;
@@ -4087,7 +4087,8 @@ draw_skipped_bg_and_borders(fz_context *ctx, fz_html_box *box, float page_top, f
 	 * without it. */
 	do_borders(ctx, dev, ctm, page_top, box, (1<<B));
 
-	if (box->list_item)
+	/* Only print the list mark if the restart point is the first entry in this box. */
+	if (box->list_item && first_entry)
 		draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
 
 }
@@ -4130,7 +4131,7 @@ static int draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, floa
 				{
 					if (restart->start_flow != node)
 						continue;
-					draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm);
+					draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm, node == box->u.flow.head);
 					restart->start = NULL;
 					restart->start_flow = NULL;
 				}
@@ -4425,7 +4426,7 @@ static int draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 	{
 		if (restart->start == box)
 		{
-			draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm);
+			draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm, box->up->down == box);
 			restart->start = NULL;
 		}
 		if (restart->end == box)
@@ -4497,7 +4498,7 @@ static int draw_table_row(fz_context *ctx, fz_html_box *box, float page_top, flo
 	{
 		if (restart->start == box)
 		{
-			draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm);
+			draw_skipped_bg_and_borders(ctx, box, page_top, page_bot, dev, ctm, box->up->down == box);
 			restart->start = NULL;
 		}
 		if (restart->end == box)
