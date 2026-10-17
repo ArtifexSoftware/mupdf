@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <sys/time.h> // for gettimeofday()
+
 /* Enable FITZ_DEBUG_LOCKING_TIMES below if you want to check the times
  * for which locks are held too. */
 //#define FITZ_DEBUG_LOCKING_TIMES
