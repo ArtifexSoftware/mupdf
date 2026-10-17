@@ -554,6 +554,7 @@ flush_words(fz_context *ctx, char_callback_data_t *cb)
 	if ((cb->line_dirn & (WORD_CONTAINS_T2B | WORD_CONTAINS_B2T)) != 0)
 	{
 		/* Vertical line */
+		size = 0; /* Stupid compiler requires initialization */
 	}
 	else
 	{

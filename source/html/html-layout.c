@@ -4759,7 +4759,7 @@ static int enumerate_block_box(fz_context *ctx, fz_html_box *box, float page_top
 	int stopped = 0;
 	int skipping;
 	fz_story_element_position pos;
-	int heading;
+	int heading = 0; /* Stupid compiler requires initialization */
 
 	assert(fz_html_box_has_boxes(box));
 	y0 = box->s.layout.y - padding[T];

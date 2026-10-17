@@ -1166,7 +1166,7 @@ fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect r, const fz_stroke_state *str
 void
 fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 {
-	int i, k, n;
+	int i, k, n = 0; /* Stupid compiler requires initialization */
 	fz_point p, p1, p2, p3, q, s;
 
 	if (path->packed)
