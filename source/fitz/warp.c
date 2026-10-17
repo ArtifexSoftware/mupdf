@@ -266,6 +266,8 @@ end_ip(const fz_ipoint2_bresenham *b)
 	return ip;
 }
 
+#ifndef SLOW_INTERPOLATION
+
 static void
 interp_n(unsigned char *d, const unsigned char *s0,
 	const unsigned char *s1, int f, int n)
@@ -279,7 +281,6 @@ interp_n(unsigned char *d, const unsigned char *s0,
 	while (--n);
 }
 
-#ifndef SLOW_INTERPOLATION
 static void
 interp2_n(unsigned char *d, const unsigned char *s0,
 	const unsigned char *s1, const unsigned char *s2,
