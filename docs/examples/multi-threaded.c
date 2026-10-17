@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 {
 	char *filename = argc >= 2 ? argv[1] : "";
 	pthread_t *thread = NULL;
-	fz_locks_context locks;
+	fz_locks_context locks = { 0 };
 	pthread_mutex_t mutex[FZ_LOCK_MAX];
 	fz_context *ctx;
 	fz_document *doc = NULL;
