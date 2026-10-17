@@ -209,39 +209,6 @@ static void boxer_feed(fz_context *ctx, boxer_t *boxer, fz_rect *bbox)
 	boxer->list = newlist;
 }
 
-#ifdef DEBUG_WRITE_AS_PS
-static int
-compare_areas(const void *a_, const void *b_)
-{
-	const fz_rect *a = (const fz_rect *)a_;
-	const fz_rect *b = (const fz_rect *)b_;
-	double area_a = (a->x1-a->x0) * (a->y1-a->y0);
-	double area_b = (b->x1-b->x0) * (b->y1-b->y0);
-
-	if (area_a < area_b)
-		return 1;
-	else if (area_a > area_b)
-		return -1;
-	else
-		return 0;
-}
-
-/* Sort the rectangle list to be largest area first. For ease of humans
- * reading debug output. */
-static void boxer_sort(boxer_t *boxer)
-{
-	qsort(boxer->list->list, boxer->list->len, sizeof(fz_rect), compare_areas);
-}
-
-/* Get the rectangle list for a given boxer. Return value is the length of
- * the list. Lifespan is until the boxer is modified or freed. */
-static int boxer_results(boxer_t *boxer, fz_rect **list)
-{
-	*list = boxer->list->list;
-	return boxer->list->len;
-}
-#endif
-
 /* Currently unused debugging routine */
 #if 0
 static void
