@@ -562,11 +562,12 @@ static void add_from_bag(X509 **pX509, EVP_PKEY **pPkey, PKCS12_SAFEBAG *bag, co
 {
 	EVP_PKEY *pkey = NULL;
 	X509 *x509 = NULL;
+	STACK_OF(PKCS12_SAFEBAG) *bags;
 	switch (M_PKCS12_bag_type(bag))
 	{
 	case NID_keyBag:
 		{
-			const PKCS8_PRIV_KEY_INFO *p8 = PKCS12_SAFEBAG_get0_p8inf(bag);
+			const PKCS8_PRIV_KEY_INFO *p8 = PKCS12_decrypt_skey(bag, pw, (int)strlen(pw));
 			pkey = EVP_PKCS82PKEY(p8);
 		}
 		break;
@@ -588,7 +589,10 @@ static void add_from_bag(X509 **pX509, EVP_PKEY **pPkey, PKCS12_SAFEBAG *bag, co
 		break;
 
 	case NID_safeContentsBag:
-		add_from_bags(pX509, pPkey, PKCS12_SAFEBAG_get0_safes(bag), pw);
+		bags = sk_PKCS12_SAFEBAG_new_null();
+		sk_PKCS12_SAFEBAG_push(bags, bag);
+		add_from_bags(pX509, pPkey, bags, pw);
+		sk_PKCS12_SAFEBAG_free(bags);
 		break;
 	}
 
