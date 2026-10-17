@@ -24,11 +24,11 @@
 
 #ifdef TRACK_USAGE
 
-track_usage_data *usage_head = NULL;
+fz_track_usage_data *usage_head = NULL;
 
 static void dump_usage(void)
 {
-	track_usage_data *u = usage_head;
+	fz_track_usage_data *u = usage_head;
 
 	while (u)
 	{
@@ -38,7 +38,7 @@ static void dump_usage(void)
 	}
 }
 
-void track_usage(track_usage_data *data, const char *function, int line, const char *desc)
+void fz_track_usage(fz_track_usage_data *data, const char *function, int line, const char *desc)
 {
 	int c = data->count++;
 	if (c == 0)

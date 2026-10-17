@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -41,11 +41,11 @@ typedef struct fz_track_usage_data {
 
 #define FZ_TRACK_FUNCTION() \
 	do { \
-		static track_usage_data USAGE_DATA = { 0 };\
+		static fz_track_usage_data USAGE_DATA = { 0 };\
 		fz_track_usage(&USAGE_DATA, __FILE__, __LINE__, __FUNCTION__);\
 	} while (0)
 
-void fz_track_usage(track_usage_data *data, const char *function, int line, const char *desc);
+void fz_track_usage(fz_track_usage_data *data, const char *function, int line, const char *desc);
 
 #else
 
