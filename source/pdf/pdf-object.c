@@ -619,6 +619,10 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 		return strcmp(NAME(a)->n, NAME(b)->n);
 
 	case PDF_INDIRECT:
+		if (REF(a)->doc < REF(b)->doc)
+			return -1;
+		else if (REF(a)->doc > REF(b)->doc)
+			return 1;
 		if (REF(a)->num == REF(b)->num)
 			return REF(a)->gen - REF(b)->gen;
 		return REF(a)->num - REF(b)->num;
@@ -632,6 +636,10 @@ do_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b, int check_streams)
 		return 0;
 
 	case PDF_DICT:
+		if (REF(a)->doc < REF(b)->doc)
+			return -1;
+		else if (REF(a)->doc > REF(b)->doc)
+			return 1;
 		if (DICT(a)->len != DICT(b)->len)
 			return DICT(a)->len - DICT(b)->len;
 		if ((a->flags & b->flags) & PDF_FLAGS_SORTED)
