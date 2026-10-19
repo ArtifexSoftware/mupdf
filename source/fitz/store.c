@@ -528,11 +528,18 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 		val->refs++;
 	}
 
+	/* It's in the store now, as the moment we unlock below it could be found from the
+	 * hash table. */
+	store->size += itemsize;
+
+	/* Regardless of whether it's indexed, it goes into the linked list */
+	touch(store, item);
+
 	/* If we haven't got an infinite store, check for space within it */
 	if (store->max != FZ_STORE_UNLIMITED)
 	{
 		/* FIXME: Overflow? */
-		size = store->size + itemsize;
+		size = store->size;
 		if (size > store->max)
 		{
 			FZ_LOG_STORE(ctx, "Store size exceeded: item=%zu, size=%zu, max=%zu\n",
@@ -547,7 +554,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 					do_reap(ctx); /* Drops alloc lock */
 					fz_lock(ctx, FZ_LOCK_ALLOC);
 				}
-				size = store->size + itemsize;
+				size = store->size;
 				if (size <= store->max)
 					break;
 
@@ -572,10 +579,6 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 			FZ_LOG_DUMP_STORE(ctx, "After eviction:\n");
 		}
 	}
-	store->size += itemsize;
-
-	/* Regardless of whether it's indexed, it goes into the linked list */
-	touch(store, item);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 
 	return NULL;
