@@ -28,7 +28,9 @@
 #include <stdio.h>
 #include <errno.h>
 
+#ifndef _WIN32
 #include <sys/time.h> // for gettimeofday()
+#endif
 
 /* Enable FITZ_DEBUG_LOCKING_TIMES below if you want to check the times
  * for which locks are held too. */
