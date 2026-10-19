@@ -1,0 +1,43 @@
+== How to contribute to MuPDF
+
+MuPDF is open source; as such it’s very easy for anyone to get a copy of the source and modify it. In order to contribute any such changes or fixes back to the main version, Artifex asks for a Copyright Assignment. In order to understand why this is required, we need to first understand the licenses under which MuPDF is made available.
+
+=== Licensing
+
+MuPDF is released under 2 licenses. To use MuPDF you have to pick a license and obey all its terms. If you cannot abide by all the terms of a license, then you cannot use that license. If you can’t agree with at least one license, you can’t use MuPDF at all.
+
+==== GNU AGPL
+
+Firstly, MuPDF is released under the GNU AGPL; with this you are free to copy the code, modify it, and incorporate it into your own works as you see fit. While these works are purely for you alone there are no limits on what you can do, but once you share your modifications with anyone else (either in source or binary forms, or by making them available as part of a '`service`'), this counts as distribution. In order to distribute anything derived from MuPDF you must obey the terms of the GNU AGPL.
+
+The '`viral`' nature of the GNU AGPL is such that this means your entire application that uses MuPDF must be distributed under the GNU AGPL, not just the portion that interfaces with MuPDF. One of the most obvious consequences of this is that you have to make all the source code for your application and all the libraries that it relies on available. For many developers, they simply cannot agree to this, which rules out the GNU AGPL for them.
+
+==== Artifex Commercial License
+
+For such cases, there is a second licensing option, a commercial license from Artifex. This is not a free license, but it does free you from the constraints of the GNU AGPL. In particular your application can remain closed source.
+
+The money raised from such commercial licenses has funded the development of MuPDF since its inception. Without commercial licenses, MuPDF would not be as well developed and capable as it is today.
+
+=== Copyright Assignment
+
+The reason Artifex is able to license MuPDF in this way is because it owns all the copyright in the MuPDF code. The vast majority of development work on MuPDF has been directly paid for by Artifex. The rest of it is in smaller patches and fixes that have had their Copyright assigned to Artifex.
+
+If Artifex were to take on a patch without owning the Copyright, it would no longer be able to license MuPDF commercially, which would mean that it could no longer fund development.
+
+Accordingly, in order for any (non-trivial) patch to be accepted into the main MuPDF source tree, Artifex asks the author of that patch to sign a Copyright Assignment letter giving over their copyright to Artifex.
+
+Artifex runs a Bug Bounty programme, whereby interested developers who tackle nominated problems can earn cash payments for their fixes.
+
+=== Coding Style
+
+Any submissions to MuPDF should try to match the existing coding style. While following the coding style does not guarantee inclusion, not following it will severely harm the chances of getting a patch accepted.
+
+Details of the coding style can be found in `docs/coding-style.html`.
+
+While it’s true that developers can always tweak a patch before they accept it (to make it follow whitespace, layout, naming, and other conventions), submitting a patch that requires such interventions is stacking the deck against it.
+
+MuPDF is at pains to work everywhere. Submitting a patch that only works in specific circumstances (such as only working on Linux) is a sure-fire way to get rejected.
+
+Similarly, pulling in new dependencies (be it new libraries or new functions that aren’t supported in all platforms) will make a patch unlikely to succeed.
+
+MuPDF has a very consistent layout and whitespace style; patches that don’t follow the pattern will need to be refactored before they can be accepted.

@@ -1,0 +1,113 @@
+== Introduction
+
+=== Preface
+
+This is the beginnings of a book on MuPDF. It is not yet complete, but offers useful information as far as it goes. We offer it with the latest release of MuPDF (see mupdf.com/downloads) in the hopes it will be useful. It documents the API and design of MuPDF as of December 2022 (just after version 1.21).
+
+Any feedback, corrections or suggestions are welcome. Please visit bugs.ghostscript.com and open a bug with "`MuPDF`" as the product, and "`Documentation`" as the component.
+
+We will endeavour to make new versions available from the Documentation section of mupdf.com as they appear.
+
+=== Acknowledgements
+
+Many thanks are due to Tor Andersson for creating MuPDF, to everyone who has contributed to it over the years, and to all my colleagues at Artifex Software for providing an environment in which it could grow, and nursing it through to maturity. Particular thanks are due to Sebastian Rasmussen for patiently proof-reading the book through its many revisions, and suggesting numerous improvements.
+
+Finally, many thanks are due to Helen Rogers, for putting up with me.
+
+[[Introduction]]
+=== Introduction
+
+==== What is MuPDF?
+
+MuPDF is a portable C library for opening, manipulating and rendering documents in a variety of formats, including PDF, XPS, SVG, e-pub, and many common image formats.
+
+This core C library provides an API (known as the MuPDF API) that allows a wide range of actions to be performed on those documents. The exact actions available depend on the format of the document, but always includes rendering of those files.
+
+As well as this library, the MuPDF distribution includes various tools built on top of this API. These tools include simple viewers, tools to manipulate documents, to add, remove or resize pages, and to extract resources and other information from the documents. These tools are deliberately kept as '`thin`' as possible. The heavy lifting is all performed by the core library, so as to be as reusable as possible.
+
+Often the first place that people will encounter MuPDF is as a Linux or Android desktop viewer, but these are merely simple examples of applications built using some of the features of the library.
+
+Finally, the MuPDF distribution includes bindings to reflect the MuPDF C API into other languages, such as C{plus}{plus}, Python, Java and Javascript.
+
+==== License
+
+MuPDF is released under two licenses.
+
+Firstly, it is available under the GNU Afferro General Purpose License (henceforth the GNU AGPL). This is a complex license worthy of careful study and more words than we have space for here. Some key points, however are:
+
+* You are free to use MuPDF within a piece of software written entirely for your own use with no problems. The moment you pass that software to any other person, or make it available to any other person as part of a "`Software as a service`" installation, you *must* abide by the following terms.
+* If you link MuPDF into your own software, then the entirety of that software must be licensed under the GNU AGPL (or a compatible licensefootnote:[The question of whether a given open source license is compatible with the GNU AGPL is a complex one - a good list can be found here: https://www.gnu.org/licenses/license-list.en.html#GPLCompatibleLicenses]).
+* If you use MuPDF as part of a "`Software as a service`" installation, then you must license the entirety of that installation under the GNU AGPL.
+* Releasing a piece of software under the GNU AGPL requires you to be prepared to give full source code to any user that receives a copy of the software. No charge (other than nominal media costs) may be made for this.
+* You must ensure that all end users of that system have the ability to update the software with an updated version of MuPDF. This includes embedded systems.
+* Using MuPDF under the GNU AGPL, you receive no warranty and no support.
+
+There are other terms too, and we strongly recommend that you read the license in full and understand your obligations under it before developing code based upon MuPDF.
+
+If you find that you can abide by all the terms of the GNU AGPL, you can use MuPDF in your own projects without any license fee.
+
+These terms, however, are generally stringent enough that they are inappropriate for people producing commercial products - giving the source code to a commercial product away is generally unacceptable, and the '`relinking`' requirements of the GNU AGPL are too cumbersome for embedded users.
+
+It is for this reason that Artifex (the developers of MuPDF) offer commercial licenses. Contact sales@artifex.com for a quote tailored to your exact needs.
+
+The Artifex commercial license removes all the onerous terms of the GNU AGPL, including the need to license your entire app, to give away source, and to ensure relinking capabilities.
+
+If you find yourself unable to accept and comply with the terms of the GNU AGPL, and unwilling to obtain a Commercial license from Artifex, you cannot legally use MuPDF in any software that you distribute (or make available as "`Software as a service`").
+
+==== Dependencies
+
+The core MuPDF library makes use of various software libraries.
+
+Freetype::
+  Renderer for various font types.
+Harfbuzz::
+  OpenType Font shaper built upon Freetype, required for e-pub files.
+JBig2dec::
+  Image decoder for JBIG2 images.
+JpegLib::
+  Image decoder for JPEG images.
+MuJS::
+  Javascript engine used for PDF files.
+OpenJPEG::
+  Image decoder for JPEG2000 images.
+ZLib::
+  Compression library.
+LCMS2::
+  ICC Color Management engine.
+
+In addition, the MuPDF library can optionally make use of:
+
+OpenSSL::
+  Encryption library, required for Digital Signatures support.
+
+The MuPDF viewer for Linux and Windows can optionally make use of:
+
+Curl::
+  An http fetcher used for displaying files as they download.
+
+These libraries are packaged with MuPDF, either in the distribution archives or as git submodules. From time to time, these libraries may include bug fixes that have not been accepted back into the upstream repositories. We therefore strongly recommend using the versions of the libraries that we ship, rather than any other versions you may find on your system.
+
+The exception to this is LCMS2. The version of LCMS2 included with MuPDF has API changes to make it incompatible with vanilla LCMS2. As such it is not merely a recommendation that you use the supplied version, but a requirement. The reasons for this incompatibility are discussed in the documentation with our version of the library.
+
+Finally, the commercial version of MuPDF can optionally use different decoder libraries:
+
+Luratech JBIG2::
+  Image decoder for JBIG2 images.
+Luratech JPEG2000::
+  Image decoder for JPEG 2000 images.
+
+These libraries are generally better both in terms of memory and CPU use, but are not available open source. As such they are made available to our customers as part of the commercial release. These commercial customers are then free to choose which library to use.
+
+=== About this book
+
+This book is divided into 5 parts.
+
+The first part describes the MuPDF C API, the concepts behind it, and how to call it. If you wish to build an application from MuPDF, the information you need should be here.
+
+The second part describes some of the modules used to build MuPDF. If you wish to extend MuPDF, perhaps to open new formats, or to offer new operations on documents once open, this is the part to refer to.
+
+The third part describes some details of the actual language interpreters. This will primarily be of interest to people wanting to do low level operations on document formats (in particular PDF), but might be of interest to authors of new document format handlers to see how common problems have been addressed.
+
+The fourth part describes some of the tools, libraries, and '`helper`' routines provided with MuPDF. These helper routines are not strictly part of the MuPDF library, but can nonetheless be very useful when implementing applications based on it.
+
+Finally, we have a part dedicated to platform specifics and the different language bindings available.

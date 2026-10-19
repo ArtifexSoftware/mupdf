@@ -1,7 +1,7 @@
 # MuPDF Explored
 
-![pretty picture](../images/mupdf_explored_optimized.webp)
+![](/explored/splash.webp)
 
 Read the
-[MuPDF Explored](https://casper.mupdf.com/docs/mupdf_explored.pdf)
+[MuPDF Explored](https://docs.mupdf.com/heads/master/explored/index.html)
 book by Robin Watts for an in depth exploration of MuPDF.

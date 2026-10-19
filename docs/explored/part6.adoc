@@ -1,0 +1,137 @@
+== Platform specifics and Language Bindings
+
+[[PlatformSpecifics]]
+=== Platform specifics
+
+==== Overview
+
+MuPDF is designed to compile and run on almost any platform that supports a standard C runtime library. In general, we try to restrict our use of C features later than C89, and to rely only on Posix standard APIs.
+
+Our primary development platforms are Linux (various versions, 32 and 64bit using both Clang and GCC compilers) and Windows (32 and 64bit, using MSVC 2019).
+
+The choice of MSVC 2019 was forced upon us by the Tesseract library that we use for OCR requiring a later version of C{plus}{plus} than is supported by earlier versions of Visual C. Executables can be produced by this version of Visual Studio that run on every Windows version from XP (Service Pack 3) up to the latest (Windows 10 20H2, at the time of writing). If Tesseract functionality is not required, then it should be fairly simple to fall back to earlier versions of VS (certainly back to VS2010, and even back to VS2005 at the cost of a different solution format).
+
+Windows is not Posix compliant, but in the cases where a Posix API is required and not available, we provide windows specific code, often by implementing an equivalent API using Windows platform calls.
+
+We do not currently actively use MacOS for developing MuPDF, though we have in the past. MuPDF compiles and runs fine on MacOS, and we intend to keep it so. There is no MacOS specific code in the MuPDF codebase; the MuPDF viewer for MacOS is just the standard linux X11 one.
+
+Aside from the native C API, MuPDF has language bindings for C{plus}{plus}, Python, Java and JavaScript.
+
+==== C API
+
+On all platforms, MuPDF builds a C library that offers the standard C level API as defined within this book. MuPDF is written in C and thus this C API is the basis for all the other language bindings described here. All new functionality will be exposed in the C API first. Other language bindings (as described in later sections) are built on top of the C API, sometimes by custom, hand-written code, sometimes by automated tools.
+
+By default we build a static library. Dynamic libraries can be built, but we do not guarantee ABI compatibility between releases, so we do not provide this on all platforms by default.
+
+The standard Unix makefile requires GNU Make, and detects the presence of the third party libraries within the `thirdparty` directory. If present, these are used in preference to any system libraries.
+
+The standard Visual Studio Solution requires Visual Studio 2019, and relies upon the presence of the third party libraries as above. No facility is offered as standard for using system libraries, but this should not be hard for an experienced user of Visual Studio to customize.
+
+Our libraries frequently contain bug fixes to the standard ones, and we attempt to pass such fixes upstream to the main package maintainers. Given that all our regression and quality control testing happens with the versions that we supply, we prefer people to use our versions, and will frequently ask for bug reports to be reproduced using such a build before investing too much time in trying to solve them.
+
+==== C{plus}{plus} API
+
+We offer an object-oriented reflection of the standard C API into C{plus}{plus}. While C{plus}{plus} programs can certainly call the C API directly, we offer the C{plus}{plus} bindings not just because they offer an environment that experienced C{plus}{plus} codes may find more familiar, but also because they can hide some of the complexities involved.
+
+This book does not go into detail on the C{plus}{plus} API, but in general, it is derived fairly simply (conceptually at least) from the C level one. To best illustrate the differences between the C and C{plus}{plus} APIs, let us consider an example. In C, we would load a page by calling:
+
+....
+fz_page *page = fz_load_page(ctx, doc, page_num);
+....
+
+The C{plus}{plus} equivalent would be:
+
+....
+mupdf::Page page = doc.load_page(page_num);
+....
+
+This simple example highlights some important differences.
+
+Firstly, where (almost) every C level call takes an `fz++_++context` argument as the first parameter, this is handled for users automatically at the C{plus}{plus} level.
+
+Secondly, where C API functions operate on a particular object (in this example, a page), this will typically be passed as the second parameter (after the context). In the C{plus}{plus} translation, these objects are instances of classes, and functions become methods on these classes. That is to say that while the C API is not explicitly object-oriented (as the language does not natively support that concept) the generated C{plus}{plus} API is.
+
+Next, where the C version would need to be wrapped in a `fz++_++try`/`fz++_++catch` construct to handle any exceptions thrown, the C{plus}{plus} version only needs to handle standard C{plus}{plus} exceptions. This can reduce code as the C{plus}{plus} program may already be handling such exceptions.
+
+Finally, by passing objects by value, the C{plus}{plus} version handles reference counting automatically. Where programmers using the C version are required to track references manually using calls like `fz++_++keep++_++page` and `fz++_++drop++_++page`, C{plus}{plus} programmers never need to call these as this is taken care of behind the scenes.
+
+This C{plus}{plus} API is generated using a script that uses the Clang/llvm parser to analyse the C API so it is largely automatic. Often, changes/additions to the C API will convert seamlessly to C{plus}{plus} with no additional changes. For more complex cases, some tweaking of the scripts may be required. This automatic conversion happens based upon the API exposed in the public C headers; by default any new functions or types defined there will be reflected into the C{plus}{plus}.
+
+A few other conveniences arise with the C{plus}{plus} wrappers. Where appropriate generated classes have support for iteration - for instance, the contents of an `StextPage` can be navigated using familiar C{plus}{plus} operations:
+
+....
+void show_stext(mupdf::StextPage &page)
+{
+    for (mupdf::StextPage::iterator it_page: page)
+    {
+        mupdf::StextBlock block = *it_page;
+        for (mupdf::StextBlock::iterator it_block: block)
+        {
+            mupdf::StextLine line = *it_block;
+            for (mupdf::StextLine::iterator it_line: line)
+            {
+                mupdf::StextChar c = *it_line;
+                fz_stext_char *c = stextchar.m_internal;
+                std::cout << "StextChar("
+                        << "c=" << c->c
+                        << " color=" << c->color
+                        << " origin=" << c->origin
+                        << " quad=" << c->quad
+                        << " size=" << c->size
+                        << " font_name=" << c->font->name
+                        << "\n";
+            }
+        }
+    }
+}
+....
+
+This example also serves to illustrate another convenience; simple classes ('`POD`' classes in C{plus}{plus} parlance) are given a `to++_++string` method and an `++<<++` operator that converts them to a printable form. This enables structures to quickly be printed as seen with the `origin` and `quad` fields above.
+
+==== Python
+
+There are 2 sets of Python bindings for MuPDF.
+
+The first set is an independent open source project called PyMuPDF (https://pypi.org/project/PyMuPDF/). This was developed independently of MuPDF, but support and commercial licensing options are now available through Artifex if required. This is a mature set of code with some helpful extensions to MuPDF itself over and above a raw reflection of the C API. We will say no more about this set of bindings here.
+
+The second set of bindings are newer, and developed directly by the MuPDF developers themselves. They consist of a reflection of the C API (actually, a reflection of the C{plus}{plus} API, which is itself a reflection of the C API) into Python.
+
+For the technically inclined, these bindings are generated programmatically from the C{plus}{plus} API using SWIG (http://swig.org). The C{plus}{plus} `mupdf` namespace is reflected into a Python module called `mupdf`.
+
+Thus, any changes to the C API that survive the conversion into the C{plus}{plus} API should make it into the Python API automatically.
+
+As a demonstration both of the power of the Python bindings and a test of them (and indirectly the C{plus}{plus} ones on which they are based) we have converted the `draw` subtool from `mutool` to python as `scripts/mutool++_++draw.py`.
+
+==== Java
+
+Like the C{plus}{plus} and Python bindings, the Java bindings are an object-oriented reflection of the C API.
+
+In contrast to the C{plus}{plus} and Python bindings, the Java bindings offered in MuPDF are not generated automatically, and use hand-written code. This means that additions and modifications to the C level API will require corresponding additions and modifications to the Java code.
+
+The Java class definitions can be seen in:
+
+....
+platform/java/src/com/artifex/mupdf/fitz
+....
+
+These lean heavily on ’native’ methods. The implementations for these methods are found in `platform/java/mupdf++_++native.c`, and use the JNI interface to marry up native functions and data with their Java equivalents.
+
+This Java code is designed to work both on desktop Java, and on Android devices. When built for Android devices, it offers additional classes to give easy access to Android fonts and images, and for rendering into Android bitmaps.
+
+==== Javascript
+
+There are 2 solutions to using MuPDF with Javascript.
+
+Firstly, we have the `mutool run` utility.
+
+PDF files can contain Javascript fragments to perform a variety of tasks including validation of form input data. To accommodate this, MuPDF has its own Javascript engine, '`mujs`'.
+
+Accordingly, the `run` subtool of `mutool` can be used to execute Javascript using this engine. While running such scripts, the engine provides a Javascript reflection of the C API (actually, more correctly a reflection of the object-oriented version of the API as found in C{plus}{plus}).
+
+This enables the scripting of very powerful tasks, including opening, manipulating, rendering and resaving files. Some examples of such scripts can be found in `docs/examples`.
+
+Secondly, the entirety of MuPDF and its thirdparty libraries can be built using the enscript tool to generate a wasm blob. Coupled with a thin Javascript veneer, this provides broadly the same Javascript reflection of the C API.
+
+This wasm blob can be run either within browsers, or via node.js to provide access to MuPDF’s funtionality either client or server side as appropriate.
+
+We also provide a full client side web viewer for PDF files built upon this wasm solution.

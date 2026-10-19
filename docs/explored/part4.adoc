@@ -1,0 +1,801 @@
+== The MuPDF Interpreters
+
+[[PDFInterpreter]]
+=== PDF Interpreter Details
+
+==== Overview
+
+The PDF document handler is built upon a large corpus of code within MuPDF that deals specifically with the objects, structures and operators found within a document. This code is collectively known as the PDF interpreter.
+
+While it is perfectly possible to use MuPDF to open documents and render pages from a PDF file without understanding anything at all about the PDF interpreter, there are many situations where deeper access to the interpreter can be advantageous.
+
+For example, in order for PDF documents to have their pages rearranged, or files embedded/extracted from them, simple access to the underlying PDF document structure is required.
+
+In fact, the access given to a PDF document structure is such that almost any operation can be coded for.
+
+==== PDF Document
+
+The first step in dealing with a PDF document is to get a handle to it. This is done by opening it as normal using `fz++_++open++_++document` to get a `fz++_++document` pointer. To '`promote`' this to a `pdf++_++document`, we use the `pdf++_++specifics` call:
+
+....
+/*
+	pdf_specifics: down-cast a fz_document to a pdf_document.
+	Returns NULL if underlying document is not PDF
+*/
+pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc);
+....
+
+If `pdf++_++specifics` returns non-NULL, then you know that you are indeed dealing with a PDF format document.
+
+Having a `pdf++_++document` pointer allows a series of new APIs to be called (see `include/mupdf/pdf/document.h`).
+
+In terms of handling a PDF file via its constituent objects, one of the most useful is:
+
+....
+pdf_obj *pdf_trailer(fz_context *ctx, pdf_document *doc);
+....
+
+This obtains a pointer to a representation of the trailer dictionary object.
+
+==== PDF Objects
+
+PDF files are made up of a series of objects. These objects can be in many different types, including dictionaries, streams, numbers, booleans, names, strings etc. For full details, see '`The PDF Reference Manual`'.
+
+MuPDF represents all of these as a `pdf++_++obj` pointer. Such pointers are reference counted in the usual way:
+
+....
+pdf_obj *pdf_keep_obj(fz_context *ctx, pdf_obj *obj);
+void pdf_drop_obj(fz_context *ctx, pdf_obj *obj);
+....
+
+Given such a pointer, the actual type of the object can be obtained using:
+
+....
+int pdf_is_null(fz_context *ctx, pdf_obj *obj);
+int pdf_is_bool(fz_context *ctx, pdf_obj *obj);
+int pdf_is_int(fz_context *ctx, pdf_obj *obj);
+int pdf_is_real(fz_context *ctx, pdf_obj *obj);
+int pdf_is_number(fz_context *ctx, pdf_obj *obj);
+int pdf_is_name(fz_context *ctx, pdf_obj *obj);
+int pdf_is_string(fz_context *ctx, pdf_obj *obj);
+int pdf_is_array(fz_context *ctx, pdf_obj *obj);
+int pdf_is_dict(fz_context *ctx, pdf_obj *obj);
+int pdf_is_indirect(fz_context *ctx, pdf_obj *obj);
+int pdf_is_stream(fz_context *ctx, pdf_obj *obj);
+....
+
+These all return non-zero if the object is of the tested type, and zero otherwise.
+
+To extract the data from a PDF object, you can use one of the following functions:
+
+....
+/* safe, silent failure, no error reporting on type mismatches */
+int pdf_to_bool(fz_context *ctx, pdf_obj *obj);
+int pdf_to_int(fz_context *ctx, pdf_obj *obj);
+fz_off_t pdf_to_offset(fz_context *ctx, pdf_obj *obj);
+float pdf_to_real(fz_context *ctx, pdf_obj *obj);
+char *pdf_to_name(fz_context *ctx, pdf_obj *obj);
+char *pdf_to_str_buf(fz_context *ctx, pdf_obj *obj);
+int pdf_to_str_len(fz_context *ctx, pdf_obj *obj);
+....
+
+It is, in fact, safe to call any of these functions on any `pdf++_++obj` pointer. If the object is not of the expected type, a '`safe`' default will be returned.
+
+===== Arrays
+
+Array objects consist of lists of other objects, each of which can potentially be of a different type. Accordingly, we have a function to enquire how long a list we have:
+
+....
+int pdf_array_len(fz_context *ctx, pdf_obj *array);
+....
+
+Armed with this knowledge we can then fetch any object we want from within the array.
+
+....
+pdf_obj *pdf_array_get(fz_context *ctx, pdf_obj *array, int i);
+....
+
+Ideally `i` should be between 0 and length-1 (though the function will just return NULL if an out of range element is requested).
+
+Note that the `pdf++_++obj` reference returned by this function is merely borrowed. That is to say, if you wish to keep the object pointer around for more than the immediate lifespan of the call, you should manually call `pdf++_++keep++_++obj` to keep it, and later `pdf++_++drop++_++obj` to dispose of it.
+
+An object can be inserted into an array at a given index, using:
+
+....
+void pdf_array_insert(fz_context *ctx, pdf_obj *array, pdf_obj *obj, int index);
+....
+
+Any objects after this point are shuffled up the array. Alternatively an object can be put into an array at a given point, overwriting any object that is there already:
+
+....
+void pdf_array_put(fz_context *ctx, pdf_obj *array, int i, pdf_obj *obj);
+....
+
+If the array needs to be extended it will be, and any intervening objects will be created as '`null`'. Alternatively objects can be appended to an array using:
+
+....
+void pdf_array_push(fz_context *ctx, pdf_obj *array, pdf_obj *obj);
+....
+
+In all these cases, the array will take new references to the object passed in - that is, after the call, both the array and the caller will hold references to the object. In cases where the object to be inserted is a '`borrowed`' reference, this is ideal.
+
+In other cases, where the ownership of the object reference should be passed down into the array, we have alternative formulations of those functions:
+
+....
+void pdf_array_insert_drop(fz_context *ctx, pdf_obj *array, pdf_obj *obj, int index);
+void pdf_array_put_drop(fz_context *ctx, pdf_obj *array, int i, pdf_obj *obj);
+void pdf_array_push_drop(fz_context *ctx, pdf_obj *array, pdf_obj *obj);
+....
+
+These functions are so named because they are equivalent to first inserting/putting/pushing the object, and then dropping it, with the nice side effect that any errors encountered during the push still result in the object being correctly dropped, often saving the caller from having to wrap the call in a `fz++_++try`/`fz++_++catch` clause.
+
+==== PDF Operator Processors
+
+Graphical content within a PDF file is given as textual streams of PDF "`operators`". These operators manipulate a graphics state (e.g. select a font, change color, define a path) and then call marking operations to actually mark the page (e.g. fill the current path, or place an image, or output some text).
+
+In addition, these operators can include tags that allow the content to link back to the structures in the original document from which the graphical content is derived; for instance, tags can tell us that a given piece of content is part of a list, a table, a figure, etc (or even a figure within a table that is within a list).
+
+The page content of a page is described as an operator stream. Likewise, every annotation has its own operator stream that defines its appearance. Some of these streams may be autogenerated when Annotations are edited, in a process known as annotation appearance synthesis.
+
+A core task of the PDF interpreter is therefore to be able to process these streams efficiently. The most common processing done is that of rendering a stream to obtain an image of a page, but many other manipulations of PDF files are best done at the operator stream level too.
+
+For example, manipulations like redaction, sanitisation, and appending are best done by operating directly on these operator streams. The alternative, of first converting the operators to graphical objects, then resynthesising an operator stream from that, leads to problems with round trip conversions, and the potential loss of structure information.
+
+All of these processes start with the task of reading the textual streams within the file, and then doing something with the operators thus read.
+
+Accordingly, the PDF interpreter within MuPDF contains code to parse a stream, and to pass the operators as function calls into a `pdf++_++processor`. A `pdf++_++processor` is a set of functions, one for each operator.
+
+By changing the `pdf++_++processor` in use, we can therefore change what the effect of interpreting the page is. The obvious first processor is the ’run’ processor that converts operator calls into graphical calls (passed to a `fz++_++device`), but many other processors are included to perform other tasks, such as turning the sequence of operator calls back into a textual stream so it can be replaced within the document.
+
+MuPDF contains several different `pdf++_++processor` implementations. The system is deliberately open ended, and more can be supplied by any user of the library. While some are useful by themselves, the system becomes much more powerful by allowing several of them to be chained together at once.
+
+===== Inbuilt PDF processors
+
+There are several PDF processors that are crucial to the working of MuPDF, but that few people will ever need to use directly. These are documented in this section, partly for completeness, but also because they serve to show how the system fits together, and as examples for other things that can be done.
+
+====== Run processor
+
+The first processor is the `pdf++_++run++_++processor`. This is the most commonly used processor in the system, but its use is generally hidden from view.
+
+This is used in conjunction with the PDF interpreter itself. The interpreter turns the textual stream of operators into calls over the `pdf++_++processor` interface. This processor then converts those calls in graphical operations, passing them onwards as device calls to actually render output of the page.
+
+This is the `pdf++_++processor` that is used internally to implement functions such as `fz++_++run++_++page`. Few people will ever need to call this themselves, as calling via `fz++_++run++_++page` has the benefit of handling all the creation, destruction, and plumbing for us automatically.
+
+Nonetheless, users can, if they choose, create such a processor using:
+
+....
+/*
+	pdf_new_run_processor: Create a new "run" processor. This maps
+	from PDF operators to fz_device level calls.
+
+	dev: The device to which the resulting device calls are to be
+	sent.
+
+	ctm: The initial transformation matrix to use.
+
+	usage: A NULL terminated string that describes the 'usage' of
+	this interpretation. Typically 'View', though 'Print' is also
+	defined within the PDF reference manual, and others are possible.
+
+	gstate: The initial graphics state.
+
+	nested: The nested depth of this interpreter. This should be
+	0 for an initial call, and will be incremented in nested calls
+	due to Type 3 fonts.
+*/
+pdf_processor *pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, const char *usage, pdf_gstate *gstate, fz_default_colorspaces *default_cs, int nested);
+....
+
+The component parts of this processor are generally functions named `pdf++_++run++_++...`, and frequently call back into the main pdf interpreter (to handle nested content streams as found in XObjects etc).
+
+====== Output processor
+
+The `pdf++_++output++_++processor` is designed to produce an output stream from an input stream of operators.
+
+Effectively, this is the inverse of the job that the PDF interpreter itself does. While the PDF interpret converts a textual stream of characters representing operations into calls to a `pdf++_++processor`, this does the reverse, and converts calls back into a textual stream.
+
+....
+/*
+	pdf_new_output_processor: Create an output processor. This
+	sends the incoming PDF operator stream to an fz_output stream.
+
+	out: The output stream to which operators will be sent.
+
+	ahxencode: If 0, then image streams will be send as binary,
+	otherwise they will be asciihexencoded.
+*/
+pdf_processor *pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode);
+....
+
+The component parts of this processor are generally functions named `pdf++_++out++_++...`.
+
+This is a key building block for the `pdf++_++buffer++_++processor`.
+
+====== Buffer processor
+
+The `pdf++_++buffer++_++processor` is designed to produce a `fz++_++buffer` from an input stream of `pdf++_++processor` calls.
+
+....
+/*
+	pdf_new_buffer_processor: Create a buffer processor. This
+	collects the incoming PDF operator stream into an fz_buffer.
+
+	buffer: The (possibly empty) buffer to which operators will be
+	appended.
+
+	ahxencode: If 0, then image streams will be send as binary,
+	otherwise they will be asciihexencoded.
+*/
+pdf_processor *pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode);
+....
+
+This is a key building block of the PDF filter system.
+
+[[PDFFilter]]
+===== PDF Filters
+
+As mentioned earlier, certain common manipulations of PDF files (like redaction, sanitisation, and appending of data, for example) are best done by operating directly on the streams of operators within the file.
+
+MuPDF implements this using a "`filter`" system; any stream can be filtered through a chain of processors, with the new stream written back (or not!) into the document. Each link in the chain might only do 1 job (however simple), but the whole chain can achieve complex effects.
+
+Such a filtering operation can be run by calling one of the following functions:
+
+....
+void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_filter_options *options);
+void pdf_filter_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, pdf_filter_options *options);
+....
+
+These filter either the graphical contents of a page or an annotation, respectively.
+
+The arguments for these are self-explanatory, apart from the final `options` parameter. This is a pointer to a structure that describes the filtering that should take place:
+
+....
+typedef struct pdf_filter_options pdf_filter_options;
+
+/*
+	recurse: Filter resources recursively.
+
+	instance_forms: Always recurse on XObject Form resources, but will
+	create a new instance of each XObject Form that is used, filtered
+	individually.
+
+	ascii: If true, escape all binary data in the output.
+
+	no_update: If true, do not update the document at the end.
+
+	opaque: Opaque value that is passed to the complete function.
+
+	complete: A function called at the end of processing.
+	This allows the caller to insert some extra content after
+	all other content.
+
+	filters: Pointer to an array of filter factory/options.
+	The array is terminated by an entry with a NULL factory pointer.
+	Operators will be fed into the filter generated from the first
+	factory function in the list, and from there go to the filter
+	generated from the second factory in the list etc.
+*/
+struct pdf_filter_options
+{
+	int recurse;
+	int instance_forms;
+	int ascii;
+	int no_update;
+
+	void *opaque;
+	void (*complete)(fz_context *ctx, fz_buffer *buffer, void *arg);
+
+	pdf_filter_factory *filters;
+};
+....
+
+The first part of this structure consists of global options for the filtering, such as whether we should recurse down into the resources used by a page or not, whether we should create new instances for form entries, whether we should ascii encode the generated stream data, and whether we should update the document with the end result of the filtering or not.
+
+The second part of the structure consists of an argument (`opaque`), and a function pointer (`complete`). When the filter operation has completed, if `complete` is non-NULL, it will be called, passing a `fz++_++buffer` containing the textual version of the filtered stream, and `opaque`. This function can update the buffer as required (typically by appending more operators).
+
+The final part of the structure describes which set of filters to use.
+
+Simply running a filtering operation with no filters defined is a perfectly reasonable thing to do.
+
+The system would parse the stream in the document, and convert it to calls on a `pdf++_++processor`. As there are no filters defined, the system just captures these calls and converts them back to a textual stream. This stream is then offered to `complete` to allow it to make modifications, and the result is then (optionally) written back into the document.
+
+While `complete` is a useful way to operate on the stream as a whole (perhaps by appending to it), it’s not terribly convenient to use for modifying parts of the stream.
+
+The real power of the system comes in the use of filters. Each filter is an implemention of `pdf++_++processor` that outputs to another `pdf++_++processor`. Typically the output calls will be modified versions of the input calls, though exactly how they are related will vary according to the purpose of the filter.
+
+For instance, a filter might perform redaction by passing almost all of the calls from input to output, omitting some of the input text operator calls so that certain text content is dropped. It could also add some extra fill path operations to cover the missing text with black boxes.
+
+By running such a filtering option, the resultant stream collected at the end would (usually) be written back, resulting in a permanent change to the document.
+
+Each filter step is defined by a `pdf++_++filter++_++factory` entry:
+
+....
+/*
+	A pdf_filter_factory is a pdf_filter_factory_fn, plus the options
+	needed to instantiate it.
+*/
+typedef struct
+{
+	pdf_filter_factory_fn *filter;
+	void *options;
+} pdf_filter_factory;
+....
+
+The `filter` entry is set to a function that will create an instance of the required filter (a "`factory`" function):
+
+....
+/*
+	Create a filter processor. This filters the PDF operators
+	it is fed, and passes them down (with some changes) to the
+	child filter.
+
+	chain: The child processor to which the filtered operators
+	will be fed.
+
+	The options field contains a pointer to a structure with
+	filter specific options in.
+*/
+typedef pdf_processor *(pdf_filter_factory_fn)(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *factory_options);
+....
+
+As each filter can do wildly different things (some of which we haven’t even thought of yet) each requires its own dedicated configuration structure. This is catered for by the `void ++*++options` field in the `pdf++_++filter++_++factory`.
+
+When the system sets up the filter chain, it parrots the `options` value into the filter factory function without understanding it.
+
+The `filters` pointer in the `pdf++_++filter++_++options` struct points to an array of `pdf++_++filter++_++factory` entries, the length of which will depend upon the number of filter stages required.
+
+To setup a sequence of `n` filter stages, the array should be at least `n{plus}1` entries long.
+
+The first `n` entries will have the filter details in, in order, and the final one (the `n{plus}1`th) will have an entry with its `filter` entry set to `NULL` to indicate the end of the list.
+
+When run, the filter operation will create each filter from the list, and then interpret the stream. Each resulting operation will be fed into the first filter in the list, which will forward it (or not!) to the second one (possibly modifying it as required). The second will pass it on to the third, etc, until finally, it will arrive back at a `pdf++_++buffer++_++processor` created internally, where will be converted back to a textual form.
+
+Once interpretation is complete, the buffer will be offered to `complete` (if set) to allow any final modifications, and then, finally, unless `no++_++update` is set, it will be written back into the document.
+
+Thus, for a processor to be used in this manner, a `pdf++_++filter++_++factory++_++fn` must to be provided to create it.
+
+Currently there are 2 such filter factories within MuPDF, though it is an extensible system, and users can add more at runtime.
+
+====== Sanitize processor
+
+A "`sanitizing`" filter can be created using `pdf++_++new++_++sanitize++_++processor`:
+
+....
+/*
+	A sanitize filter factory.
+
+	sopts = pointer to pdf_sanitize_filter_options.
+
+	The changes made by a filter generated from this are:
+
+	* No operations are allowed to change the top level gstate.
+	Additional q/Q operators are inserted to prevent this.
+
+	* Repeated/unnecessary colour operators are removed (so,
+	for example, "0 0 0 rg 0 1 rg 0.5 g" would be sanitised to
+	"0.5 g")
+
+	The intention of these changes is to provide a simpler,
+	but equivalent stream, repairing problems with mismatched
+	operators, maintaining structure (such as BMC, EMC calls)
+	and leaving the graphics state in an known (default) state
+	so that subsequent operations (such as synthesising new
+	operators to be appended to the stream) are easier.
+
+	The net graphical effect of the filtered operator stream
+	should be identical to the incoming operator stream.
+*/
+pdf_processor *pdf_new_sanitize_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *sopts);
+....
+
+This filter performs a range of operations as the stream passes through it.
+
+Firstly, as its name suggests, the stream is sanitized; that is to say that redundant operations are removed, and bad nestings are fixed (as much as possible).
+
+Further to this however, callbacks within the the `options` structure for this factory can allow other modifications to be made:
+
+....
+/*
+	image_filter: A function called to assess whether a given
+	image should be removed or not.
+
+	text_filter: A function called to assess whether a given
+	character should be removed or not.
+
+	after_text_object: A function called after each text object.
+	This allows the caller to insert some extra content if
+	desired.
+
+	culler: A function called to see whether each object should
+	be culled or not.
+*/
+typedef struct
+{
+	void *opaque;
+	fz_image *(*image_filter)(fz_context *ctx, void *opaque, fz_matrix ctm, const char *name, fz_image *image);
+	int (*text_filter)(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix trm, fz_matrix ctm, fz_rect bbox);
+	void (*after_text_object)(fz_context *ctx, void *opaque, pdf_document *doc, pdf_processor *chain, fz_matrix ctm);
+	int (*culler)(fz_context *ctx, void *opaque, fz_rect bbox, fz_cull_type type);
+}
+pdf_sanitize_filter_options;
+....
+
+If set, the `image++_++filter` function will be called on every image encountered in the stream. This callback allows users to modify images in arbitrary ways - downscaling, upscaling, color conversion, editing, or even complete replacement are all possible.
+
+If set, the `text++_++filter` function will be called on every glyph. If this callback returns 1, then the glyph will be elided from the page; if 0 is returned, no changes are made.
+
+These two callbacks are key to MuPDF’s support for redaction annotations.
+
+If set, the `after++_++text++_++object` function will be called after every text object. It can send additional content by calling supplied `chain` processor.
+
+Finally, the `culler` function can be used to arbitrarily include/exclude any piece of content based upon its bounding box or type:
+
+....
+typedef enum
+{
+	FZ_CULL_PATH_FILL,
+	FZ_CULL_PATH_STROKE,
+	FZ_CULL_PATH_FILL_STROKE,
+	FZ_CULL_CLIP_PATH,
+	FZ_CULL_GLYPH,
+	FZ_CULL_IMAGE,
+	FZ_CULL_SHADING
+} fz_cull_type;
+....
+
+If the `culler` function returns 1, then the object will be elided from the page. If 0, it will remain unchanged.
+
+This used as the basis for the mutool "`trim`" tool.
+
+====== Color filter processor
+
+The Color filter processor is a powerful tool for transforming the colors and colorspaces used within a PDF file.
+
+....
+pdf_processor *
+pdf_new_color_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, int struct_parents, fz_matrix transform, pdf_filter_options *options, void *copts);
+....
+
+Operation of this filter depends entirely on the callbacks provided to it in its `copts` parameter.
+
+....
+/*
+	opaque: Opaque value that is passed to all the filter functions.
+
+	color_rewrite: function pointer called to rewrite a color
+		On entry:
+			*cs = reference to a pdf object representing the colorspace.
+
+			*n = number of color components
+
+			color = *n color values.
+
+		On exit:
+			*cs either the same (for no change in colorspace) or
+			updated to be a new one. Reference must be dropped, and
+			a new kept reference returned!
+
+			*n = number of color components (maybe updated)
+
+			color = *n color values (maybe updated)
+
+	image_rewrite: function pointer called to rewrite an image
+		On entry:
+			*image = reference to an fz_image.
+
+		On exit:
+			*image either the same (for no change) or updated
+			to be a new one. Reference must be dropped, and a
+			new kept reference returned.
+*/
+typedef struct
+{
+	void *opaque;
+	void (*color_rewrite)(fz_context *ctx, void *opaque, pdf_obj **cs, int *n, float color[FZ_MAX_COLORS]);
+	void (*image_rewrite)(fz_context *ctx, void *opaque, fz_image **image);
+	pdf_shade_recolorer *shade_rewrite;
+} pdf_color_filter_options;
+....
+
+During interpretation, whenever the filter is given a PDF operator to set a color or colorspace, a callback will be made to `color++_++rewrite`. For operators that set a colorspace without setting the color components values, `n` will point to 0 on entry, otherwise `n` will point to the number of color components to be set.
+
+The callback can update the pdf object pointed to by `cs`, the number pointed to by `n`, and the values contained in `color` as appropriate to rewrite the color/colorspaces used within the document.
+
+Similarly, whenever the filter is passed a image, this will be offered to the `image++_++rewrite` function, which can replace it with a modified one as required.
+
+Shadings are handled similarly, but due to their nature, with another level of complexity. In common with the other types of object, we have a function `shade++_++rewrite` that will be called on every shading passed to the filter function:
+
+....
+/**
+	Function to handle recoloring a shade.
+
+	Called with src_cs from the shade. If no recoloring is required,
+	return NULL. Otherwise fill in *dst_cs, and return a vertex
+	recolorer.
+*/
+typedef pdf_recolor_vertex *(pdf_shade_recolorer)(fz_context *ctx, void *opaque, fz_colorspace *src_cs, fz_colorspace **dst_cs);
+....
+
+This will then determine if the shading should be replaced or not, and if so, it should return a function to be used to recolor a single vertex within the shading:
+
+....
+/**
+	Function to recolor a single color from a shade.
+*/
+typedef void (pdf_recolor_vertex)(fz_context *ctx, void *opaque, fz_colorspace *dst_cs, float *d, fz_colorspace *src_cs, const float *src);
+....
+
+This will be called for each vertex within the shade in turn.
+
+This filter is the core of the MuPDF "`recolor`" tool. This tool allows all the colors in a file to be rewritten into a single other colorspace. Other potential uses of the filter can offer far more fine-grained control - all determined by the callbacks provided by the user.
+
+==== Copying objects between PDF documents
+
+PDF objects vary in complexity from simple values (booleans, integers, floats, names, etc) to more complex entities (arrays, dictionaries, streams, indirect references etc). While the simplest object types are independent of any particular document, the more complex types are implicitly bound to the document in which they appear.
+
+Most of the time this is all taken care of automatically by the MuPDF core, but special care must be taken when trying to copy objects from one PDF file to another.
+
+===== The problem
+
+To illustrate this, imagine that you have 2 PDF documents open, docA and docB. Imagine that we want to lookup an object from docA, and insert into docB. A naive code fragment to do this might be:
+
+....
+pdf_dict_putp_drop(ctx,
+                     pdf_trailer(ctx, docB),
+                     "Root/Example",
+                     pdf_dict_getp(ctx,
+                                    pdf_trailer(ctx, docA),
+                                    "Root/Example"));
+....
+
+This may actually work in limited cases, such as:
+
+....
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 3 0 R
+  /Metadata 9 0 R
+  /Example true
+>>
+endobj
+...
+trailer
+<<
+  /Root 1 0 R
+>>
+....
+
+The value of `Root/Example` is read as `true`, which can safely be written into another file.
+
+This can easily fall down though, as can be seen in more complex cases:
+
+....
+2 0 obj
+/Complex
+endobj
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 3 0 R
+  /Metadata 9 0 R
+  /Example [ (More) 2 0 R ]
+>>
+endobj
+...
+trailer
+<<
+  /Root 1 0 R
+>>
+....
+
+In this case the value of `Root/Example` is read as an array of 2 elements; the first element being the string "More", and the second being a reference to object 2 in the file.
+
+If this was to be written directly into the new file, we’d still have an array of 2 elements, with the first element being the string "More". The second would refer to whatever object 2 in the new file happens to be.
+
+The solution to this requires us to walk the directed (possibly cyclic) graph of child objects within the object to be copied from one file to another, and to '`deep copy`' the contents.
+
+We refer to this process as '`grafting`' objects from one tree into another.
+
+===== Grafting objects
+
+To move a single object to a new tree, use `pdf++_++graft++_++object`:
+
+....
+/*
+	pdf_graft_object: Return a deep copied object equivalent to the
+	supplied object, suitable for use within the given document.
+
+	dst: The document in which the returned object is to be used.
+
+	obj: The object deep copy.
+
+	Note: If grafting multiple objects, you should use a pdf_graft_map
+	to avoid potential duplication of target objects.
+*/
+pdf_obj *pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_obj *obj);
+....
+
+This takes an object in one document, and returns an equivalent object that can safely be written into document `dst`. Any indirect references within the original object will have been copied across as new objects within `dst` as a side effect of this call.
+
+The '`safe`' version of the code given above would therefore be:
+
+....
+pdf_dict_putp_drop(ctx,
+                     pdf_trailer(ctx, docB),
+                     "Root/Example",
+                     pdf_graft_object(ctx, docB,
+                                        pdf_dict_getp(ctx,
+                                                        pdf_trailer(ctx, docA,
+                                                        "Root/Example"));
+....
+
+===== A further problem
+
+Even this is not perfect. Consider the example:
+
+....
+2 0 obj
+/Complex
+endobj
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 3 0 R
+  /Metadata 9 0 R
+  /Example [ (More) 2 0 R ]
+  /Example2 [ (Even more) 2 0 R ]
+>>
+endobj
+...
+trailer
+<<
+  /Root 1 0 R
+>>
+....
+
+Suppose we want to copy both `Root/Example` and `Root/Example2` between files. If we read the first of these, and write it, it will cause object 2 to be copied to the new file (as a new object, 99 say). When we read the second one, and write that, it will cause object 2 to be copied into the second file again (as object 100 perhaps).
+
+In the example above, with the object consisting of a single name this duplication may not matter, but when you consider that objects might be dictionaries with lots of contents, or even streams with many megabytes of data attached, the problem becomes clear.
+
+The solution to this is to use a `pdf++_++graft++_++map`.
+
+===== Graft maps
+
+A `pdf++_++graft++_++map` is a mapping from one `pdf++_++document` to another that ensures objects in the source document are only ever copied into the target document at most once.
+
+....
+/*
+	pdf_new_graft_map: Prepare a graft map object to allow objects
+	to be deep copied from one document to the given one, avoiding
+	problems with duplicated child objects.
+
+	dst: The document to copy objects to.
+
+	Note: all the source objects must come from the same document.
+*/
+pdf_graft_map *pdf_new_graft_map(fz_context *ctx, pdf_document *dst);
+
+/*
+	pdf_drop_graft_map: Drop a graft map.
+*/
+void pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map);
+
+/*
+	pdf_graft_mapped_object: Return a deep copied object equivalent
+	to the supplied object, suitable for use within the target
+	document of the map.
+
+	map: A map targeted at the document in which the returned
+	object is to be used.
+
+	obj: The object deep copy.
+
+	Note: Copying multiple objects via the same graft map ensures
+	that any shared child are not duplicated more than once.
+*/
+pdf_obj *pdf_graft_mapped_object(fz_context *ctx, pdf_graft_map *map, pdf_obj *obj);
+....
+
+A '`safe`' version of the example given earlier that copies both `Root/Example` and `Root/Example2` would therefore be:
+
+....
+pdf_graft_map *map = pdf_new_graft_map(ctx, docB);
+
+pdf_dict_putp_drop(ctx,
+                     pdf_trailer(ctx, docB),
+                     "Root/Example",
+                     pdf_graft_mapped_object(
+                                        ctx, map,
+                                        pdf_dict_getp(ctx,
+                                                        pdf_trailer(ctx, docA,
+                                                        "Root/Example"));
+pdf_dict_putp_drop(ctx,
+                     pdf_trailer(ctx, docB),
+                     "Root/Example2",
+                     pdf_graft_mapped_object(
+                                        ctx, map,
+                                        pdf_dict_getp(ctx,
+                                                        pdf_trailer(ctx, docA,
+                                                        "Root/Example2"));
+pdf_drop_graft_map(ctx, map);
+....
+
+[[XPSInterpreter]]
+=== XPS Interpreter Details
+
+==== Overview
+
+The XPS document handler differs from the PDF document handler in that its sole interface is that exposed through the `fz++_++document` class.
+
+XPS files are zip format archives with a specific layout of files. As well as opening xps (and .oxps) files (archives) directly, MuPDF will also open unpacked files by pointing `fz++_++open++_++document` at the "``rels/.rels``" file in the unpacked directory tree.
+
+[[EPubInterpreter]]
+=== EPub/HTML Interpreter Details
+
+The EPUB and HTML document handlers are based upon the same layout code. With the exception of a few global configuration settings, their sole interfaces are those exposed through the `fz++_++document` class.
+
+==== CSS rules
+
+The layout follows simple CSS rules. On opening both EPUB and HTML documents CSS rules are read from a series of locations in defined order.
+
+Firstly, an inbuilt set of CSS (see `html++_++default++_++css`) is read for all files with the exception of those identified as FictionBook 2 format which have their own special case rules (see `fb2++_++default++_++css`).
+
+Next, the CSS rules from the document itself are read. If you would rather avoid this, it can be suppressed using:
+
+....
+/*
+	fz_set_use_document_css: Toggle whether to respect document styles in HTML and EPUB.
+*/
+void fz_set_use_document_css(fz_context *ctx, int use);
+....
+
+Finally a set of '`user`' CSS is read. This defaults to empty, but can be supplied using:
+
+....
+/*
+	fz_set_user_css: Set the user stylesheet source text for use with HTML and EPUB.
+*/
+void fz_set_user_css(fz_context *ctx, const char *text);
+....
+
+Thus the user CSS is the last to be read and can potentially override all the settings made by the defaults and document CSS.
+
+==== Shaped text
+
+The text read from the document is held as Unicode, and displayed using the built in fonts. By default these are the Google Noto fonts, which are in OpenType format. One of the features of OpenType fonts is the ability to offer excellent typographical output for a wide range of scripts due to the inbuilt automated tables to control font shaping.
+
+Font shaping allows a font to choose a different set of output glyphs (with highly customised positioning) based on the context within which an input Unicode character (or series of characters) are used.
+
+Some languages use this to add diacritical marks (in particular Vietnamese). Others (such as Arabic) may use it to ensure that characters join smoothly. Still others (such as Indic languages) completely change the appearance of groups of input characters by combining them into single shapes that represent multiple characters at once.
+
+The complex rules that control this are encoded as tables within the OpenType format fonts. The interpretation and application of these tables/rules is handled for us using the HarfBuzz library.
+
+==== Bidirectional text
+
+While Western languages are written left to right, others are written (broadly) right to left. Even in right to left languages, specific regions of text (such as numbers) are written left to right. The behaviour of '`enclosing`' operators brackets adds additional complexity.
+
+The rules governing exactly how layout should proceed when faced with a combination of left to right and right to left text are complex to say the least, but fortunately an algorithm has been published by the Unicode consortium to specify exactly how layout should proceed in any given circumstance (as '`Technical Recommendation 9`').
+
+MuPDF contains an implementation of this algorithm derived from the example code provided with this recommendation.
+
+[[SVGInterpreter]]
+=== SVG Interpreter Details
+
+The SVG interpreter offers very little API other than that exposed through the `fz++_++document` interface.
+
+The sole extras are defined to facilitate the use of SVGs as illustrations within EPUB files.
+
+....
+/*
+	Parse an SVG document into a display-list.
+*/
+fz_display_list *fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h);
+
+/*
+	Create a scalable image from an SVG document.
+*/
+fz_image *fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf);
+....
+
+These enable the HTML agent to easily create a `fz++_++image` out of an SVG. This `fz++_++image` has the property that it remains scalable, and hence will not appear pixellated if the document is reflowed to different dimensions.

@@ -1,0 +1,398 @@
+== Tools, Libraries, and Helper Routines
+
+[[Mutool]]
+=== MuTool
+
+==== Overview
+
+Mutool is a collection of useful command line utilities rolled into a single executable.
+
+As explained earlier MuPDF is a C library that encapsulates all the smarts required to open/render/manipulate document files of a range of a formats. This means that most utilities using it are reduced to very thin shells that just call down to the library.
+
+When you consider the additional factor of the size of the resources built into MuPDF (fonts, CMAPs etc), this means it makes a lot of sense to build a single executable with multiple utilities sharing a single copy of the library.
+
+If you run `mutool` at the command line with no arguments, a list of the possible options will be displayed:
+
+....
+$ mutool
+usage: mutool <command> [options]
+        clean      -- rewrite pdf file
+        convert    -- convert document
+        create     -- create pdf document
+        draw       -- convert document
+        extract    -- extract font and image resources
+        info       -- show information about pdf resources
+        merge      -- merge pages from multiple pdf sources into a new pdf
+        pages      -- show information about pdf pages
+        portfolio  -- manipulate PDF portfolios
+        poster     -- split large page into many tiles
+        run        -- run javascript
+        show       -- show internal pdf objects
+....
+
+==== Clean
+
+The `clean` utility will produce a cleaned version of an input PDF. It can apply a range of different options, a full list of which can be obtained by running `mutool clean` with no options:
+
+....
+$ mutool clean
+usage: mutool clean [options] input.pdf [output.pdf] [pages]
+        -p -    password
+        -g      garbage collect unused objects
+        -gg     in addition to -g compact xref table
+        -ggg    in addition to -gg merge duplicate objects
+        -gggg   in addition to -ggg check streams for duplication
+        -l      linearize PDF
+        -a      ascii hex encode binary streams
+        -d      decompress streams
+        -z      deflate uncompressed streams
+        -f      compress font streams
+        -i      compress image streams
+        -s      clean content streams
+        pages   comma separated list of page numbers and ranges
+....
+
+The arguments here are fairly self explanatory, and usage is best explained with a few examples.
+
+Firstly, and most simply, `clean` can be used to try to repair broken files. Many PDF files found in the wild are broken - sometimes because of having been corrupted, either by transmission/archiving problems, but a disappointing amount by just having been created by bad PDF writing software. Running a clean pass will attempt to repair the files:
+
+....
+mutool clean in.pdf out.pdf
+....
+
+Individual pages (or page ranges) can be extracted from a PDF. For example:
+
+....
+mutool clean -gggg in.pdf out.pdf 1-10,12
+....
+
+That will extract the pages 1 to 10, and page 12 of `in.pdf` and output it into a new `out.pdf`. The `-gggg` options ensure that unused objects will be dropped from the PDF.
+
+An 8 page PDF might be rearranged into booklet form using:
+
+....
+mutool clean -gggg in.pdf out.pdf 8,1,7,2,6,3,5,4
+....
+
+Finally, a more exotic, but very common example; if someone reports a problem seen on page 4 of a given PDF, the following command will extract that page, and expand the content streams, without decompressing the images or the fonts:
+
+....
+mutool clean -difgggg in.pdf out.pdf 4
+....
+
+If this file still exhibits the same problem, it is generally far easier to debug through it than the original one was.
+
+==== Convert
+
+The `convert` utility performs a similar task to the `draw` utility, using a different internal mechanism (the document writer interface). Which is better for any given task is often a matter of taste.
+
+....
+$ mutool convert
+mutool convert version 1.11
+Usage: mutool convert [options] file [pages]
+        -p -    password
+
+        -A -    number of bits of antialiasing (0 to 8)
+        -W -    page width for EPUB layout
+        -H -    page height for EPUB layout
+        -S -    font size for EPUB layout
+        -U -    file name of user stylesheet for EPUB layout
+        -X      disable document styles for EPUB layout
+
+        -o -    output file name (%d for page number)
+        -F -    output format (default inferred from output file name)
+                        png, pnm, pgm, ppm, pam, tga, pbm, pkm,
+                        pdf, svg, cbz
+        -O -    comma separated list of options for output format
+
+        pages   comma separated list of page ranges (N=last page)
+
+Common raster format output options:
+        rotate=N: rotate rendered pages N degrees counterclockwise
+        resolution=N: set both X and Y resolution in pixels per inch
+        x-resolution=N: X resolution of rendered pages in pixels per inch
+        y-resolution=N: Y resolution of rendered pages in pixels per inch
+        width=N: render pages to fit N pixels wide (ignore resolution option)
+        height=N: render pages to fit N pixels tall (ignore resolution option)
+        colorspace=(gray|rgb|cmyk): render using specified colorspace
+        alpha: render pages with alpha channel and transparent background
+
+Structured text output options:
+        preserve-ligatures: do not expand all ligatures into constituent characters
+        preserve-whitespace: do not convert all whitespace characters into spaces
+
+PDF output options:
+        decompress: decompress all streams (except compress-fonts/images)
+        compress: compress all streams
+        compress-fonts: compress embedded fonts
+        compress-images: compress images
+        ascii: ASCII hex encode binary streams
+        pretty: pretty-print objects with indentation
+        linearize: optimize for web browsers
+        sanitize: clean up graphics commands in content streams
+        garbage: garbage collect unused objects
+        or garbage=compact: ... and compact cross reference table
+        or garbage=deduplicate: ... and remove duplicate objects
+
+SVG output options:
+        text=text: Emit text as <text> elements (inaccurate fonts).
+        text=path: Emit text as <path> elements (accurate fonts).
+        no-reuse-images: Do not reuse images using <symbol> definitions.
+....
+
+==== Create
+
+The `create` tool allows PDFs to generated from simple text files full of pdf operator streams plus formatted comments.
+
+....
+$ mutool create
+usage: mutool create [-o output.pdf] [-O options] page.txt [page2.txt ...]
+        -o -      name of PDF file to create
+        -O -      comma separated list of output options
+        page.txt  content stream with annotations for creating resources
+
+Content stream special commands:
+        %%MediaBox LLX LLY URX URY
+        %%Rotate Angle
+        %%Font Name Filename (or base 14 font name)
+        %%Image Name Filename
+
+PDF output options:
+        decompress: decompress all streams (except compress-fonts/images)
+        compress: compress all streams
+        compress-fonts: compress embedded fonts
+        compress-images: compress images
+        ascii: ASCII hex encode binary streams
+        pretty: pretty-print objects with indentation
+        linearize: optimize for web browsers
+        sanitize: clean up graphics commands in content streams
+        garbage: garbage collect unused objects
+        or garbage=compact: ... and compact cross reference table
+        or garbage=deduplicate: ... and remove duplicate objects
+....
+
+==== Draw
+
+The `draw` utility is the most commonly used tool, capable of converting/rendering documents to a range of bitmap and vector formats. It performs a similar task to the `convert` utility, using a different set of internal mechanisms. Which is better for any given task is often a matter of taste.
+
+....
+$ mutool draw
+mudraw version 1.11
+Usage: mudraw [options] file [pages]
+        -p -    password
+
+        -o -    output file name (%d for page number)
+        -F -    output format (default inferred from output file name)
+                raster: png, tga, pnm, pam, pbm, pkm, pwg, pcl, ps
+                vector: svg, pdf, trace
+                text: txt, html, stext
+
+        -s -    show extra information:
+                m - show memory use
+                t - show timings
+                f - show page features
+                5 - show md5 checksum of rendered image
+
+        -R -    rotate clockwise (default: 0 degrees)
+        -r -    resolution in dpi (default: 72)
+        -w -    width (in pixels) (maximum width if -r is specified)
+        -h -    height (in pixels) (maximum height if -r is specified)
+        -f -    fit width and/or height exactly; ignore original aspect
+                ratio
+        -B -    maximum band_height (pgm, ppm, pam, png output only)
+
+        -W -    page width for EPUB layout
+        -H -    page height for EPUB layout
+        -S -    font size for EPUB layout
+        -U -    file name of user stylesheet for EPUB layout
+        -X      disable document styles for EPUB layout
+
+        -c -    colorspace (mono, gray, grayalpha, rgb, rgba, cmyk,
+                cmykalpha)
+        -G -    apply gamma correction
+        -I      invert colors
+
+        -A -    number of bits of antialiasing (0 to 8)
+        -A -/-  number of bits of antialiasing (0 to 8) (graphics, text)
+        -l -    minimum stroked line width (in pixels)
+        -D      disable use of display list
+        -i      ignore errors
+        -L      low memory mode (avoid caching, clear objects after each
+                page)
+        -P      parallel interpretation/rendering
+		-N      disable ICC workflow ("N"o color management)
+		-O      Control spot rendering
+		          0 = No spot rendering
+		          1 = Overprint simulation
+		          2 = Full spot rendering
+
+        -y l    List the layer configs to stderr
+        -y -    Select layer config (by number)
+        -y -{,-}*  Select layer config (by number), and toggle the
+                   listed entries
+
+        pages   comma separated list of page numbers and ranges
+....
+
+==== Extract
+
+The `extract` utility extracts objects from PDF files. This can be used to extract resources such as fonts, ICC profiles, images etc.
+
+....
+$ mutool extract
+usage: mutool extract [options] file.pdf [object numbers]
+        -p      password
+        -r      convert images to rgb
+....
+
+Run without any object numbers listed, it will extract all the resources it can find within the file to your local filesystem. It is best to run this in a clean directory!
+
+Alternatively specific resources can be extracted by specifying the PDF object numbers. These can be obtained by using the `info` utility.
+
+==== Info
+
+The `info` utility displays various different sets of information on the contents of a PDF file.
+
+....
+$ mutool info
+usage: mutool info [options] file.pdf [pages]
+        -p -    password for decryption
+        -F      list fonts
+        -I      list images
+        -M      list dimensions
+        -P      list patterns
+        -S      list shadings
+        -X      list form and postscript xobjects
+        pages   comma separated list of page numbers and ranges
+....
+
+==== Merge
+
+The `merge` utility allows a new output PDF to be created by combining pages (or ranges of pages) from a set of input pdfs.
+
+....
+$ mutool merge
+usage: mutool merge [-o output.pdf] [-O options] input.pdf [pages] [input2.pdf] [pages2] ...
+        -o -       name of PDF file to create
+        -O -       comma separated list of output options
+        input.pdf  name of input file from which to copy pages
+        pages      comma separated list of page numbers and ranges
+
+PDF output options:
+        decompress: decompress all streams (except compress-fonts/images)
+        compress: compress all streams
+        compress-fonts: compress embedded fonts
+        compress-images: compress images
+        ascii: ASCII hex encode binary streams
+        pretty: pretty-print objects with indentation
+        linearize: optimize for web browsers
+        sanitize: clean up graphics commands in content streams
+        garbage: garbage collect unused objects
+        or garbage=compact: ... and compact cross reference table
+        or garbage=deduplicate: ... and remove duplicate objects
+....
+
+==== Pages
+
+The `pages` utility displays information on the different pages (such as MediaBoxes, CropBoxes etc) of a PDF file.
+
+....
+$ mutool pages
+usage: mutool pages [options] file.pdf [pages]
+        -p -    password for decryption
+        pages   comma separated list of page numbers and ranges
+....
+
+==== Portfolio
+
+The `portfolio` utility is used to create or manipulate PDF portfolios.
+
+....
+$ mutool portfolio
+usage: mutool portfolio [options] portfolio.pdf [actions]
+
+Options are:
+        -p -    password
+        -o -    output (defaults to input file)
+        -O -    PDF output options (see mutool create)
+
+Actions are:
+        t       display a table listing the contents of the portfolio
+        x N <file>
+                extract Nth entry to <file>
+        a <file> <name>
+                add contents of <file> as an entry named <name>
+
+For safety, only use ASCII characters in entry names for now.
+....
+
+==== Poster
+
+The `poster` utility is used to subdivide pages within a PDF so that they can be printed to a small format printer and then pasted together to form a poster.
+
+....
+$ mutool poster
+usage: mutool poster [options] input.pdf [output.pdf]
+        -p -    password
+        -x      x decimation factor
+        -y      y decimation factor
+....
+
+==== Run
+
+Unlike the other utilities, invoking `run` with no arguments will not get you a list of arguments, but will instead start an interpreter waiting for your input. This interpreter expects to be fed Javascript commands to be executed using MuJS.
+
+The PDF bindings present within the Javascript environment allow many powerful operations to be scripted on PDF and other files.
+
+==== Show
+
+The `show` command will display various sections of the PDF file in printable format. This will primarily be of use to people working with the internals of PDF files, but the `outline` option provides a way to get the outlines (a.k.a. bookmarks) from a PDF file at the command line.
+
+....
+$ mutool show
+usage: mutool show [options] file.pdf [grep] [xref] [trailer] [pagetree] [outline] [object numbers]
+        -p -    password
+        -o -    output file
+        -b      print streams as binary data
+        -e      print encoded streams (don't decode)
+....
+
+=== MuOfficeLib
+
+The MuPDF API is designed to be a set of interlocking pieces that can be assembled together in many different ways to offer a powerful range of functionality. The cost of this versatility is that a certain amount of assembly is required.
+
+For those people who would prefer a more encapsulated solution, we have a helper library, MuOfficeLib, that handles much of the
+
+[[Transitions]]
+=== Transitions
+
+For a basic description of how to query a document for the specified presentation details, see . Given these details, the caller is still responsible for displaying (animating) the transition.
+
+To help with this task, MuPDF provides a helper function that generate the required frame of the transition into the supplied target pixmap from supplied rendered pixmaps of the start/end of the transition:
+
+....
+/*
+	fz_generate_transition: Generate a frame of a transition.
+
+	tpix: Target pixmap
+	opix: Old pixmap
+	npix: New pixmap
+	time: Position within the transition (0 to 256)
+	trans: Transition details
+
+	Returns 1 if successfully generated a frame.
+*/
+int fz_generate_transition(fz_context *ctx, fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time, fz_transition *trans);
+....
+
+This helper function is largely independent of the rest of MuPDF, and will be dropped from the library at link time if it is not used.
+
+It is still the callers responsibility to drive this, to display the updated pixmaps, and to generate the time field as appropriate from the actual real clock values.
+
+=== MuThreads
+
+In order to implement tools such as MuTool, and helpers such as mu-office-lib, we needed a simple cross platform threading library. MuThreads is that library.
+
+It is a very simple interface layer that gives a consistent implementation of Mutexes, Semaphores and Threads that builds both on pthreads and on Windows threads. More platforms may be added in the future.
+
+The interface is described in a single header, '``mupdf/helpers/mu-threads.h``', and should be self-evident.

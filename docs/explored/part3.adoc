@@ -1,0 +1,2813 @@
+== MuPDF Internals
+
+[[Image]]
+=== The Image interface
+
+==== Overview
+
+Images are ubiquitous in document formats, and come in a huge variety of formats, ranging from full colour to monochrome, compressed to uncompressed, large to small. The ability to efficiently represent and decode 2d arrays of pixels is vital.
+
+MuPDF represents images using an abstract type, `fz++_++image`. This takes the form of a base class, upon which different implementations can be built. All `fz++_++image`s are reference counted, using the standard `fz++_++keep` and `fz++_++drop` conventions:
+
+....
+/*
+	fz_drop_image: Drop a reference to an image.
+
+	image: The image to drop a reference to.
+*/
+void fz_drop_image(fz_context *ctx, fz_image *image);
+
+/*
+	fz_keep_image: Increment the reference count of an image.
+
+	image: The image to take a reference to.
+
+	Returns a pointer to the image.
+*/
+fz_image *fz_keep_image(fz_context *ctx, fz_image *image);
+....
+
+The key operation required is to be able to request a decoded version of a subarea of that image (yielding a `fz++_++pixmap`), suitable for rendering at a given size:
+
+....
+/*
+	fz_get_pixmap_from_image: Called to get a handle to a pixmap from an image.
+
+	image: The image to retrieve a pixmap from.
+
+	subarea: The subarea of the image that we actually care about (or NULL
+	to indicate the whole image).
+
+	trans: Optional, unless subarea is given. If given, then on entry this is
+	the transform that will be applied to the complete image. It should be
+	updated on exit to the transform to apply to the given subarea of the
+	image. This is used to calculate the desired width/height for subsampling.
+
+	w: If non-NULL, a pointer to an int to be updated on exit to the
+	width (in pixels) that the scaled output will cover.
+
+	h: If non-NULL, a pointer to an int to be updated on exit to the
+	height (in pixels) that the scaled output will cover.
+
+	Returns a non NULL pixmap pointer. May throw exceptions.
+*/
+fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *trans, int *w, int *h);
+....
+
+Frequently this will involve decoding the image from its source data, so should be considered a potentially expensive call, both in terms of CPU time, and memory usage.
+
+To minimise the impact of such decodes, `fz++_++image`s make use of the Store (see ) to cache decoded versions in. This means that (subject to enough memory being available) repeated calls to get a `fz++_++pixmap` from the same `fz++_++image` (with the same parameters) will return the same `fz++_++pixmap` each time, with no further decode being required.
+
+The usual reference counting behaviour applies to `fz++_++image`s, with `fz++_++keep++_++image` and `fz++_++drop++_++image` claiming and releasing references respectively.
+
+Depending on the size at which a `fz++_++image` is to be used, it may not be worth decoding it at full resolution; instead, decoding it at a smaller size can save memory (and frequently time). In addition, subsequent rendering operations can often be faster due to having to handle fewer pixels for no quality loss in the final output.
+
+To facilitate this, `fz++_++image`s will subsample images as appropriate. Subsampling involves an image being decoded to a size an integer power of 2 smaller than their native size. For instance, if an image has a native size of 400x300, and is to be rendered to a final size of 40x30, `fz++_++get++_++pixmap++_++from++_++image` may subsample the returned image by up to 8 in each direction, resulting in a 50x37 image.
+
+Subsequent operations (such as smooth scaling and rendering) will proceed much faster due to fewer pixels being involved, and around one sixteenth of the memory will be required.
+
+Many images have a resolution encoded within them. This may or may not be honoured in the way they are positioned on the page, and it will certainly not be honoured when zooming is taken into account, but for some operations it is useful to be able to request it.
+
+....
+/*
+	fz_image_resolution: Request the natural resolution
+	of an image.
+
+	xres, yres: Pointers to ints to be updated with the
+	natural resolution of an image (or a sensible default
+	if not encoded).
+*/
+void fz_image_resolution(fz_image *image, int *xres, int *yres);
+....
+
+If no resolution is specified within the image, sensible defaults are returned.
+
+A key ability of `fz++_++image`s is that they are automatically cached in the `fz++_++store` when decoded - repeated requests for pixmaps from the same image will (not necessarily) require the image to be decoded again and again.
+
+==== Standard Image Types
+
+===== Compressed
+
+The most common type of `fz++_++image` is `fz++_++compressed++_++image` - that is, an image based upon a `fz++_++buffer` of data in a standard compressed format, such as JPEG, PNG, TIFF, and others.
+
+With such images, the data is held in a `fz++_++compressed++_++buffer`:
+
+....
+typedef struct fz_compressed_buffer_s
+{
+	fz_compression_params params;
+	fz_buffer *buffer;
+} fz_compressed_buffer;
+....
+
+The data is held in the buffer field, and the details of the compression used are given in the params field, of type `fz++_++compression++_++params`:
+
+....
+struct fz_compression_params_s
+{
+	int type;
+	union {
+		struct {
+			int color_transform; /* Use -1 for unset */
+		} jpeg;
+		struct {
+			int smask_in_data;
+		} jpx;
+		struct {
+			int columns;
+			int rows;
+			int k;
+			int end_of_line;
+			int encoded_byte_align;
+			int end_of_block;
+			int black_is_1;
+			int damaged_rows_before_error;
+		} fax;
+		struct
+		{
+			int columns;
+			int colors;
+			int predictor;
+			int bpc;
+		}
+		flate;
+		struct
+		{
+			int columns;
+			int colors;
+			int predictor;
+			int bpc;
+			int early_change;
+		} lzw;
+	} u;
+};
+....
+
+The choice of which of the union clauses is used is made by the type field:
+
+....
+enum
+{
+	FZ_IMAGE_UNKNOWN = 0,
+
+	/* Uncompressed samples */
+	FZ_IMAGE_RAW,
+
+	/* Compressed samples */
+	FZ_IMAGE_FAX,
+	FZ_IMAGE_FLATE,
+	FZ_IMAGE_LZW,
+	FZ_IMAGE_RLD,
+
+	/* Full image formats */
+	FZ_IMAGE_BMP,
+	FZ_IMAGE_GIF,
+	FZ_IMAGE_JPEG,
+	FZ_IMAGE_JPX,
+	FZ_IMAGE_JXR,
+	FZ_IMAGE_PNG,
+	FZ_IMAGE_PNM,
+	FZ_IMAGE_TIFF,
+};
+....
+
+To determine if a `fz++_++image` is a compressed image, call:
+
+....
+/*
+	fz_compressed_image_buffer: Retrieve the underlying compressed
+	data for an image.
+
+	Returns a pointer to the underlying data buffer for an image,
+	or NULL if this image is not based upon a compressed data
+	buffer.
+
+	This is not a reference counted structure, so no reference is
+	returned. Lifespan is limited to that of the image itself.
+*/
+fz_compressed_buffer *fz_compressed_image_buffer(fz_context *ctx, fz_image *image);
+....
+
+The easiest way to tell if an image is a compressed image is to request its underlying buffer. If it returns NULL, you know it is not this sort of image.
+
+===== Decoded
+
+The next most common type of image is based upon a decoded `fz++_++pixmap`. These are generally only used if the pixmap takes less storage than the compressed data would.
+
+....
+/*
+	fz_pixmap_image_tile: Retried the underlying fz_pixmap
+	for an image.
+
+	Returns a pointer to the underlying fz_pixmap for an image,
+	or NULL if this image is not based upon an fz_pixmap.
+
+	No reference is returned. Lifespan is limited to that of
+	the image itself. If required, use fz_keep_pixmap to take
+	a reference to keep it longer.
+*/
+fz_pixmap *fz_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *cimg);
+....
+
+The easiest way to tell if an image is a decoded image is to request its underlying tile. If it returns NULL, you know it is not this sort of image.
+
+===== Display List
+
+The final standard sort of image in MuPDF (though more types may of course be added in future) is that based upon a display list.
+
+We use this to easily embed one file format within another. For example, EPUB files frequently contain SVG images for title pages. We open the SVG image as a separate document, run it to a display list, and close the document. We can then create an image from the display list, and use this in the HTML flow of the EPUB document.
+
+These images maintain the properties of the original (vector-based) document in that they remain scalable even after conversion to an image.
+
+==== Creating Images
+
+To create an image from a standard type, simply call the appropriate function. For example, if you have a `fz++_++buffer` with the source data:
+
+....
+/*
+	fz_new_image_from_buffer: Create a new image from a
+	buffer of data, inferring its type from the format
+	of the data.
+*/
+fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
+....
+
+If the data is in a file, use:
+
+....
+/*
+	fz_image_from_file: Create a new image from the contents
+	of a file, inferring its type from the format of the
+	data.
+*/
+fz_image *fz_new_image_from_file(fz_context *ctx, const char *path);
+....
+
+This loads the data into memory, and calls `fz++_++new++_++image++_++from++_++buffer` internally.
+
+If the data cannot be recognised from its header, and more information is required, then the data can be formed in a `fz++_++compressed++_++buffer`, and an image created with:
+
+....
+/*
+	fz_new_image_from_compressed_buffer: Create an image based on
+	the data in the supplied compressed buffer.
+
+	w,h: Width and height of the created image.
+
+	bpc: Bits per component.
+
+	colorspace: The colorspace (determines the number of components,
+	and any color conversions required while decoding).
+
+	xres, yres: The X and Y resolutions respectively.
+
+	interpolate: 1 if interpolation should be used when decoding
+	this image, 0 otherwise.
+
+	imagemask: 1 if this is an imagemask (i.e. transparent), 0
+	otherwise.
+
+	decode: NULL, or a pointer to to a decode array. The default
+	decode array is [0 1] (repeated n times, for n color components).
+
+	colorkey: NULL, or a pointer to a colorkey array. The default
+	colorkey array is [0 255] (repeatd n times, for n color
+	components).
+
+	buffer: Buffer of compressed data and compression parameters.
+	Ownership of this reference is passed in.
+
+	mask: NULL, or another image to use as a mask for this one.
+	Supplying a masked image as a mask to another image is
+	illegal!
+*/
+fz_image *fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
+....
+
+Finally, if we have a decoded `fz++_++pixmap`, we can form a new image from it:
+
+....
+/*
+	fz_new_image_from_pixmap: Create an image from the given
+	pixmap.
+
+	pixmap: The pixmap to base the image upon. A new reference
+	to this is taken.
+
+	mask: NULL, or another image to use as a mask for this one.
+	A new reference is taken to this image. Supplying a masked
+	image as a mask to another image is illegal!
+*/
+fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
+....
+
+==== Implementing an Image Type
+
+Should it be necessary, support for new types of image can be implemented fairly simply, by defining a structure derived from a `fz++_++image`. Perhaps:
+
+....
+typedef struct
+{
+	fz_image super;
+	<foo specific fields>
+} foo_image;
+....
+
+Then we’d define a new image creation function, `fz++_++new++_++image++_++from++_++foo`, of the form:
+
+....
+fz_image *fz_new_image_from_foo(fz_context *ctx, <foo specific parameters>) {
+	foo_image *foo = fz_new_image(ctx, ..., foo_image, foo_get, foo_size, foo_drop);
+	if (!foo)
+		return NULL;
+
+	<initialise foo specific fields from foo specific parameters>
+
+	return &foo->super;
+}
+....
+
+The key call here is the call to `fz++_++new++_++image`. This is a macro which wraps a call to `fz++_++new++_++image++_++of++_++size`:
+
+....
+/*
+	fz_new_image_of_size: Internal function to make a new fz_image
+	structure for a derived class.
+
+	w,h: Width and height of the created image.
+
+	bpc: Bits per component.
+
+	colorspace: The colorspace (determines the number of components,
+	and any color conversions required while decoding).
+
+	xres, yres: The X and Y resolutions respectively.
+
+	interpolate: 1 if interpolation should be used when decoding
+	this image, 0 otherwise.
+
+	imagemask: 1 if this is an imagemask (i.e. transparent), 0
+	otherwise.
+
+	decode: NULL, or a pointer to to a decode array. The default
+	decode array is [0 1] (repeated n times, for n color components).
+
+	colorkey: NULL, or a pointer to a colorkey array. The default
+	colorkey array is [0 255] (repeatd n times, for n color
+	components).
+
+	mask: NULL, or another image to use as a mask for this one.
+	A new reference is taken to this image. Supplying a masked
+	image as a mask to another image is illegal!
+
+	size: The size of the required allocated structure (the size of
+	the derived structure).
+
+	get: The function to be called to obtain a decoded pixmap.
+
+	get_size: The function to be called to return the storage size
+	used by this image.
+
+	drop: The function to be called to dispose of this image once
+	the last reference is dropped.
+
+	Returns a pointer to an allocated structure of the required size,
+	with the first sizeof(fz_image) bytes initialised as appropriate
+	given the supplied parameters, and the other bytes set to zero.
+*/
+fz_image *fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get, fz_image_get_size_fn *get_size, fz_drop_image_fn *drop);
+
+#define fz_new_image(CTX,W,H,B,CS,X,Y,I,IM,D,C,M,T,G,S,Z) \
+((T*)Memento_label(fz_new_image_of_size(CTX,W,H,B,CS,X,Y,I,IM,\
+											D,C,M,sizeof(T),G,S,Z),#T))
+....
+
+The macro takes identical parameters to the function other than passing the structure type in place of the structure type saved, and performing a typecast to simplify the typical enclosing code.
+
+Both function and macro take pointers to 3 functions that need to be defined for the new format. Firstly, `foo++_++get` is of the following type:
+
+....
+/*
+	fz_get_pixmap_fn: Function type to get a decoded pixmap
+	for an image.
+
+	im: The image to decode.
+
+	subarea: NULL, or the subarea of the image required. Expressed
+	in terms of a rectangle in the original width/height of the
+	image. If non NULL, this should be updated by the function to
+	the actual subarea decoded - which must include the requested
+	area!
+
+	w, h: The actual width and height that the whole image would
+	need to be decoded to.
+
+	l2factor: On entry, the log 2 subsample factor required. If
+	possible the decode process can take care of (all or some) of
+	this subsampling, and must then update the value so the caller
+	knows what remains to be done.
+
+	Returns a reference to a decoded pixmap that satisfies the
+	requirements of the request.
+*/
+typedef fz_pixmap *(fz_image_get_pixmap_fn)(fz_context *ctx,
+												fz_image *im,
+												fz_irect *subarea,
+												int w, int h,
+												int *l2factor);
+....
+
+Secondly, `foo++_++get++_++size` will be of type:
+
+....
+/*
+	fz_image_get_size_fn: Function type to get the given storage
+	size for an image.
+
+	Returns the size in bytes used for a given image.
+*/
+typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
+....
+
+Finally, `foo++_++drop` will be of type:
+
+....
+/*
+	fz_drop_image_fn: Function type to destroy an images data
+	when it's reference count reaches zero.
+*/
+typedef void (fz_drop_image_fn)(fz_context *ctx, fz_image *image);
+....
+
+The actual deallocation of the `fz++_++image` block and its associated resources will be done on return from this function. The `fz++_++drop++_++image++_++fn` is responsible just for deallocating its implementation specific resources (i.e. the contents of `foo++_++image` rather than `fz++_++image`).
+
+==== Image Caching
+
+While caching of decoded images happens automatically within MuPDF, it is perhaps worth saying a small amount about it.
+
+Whenever a decoded image is requested, MuPDF searches in the store (see ) to see if a suitable pixmap exists there already. If one is found, the store remembers that is has been reused, and returned immediately - no decoding is done.
+
+If no suitable pixmap is found, MuPDF calculates how large the image would be on a rendered page. By comparing this size to the native size of the image, it calculates a log 2 subsampling factor to use. That is, it attempts to avoid decoding the image at full size, when one 1/2 (or 1/4 etc) of the width/height would do.
+
+A log 2 subsampling is used because a) some compression formats such as JPEG can achieve this as part of their decompression run, and b) it is easy to rapidly shrink decompressed pixmaps in this way.
+
+The decoded and subsampled image is then placed into the store so that it will (hopefully) be found the next time a decode of the image is requested.
+
+[[DocumentHandler]]
+=== The Document Handler interface
+
+==== Overview
+
+MuPDF is written as an extensible framework for handling different document types. Each different document format provides a `fz++_++document++_++handler` structure that provides the required callbacks to recognise and open files of its supported type. For example:
+
+....
+extern fz_document_handler pdf_document_handler;
+extern fz_document_handler xps_document_handler;
+extern fz_document_handler svg_document_handler;
+...
+....
+
+At startup, the calling program must register the required document handlers. It can either register them each individually, by repeatedly calling `fz++_++register++_++document++_++handler`:
+
+....
+/*
+	fz_register_document_handler: Register a handler
+	for a document type.
+
+	handler: The handler to register.
+*/
+void fz_register_document_handler(fz_context *ctx, const fz_document_handler *handler);
+....
+
+For example:
+
+....
+	fz_register_document_handler(ctx, &pdf_document_handler);
+	fz_register_document_handler(ctx, &xps_document_handler);
+	fz_register_document_handler(ctx, &svg_document_handler);
+	...
+....
+
+or, it can use a convenience function to register all the standard handlers enabled in a given build:
+
+....
+/*
+	fz_register_document_handler: Register handlers
+	for all the standard document types supported in
+	this build.
+*/
+void fz_register_document_handlers(fz_context *ctx);
+....
+
+==== Implementing a Document Handler
+
+===== Recognize and Open
+
+To implement a new document handler, a new `fz++_++document++_++handler` structure is required. There are 3 components to such a structure, all function pointers:
+
+....
+typedef struct fz_document_handler_s
+{
+	fz_document_recognize_fn *recognize;
+	fz_document_open_fn *open;
+	fz_document_open_with_stream_fn *open_with_stream;
+} fz_document_handler;
+....
+
+The first is a function to recognize a document from a magic string, typically a mimetype or a filename:
+
+....
+/*
+	fz_document_recognize_fn: Recognize a document type from
+	a magic string.
+
+	magic: string to recognise - typically a filename or mime
+	type.
+
+	Returns a number between 0 (not recognized) and 100
+	(fully recognized) based on how certain the recognizer
+	is that this is of the required type.
+*/
+typedef int (fz_document_recognize_fn)(fz_context *ctx, const char *magic);
+....
+
+The second is a function to open a document from a filename:
+
+....
+/*
+	fz_document_open_fn: Function type to open a document from a
+	file.
+
+	filename: file to open
+
+	Pointer to opened document. Throws exception in case of error.
+*/
+typedef fz_document *(fz_document_open_fn)(fz_context *ctx, const char *filename);
+....
+
+This function can permissibly be NULL, as it can be synthesized automatically from the third entry, a function to open a document from a stream:
+
+....
+/*
+	fz_document_open_with_stream_fn: Function type to open a
+	document from a file.
+
+	stream: fz_stream to read document data from. Must be
+	seekable for formats that require it.
+
+	Pointer to opened document. Throws exception in case of error.
+*/
+typedef fz_document *(fz_document_open_with_stream_fn)(fz_context *ctx, fz_stream *stream);
+....
+
+To create a `fz++_++document` use the `fz++_++new++_++document` macro. For a document of type foo, typically a `foo++_++document` structure would be defined as below:
+
+....
+typedef struct
+{
+	fz_document super;
+	<foo specific fields>
+} foo_document;
+....
+
+This would then be created using a call to `fz++_++new++_++document`, such as:
+
+....
+   foo_document *foo = fz_new_document(ctx, foo_document);
+....
+
+This returns an empty document structure with `super` populated with default values, and the foo specific fields initialized to 0. The document handler then needs to fill in the document level functions.
+
+===== Document Level Functions
+
+The `fz++_++document` structure contains a list of functions used to implement the document level calls:
+
+....
+typedef struct fz_document_s
+{
+	int refs;
+	fz_document_drop_fn *drop_document;
+	fz_document_needs_password_fn *needs_password;
+	fz_document_authenticate_password_fn *authenticate_password;
+	fz_document_has_permission_fn *has_permission;
+	fz_document_load_outline_fn *load_outline;
+	fz_document_layout_fn *layout;
+	fz_document_make_bookmark_fn *make_bookmark;
+	fz_document_lookup_bookmark_fn *lookup_bookmark;
+	fz_document_resolve_link_fn *resolve_link;
+	fz_document_count_pages_fn *count_pages;
+	fz_document_load_page_fn *load_page;
+	fz_document_lookup_metadata_fn *lookup_metadata;
+	int did_layout;
+	int is_reflowable;
+} fz_document;
+....
+
+Implementations must fill in the `drop++_++document` field, with a pointer to a function called to free any resources help by the document when the reference count drops to 0. In the unlikely event that your implementation has no resources, this field can be left NULL.
+
+....
+/*
+	fz_document_drop_fn: Called when the reference count for
+	the fz_document drops to 0. The implementation should
+	release any resources held by the document. The actual
+	document pointer will be freed by the caller.
+*/
+typedef void (fz_document_drop_fn)(fz_context *ctx, fz_document *doc);
+....
+
+If your document handler is capable of handling password protected documents, then you must fill in the `needs++_++password` field with a pointer to a function called to enquire whether a given document needs a password:
+
+....
+/*
+	fz_document_needs_password_fn: Type for a function to be
+	called to enquire whether the document needs a password
+	or not. See fz_needs_password for more information.
+*/
+typedef int (fz_document_needs_password_fn)(fz_context *ctx, fz_document *doc);
+....
+
+If your document handler is capable of handling password protected documents, then you must fill in the `authenticate++_++password` field with a pointer to a function called to attempt to authenticate a password:
+
+....
+/*
+	fz_document_authenticate_password_fn: Type for a function to be
+	called to attempt to authenticate a password. See
+	fz_authenticate_password for more information.
+*/
+typedef int (fz_document_authenticate_password_fn)(fz_context *ctx, fz_document *doc, const char *password);
+....
+
+Certain document types encode permissions within them to say what users are allowed to do with them (printing, extracting etc). If your document handler’s format has this concept, then you must fill in the `has++_++permission` field with a pointer to a function called to attempt to query such permissions:
+
+....
+/*
+	fz_document_has_permission_fn: Type for a function to be
+	called to see if a document grants a certain permission. See
+	fz_document_has_permission for more information.
+*/
+typedef int (fz_document_has_permission_fn)(fz_context *ctx, fz_document *doc, fz_permission permission);
+....
+
+Certain document types can optionally include outline (table of contents) information within them. If your document handler’s format has this concept, then you must fill in the `load++_++outline` field with a pointer to a function called to attempt to load such information if it is there:
+
+....
+/*
+	fz_document_load_outline_fn: Type for a function to be called to
+	load the outlines for a document. See fz_document_load_outline
+	for more information.
+*/
+typedef fz_outline *(fz_document_load_outline_fn)(fz_context *ctx, fz_document *doc);
+....
+
+If your document format requires a layout pass before it can be viewed, then you must fill in the `layout` field with a pointer to a function called to perform such a layout:
+
+....
+/*
+	fz_document_layout_fn: Type for a function to be called to lay
+	out a document. See fz_layout_document for more information.
+*/
+typedef void (fz_document_layout_fn)(fz_context *ctx, fz_document *doc, float w, float h, float em);
+....
+
+If your document requires a layout pass, you should provide functions to both make and resolve bookmarks to enable reader positions to be kept over layout changes. Accordingly the `make++_++bookmark` and `lookup++_++bookmark` fields should be filled out:
+
+....
+/*
+	fz_document_make_bookmark_fn: Type for a function to make
+	a bookmark. See fz_make_bookmark for more information.
+*/
+typedef fz_bookmark (fz_document_make_bookmark_fn)(fz_context *ctx, fz_document *doc, int page);
+
+/*
+	fz_document_lookup_bookmark_fn: Type for a function to lookup
+	a bookmark. See fz_lookup_bookmark for more information.
+*/
+typedef int (fz_document_lookup_bookmark_fn)(fz_context *ctx, fz_document *doc, fz_bookmark mark);
+....
+
+Some document formats can encode internal links that point to another page in the document. If your document supports this concept, then you must fill in the `resolve++_++link` field with a pointer to a function called to resolve a textual link to a page number, and location on that page:
+
+....
+/*
+	fz_document_resolve_link_fn: Type for a function to be called to
+	resolve an internal link to a page number. See fz_resolve_link
+	for more information.
+*/
+typedef int (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
+....
+
+All document formats must fill in the `count++_++pages` field with a pointer to a function called to return the number of pages in a document:
+
+....
+/*
+	fz_document_count_pages_fn: Type for a function to be called to
+	count the number of pages in a document. See fz_count_pages for
+	more information.
+*/
+typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc);
+....
+
+Different document formats encode different types of metadata. We therefore have an extensible function to allow such data to be queried. If your document handler wishes to support this, then the `lookup++_++metadata` field must be filled in with a pointer to a function to perform such lookups:
+
+....
+/*
+	fz_document_lookup_metadata_fn: Type for a function to query
+	a documents metadata. See fz_lookup_metadata for more
+	information.
+*/
+typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
+....
+
+All document formats must fill in the `load++_++page` field with a pointer to a function called to return a reference to a `fz++_++page` structure:
+
+....
+/*
+	fz_document_load_page_fn: Type for a function to load a given
+	page from a document. See fz_load_page for more information.
+*/
+typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int number);
+....
+
+To create a `fz++_++page` use the `fz++_++new++_++page` macro. For a document of type foo, typically a `foo++_++page` structure would be defined as below:
+
+....
+typedef struct
+{
+	fz_page super;
+	<foo specific fields>
+} foo_page;
+....
+
+This would then be created using a call to `fz++_++new++_++page`, such as:
+
+....
+   foo_page *foo = fz_new_page(ctx, foo_page);
+....
+
+This returns an empty document structure with `super` populated with default values, and the foo specific fields initialized to 0. The document handler implementation then needs to fill in the page level functions.
+
+[[PageLevelFunctions]]
+===== Page Level Functions
+
+The `fz++_++page` structure contains a list of functions used to implement the page level calls:
+
+....
+typedef struct fz_page_s
+{
+	int refs;
+	fz_page_drop_page_fn *drop_page;
+	fz_page_bound_page_fn *bound_page;
+	fz_page_run_page_contents_fn *run_page_contents;
+	fz_page_load_links_fn *load_links;
+	fz_page_first_annot_fn *first_annot;
+	fz_page_page_presentation_fn *page_presentation;
+	fz_page_control_separation_fn *control_separation;
+	fz_page_separation_disabled_fn *separation_disabled;
+	fz_page_count_separations_fn *count_separations;
+	fz_page_get_separation_fn *get_separation;
+} fz_page;
+....
+
+The `fz++_++page` (and hence derived `foo++_++page`) structures are reference counted. The `refs` field is used to keep the reference count in. All the reference counting is handled by the core library, and all that is required of the implementation is that it should supply a `drop++_++page` function that will be called when the reference count reaches zero. This is of type:
+
+....
+/*
+	fz_page_drop_page_fn: Type for a function to release all the
+	resources held by a page. Called automatically when the
+	reference count for that page reaches zero.
+*/
+typedef void (fz_page_drop_page_fn)(fz_context *ctx, fz_page *page);
+....
+
+Implementations must fill in the `bound++_++page` field with the address of a function to return the pages bounding box, of type:
+
+....
+/*
+	fz_page_bound_page_fn: Type for a function to return the
+	bounding box of a page. See fz_bound_page for more
+	information.
+*/
+typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
+....
+
+Implementations must fill in the `run++_++page++_++contents` field with the address of a function to interpret the contents of a page, of type:
+
+....
+/*
+	fz_page_run_page_contents_fn: Type for a function to run the
+	contents of a page. See fz_run_page_contents for more
+	information.
+*/
+typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+....
+
+If a document format supports internal or external hyperlinks, then its implementation must fill in the `load++_++links` field with the address of a function to load the links from a page, of type:
+
+....
+/*
+	fz_page_load_links_fn: Type for a function to load the links
+	from a page. See fz_load_links for more information.
+*/
+typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
+....
+
+If a document format supports annotations, then its implementation must fill in the `first++_++annot` field with the address of a function to load the annotations from a page, of type:
+
+....
+/*
+	fz_page_first_annot_fn: Type for a function to load the
+	annotations from a page. See fz_first_annot for more
+	information.
+*/
+typedef fz_annot *(fz_page_first_annot_fn)(fz_context *ctx, fz_page *page);
+....
+
+Some document formats can encode information that specifies how pages should be presented to the user as a slideshow - how long they should be displayed, and which transition to use when moving to the next page etc. In implementations of document handlers for such formats, they should fill in the `page++_++presentation` field with the address of a function to obtain this information, of type:
+
+....
+/*
+	fz_page_page_presentation_fn: Type for a function to
+	obtain the details of how this page should be presented when
+	in presentation mode. See fz_page_presentation for more
+	information.
+*/
+typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
+....
+
+Some document formats can encapsulate multiple color separations. In order to allow proofing of such formats, MuPDF allows such separations to be enumerated and enabled/disabled. In document handlers for such document formats, the `control++_++separation`, `separation++_++disabled`, `count++_++separations` and `get++_++separation` fields should be filled in with functions of the following types respectively:
+
+....
+/*
+	fz_page_control_separation: Type for a function to enable/
+	disable separations on a page. See fz_control_separation for
+	more information.
+*/
+typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int separation, int disable);
+
+/*
+	fz_page_separation_disabled_fn: Type for a function to detect
+	whether a given separation is enabled or disabled on a page.
+	See fz_separation_disabled for more information.
+*/
+typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int separation);
+
+/*
+	fz_page_count_separations_fn: Type for a function to count
+	the number of separations on a page. See fz_count_separations
+	for more information.
+*/
+typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
+
+/*
+	fz_page_get_separation_fn: Type for a function to retrieve
+	details of a separation on a page. See fz_get_separation
+	for more information.
+*/
+typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
+....
+
+==== Standard Document Handlers
+
+MuPDF contains a range of document handlers for different formats. Which of these are built/enabled by default depends on configuration options in the `include/mupdf/fitz/config.h` file. See for more information.
+
+===== PDF
+
+Support for PDF (Portable Document Format) is provided by `pdf++_++document++_++handler`. All current versions at the time of writing (i.e up to and including PDF 2.0) are supported.
+
+MuPDF contains functionality to allow deeper access to the contents and structure of a PDF file than is exposed through the standard `fz++_++` prefixed functions, by using `pdf++_++` prefixed functions.
+
+The library provides a `pdf++_++specifics` function to safely promote a `fz++_++document` pointer to a `pdf++_++document` pointer. This will return NULL if the document is not a PDF, indicating that the `pdf++_++` functions cannot be used.
+
+===== XPS
+
+Support for XPS (Open XML Paper Specification) is provided by `xps++_++document++_++handler`. All current versions at the time of writing are supported.
+
+===== EPUB
+
+Support for EPUB v2 is provided by `epub++_++document++_++handler`. Tables are not currently supported, but is planned. Support for v3 is not planned.
+
+The same document handler supports the FB2 (Fiction Book 2) electronic book format.
+
+===== HTML
+
+Support for basic HTML {plus} simple CSS is provided by `htdoc++_++document++_++handler`. Tables are not currently supported, but is planned.
+
+===== SVG
+
+Support for SVG (Scalable Vector Graphics) is provided by `svg++_++document++_++handler`. Support is incomplete, but sufficient for many files.
+
+===== Image
+
+Support for a range of common image types (including PNG, JPEG, TIFF, JPEG2000, BMP and GIF) is provided by `image++_++document++_++handler`.
+
+===== CBZ
+
+Support for CBZ (Comic Book Archive) format is provided by `cbz++_++document++_++handler`. This supports files in .zip or .tar format.
+
+[[StoreInternals]]
+=== Store Internals
+
+==== Overview
+
+In we introduced the concept of the Store, and its use in getting the most out of the available memory of a system. Here we explain the implementation, so document handler authors (and application programmers) can make use of the same mechanism.
+
+==== Implementation
+
+These keep and drop calls for simple objects are generally implemented by using one of a set of standard functions. There are a range of these, depending on the expected size of the reference counts, and all handle the locking required to ensure thread safety:
+
+....
+void *fz_keep_imp(fz_context *ctx, void *p, int *refs);
+void *fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs);
+void *fz_keep_imp16(fz_context *ctx, void *p, int16_t *refs);
+int fz_drop_imp(fz_context *ctx, void *p, int *refs);
+int fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs);
+int fz_drop_imp16(fz_context *ctx, void *p, int16_t *refs);
+....
+
+As an example, a `fz++_++path` structure is defined as:
+
+....
+typedef struct {
+   int8_t refs;
+} fz_path;
+....
+
+and thus appropriate keep and drop functions can be defined simply:
+
+....
+fz_path *fz_keep_path(fz_context *ctx, fz_path *path)
+{
+	return fz_keep_imp8(ctx, &path->refs);
+}
+
+void fz_drop_path(fz_context *ctx, fz_path *path)
+{
+	if (!fz_drop_imp8(ctx, &path->refs))
+		return;
+	/* code to free the contents of the path structure */
+	...
+}
+....
+
+More complex variations of these functions are available to cope with '`storable`' objects, and still more complex versions to cope with '`key storable`' objects - these are explained in the following sections.
+
+However they are implemented, these objects all look basically the same to most users - they can simply be '`kept`' and '`dropped`' as required.
+
+[[ReferenceCounting]]
+==== Reference Counting
+
+As mentioned above, most MuPDF objects are reference counted. This means that on creation (typically with a `fz++_++new++_++...` call), they have a reference count of 1. Think of these object pointers as '`handles`'.
+
+In the event that a `fz++_++new++_++...` call fails (perhaps due to running out of memory), then it will tidy up any partially constructed object(s) before throwing an exception.
+
+If a '`copy`' of the object is required, a new handle can be generated using the appropriate `fz++_++keep++_++...` call. This is a very low cost operation that just involves incrementing the reference count, so no physical copying of the data is involved. Accordingly it is vital that objects that have multiple handles do not have their contents altered.
+
+Once a reference is finished with, it should be disposed of using the appropriate `fz++_++drop++_++...` call. This is true regardless of whether the handle was created by a `fz++_++new++_++...` or a `fz++_++keep++_++...` call. This drops the reference count by 1.
+
+Once the reference count hits 0, the storage used by the object is freed.
+
+It is a matter of design that no `fz++_++drop++_++...` (or `fz++_++free`) call ever throws an exception. Furthermore, all such '`destructor`' calls must accept a NULL pointer (and do nothing). This vastly simplifies error handling in most cases.
+
+As an implementation detail, certain objects within MuPDF are allocated statically and have a reference count of -1. Any negative values are unaffected by reference counting operations, and will never be freed. Nonetheless, these should be treated exactly as normal objects and kept/dropped as usual.
+
+It is up to the developer to choose which size of storage to use for the reference count, remembering that the MuPDF counting routines do not detect overflow. If someone takes more than 127 references to an object built upon an `int8++_++t`, for example, the reference counting routines will believe that it is a static object, and it will never be freed.
+
+==== Scavenging memory allocator
+
+All allocations within MuPDF (and its sub-libraries) call `fz++_++malloc` and family. These functions ultimately call down to the custom allocator functions passed into the `fz++_++new++_++context` call (or to `malloc` and family if no custom allocators were supplied). (See for details).
+
+If a call to the underlying custom allocator fails, MuPDF will automatically seek to evict the least recently used objects from the store that are not currently being used, and then will retry the allocation. This can happen several times, with more and more objects being freed between each attempt.
+
+Allocation failures are therefore only fatal to MuPDF if there are no remaining objects to be freed in the store.
+
+This '`just in time`' scavenging of memory means that the store limit can safely be set to a high level (or to be unlimited), and MuPDF will still operate within safe bounds.
+
+==== Using the Store
+
+===== Overview
+
+Every "`storable piece of information`" in MuPDF is held in a data structure that begins with a `fz++_++storable` structure. Rather than repeatedly say "`a storable piece of information`", we shall henceforth just say "`a `fz++_++storable``".
+
+MuPDF uses reference counting for most of its data structures (see ), and `fz++_++storable`s are no exception.
+
+The objects in the Store are held in a chain according to when they were last used. Whenever an object is '`used`', it is moved to the head of the chain. Whenever we need to evict an object from the Store to make room, we therefore discard objects from the tail of the chain. In this way frequently used objects are kept around, while rarely used ones are discarded in preference.
+
+Whenever MuPDF needs to use a `fz++_++storable`, it first checks to see if there is one in the Store already. It does this by forming a unique '`key`' and scanning the Store for an object of a given type, with that key. If the object exists within the Store, the fact that the object has been used is noted (i.e. it is moved to the front of the usage chain), a reference is taken, and returned to the caller.
+
+If no reference is returned, the code creates its own version of the `fz++_++storable`. It calculates its size, and puts it into the Store, together with the same key as before. The Store takes a reference to the object, links it into its data structure, and updates its running total of the size of all the objects within it.
+
+If placing a new object into the Store would take it over the limit, it runs through and looks for the least recently used objects to evict to bring the limit down. In order for an object to be considered for eviction, their refcount must be 1. We know that the Store is holding 1 reference to the object - if anything else is, then removing it from the Store won’t actually save us any memory.
+
+Regardless of whether the Store can be reduced to a suitable size, the object is always placed into the store. This ensures that the Store’s figure for "`amount of memory used by `fz++_++storable`’s`" remains correct (thus ensuring that should objects become evictable, the store size will fall correctly). It also does no harm, because clearly we have managed to allocate enough memory to form the `fz++_++storable` in the first place.
+
+Regardless of whether a caller finds the object in the Store, or has to store it itself, it then proceeds identically. It uses the object for whatever purpose it needed it, and then calls the appropriate `fz++_++drop` function to lose its reference. The object will live on in the Store until it needs to be evicted to make room.
+
+When the `fz++_++context` (or, more accurately, the last of a set of cloned contexts) is finally destroyed, the Store is destroyed too. This results in every object in the Store being released. Unless something has gone wrong with reference counting, this will result in all our objects being freed.
+
+===== Handling keys
+
+As discussed above, the Store is basically a set of key/value pairs. While the values are always `fz++_++storable`s, the keys can be of many different types, due to coming from many disparate parts of the system.
+
+Accordingly, we need a mechanism to allow us to safely know what '`type`' a given key is, and to compare 2 keys of identical type.
+
+We solve this, by using a `fz++_++store++_++type` structure:
+
+....
+typedef struct fz_store_type_s
+{
+	int (*make_hash_key)(fz_context *ctx, fz_store_hash *, void *);
+	void *(*keep_key)(fz_context *,void *);
+	void (*drop_key)(fz_context *,void *);
+	int (*cmp_key)(fz_context *ctx, void *, void *);
+	void (*print)(fz_context *ctx, fz_output *out, void *);
+	int (*needs_reap)(fz_context *ctx, void *);
+} fz_store_type;
+....
+
+We will have just one instance of this for each type - normally a static const structure defined in the code. Whenever we insert (or lookup) something in the store, we pass the address of that '`types`' structure.
+
+We only compare items if they have the same type pointer, and any comparison is done using the `cmp++_++key` function pointer therein. In common with normal C idioms, 0 means match, non zero means different.
+
+The `keep++_++key` and `drop++_++key` entries are used to implement reference counting of keys. Keys can be an amalgam of several reference counted objects, so a single call to the keep or drop functions provided here will take or release references for all these objects in one operation.
+
+The `print` function is purely for debugging purposes as part of calls to `fz++_++print++_++store` - it should generate a human readable summary of the key to the given `fz++_++output` stream.
+
+The `make++_++hash++_++key` and `needs++_++reap` functions are explained in the following subsections.
+
+===== Hashing
+
+In order to ensure the Store performs well, we must ensure that certain processes run efficiently - notably searching for an existing entry, insertion and deletion.
+
+Accordingly, the Store is implemented based on a hash table. For every '`key`', we need to be able to form a hash, but this process is complicated slightly by the fact that every different `fz++_++storable` has a different type for the key.
+
+We solve this by having the `make++_++hash++_++key` member of the `fz++_++store++_++type` structure convert whatever its key data is into a common structure:
+
+....
+typedef struct fz_store_hash_s
+{
+	fz_store_drop_fn *drop;
+	union
+	{
+		struct
+		{
+			const void *ptr;
+			int i;
+		} pi; /* 8 or 12 bytes */
+		struct
+		{
+			const void *ptr;
+			int i;
+			fz_irect r;
+		} pir; /* 24 or 28 bytes */
+		struct
+		{
+			int id;
+			float m[4];
+		} im; /* 20 bytes */
+		struct
+		{
+			unsigned char src_md5[16];
+			unsigned char dst_md5[16];
+			unsigned int ri:2;
+			unsigned int bp:1;
+			unsigned int bpp16:1;
+			unsigned int proof:1;
+			unsigned int src_extras:5;
+			unsigned int dst_extras:5;
+			unsigned int copy_spots:1;
+		} link; /* 36 bytes */
+	} u;
+} fz_store_hash; /* 40 or 44 bytes */
+....
+
+The caller will always arrange for this structure to be zero filled on entry to the `make++_++hash++_++key` call. On exit, it should have been updated with the key details. Implementers may extend the union found in this structure as required, though ideally the size of the overall structure should be minimised to avoid unnecessary work.
+
+Once the Store has formed a `fz++_++store++_++hash` it can then generate the required hash for the hash table as required.
+
+===== Key storable items
+
+Some objects can be used both as values within the Store, and as a component of keys within the Store. We refer to these objects as '`key storable`' objects. In this case, we need to take additional care to ensure that we do not end up keeping an item within the store purely because its value is referred to by another key in the store.
+
+An example of this are `fz++_++images` in PDF files. Each `fz++_++image` is placed into the Store to enable it to be easily reused. When the image is rendered, a pixmap is generated from the image, and the pixmap is placed into the Store so it can be reused on subsequent renders. The image forms part of the key for the pixmap.
+
+When we close the pdf document (and any associated pages/display lists etc), we drop the images from the Store. This may leave us in the position of the images having non-zero reference counts purely because they are used as part of the keys for the pixmaps.
+
+The pixmaps can never be found by a search of the Store, because to find them, we’d have to search for them using the appropriate `fz++_++image`. They are therefore, to all intents and purposes '`dead`', and just taking up useless space.
+
+We therefore use special reference counting functions to implement these `fz++_++key++_++storable` items, `fz++_++keep++_++key++_++storable` and `fz++_++drop++_++key++_++storable` rather than the more usual `fz++_++keep++_++storable` and `fz++_++drop++_++storable`.
+
+The sole difference is that these enable us to store the number of references to these items that are used in keys. This is achieved by callers taking and dropping references for use in keys with `fz++_++keep++_++key++_++storable++_++key` and `fz++_++drop++_++key++_++storable++_++key`.
+
+This means that key storable items need to provide two sets of keep and drop functions, one for '`normal`' callers, and one for use during key handling. For example:
+
+....
+fz_image *fz_keep_image(fz_context *ctx, fz_image *image);
+void fz_drop_image(fz_context *ctx, fz_image *image);
+
+fz_image *fz_keep_image_store_key(fz_context *ctx, fz_image *image);
+void fz_drop_image_store_key(fz_context *ctx, fz_image *image);
+....
+
+The purpose of this extra work is to allow us to spot when we may need to check the Store for '`dead`' entries - those that can never be found by searching the Store.
+
+===== Reap passes
+
+When the number of references to a key storable object equals the number of references to an object from keys in the Store, we know that we can remove all the items which have that object as part of the key. This is done by running a pass over the store, '`reaping`' those items.
+
+If a key does not consist of any storable objects, then the `needs++_++reap` entry in its `fz++_++store++_++type` can safely be left as NULL. If it does, however, it must provide an implementation to check whether a reap pass is required. Essentially this needs to check if any of its constituent `fz++_++key++_++storable` objects need reaping, which can be done by a call to:
+
+....
+int fz_key_storable_needs_reaping(fz_context *ctx, const fz_key_storable *ks);
+....
+
+Reap passes are slower than we would like as they touch every item in the store. We therefore provide a way to '`batch`' such reap passes together, using `fz++_++defer++_++reap++_++start` and `fz++_++defer++_++reap++_++end` to bracket a region in which many may be triggered.
+
+The need for a reap is detected as part of normal operations in the core code, and such passes are then triggered automatically as required. The user need never (and indeed cannot) trigger such passes manually. The user can, however, exercise some control over when such operations take place.
+
+If an application is about to perform an operation that may drop many objects (say dropping a collection of cached display lists), then it should call `fz++_++defer++_++reap++_++start` beforehand, and match that with a `fz++_++defer++_++reap++_++end` afterwards. Any reap passes triggered by the dropping of objects within the display lists would be deferred until the end - resulting in at most one pass rather than potentially many.
+
+[[DeviceInternals]]
+=== Device Internals
+
+In , we introduced the central concept of a `fz++_++device`, and described the normal ones found in a standard MuPDF build. We skipped over the actual implementation details of how to call, or implement such devices. We rectify that here.
+
+As mentioned before, although each device offers a set of function pointers, we prefer people not to call these directly, but rather to call some convenience functions that map down onto these. This protects us against API changes in future, and copes automatically with NULL pointers (in the case when a device doesn’t care about a particular type of call).
+
+We describe these convenience functions here; implementers of devices can trivially extrapolate the behaviour of the function pointers from these descriptions. For example, the `fz++_++fill++_++path` function described here is implemented by the `fill++_++path` function pointer in the `fz++_++device` that takes the identical arguments and has the same return conditions.
+
+[[DevicePaths]]
+==== Line Art
+
+Line Art is handled by the device functions to plot paths. See for more information.
+
+....
+void fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params);
+void fz_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params);
+void fz_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor);
+void fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor);
+....
+
+[[DeviceText]]
+==== Text
+
+Text is handled by the device functions to plot text. See for more information.
+
+....
+void fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params);
+void fz_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params);
+void fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor);
+void fz_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor);
+void fz_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm);
+....
+
+The `fz++_++clip++_++text` and `fz++_++clip++_++stroke++_++text` functions are used to start a clip. Subsequent operations will be clipped through the areas delimited by these, until a `fz++_++pop++_++clip` is seen. See for more details.
+
+Sometimes formats (such as PDF) can send text that has no rendered appearance. We refer to this as '`ignored`' text. This serves a variety of purposes, the most usual of which is to allow text to be copy/paste out of a document when the actual appearance of that text is given in the form of an image or line art.
+
+For example, a product logo may be rendered using vector graphics, which would ordinarily not have any textual meaning. By including some ignored text, then a user can copy the content out as text, or a text-to-speech engine can correctly enunciate the page contents.
+
+An alternative common example would be where a document has been scanned, and then the text within it has been run through an OCR (Optical Character Recognition) process. The OCR engine would typically include its results as ignored text. The final document would look identical to the scans, but would copy/paste as expected.
+
+[[DeviceImages]]
+==== Images
+
+Images are handled by the device functions to plot images. See for more information.
+
+....
+void fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha, const fz_color_params *color_params);
+void fz_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params);
+void fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor);
+....
+
+The `fz++_++clip++_++image++_++mask` function is used to start a clip. Subsequent operations will be clipped through the area delimited by this, until a `fz++_++pop++_++clip` is seen. See for more details.
+
+==== Shadings
+
+Shaded areas (such as radial, linear and mesh based shadings) are rendered by filling a (normally) clipped region with a shade. This is achieved by calling `fz++_++fill++_++shade`. See for more details.
+
+....
+void fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *color_params);
+....
+
+[[Clipping]]
+==== Clipping and Masking
+
+Graphical objects can be restricted to a given area using Clipping. The area to clip to can be specified as paths, text, or images as explained in , , and .
+
+Each call to such a function starts a clipping group, which will be terminated by calling:
+
+....
+void fz_pop_clip(fz_context *ctx, fz_device *dev);
+....
+
+Clipping groups can be nested, allowing complex graphical effects.
+
+A related concept to clipping, is that of masking. Whereas clipping regions are simple on or off things, where content is chopped off at hard edges, masking allows for regions that allow just some proportion of the content to show through.
+
+Masking operations take place in 2 stages; first the mask itself is defined, then the content to be masked.
+
+Stage 1 begins by calling `fz++_++begin++_++mask` to start a mask definition group. Any series of graphical operations can now be sent to the device which will combine together to create the mask.
+
+Stage 1 is terminated and Stage 2 begins by calling `fz++_++end++_++mask`. This converts the mask definition into a '`soft clip`'. Any series of graphical operations can now be sent to the device which will combine together to create the mask contents.
+
+The whole process is then completed by calling `fz++_++pop++_++clip`. This renders the mask contents through the soft clip, giving the final results.
+
+....
+void fz_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *area, int luminosity, fz_colorspace *colorspace, const float *bc, const fz_color_params *color_params);
+void fz_end_mask(fz_context *ctx, fz_device *dev);
+....
+
+==== Groups and Transparency
+
+Some document formats (such as PDF) offer a rich transparency model that allows graphical objects to be ’Grouped’ together and imposed upon the page as if they have a given opacity, using a variety of different blend modes.
+
+MuPDF implements this by using the `fz++_++begin++_++group` and `fz++_++end++_++group` calls.
+
+....
+void fz_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *area, int isolated, int knockout, int blendmode, float alpha);
+void fz_end_group(fz_context *ctx, fz_device *dev);
+....
+
+The exact details of PDF transparency are too complex to explain here; for a full explanation see The PDF Reference Manual.
+
+==== Tiling
+
+Many document formats allow for content to be tiled repeatedly. Frequently this is used to implement patterns for filling other graphical operations.
+
+MuPDF implements this by allowing a group of content to be defined that is then tiled repeatedly across an area.
+
+The content definition begins by calling `fz++_++begin++_++tile++_++id`, giving the area of the page to be filled (`area`), the area of a single tile (`view`), the x and y steps between repeats of the tile (`xstep` and `ystep`), the transformation to take all of these measurements out of pattern space to device space (`ctm`) and an integer `id`.
+
+The purpose of `id` is to allow for efficient caching of rendered tiles. If `id` is 0, then no caching is performed. If it is non-zero, then it assumed to uniquely identify this tile. The tile can be safely placed into the Store (see ) and future uses of this tile can short circuit the tile definition/rendering phase.
+
+If a tile is found in the store, then `fz++_++begin++_++tile++_++id` will return non-zero and the caller can proceed directly to the call to `fz++_++end++_++tile`.
+
+Any graphical operations sent to the device will be taken as part of the tile content, until `fz++_++end++_++tile` is called, whereupon these graphical operations will be imposed upon the output.
+
+For the convenience of the caller, if no id is available (and hence no caching is possible), the `fz++_++begin++_++tile` variant can be used instead.
+
+The id is set by the caller - i.e. the interpreter for the document format in use. Care should be taken by the caller to make these unique.
+
+....
+void fz_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm);
+int fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
+void fz_end_tile(fz_context *ctx, fz_device *dev);
+....
+
+==== Render Flags
+
+Every device has a set of render flags (a simple int, in which bits can be set or cleared).
+
+These flags tend to have meanings specific to individual devices. In an ideal world they would not be required, but having this mechanism here can provide noticeable quality improvements.
+
+....
+void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
+....
+
+The function basically does:
+
+....
+flags = (flags | set) & ~clear;
+....
+
+That is to say, the bits given in `set` are set, and then the bits given in `clear` are cleared.
+
+The current only documented use of this is for the GProof device to request the Draw device to grid fit its tiled images.
+
+The reason for using Render Flags rather than Device Hints (see ) is that Render Flags can be carried forward though display lists.
+
+==== Device Color Spaces
+
+Some pages redefine the basic default colorspaces (for color management purposes). This is handled at the device level using the `fz++_++set++_++default++_++colorspaces` call:
+
+....
+void fz_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs);
+....
+
+The device typically takes a reference to the `default++_++cs` object and refers to it as required.
+
+==== Layers
+
+Some file formats (such as PDF) have the concept of '`tagged content`'. Graphical objects within the page stream can be tagged with information regarding how they correspond to each other on the page.
+
+PDF files are rarely authored directly, but are typically '`distilled`' from documents created in other programs (such as illustrator or similar packages). These other programs frequently have the concept of '`layers`', and this layer information is generally carried over into the created PDF file using this tagging mechanism.
+
+In fact, layers are such a ubiquitous source of tag information, that the PDF processing community (and some applications) frequently refers to such information as '`layer`' information, even though this is an abuse of the terminology. MuPDF follows this convention.
+
+Other interpreters may use layer information to explicitly encode genuine layers of course!
+
+There is no render-time special treatment of layered content, so content is simply composited blindly onto the same output image. Indeed, layers do not necessarily even nest nicely with other content, and can cross groups etc in unpredictable ways.
+
+As a document is interpreted, when a layer (or a tag) start or end is found, the device is signalled using the following calls:
+
+....
+void (*begin_layer)(fz_context *, fz_device *, const char *layer_name);
+void (*end_layer)(fz_context *, fz_device *);
+....
+
+Not all content on a given layer may necessarily be sent at once - there may be several start/end pairs with the same tag.
+
+As an example, consider a newspaper laid out in a desktop processor. Multiple '`stories`' on the same page may be laid out each in multiple columns of content. The PDF file produced from this may tag each column with an identifier for the story from which it came, and the stories may be interleaved with one another.
+
+By collating only the content tagged with a given identifier (layer name), individual stories may be able to be extracted from a PDF page.
+
+The use of tagged content will vary from application to application, following convention, but no hard and fast rules.
+
+[[Paths]]
+=== Path Internals
+
+Paths are reference counted objects, with the implicit understanding that once more than one reference exists to a path, it will no longer be modified.
+
+[[PathCreation]]
+==== Creation
+
+A reference to a new empty path can be created using `fz++_++new++_++path`:
+
+....
+/*
+	fz_new_path: Create an empty path, and return
+	a reference to it.
+
+	Throws exception on failure to allocate.
+*/
+fz_path *fz_new_path(fz_context *ctx);
+....
+
+Once a path exists, commands can be added to it. The first command must always be a '`move`'.
+
+....
+/*
+	fz_moveto: Append a 'moveto' command to a path.
+
+	path: The path to modify.
+
+	x, y: The coordinate to move to.
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_moveto(fz_context *ctx, fz_path *path, float x, float y);
+....
+
+Once we have moved to a point, subsequent commands can be added, such as lines, quads (quadratic beziers) and curves (cubic beziers).
+
+....
+/*
+	fz_lineto: Append a 'lineto' command to a path.
+
+	path: The path to modify.
+
+	x, y: The coordinate to line to.
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_lineto(fz_context *ctx, fz_path *path, float x, float y);
+
+/*
+	fz_quadto: Append a 'quadto' command to a path. (For a
+	quadratic bezier).
+
+	path: The path to modify.
+
+	x0, y0: The control coordinates for the quadratic curve.
+
+	x1, y1: The end coordinates for the quadratic curve.
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_quadto(fz_context *ctx, fz_path *path, float x0, float y0, float x1, float y1);
+
+/*
+	fz_curveto: Append a 'curveto' command to a path. (For a
+	cubic bezier).
+
+	path: The path to modify.
+
+	x0, y0: The coordinates of the first control point for the
+	curve.
+
+	x1, y1: The coordinates of the second control point for the
+	curve.
+
+	x2, y2: The end coordinates for the curve.
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_curveto(fz_context *ctx, fz_path *path, float x0, float y0, float x1, float y1, float x2, float y2);
+....
+
+In addition, we have 2 functions for adding curves (cubic beziers) where one of the control points is coincident with the neighbouring endpoints. These functions mirror the usage in PDF, but offer no benefits other than convenience as such curves are detected automatically as part of an `fz++_++curveto` call.
+
+....
+/*
+	fz_curvetov: Append a 'curvetov' command to a path. (For a
+	cubic bezier with the first control coordinate equal to
+	the start point).
+
+	path: The path to modify.
+
+	x1, y1: The coordinates of the second control point for the
+	curve.
+
+	x2, y2: The end coordinates for the curve.
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_curvetov(fz_context *ctx, fz_path *path, float x1, float y1, float x2, float y2);
+
+/*
+	fz_curvetoy: Append a 'curvetoy' command to a path. (For a
+	cubic bezier with the second control coordinate equal to
+	the end point).
+
+	path: The path to modify.
+
+	x0, y0: The coordinates of the first control point for the
+	curve.
+
+	x2, y2: The end coordinates for the curve (and the second
+	control coordinate).
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_curvetoy(fz_context *ctx, fz_path *path, float x0, float y0, float x2, float y2);
+....
+
+At any point after the initial move, we can close the path using `fz++_++closepath`:
+
+....
+/*
+	fz_closepath: Close the current subpath.
+
+	path: The path to modify.
+
+	Throws exceptions on failure to allocate, and illegal
+	path closes.
+*/
+void fz_closepath(fz_context *ctx, fz_path *path);
+....
+
+After a path has been closed, the only acceptable next command is a move. A path need not be closed before a second or subsequent move is sent.
+
+For details of exactly what each of these path segment types means, see "`The PDF Reference Manual`" or "`The Postscript Language Reference Manual`".
+
+Finally, we have one additional path construction function, `fz++_++rectto`. This appends a rectangle to the current path. This rectangle is equivalent to a move, 3 lines and a closepath, and so is the one exception to the rule that paths must begin with a move (as one is implicit within the rectangle command).
+
+....
+/*
+	fz_rectto: Append a 'rectto' command to a path.
+
+	The rectangle is equivalent to:
+		moveto x0 y0
+		lineto x1 y0
+		lineto x1 y1
+		lineto x0 y1
+		closepath
+
+	path: The path to modify.
+
+	x0, y0: First corner of the rectangle.
+
+	x1, y1: Second corner of the rectangle.
+
+	Throws exceptions on failure to allocate.
+*/
+void fz_rectto(fz_context *ctx, fz_path *path, float x0, float y0, float x1, float y1);
+....
+
+Finally, during path construction, the coordinate at which the notional path cursor has reached can be read using the `fz++_++currentpoint` function.
+
+....
+/*
+	fz_currentpoint: Return the current point that a path has
+	reached or (0,0) if empty.
+
+	path: path to return the current point of.
+*/
+fz_point fz_currentpoint(fz_context *ctx, fz_path *path);
+....
+
+[[reference-counting]]
+==== Reference counting
+
+As stated before, `fz++_++path`s are reference counted objects. Once one has been created, references can be created/destroyed using the standard keep/drop conventions:
+
+....
+/*
+	fz_keep_path: Take an additional reference to
+	a path.
+
+	No modifications should be carried out on a path
+	to which more than one reference is held, as
+	this can cause race conditions.
+
+	Never throws exceptions.
+*/
+fz_path *fz_keep_path(fz_context *ctx, const fz_path *path);
+
+/*
+	fz_drop_path: Drop a reference to a path,
+	destroying the path if it is the last
+	reference.
+
+	Never throws exceptions.
+*/
+void fz_drop_path(fz_context *ctx, const fz_path *path);
+....
+
+A path with more than one reference is considered to be '`frozen`' or '`immutable`'. It is not safe to modify such a path, as the other holder of a reference to it may not expect it to be being changed. That is to say that modification operations on paths are not atomic between threads.
+
+If you have a path that you wish to be able to modify, simply call `fz++_++clone++_++path` to obtain a reference to a copy of the path that is safe to modify:
+
+....
+/*
+	fz_clone_path: Clone the data for a path.
+
+	This is used in preference to fz_keep_path when a whole
+	new copy of a path is required, rather than just a shared
+	pointer. This probably indicates that the path is about to
+	be modified.
+
+	path: path to clone.
+
+	Throws exceptions on failure to allocate.
+*/
+fz_path *fz_clone_path(fz_context *ctx, fz_path *path);
+....
+
+==== Storage
+
+Because Paths are such a crucial part of MuPDF, and are used so widely in document content, we take particular care to allow them to be expressed and accessed efficiently.
+
+This means that at path construction time, we spot simple cases where we can optimise the path representation. For example, a move immediately following a move can cause the first move to be dropped. Similarly, a curve with both control points coincident with the endpoints can be expressed as a line.
+
+This means that if you read a path out after construction (see ) you cannot rely on the exact representation being the same.
+
+In addition, after constructing a path, there are some simple things that can be done to minimise the memory used.
+
+As paths are constructed, the data buffers within them grow. For efficiency, these grow with some slack in them, so at the end of construction there can be a non-trivial amount of space wasted.
+
+If you intend to simply use the path, and then discard it, this does not matter. If instead you intend to keep the path around for a while, it may be worth calling `fz++_++trim++_++path` to shrink the storage buffers as much as possible.
+
+....
+/*
+	fz_trim_path: Minimise the internal storage
+	used by a path.
+
+	As paths are constructed, the internal buffers
+	grow. To avoid repeated reallocations they
+	grow with some spare space. Once a path has
+	been fully constructed, this call allows the
+	excess space to be trimmed.
+
+	Never throws exceptions.
+*/
+void fz_trim_path(fz_context *ctx, fz_path *path);
+....
+
+MuPDF automatically calls this function when `fz++_++keep++_++path` is called for the first time as having more than one reference to a path is considered a good indication of it being kept around for a while.
+
+For cases where large numbers of paths are kept around for a long period of time, for example in a `fz++_++display++_++list` (see ), it can be advantageous to '`pack`' paths to further minimise the space they use.
+
+To pack a path, first call `fz++_++packed++_++path++_++size` to obtain the number of bytes required to pack a path:
+
+....
+/*
+	fz_packed_path_size: Return the number of
+	bytes required to pack a path.
+
+	Never throws exceptions.
+*/
+int fz_packed_path_size(const fz_path *path);
+....
+
+Then, call `fz++_++pack++_++path` with some (suitably aligned) memory of the appropriate size to actually pack the path:
+
+....
+/*
+	fz_pack_path: Pack a path into the given block.
+
+	To minimise the size of paths, this function allows them to be
+	packed into a buffer with other information.
+
+	pack: Pointer to a block of data to pack the path into. Should
+	be aligned by the caller to the same alignment as required for
+	an fz_path pointer.
+
+	max: The number of bytes available in the block.
+	If max < sizeof(fz_path) then an exception will
+	be thrown. If max >= the value returned by
+	fz_packed_path_size, then this call will never
+	fail, except in low memory situations with large
+	paths.
+
+	path: The path to pack.
+
+	Paths can be 'unpacked', 'flat', or 'open'. Standard paths, as
+	created are 'unpacked'. Paths that will pack into less than max
+	bytes will be packed as 'flat', unless they are too large (where
+	large indicates that they exceed some private implementation
+	defined limits, currently including having more than 256
+	256 coordinates or commands).
+
+	Large paths are 'open' packed as a header into the given block,
+	plus pointers to other data blocks. Paths can be used
+	interchangably regardless of how they are packed.
+
+	Returns the number of bytes within the block used. Callers can
+	access the packed path data by casting the value of pack on
+	entry to be an fz_path *.
+
+	Throws exceptions on failure to allocate, or if
+	max < sizeof(fz_path).
+*/
+int fz_pack_path(fz_context *ctx, uint8_t *pack, int max, const fz_path *path);
+....
+
+After a successful call to `fz++_++pack++_++path`, the pointer to the block of memory can be cast to an `fz++_++path ++*++` and used as normal.
+
+All the path routines recognise packed paths and will use them interchangeably. Packed paths may not be modified once created, however.
+
+==== Transformation
+
+Once a path has been constructed, a common operation is to apply a transformation to it. This is equivalent to transforming every point in the existing path. A path can be transformed using `fz++_++transform++_++path`.
+
+....
+/*
+	fz_transform_path: Transform a path by a given
+	matrix.
+
+	path: The path to modify (must not be a packed path).
+
+	transform: The transform to apply.
+
+	Throws exceptions if the path is packed, or on failure
+	to allocate.
+*/
+void fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *transform);
+....
+
+This counts as modifying a path of course, so ensure that you are the only reference holder, or `fz++_++clone++_++path` it first.
+
+==== Bounding
+
+Sometimes it can be desirable to know the area covered by a path. The `fz++_++bound++_++path` function enables exactly this, both for filled and stroked path. For details of the `fz++_++stroke++_++state` structure, see .
+
+....
+/*
+	fz_bound_path: Return a bounding rectangle for a path.
+
+	path: The path to bound.
+
+	stroke: If NULL, the bounding rectangle given is for
+	the filled path. If non-NULL the bounding rectangle
+	given is for the path stroked with the given attributes.
+
+	ctm: The matrix to apply to the path during stroking.
+
+	r: Pointer to a fz_rect which will be used to hold
+	the result.
+*/
+fz_rect *fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
+....
+
+[[PathStroking]]
+==== Stroking
+
+Where filling a path simply requires details of the fill to be used, stroking a path requires far more information; varying the thickness of the line, or the dash pattern, or linecaps/joins used can can radically alter its appearance. The details of these stroke attributes are passed in a `fz++_++stroke++_++state` structure.
+
+Stroke states are created and managed with reference counting using the functions described below, but unlike other structures, the definition of the structure itself is public. Callers are expected to alter the different fields in the structure themselves. The sole exception to this is the `refs` field, that should only be altered using the usual `fz++_++keep++_++stroke++_++state` and `fz++_++drop++_++stroke++_++state` mechanisms.
+
+....
+typedef struct fz_stroke_state_s fz_stroke_state;
+
+typedef enum fz_linecap_e
+{
+	FZ_LINECAP_BUTT = 0,
+	FZ_LINECAP_ROUND = 1,
+	FZ_LINECAP_SQUARE = 2,
+	FZ_LINECAP_TRIANGLE = 3
+} fz_linecap;
+
+typedef enum fz_linejoin_e
+{
+	FZ_LINEJOIN_MITER = 0,
+	FZ_LINEJOIN_ROUND = 1,
+	FZ_LINEJOIN_BEVEL = 2,
+	FZ_LINEJOIN_MITER_XPS = 3
+} fz_linejoin;
+
+struct fz_stroke_state_s
+{
+	int refs;
+	fz_linecap start_cap, dash_cap, end_cap;
+	fz_linejoin linejoin;
+	float linewidth;
+	float miterlimit;
+	float dash_phase;
+	int dash_len;
+	float dash_list[32];
+};
+....
+
+It is hoped that the meaning of the individual fields within a `fz++_++stroke++_++state` structure are self evident to anyone working in this field. If you are unfamiliar with any of the concepts here, see "`The PDF Reference Manual`" or "`The Postscript Language Reference Manual`" for more details.
+
+Most simply a reference to a stroke state structure can be obtained by calling `fz++_++new++_++stroke++_++state`:
+
+....
+/*
+	fz_new_stroke_state: Create a new (empty) stroke state
+	structure (with no dash data) and return a reference to it.
+
+	Throws exception on failure to allocate.
+*/
+fz_stroke_state *fz_new_stroke_state(fz_context *ctx);
+....
+
+For stroke states that include dash information, call:
+
+....
+/*
+	fz_new_stroke_state_with_dash_len: Create a new (empty)
+	stroke state structure, with room for dash data of the
+	given length, and return a reference to it.
+
+	len: The number of dash elements to allow room for.
+
+	Throws exception on failure to allocate.
+*/
+fz_stroke_state *fz_new_stroke_state_with_dash_len(fz_context *ctx, int len);
+....
+
+Once obtained, references can be kept or dropped in the usual fashion:
+
+....
+/*
+	fz_keep_stroke_state: Take an additional reference to
+	a stroke state structure.
+
+	No modifications should be carried out on a stroke
+	state to which more than one reference is held, as
+	this can cause race conditions.
+
+	Never throws exceptions.
+*/
+fz_stroke_state *fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *stroke);
+
+/*
+	fz_drop_stroke_state: Drop a reference to a stroke
+	state structure, destroying the structure if it is
+	the last reference.
+
+	Never throws exceptions.
+*/
+void fz_drop_stroke_state(fz_context *ctx, const fz_stroke_state *stroke);
+....
+
+Once more than one reference is held to a stroke state, it should be considered '`frozen`' or '`immutable`' as other reference holders may be confused by changes to it. Accordingly, we provide functions to ensure that we are holding a reference to an '`unshared`' stroke state:
+
+....
+/*
+	fz_unshare_stroke_state: Given a reference to a
+	(possibly) shared stroke_state structure, return
+	a reference to an equivalent stroke_state structure
+	that is guaranteed to be unshared (i.e. one that can
+	safely be modified).
+
+	shared: The reference to a (possibly) shared structure
+	to unshare. Ownership of this reference is passed in
+	to this function, even in the case of exceptions being
+	thrown.
+
+	Exceptions may be thrown in the event of failure to
+	allocate if required.
+*/
+fz_stroke_state *fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *shared);
+
+/*
+	fz_unshare_stroke_state_with_dash_len: Given a reference to a
+	(possibly) shared stroke_state structure, return a reference
+	to a stroke_state structure (with room for a given amount of
+	dash data) that is guaranteed to be unshared (i.e. one that
+	can safely be modified).
+
+	shared: The reference to a (possibly) shared structure
+	to unshare. Ownership of this reference is passed in
+	to this function, even in the case of exceptions being
+	thrown.
+
+	Exceptions may be thrown in the event of failure to
+	allocate if required.
+*/
+fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, int len);
+....
+
+Finally, we have a simple function to clone a stroke state and return a new reference to it:
+
+....
+/*
+	fz_clone_stroke_state: Create an identical stroke_state
+	structure and return a reference to it.
+
+	stroke: The stroke state reference to clone.
+
+	Exceptions may be thrown in the event of a failure to
+	allocate.
+*/
+fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
+....
+
+[[PathWalking]]
+==== Walking
+
+Given a path, it can be useful to be able to read it out again. MuPDF uses this internally in a output devices such as the PDF or SVG devices (see or ) to convert paths to a new representation, and in the draw device (see ) for rendering.
+
+To isolate callers from the implementation specifics of paths, MuPDF offers a mechanism to '`walk`' a `fz++_++path`, getting a callback for each command in the path.
+
+....
+typedef struct
+{
+	/* Compulsory ones */
+	void (*moveto)(fz_context *ctx, void *arg, float x, float y);
+	void (*lineto)(fz_context *ctx, void *arg, float x, float y);
+	void (*curveto)(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3);
+	void (*closepath)(fz_context *ctx, void *arg);
+	/* Optional ones */
+	void (*quadto)(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2);
+	void (*curvetov)(fz_context *ctx, void *arg, float x2, float y2, float x3, float y3);
+	void (*curvetoy)(fz_context *ctx, void *arg, float x1, float y1, float x3, float y3);
+	void (*rectto)(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2);
+} fz_path_walker;
+
+/*
+	fz_walk_path: Walk the segments of a path, calling the
+	appropriate callback function from a given set for each
+	segment of the path.
+
+	path: The path to walk.
+
+	walker: The set of callback functions to use. The first
+	4 callback pointers in the set must be non-NULL. The
+	subsequent ones can either be supplied, or can be left
+	as NULL, in which case the top 4 functions will be
+	called as appropriate to simulate them.
+
+	arg: An opaque argument passed in to each callback.
+
+	Exceptions will only be thrown if the underlying callback
+	functions throw them.
+*/
+void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *walker, void *arg);
+....
+
+This function is called by giving a pointer to a structure containing callback functions, one for each type of path segment type. The function will walk the path structure and call the appropriate function pointer for each segment of the path in turn.
+
+Callers of this function should not rely on getting exactly the same sequence of path segments out as was used to construct the path; the internal representation may have been optimised to an equivalent form on construction, and this will be reflected in the callbacks received. The path passed back will however be entirely identical (modulo possible infinitesimal rounding issues).
+
+For example, MuPDF is capable of spotting that a cubic or quadratic bezier is actually a line; in such cases it may represent it as a line internally, saving memory and processing power.
+
+Not all path consumers can cope with the full range of segment types that MuPDF natively supports, so some of the callback entries may be left blank (i.e. set to NULL). Rather than calling such an entry, MuPDF will decompose the path segment into one of the more basic types.
+
+For example, if a path contains a quadratic segment and the `quadto` callback entry is NULL, MuPDF will automatically decompose it to a bezier segment and call the `curveto` entry instead.
+
+[[Images]]
+=== Image Internals
+
+The primary use of a `fz++_++image` is to allow a rendered pixmap to be retrieved. This is done by calling:
+
+....
+/*
+	fz_get_pixmap_from_image: Called to get a handle to a pixmap from
+	an image.
+
+	image: The image to retrieve a pixmap from.
+
+	subarea: The subarea of the image that we actually care about (or
+	NULL to indicate the whole image).
+
+	trans: Optional, unless subarea is given. If given, then on entry
+	this is the transform that will be applied to the complete image.
+	It should be updated on exit to the transform to apply to the given
+	subarea of the image. This is used to calculate the desired
+	width/height for subsampling.
+
+	w: If non-NULL, a pointer to an int to be updated on exit to the
+	width (in pixels) that the scaled output will cover.
+
+	h: If non-NULL, a pointer to an int to be updated on exit to the
+	height (in pixels) that the scaled output will cover.
+
+	Returns a non NULL pixmap pointer. May throw exceptions.
+*/
+fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *trans, int *w, int *h);
+....
+
+Frequently this will involve decoding the image from its source data, so should be considered a potentially expensive call, both in terms of CPU time, and memory usage.
+
+To minimise the impact of such decodes, `fz++_++image`s make use of the Store (see ) to cache decoded versions in. This means that (subject to enough memory being available) repeated calls to get a `fz++_++pixmap` from the same `fz++_++image` (with the same parameters) will return the same `fz++_++pixmap` each time, with no further decode being required.
+
+The usual reference counting behaviour applies to `fz++_++image`s, with `fz++_++keep++_++image` and `fz++_++drop++_++image` claiming and releasing references respectively.
+
+Depending on the size at which a `fz++_++image` is to be used, it may not be worth decoding it at full resolution; instead, decoding it at a smaller size can save memory (and frequently time). In addition, subsequent rendering operations can often be faster due to having to handle fewer pixels for no quality loss in the final output.
+
+To facilitate this, `fz++_++image`s will subsample images as appropriate. Subsampling involves an image being decoded to a size an integer power of 2 smaller than their native size. For instance, if an image has a native size of 400x300, and is to be rendered to a final size of 40x30, `fz++_++get++_++pixmap++_++from++_++image` may subsample the returned image by up to 8 in each direction, resulting in a 50x37 image.
+
+Subsequent operations (such as smooth scaling and rendering) will proceed much faster due to fewer pixels being involved, and around one sixteenth of the memory will be required.
+
+Various different implementations of `fz++_++image` exist within MuPDF.
+
+==== Compressed Images
+
+The `fz++_++compressed++_++image` structure is a specialisation of `fz++_++image`, that holds the source data for an image in a `fz++_++compressed++_++buffer`. This is the usual form for images created from PDF and XPS files.
+
+The data for a compressed image can be retrieved by calling:
+
+....
+fz_compressed_buffer *fz_compressed_image_buffer(fz_context *ctx, fz_image *image);
+....
+
+If the supplied `fz++_++image` is not a `fz++_++compressed++_++image` then it will return `NULL`.
+
+==== Pixmap Images
+
+The `fz++_++pixmap++_++image` structure is a specialisation of `fz++_++image`, that has a `fz++_++pixmap` as its source data. This exists to allow `fz++_++pixmaps` from other sources to be easily fed into the MuPDF rendering engine.
+
+[[Text]]
+=== Text Internals
+
+As described in Part 1 (), the central text object in MuPDF is `fz++_++text`. It represents blocks of bidirectional text, carrying (potentially) both details of the underlying unicode characters, and the specific glyphs to be used to render them.
+
+....
+typedef struct fz_text_s fz_text;
+....
+
+Text objects are reference counted, with the implicit understanding that once more than one reference exists to an object, it will no longer be modified.
+
+[[TextCreation]]
+==== Creation
+
+Empty `fz++_++text` objects can be created using the `fz++_++new++_++text` call:
+
+....
+/*
+	fz_new_text: Create a new empty fz_text object.
+
+	Throws exception on failure to allocate.
+*/
+fz_text *fz_new_text(fz_context *ctx);
+....
+
+Additional references can be taken/released in the usual manner:
+
+....
+/*
+	fz_keep_text: Add a reference to an fz_text.
+
+	text: text object to keep a reference to.
+
+	Return the same text pointer.
+*/
+fz_text *fz_keep_text(fz_context *ctx, const fz_text *text);
+
+/*
+	fz_drop_text: Drop a reference to the object, freeing
+	if if is the last one.
+
+	text: Object to drop the reference to.
+*/
+void fz_drop_text(fz_context *ctx, const fz_text *text);
+....
+
+[[TextPopulation]]
+==== Population
+
+Once created, characters can be added to the `fz++_++text` object either singly:
+
+....
+/*
+	fz_show_glyph: Add a glyph/unicode value to a text object.
+
+	text: Text object to add to.
+
+	font: The font the glyph should be added in.
+
+	trm: The transform to use for the glyph.
+
+	glyph: The glyph id to add.
+
+	unicode: The unicode character for the glyph.
+
+	wmode: 1 for vertical mode, 0 for horizontal.
+
+	bidi_level: The bidirectional level for this glyph.
+
+	markup_dir: The direction of the text as specified in the
+	markup.
+
+	language: The language in use (if known, 0 otherwise)
+	(e.g. FZ_LANG_zh_Hans).
+
+	Throws exception on failure to allocate.
+*/
+void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int glyph, int unicode, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
+....
+
+or a (unicode) string at a time:
+
+....
+/*
+	fz_show_string: Add a UTF8 string to a text object.
+
+	text: Text object to add to.
+
+	font: The font the string should be added in.
+
+	trm: The transform to use. Will be updated according
+	to the advance of the string on exit.
+
+	s: The utf-8 string to add.
+
+	wmode: 1 for vertical mode, 0 for horizontal.
+
+	bidi_level: The bidirectional level for this glyph.
+
+	markup_dir: The direction of the text as specified in the
+	markup.
+
+	language: The language in use (if known, 0 otherwise)
+	(e.g. FZ_LANG_zh_Hans).
+
+	Throws exception on failure to allocate.
+*/
+void fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
+....
+
+[[TextMeasurement]]
+==== Measurement
+
+Once a `fz++_++text` object has been created we can measure the area it will cover on the page:
+
+....
+/*
+	fz_bound_text: Find the bounds of a given text object.
+
+	text: The text object to find the bounds of.
+
+	stroke: Pointer to the stroke attributes (for stroked
+	text), or NULL (for filled text).
+
+	ctm: The matrix in use.
+
+	r: pointer to storage for the bounds.
+
+	Returns a pointer to r, which is updated to contain the
+	bounding box for the text object.
+*/
+fz_rect *fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
+....
+
+[[TextCloning]]
+==== Cloning
+
+As stated before, `fz++_++text` objects are referenced counted. Changes or manipulations cannot safely be carried out on an object which might be shared with someone else, so we provide a mechanism to clone an object. Once cloned an object is guaranteed to be safe to modify.
+
+....
+/*
+	fz_clone_text: Clone a text object.
+
+	text: The text object to clone.
+
+	Throws an exception on allocation failure.
+*/
+fz_text *fz_clone_text(fz_context *ctx, const fz_text *text);
+....
+
+[[TextLanguage]]
+==== Language
+
+Some formats include a declaration of which language is being used for a given piece of text. This can be used to influence aspects of the text layout, including the exact choice of glyphs used in a given font. While we make relatively little use of this at present, we try to preserve the information as part of our philosophy of not losing any information unnecessarily.
+
+Accordingly, we use ISO 639 language specification strings, for example:
+
+....
+typedef enum fz_text_language_e
+{
+	FZ_LANG_UNSET = 0,
+	FZ_LANG_ur = FZ_LANG_TAG2('u','r'),
+	FZ_LANG_urd = FZ_LANG_TAG3('u','r','d'),
+	FZ_LANG_ko = FZ_LANG_TAG2('k','o'),
+	FZ_LANG_ja = FZ_LANG_TAG2('j','a'),
+	FZ_LANG_zh = FZ_LANG_TAG2('z','h'),
+	FZ_LANG_zh_Hans = FZ_LANG_TAG3('z','h','s'),
+	FZ_LANG_zh_Hant = FZ_LANG_TAG3('z','h','t'),
+} fz_text_language;
+....
+
+To save space we pack these into 15 bits. Accordingly, we provide a way to pack/unpack these to/from the more normal string representations:
+
+....
+/*
+	Convert ISO 639 (639-{1,2,3,5}) language specification
+	strings losslessly to a 15 bit fz_text_language code.
+
+	No validation is carried out. Obviously invalid (out
+	of spec) codes will be mapped to FZ_LANG_UNSET, but
+	well-formed (but undefined) codes will be blithely
+	accepted.
+*/
+fz_text_language fz_text_language_from_string(const char *str);
+....
+
+....
+/*
+	Recover ISO 639 (639-{1,2,3,5}) language specification
+	strings losslessly from a 15 bit fz_text_language code.
+
+	No validation is carried out. See note above.
+*/
+char *fz_string_from_text_language(char str[8], fz_text_language lang);
+....
+
+[[TextImplementation]]
+==== Implementation
+
+A `fz++_++text` structure represents a block of text. At the lowest level the constituents of a block are `fz++_++text++_++item`s.
+
+....
+typedef struct fz_text_item_s fz_text_item;
+
+struct fz_text_item_s
+{
+	float x, y;
+	int gid; /* -1 for one gid to many ucs mappings */
+	int ucs; /* -1 for one ucs to many gid mappings */
+};
+....
+
+The items can be thought of as the individual '`characters`' that make up the display, together with their position. Where possible, we attempt to give both the glyph id (`gid`) and the unicode value (`ucs`) for the character, but there are various cases where a 1-1 mapping is not possible.
+
+Some unicode characters can result in a string of glyphs. The glyph ids will be sent in a series of `fz++_++text++_++item`s, in which the first `ucs` value will be the source unicode character, and subsequent ones will be -1.
+
+Some sequences of unicode characters can result in a single glyph. Again, a sequence of `fz++_++text++_++item`s will be sent listing the unicode values, but all but the first item will have the `gid` value set to -1.
+
+In more complex cases, sequences of unicode characters can be transformed into a sequence of glyphs, with no direct correspondence between the source text and the output characters. In this case as many `fz++_++text++_++item`s as are required are used, with either the `gid` or `ucs` values padded out by -1s as necessary.
+
+Different input formats offer the text in different forms. With PDF, the data within the file is (typically) in the form of glyph ids, and mechanisms are optionally provided to infer unicode values from them. Glyphs are sent in any order, and absolutely positioned on the page.
+
+With XPS the input can be either in the form of unicode or glyph ids, and directionality information is encoded in the file. This means that the logical ordering of the glyphs is well defined.
+
+Some formats, such as EPUB and HTML, send unicode text with even less positioning information, and rely on the interpreter to perform layout. Part of this process involves inferring directional information from the source text, and then using shaping mechanisms embedded within the font to do complex conversions to give the final positioned glyph sequences.
+
+In all such cases MuPDF will preserve the logical ordering of the unicode entries, at the cost of drawing glyphs non-monotonically onto the page.
+
+Sequences of `fz++_++text++_++item`s that share the same characteristics are gathered together into `fz++_++text++_++span`s:
+
+....
+struct fz_text_span_s
+{
+	fz_font *font;
+	fz_matrix trm;
+	unsigned wmode : 1;		/* 0 horizontal, 1 vertical */
+	unsigned bidi_level : 7;	/* The bidirectional level of text */
+	unsigned markup_dir : 2;	/* The direction of text as marked in the original document */
+	unsigned language : 15;		/* The language as marked in the original document */
+	int len, cap;
+	fz_text_item *items;
+	fz_text_span *next;
+};
+....
+
+Sequences of these spans are then gathered up into a linked list rooted in a `fz++_++text`.
+
+....
+struct fz_text_s
+{
+	int refs;
+	fz_text_span *head, *tail;
+};
+....
+
+[[Shadings]]
+=== Shading Internals
+
+As described in , `fz++_++shade` is an encapsulation of the information required to define a PDF shading. This is essentially a superset of all the shading types provided by our supported document handlers. If we ever meet a format that requires features not provided in PDF, then `fz++_++shade` will be extended to cope.
+
+....
+typedef struct fz_shade_s
+{
+	fz_storable storable;
+
+	fz_rect bbox;		/* can be fz_infinite_rect */
+	fz_colorspace *colorspace;
+
+	fz_matrix matrix;	/* matrix from pattern dict */
+	int use_background;	/* background color for fills but not 'sh' */
+	float background[FZ_MAX_COLORS];
+
+	int use_function;
+	float function[256][FZ_MAX_COLORS + 1];
+
+	int type; /* function, linear, radial, mesh */
+	union
+	{
+		struct
+		{
+			int extend[2];
+			float coords[2][3]; /* (x,y,r) twice */
+		} l_or_r;
+		struct
+		{
+			int vprow;
+			int bpflag;
+			int bpcoord;
+			int bpcomp;
+			float x0, x1;
+			float y0, y1;
+			float c0[FZ_MAX_COLORS];
+			float c1[FZ_MAX_COLORS];
+		} m;
+		struct[]
+		{
+			fz_matrix matrix;
+			int xdivs;
+			int ydivs;
+			float domain[2][2];
+			float *fn_vals;
+		} f;
+	} u;
+
+	fz_compressed_buffer *buffer;
+} fz_shade;
+....
+
+[[creation]]
+==== Creation
+
+Currently, there is no defined API for creating a shading due to the public nature of the structure. Just call `fz++_++malloc++_++struct(ctx, fz++_++shade)` and initialise the fields accordingly.
+
+We may look to add convenience functions in the future, as this is likely to be desirable for the JNI (and other) bindings.
+
+Shading objects are reference counted, with the implicit understanding that once more than one reference exists to a `fz++_++shade`, it will no longer be modified.
+
+Additional references can be taken and dropped as usual:
+
+....
+/*
+	fz_keep_shade: Add a reference to an fz_shade.
+
+	shade: The reference to keep.
+
+	Returns shade.
+*/
+fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
+
+/*
+	fz_drop_shade: Drop a reference to an fz_shade.
+
+	shade: The reference to drop. If this is the last
+	reference, shade will be destroyed.
+*/
+void fz_drop_shade(fz_context *ctx, fz_shade *shade);
+....
+
+We also provide a function to process a given shading, by calling:
+
+==== Bounding
+
+Once created, we can ask for the bounds of a given shade under a given transformation. This can sometimes be infinite.
+
+....
+/*
+	fz_bound_shade: Bound a given shading.
+
+	shade: The shade to bound.
+
+	ctm: The transform to apply to the shade before bounding.
+
+	r: Pointer to storage to put the bounds in.
+
+	Returns r, updated to contain the bounds for the shading.
+*/
+fz_rect *fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_rect *r);
+....
+
+==== Painting
+
+For devices that require shadings as rasterised objects, we provide a function to paint a shading to a `fz++_++pixmap`:
+
+....
+/*
+	fz_paint_shade: Render a shade to a given pixmap.
+
+	shade: The shade to paint.
+
+	ctm: The transform to apply.
+
+	dest: The pixmap to render into.
+
+	bbox: Pointer to a bounding box to limit the rendering
+	of the shade.
+*/
+void fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_irect *bbox);
+....
+
+This is currently used by the draw and SVG devices.
+
+==== Decomposition
+
+For devices that wish to get access to a higher level representation of a shading, but do not wish to access the internals of a shading directly, we provide a function to decompose a shading to a mesh.
+
+This is called with functions to '`prepare`' and '`fill`' vertices respectively. The mesh is decomposed to triangles internally, each vertex is '`prepared`' and each triangle '`filled`' in turn.
+
+The ordering of these calls is not guaranteed, other than the fact that a vertex will always be prepared before it is used as part of a triangle to be filled.
+
+....
+typedef struct fz_vertex_s fz_vertex;
+
+struct fz_vertex_s
+{
+	fz_point p;
+	float c[FZ_MAX_COLORS];
+};
+
+/*
+	fz_shade_prepare_fn: Callback function type for use with
+	fz_process_shade.
+
+	arg: Opaque pointer from fz_process_shade caller.
+
+	v: Pointer to a fz_vertex structure to populate.
+
+	c: Pointer to an array of floats to use to populate v.
+*/
+typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
+
+/*
+	fz_shade_process_fn: Callback function type for use with
+	fz_process_shade.
+
+	arg: Opaque pointer from fz_process_shade caller.
+
+	av, bv, cv: Pointers to a fz_vertex structure describing
+	the corner locations and colors of a triangle to be
+	filled.
+*/
+typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
+
+/*
+	fz_process_shade: Process a shade, using supplied callback
+	functions. This decomposes the shading to a mesh (even ones
+	that are not natively meshes, such as linear or radial
+	shadings), and processes triangles from those meshes.
+
+	shade: The shade to process.
+
+	ctm: The transform to use
+
+	prepare: Callback function to 'prepare' each vertex.
+	This function is passed an array of floats, and populates
+	an fz_vertex structure.
+
+	process: This function is passed 3 pointers to vertex
+	structures, and actually performs the processing (typically
+	filling the area between the vertexes).
+
+	process_arg: An opaque argument passed through from caller
+	to callback functions.
+*/
+void fz_process_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
+			fz_shade_prepare_fn *prepare, fz_shade_process_fn *process, void *process_arg);
+....
+
+This function is used internally as part of `fz++_++paint++_++shade`, but is intended to also allow extraction of arbitrary shading data.
+
+[[Stream Internals]]
+=== Stream Internals
+
+The concepts embodied by a `fz++_++stream` object, and details of how to use them were given in . The above, relatively rich, set of functions are implemented on a fairly simple basic structure.
+
+To implement your own `fz++_++stream`, simply define a creation function, of the form:
+
+....
+fz_stream *fz_new_stream_foo(fz_context *ctx, <more parameters here>)
+{
+	fz_stream *stm;
+	foo_state *state;
+
+	state = <create structure to hold foo specific stream state>
+	stm = fz_new_stream(ctx, state, foo_next, foo_close);
+	<set stm->seek if required>
+	<set stm->meta if required>
+	return stm;
+}
+....
+
+Note that some `fz++_++try`/`fz++_++catch`-ery may be required as part of the setup for state.
+
+The hard work for this function is done using `fz++_++new++_++stream`, and two '`foo`' specific functions, `foo++_++next` and `foo++_++close`. First let’s look at `fz++_++new++_++stream`:
+
+....
+/*
+	fz_new_stream: Create a new stream object with the given
+	internal state and function pointers.
+
+	state: Internal state (opaque to everything but implementation).
+
+	next: Should provide the next set of bytes (up to max) of stream
+	data. Return the number of bytes read, or EOF when there is no
+	more data.
+
+	close: Should clean up and free the internal state. May not
+	throw exceptions.
+*/
+fz_stream *fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close);
+....
+
+This creates the main `fz++_++stream` structure, populates it with the given pointers (`state`, `foo++_++next` and `foo++_++close`) and sets the internal buffer pointers up to indicate an empty buffer.
+
+As soon as anyone tries to read from the buffer (or to find out how many bytes are available), the MuPDF stream functions will cause `foo++_++next` to be called. This is a function of the following type:
+
+....
+/*
+	fz_stream_next_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called
+	whenever data is required, and the current buffer is empty.
+
+	stm: The stream to operate on.
+
+	max: a hint as to the maximum number of bytes that the caller
+	needs to be ready immediately. Can safely be ignored.
+
+	Returns -1 if there is no more data in the stream. Otherwise,
+	the function should find its internal state using stm->state,
+	refill its buffer, update stm->rp and stm->wp to point to the
+	start and end of the new data respectively, and then
+	"return *stm->rp++".
+*/
+typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, size_t max);
+....
+
+When the stream is closed, the `foo++_++close` function will be called. This should be a function of type `fz++_++stream++_++close++_++fn`:
+
+....
+/*
+	fz_stream_close_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called
+	when the stream is closed, to release the stream specific
+	state information.
+
+	state: The stream state to release.
+*/
+....
+
+In our example, if the state was created by a simple `fz++_++malloc++_++struct(ctx, foo++_++state)` then `foo++_++close` might be as simple as a `fz++_++free(ctx, state)`. If the internal state of the stream is more complex then the destructor will be similarly more complex.
+
+These three functions (creation, next and close) are all that is required to define a stream.
+
+Optionally, you can also define a seek and/or a meta function, using functions of the following types:
+
+....
+/*
+	fz_stream_seek_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called when
+	fz_seek is requested, and the arguments are as defined for
+	fz_seek.
+
+	The stream can find its private state in stm->state.
+*/
+typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
+
+/*
+	fz_stream_meta_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called when
+	fz_meta is requested, and the arguments are as defined for
+	fz_meta.
+
+	The stream can find its private state in stm->state.
+*/
+typedef int (fz_stream_meta_fn)(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
+....
+
+=== Output Internals
+
+The concepts embodied by a `fz++_++output` object, and details of how to use them were given in . The above, relatively rich, set of functions are implemented on a fairly simple basic structure.
+
+To implement your own `fz++_++output`, simply define a creation function of the form:
+
+....
+fz_output *fz_new_output_foo(fz_context *ctx, <more parameters here>)
+{
+	fz_output *out = fz_new_output(ctx, <state>, foo_write, foo_close);
+	<optionally set out->seek = foo_seek>
+	<optionally set out->tell = foo_tell>
+	return out;
+}
+....
+
+This has parallels with the implementation of `fz++_++stream`s, but is not quite identical.
+
+If `state` needs no destruction, then we can use NULL in place of `foo++_++close`. Otherwise `foo++_++close` should be a function of type:
+
+....
+/*
+	fz_output_close_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	when the output stream is closed, to release the stream specific
+	state information.
+
+	state: The output stream state to release.
+*/
+typedef void (fz_output_close_fn)(fz_context *ctx, void *state);
+....
+
+This can be as simple as doing `fz++_++free(ctx, state)`, or (depending on the complexity of the state structure) can require more involved operations to clean up.Many `fz++_++output` implementations rely on close being called to ensure the output is correctly flushed, and no data lost.
+
+The most important function and the only non-optional one is `foo++_++write`. This is a function of type:
+
+....
+/*
+	fz_output_write_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	whenever data is written to the output.
+
+	state: The state for the output stream.
+
+	data: a pointer to a buffer of data to write.
+
+	n: The number of bytes of data to write.
+*/
+typedef void (fz_output_write_fn)(fz_context *ctx, void *state, const void *data, size_t n);
+....
+
+Optionally we can choose to have our output stream support `fz++_++seek++_++output` and `fz++_++tell++_++output`. To do that we must implement `foo++_++seek` and `foo++_++tell` respectively, and assign them `out-++>++seek` and `out-++>++tell` during creation.
+
+....
+/*
+	fz_output_seek_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called when
+	fz_seek_output is requested.
+
+	state: The output stream state to seek within.
+
+	offset, whence: as defined for fs_seek_output.
+*/
+typedef void (fz_output_seek_fn)(fz_context *ctx, void *state, fz_off_t offset, int whence);
+
+/*
+	fz_output_tell_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called when
+	fz_tell_output is requested.
+
+	state: The output stream state to report on.
+
+	Returns the offset within the output stream.
+*/
+typedef size_t (fz_output_tell_fn)(fz_context *ctx, void *state);
+....
+
+[[ColorspaceInternals]]
+=== Colorspace Internals
+
+In , we were introduced to the basic Colorspaces available within MuPDF. Here we describe how they work internally, and how new colorspaces can be implemented by document handler authors.
+
+Colorspaces are complicated slightly by the need to cope with both ICC-enabled and ICC-disabled workflows.
+
+==== Non ICC-based Colorspaces
+
+The first and most basic colorspace creation method is for creating a non-ICC based colorspace, by calling:
+
+....
+fz_colorspace *fz_new_colorspace(
+							fz_context *ctx,
+							const char *name,
+							enum fz_colorspace_type type,
+							int flags,
+							int n,
+							fz_colorspace_convert_fn *to_ccs,
+							fz_colorspace_convert_fn *from_ccs,
+							fz_colorspace_base_fn *base,
+							fz_colorspace_clamp_fn *clamp,
+							fz_colorspace_destruct_fn *destruct,
+							void *data,
+							size_t size);
+....
+
+The `name` parameter is a pointer to a (short) ASCII string describing the colorspace, and `n` is the number of colorants in the space.
+
+The `type` of the colorspace should be chosen as one of the following types (which should be consistent with the value of `n` chosen):
+
+....
+enum fz_colorspace_type
+{
+	FZ_COLORSPACE_NONE,
+	FZ_COLORSPACE_GRAY,
+	FZ_COLORSPACE_RGB,
+	FZ_COLORSPACE_BGR,
+	FZ_COLORSPACE_CMYK,
+	FZ_COLORSPACE_LAB,
+	FZ_COLORSPACE_INDEXED,
+	FZ_COLORSPACE_SEPARATION,
+};
+....
+
+The `flags` value for is the logical or of a selection of values from the following enum:
+
+....
+enum
+{
+	FZ_COLORSPACE_IS_DEVICE = 1,
+	FZ_COLORSPACE_IS_ICC = 2,
+	FZ_COLORSPACE_IS_CAL = 4,
+	FZ_COLORSPACE_LAST_PUBLIC_FLAG = 4,
+};
+....
+
+MuPDF uses some extra bits internally, so unknown bits should be considered private.
+
+If the colorspace requires any private data (perhaps a palette for an indexed space), then an opaque pointer can be passed as `data`. A function to destroy this data when the colorspace reference count reaches zero should be passed as `destruct`.
+
+Colorspaces are placed into the Store, so some measure of the size of their data is required - the size in bytes of the colorspaces extra data should be passed as `size`.
+
+If this colorspace is based on another one then a function to return a borrowed reference to the underlying space should be supplied as `base`. For instance, an indexed space with an RGB palette would pass a function that returns `fz++_++device++_++rgb`.
+
+This leaves the 3 functions that do the heavy lifting.
+
+The `to++_++ccs` parameter should be a function that takes `n` colorant values in the colorspace, and returns them as RGB values.
+
+The `from++_++ccs` parameter should be a function that takes RGB colorant values, and returns them as `n` colorant values in the colorspace.
+
+Finally, the `clamp` field should be a function that takes `n` colorant values in the colorspace, and clamps them into the appropriate range.
+
+==== ICC-based colorspaces
+
+If you have an ICC profile for your colorspace, then you can call one of these functions:
+
+....
+fz_colorspace *fz_new_icc_colorspace(
+								fz_context *ctx,
+								const char *name,
+								int num,
+								fz_buffer *buf);
+fz_colorspace *fz_new_icc_colorspace_from_file(
+								fz_context *ctx,
+								const char *name,
+								const char *path);
+fz_colorspace *fz_new_icc_colorspace_from_stream(
+								fz_context *ctx,
+								const char *name,
+								fz_stream *in);
+....
+
+They all load the ICC profile from the specified source, and create the ICC based `fz++_++colorspace`.
+
+Unfortunately, in non-ICC based workflows, ICC profiles can’t be loaded. This means that document handlers have to be prepared to '`fall back`' to a non-ICC based approximation. This has to be done at the document handler level; for example the PDF agent calls `fz++_++get++_++cmm++_++engine`, and if it returns NULL, drops back to the alternate specified space.
+
+==== Calibrated Colorspaces
+
+One final route to create colorspaces exists, that of creating them from given calibration settings. This builds upon the ICC workflow, so again, should only be used in the ICC-workflow case.
+
+....
+fz_colorspace *fz_new_cal_colorspace(
+								fz_context *ctx,
+								const char *name,
+								float *wp,
+								float *bp,
+								float *gamma,
+								float *matrix);
+....
+
+[[ColorManagement]]
+=== Color Management
+
+==== Overview
+
+MuPDF can optionally make use of a color management engine to offer a fully color managed workflow.
+
+Its use of the engine is encapsulated within the `fz++_++cmm++_++engine` structure. Currently we provide an implementation of this structure using a modified version of LCMS2 (known as LCMS2MT), but systems with other CMM engines in already can use those instead by reimplementing the functions therein.
+
+By default, on start-up, MuPDF has no color management engine enabled. This keeps the library size down (and performance up!) for people who do not wish to use it.
+
+The relevant functions are:
+
+....
+/*
+	fz_set_cmm_engine: Set the color management engine to
+	be used. This should only ever be called on the "base"
+	context before cloning it, and before opening any files.
+
+	Attempting to change the engine in use once a file has
+	been opened, or to use different color management engine
+	for the same file in different threads will lead to
+	undefined behaviour, including crashing.
+
+	Using different ICC engines for different files using
+	different sets of fz_contexts should theoretically be
+	possible.
+*/
+void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine);
+
+/*
+	Currently we only provide a single color management
+	engine, based on a (modified) LCMS2.
+
+	An unmodified LCMS2 should work too, but only when restricted
+	to a single thread.
+*/
+extern fz_cmm_engine fz_cmm_engine_lcms;
+....
+
+Thus to enable the color managed workflow using LCMS, call:
+
+....
+fz_set_cmm_engine(ctx, &fz_cmm_engine_lcms);
+....
+
+It is best to do this immediately after creating the base context.
+
+It is possible to switch between ICC and non-ICC workflows in the same instance of MuPDF (and even to use the two simultaneously). It is, however, not generally possible to swap a given context once operations on that context have started. This is because any outstanding `fz++_++colorspace`s (such as those found within the store) will still refer to the wrong color management implementation!
+
+[[FontProvision]]
+=== Font provision within MuPDF
+
+Which fonts are built into MuPDF is a vexed question that will very much depend upon exactly where you got your MuPDF library, and what options were used to build it. While MuPDF is supplied from the authors with a wide range of fonts, the decision about which of these should be built in is left to the builder. This allows the size of the resultant library to be tuned; there is a trade-off to be made between the number of fonts included (and hence the language/script coverage) and the size of the shipped binary.
+
+==== Tofu
+
+In many typographical applications, if a given glyph cannot be located for display (perhaps because the required font is not on a system), it may be rendered as a empty box. Such boxes are known informally as Tofu.
+
+MuPDF tends not to display such boxes, but the notion of Tofu corresponding to “glyphs not existing" is carried over.
+
+Specifically, while MuPDF is supplied with a large number of fonts, giving the best possible coverage for scripts/languages from across the world, we allow builders of MuPDF to customise the resultant library by omitting (or “Tofuing") particular sets of fonts.
+
+This is done by building the library with a range of different predefines to the C compiler, all beginning `TOFU++_++`.
+
+==== Supplied fonts
+
+Broadly the fonts supplied fall into the following categories:
+
+===== Base 14 fonts
+
+The PDF standard requires all viewers to provide 14 ’standard’ fonts (or metric-compatible clones thereof); Courier, Courier-Oblique, Courier-Bold, Courier-BoldOblique, Helvetica, Helvetica-Oblique, Helvetica-Bold, Helvetica-BoldOblique, Times-Roman, Times-Italic, Times-Bold, Times-BoldItalic, Symbol and ZapfDingbats. Accordingly, MuPDF is supplied with equivalent font families (Nimbus Mono, Nimbus Sans, Nimbus Roman, Standard Symbols, and Dingbats) for these fonts that answer to the standard names.
+
+It is extremely unlikely that any builder of a general purpose MuPDF library will choose to leave these fonts out of a distribution, as many PDF files rely (quite reasonably) on them being available.
+
+Nonetheless, if a builder is in control of the exact set of files that will be read by MuPDF (perhaps for a system where content is tightly controlled, and made to specific standards with all the fonts embedded) it is possible for MuPDF to be built and used without any fonts embedded.
+
+This can be achieved by building with `TOFU++_++BASE14`. We only recommend this for experienced users who are in control of the content to be displayed.
+
+===== Extra Latin font
+
+Charis SIL is supplied and is used as our default for ebook reading.
+
+This font can be omitted from builds by building with `TOFU++_++SIL`.
+
+===== CJKV fonts
+
+Support for Chinese, Japanese, Korean and Vietnamese scripts (CJKV or CJK for short) is given by default by the “Source Han Serif Regular" font collection. This has 4 subfonts embedded within a single TrueType collection.
+
+This collection can be omitted from builds by building with `TOFJ++_++CJK`, `TOFU++_++CJK++_++EXT` or `TOFU++_++CJK++_++LANG`.
+
+===== Noto fonts
+
+Google has produced a range of fonts that offer exceptional coverage for scripts/languages worldwide. The idea of these fonts is that with them, you should see “no tofu". Accordingly, these are know as the “noto" fonts.
+
+MuPDF provides a huge number of these, too many to list here. These provide great coverage, at the expense of a significant size taken in the built library.
+
+Many builders choose to eliminate these, by building with `TOFU++_++NOTO` defined.
+
+===== Fallback fonts
+
+Noto Serif is supplied as a“fallback" font. It provides reasonable coverage for non-Latin, non-CJKV glyphs, so is useful as a “last resort" for content that needs glyphs that fall outside of the "base 14" fonts.
+
+This font can be omitted from builds by building with `TOFU++_++NOTO`.
+
+Additionally, if built with `TOFU++_++CJK++_++LANG`, MuPDF includes the DroidSansFallbackFull font. This provides decent coverage for glyphs used in CJK languages, and will be used as a font of last resort given that Source Han Serif Regular is not included.
+
+If MuPDF is built with `TOFU++_++CJK++_++EXT`, then MuPDF will include DroidSansFallback (a smaller version of DroidSansFallbackFull) instead. This provides worse coverage for CJK glyphs, but for a smaller size.
+
+Finally, if MuPDF is built with `TOFU++_++CJK` then even DroidSansFallback will be omitted, leaving a system that cannot render any CJK glyphs at all, unless the font in question is embedded within the source PDF file.
+
+==== Customising the included fonts
+
+The easiest way to customise the set of fonts included within a build of MuPDF is to use the `TOFU++_++...` build predefines described above. This allows fonts to omitted from the build.
+
+Further customisation (both adding and subtracting fonts) is possible with some more work, but this requires some source code alteration.
+
+The `source/fitz/font-table.h` file lists the fonts that are to be made available to MuPDF. Remove a line from this file, and that font will not be available in the built library.
+
+The ordering of fonts within font-table.h is important; it is searched in a linear fashion, and the first match for any given query found. This means, for example, that fonts intended to provide support for a specific language with a given script should be listed before fonts that offer support for any language with that script.
+
+To add new fonts, they must first be added to this file, and then the build scripts must be updated to include the font itself. Note that many fonts appear multiple times in the table, either providing different scripts/languages, or to allow each font to respond to multiple different names.
+
+Updating the build scripts for new fonts depends on the platform you are building for.
+
+===== MSVC builds
+
+The MSVC solution `mupdf.sln` contains a `libresources` project. The fonts to be included in the build are included as sources here. Simply add new fonts to this project, and they should be included automatically on the next build.
+
+Note that the symbol under which the font appears in the build depends upon the path to the font name, so it is best to follow the pattern provided by the existing fonts; `resources/fonts/++<++foundry name++>++/++<++font name++>++.++<++suffix++>++`.
+
+===== Makefile builds
+
+The `Makefile` contains a section that sets the `FONT++_++BIN` macro to a list of files found from files within `resources/fonts` using wildcards. Either put the new fonts to be included into this directory, or extend `FONT++_++BIN` to include the source for your font.
+
+Note that the name under which the font appears in the build depends upon the path to the font name, so it is best to follow the pattern provided by the existing fonts; `resources/fonts/++<++foundry name++>++/++<++font name++>++.++<++suffix++>++`.
