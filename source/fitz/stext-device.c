@@ -997,8 +997,13 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		{
 			/* Check indent to spot text-indent style paragraphs */
 			if (wmode == 0 && cur_line)
-				if ((p.x - dev->start.x) > 0.5f && !dev->maybe_bullet)
+			{
+				float delta_start_x = p.x - dev->start.x;
+				float delta_start_y = p.y - dev->start.y;
+				float delta_start = (ndir.x * delta_start_x + ndir.y * delta_start_y) / size;
+				if (delta_start > 0.5f && !dev->maybe_bullet)
 					new_para = 1;
+			}
 			new_line = 1;
 		}
 
