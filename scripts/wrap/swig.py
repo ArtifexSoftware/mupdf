@@ -6,6 +6,7 @@ import inspect
 import io
 import os
 import re
+import sys
 import textwrap
 
 import pipcl
@@ -1924,12 +1925,15 @@ def build_swig(
             dllimport = 'mupdfcsharp.dll'
 
         # See https://www.swig.org/Doc4.2/CSharp.html `23.3.1 Primitive types`
-        # for description of SWIGWORDSIZE64. If we were to build on 32-bit Linux
-        # we would have to remove the `-DSWIGWORDSIZE64` flag.
+        # for description of SWIGWORDSIZE64.
+        SWIGWORDSIZE = ''
+        if state_.linux:
+            bits = int.bit_length(sys.maxsize+1)
+            SWIGWORDSIZE = f'-DSWIGWORDSIZE{bits}'
         command = (f'''
                 "{swig_command}"
                     {"-D_WIN32" if state_.windows else ""}
-                    {"-DSWIGWORDSIZE64" if state_.linux else ""}
+                    {SWIGWORDSIZE}
                     -c++
                     -csharp
                     -Wextra
