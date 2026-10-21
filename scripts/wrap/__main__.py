@@ -925,7 +925,10 @@ Usage:
         ./scripts/mupdfwrap.py --venv -b all -t
             Build and test on Windows.
 
+Environment variables:
 
+    MUPDF_WRAP_USE_VENV
+        If '0', we do not re-run ourselves in a venv.
 '''
 
 import glob
@@ -942,13 +945,18 @@ import sysconfig
 import tempfile
 import textwrap
 
-sys.path.insert(0, os.path.normpath(f'{__file__}/../..'))
-try:
-    import autovenv
-finally:
-    del sys.path[0]
 
-autovenv.enter(venv_prefix='build/mupdfwrap-autovenv')
+MUPDF_WRAP_USE_VENV = os.environ.get('MUPDF_WRAP_USE_VENV')
+if MUPDF_WRAP_USE_VENV == '0':
+    # Don't use a venv.
+    pass
+else:
+    sys.path.insert(0, os.path.normpath(f'{__file__}/../..'))
+    try:
+        import autovenv
+    finally:
+        del sys.path[0]
+    autovenv.enter(venv_prefix='build/mupdfwrap-autovenv')
 
 # Install/import pipcl. We don't pass 'pipcl' to above call to autovenv.enter()
 # because this would do `pip install pipcl`, which seems to fail if we are
