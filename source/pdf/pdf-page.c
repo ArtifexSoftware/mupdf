@@ -2027,5 +2027,6 @@ pdf_keep_page(fz_context *ctx, pdf_page *page)
 void
 pdf_drop_page(fz_context *ctx, pdf_page *page)
 {
-	fz_drop_page(ctx, &page->super);
+	if (page)
+		fz_drop_page(ctx, &page->super);
 }
