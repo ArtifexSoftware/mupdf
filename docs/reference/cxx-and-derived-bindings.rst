@@ -10,22 +10,6 @@
 C++, Python, and C#
 ===============================================================
 
-..
-    We define crude substitutions that implement simple expand/contract blocks
-    in html. Unfortunately it doesn't seem possible to pass parameters to
-    substitutions so we can't specify text to be shown next to html's details
-    triangle.
-
-.. |expand_begin| raw:: html
-
-    <details>
-    <summary><strong>Show/hide</strong></summary>
-
-.. |expand_end| raw:: html
-
-    </details>
-
-
 Overview
 ---------------------------------------------------------------
 
@@ -188,8 +172,6 @@ Extensions beyond the basic C API
 * Some generated classes have extra ``begin()`` and ``end()`` methods to allow
   standard C++ iteration:
 
-  |expand_begin|
-
   .. code-block:: c++
 
       #include "mupdf/classes.h"
@@ -222,8 +204,6 @@ Extensions beyond the basic C API
               }
           }
       }
-
-  |expand_end|
 
 * There are various custom class methods and constructors.
 
@@ -415,7 +395,6 @@ More detailed usage of the Python API can be found in:
 
 **Example Python code that shows all available information about a document's Stext blocks, lines and characters**:
 
-|expand_begin|
 ::
 
     #!/usr/bin/env python3
@@ -460,8 +439,6 @@ More detailed usage of the Python API can be found in:
 
     document = mupdf.FzDocument('foo.pdf')
     show_stext(document)
-
-|expand_end|
 
 Basic PDF viewers written in Python and C#
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -929,8 +906,6 @@ All generated files are within the MuPDF checkout.
 * C++ headers for the MuPDF C++ API are in ``platform/c++/include/``.
 
 * Files required at runtime are in ``build/shared-release/``.
-
-**Details**
 
 .. code-block:: text
 
@@ -1579,10 +1554,6 @@ Example
 
 Here is an example PDF filter written in Python that removes alternating items:
 
-**Details**
-
-|expand_begin|
-
 .. code-block::
 
     import mupdf
@@ -1613,14 +1584,3 @@ Here is an example PDF filter written in Python that removes alternating items:
             document.pdf_end_operation()
 
         document.pdf_save_document('foo.pdf', mupdf.PdfWriteOptions())
-
-|expand_end|
-
-
-
-
-
-
-
-
-.. External links
