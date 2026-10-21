@@ -531,7 +531,10 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		pdf_obj *trailer = pdf_trailer(ctx, doc);
 		nval = renumberobj(ctx, doc, opts, trailer);
 		if (nval != trailer)
+		{
 			pdf_set_trailer(ctx, doc, nval);
+			pdf_drop_obj(ctx, nval);
+		}
 		nval = NULL;
 		for (num = 0; num < xref_len; num++)
 		{
@@ -552,13 +555,17 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 				else
 					nval = pdf_new_indirect(ctx, doc, opts->renumber_map[o], 0);
 				pdf_update_object(ctx, doc, num, nval);
+				pdf_drop_obj(ctx, nval);
 				nval = NULL;
 			}
 			else
 			{
 				nval = renumberobj(ctx, doc, opts, obj);
 				if (nval != obj)
+				{
 					pdf_update_object(ctx, doc, num, nval);
+					pdf_drop_obj(ctx, nval);
+				}
 				nval = NULL;
 			}
 		}
