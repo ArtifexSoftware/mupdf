@@ -956,7 +956,10 @@ else:
         import autovenv
     finally:
         del sys.path[0]
-    autovenv.enter(venv_prefix='build/mupdfwrap-autovenv')
+    autovenv.enter(
+            venv_prefix='build/mupdfwrap-autovenv',
+            packages='libclang',
+            )
 
 # Install/import pipcl. We don't pass 'pipcl' to above call to autovenv.enter()
 # because this would do `pip install pipcl`, which seems to fail if we are
