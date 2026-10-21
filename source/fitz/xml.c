@@ -1206,7 +1206,10 @@ static void xml_from_gumbo(fz_context *ctx, struct parser *parser, GumboNode *no
 	case GUMBO_NODE_DOCUMENT:
 	case GUMBO_NODE_COMMENT:
 	case GUMBO_NODE_TEMPLATE:
-	case GUMBO_NODE_PROCESSING_INSTRUCTION:
+	/* use default to cater for the recent addition of
+	 * GUMBO_NODE_PROCESSING_INSTRUCTION in new versions.
+	 * This allows both old and new versions to build safely. */
+	default:
 		break;
 	}
 }
