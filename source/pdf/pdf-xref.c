@@ -2461,7 +2461,10 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 	int curr_pos;
 	int64_t start, offset;
 
-	while (doc->hint_obj_offsets[expected] == 0 && expected > 0)
+	if (num <= 0 || num >= doc->hint_obj_offsets_max)
+		return 0;
+
+	while (expected > 0 && doc->hint_obj_offsets[expected] == 0)
 		expected--;
 	if (expected != num)
 		DEBUGMESS((ctx, "object %d is unhinted, will search forward from %d", expected, num));
@@ -2482,15 +2485,27 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 		{
 			start = offset;
 			DEBUGMESS((ctx, "Searching for object %d @ %ld", expected, offset));
+			if (expected >= doc->hint_obj_offsets_max)
+			{
+				expected = 0; /* Out of bounds. Give up. */
+				break;
+			}
+			found = -1;
 			pdf_obj_read(ctx, doc, &offset, &found, 0);
 			DEBUGMESS((ctx, "Found object %d - next will be @ %ld", found, offset));
+			if (found <= 0 || found >= doc->hint_obj_offsets_max)
+			{
+				expected = 0;
+				break; /* Out of range. Give up. */
+			}
 			if (found <= expected)
 			{
 				/* We found the right one (or one earlier than
 				 * we expected). Update the hints. */
 				doc->hint_obj_offsets[expected] = offset;
 				doc->hint_obj_offsets[found] = start;
-				doc->hint_obj_offsets[found+1] = offset;
+				if (found + 1 < doc->hint_obj_offsets_max)
+					doc->hint_obj_offsets[found+1] = offset;
 				/* Retry with the next one */
 				expected = found+1;
 			}
@@ -2499,8 +2514,9 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 				/* We found one later than we expected. */
 				doc->hint_obj_offsets[expected] = 0;
 				doc->hint_obj_offsets[found] = start;
-				doc->hint_obj_offsets[found+1] = offset;
-				while (doc->hint_obj_offsets[expected] == 0 && expected > 0)
+				if (found + 1 < doc->hint_obj_offsets_max)
+					doc->hint_obj_offsets[found+1] = offset;
+				while (expected > 0 && doc->hint_obj_offsets[expected] == 0)
 					expected--;
 				if (expected == 0)	/* No hints found, we give up */
 					break;
