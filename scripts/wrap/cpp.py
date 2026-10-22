@@ -6036,7 +6036,12 @@ def cpp_source(
             jlib.log('global: {name=}')
         generated.c_globals.append(name)
         windows_def += f'    {name} DATA\n'
-    for fnname, cursor in state.state_.find_functions_starting_with( tu, ('fz_', 'pdf_', 'FT_'), method=False):
+    for fnname, cursor in state.state_.find_functions_starting_with(
+            tu,
+            ('fz_', 'pdf_', 'FT_'),
+            method=False,
+            include_omits=True,
+            ):
         if cursor.storage_class == state.clang.cindex.StorageClass.STATIC:
             # These fns do not work in windows.def, probably because they are
             # usually inline?

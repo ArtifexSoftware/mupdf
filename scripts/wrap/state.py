@@ -86,6 +86,18 @@ class State:
         # Maps from <tu> to dict of fnname: cursor.
         self.functions_cache = dict()
 
+        # Maps from <tu> to dict of fnname: cursor for all functions that
+        # we omit from the c++ bindings, e.g. fz_argv_from_wargv().
+        self.functions_omit_cache = dict()
+
+        # Maps from <tu> to dict of fnname: cursor for all functions that
+        # we omit because of their prefix.
+        self.functions_omit_prefix_cache = dict()
+
+        # Maps from <tu> to dict of fnname: cursor for all functions that
+        # we omit from the c++ bindings because of their prefix.
+        self.s = dict()
+
         # Maps from <tu> to dict of dataname: cursor.
         self.global_data = dict()
 
@@ -101,6 +113,8 @@ class State:
         if tu in self.functions_cache:
             return
         fns = dict()
+        fns_omit = dict()
+        fns_omit_prefix = dict()
         global_data = dict()
         enums = dict()
         structs = dict()
@@ -127,10 +141,12 @@ class State:
                     jlib.log( 'Looking at {fnname=}')
                 if fnname in omit_fns:
                     jlib.log1('{fnname=} is in omit_fns')
+                    fns_omit[fnname] = cursor
                 else:
                     for omit_fn_prefix in omit_fns_prefixes:
                         if fnname.startswith(omit_fn_prefix):
                             jlib.log1('{fnname=} matches {omit_fn_prefix=}.')
+                            fns_omit_prefix[fnname] = cursor
                             break
                     else:
                         fns[ fnname] = cursor
@@ -140,22 +156,31 @@ class State:
                 global_data[ cursor.spelling] = cursor
 
         self.functions_cache[ tu] = fns
+        self.functions_omit_cache[ tu] = fns_omit
+        self.functions_omit_prefix_cache[ tu] = fns_omit_prefix
         self.global_data[ tu] = global_data
         self.enums[ tu] = enums
         self.structs[ tu] = structs
         jlib.log1('Have populated fns and global_data. {len(enums)=} {len(self.structs)} {len(fns)=}')
 
-    def find_functions_starting_with( self, tu, name_prefix, method):
+    def find_functions_starting_with( self, tu, name_prefix, method, include_omits=False):
         '''
         Yields (name, cursor) for all functions in <tu> whose names start with
         <name_prefix>.
 
         method:
             If true, we omit names that are in omit_methods
+        include_omits:
+            If true we include names that are in omit_fns, e.g. fz_argv_from_wargv.
         '''
         self.functions_cache_populate( tu)
-        fn_to_cursor = self.functions_cache[ tu]
-        for fnname, cursor in fn_to_cursor.items():
+        def getfns():
+            for i in self.functions_cache[ tu].items():
+                yield i
+            if include_omits:
+                for i in self.functions_omit_cache[ tu].items():
+                    yield i
+        for fnname, cursor in getfns():
             verbose = state_.show_details( fnname)
             if method and fnname in omit_methods:
                 if verbose:
