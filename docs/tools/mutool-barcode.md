@@ -1,48 +1,64 @@
+% MUTOOL-BARCODE(1) | MuPDF tool manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
 # mutool barcode
 
-The barcode command is used to either decode a barcode from an image
-or document, or to create a new barcode image.
+## NAME
+mutool-barcode - decode barcodes in documents and encode barcode images
 
-> This command may not be available!
+## SYNOPSIS
+
+> **mutool barcode -d** [*options*] *file1.pdf* [*pages1*] [*file2.pdf* [*pages2*] *...*]
 >
-> It is only present if MuPDF was compiled with the ZXing barcode
-> library.
+> **mutool barcode -c** [*options*] *text*
+
+## DESCRIPTION
+
+The barcode command either decodes a barcode from an image or document, or
+creates a new barcode image.
+
+> This command may not be available! It is only present if MuPDF was compiled with the ZXing barcode library.
 
 ## Decoding barcodes
 
-	mutool barcode -d [options] file1.pdf [pages1] [file2.pdf [pages2] ...]
+> **mutool barcode -d** [*options*] *file1.pdf* [*pages1*] [*file2.pdf* [*pages2*] *...*]
+
+## OPTIONS
 
 The options are:
 
--p password
+**-p** *password*
 : Use the specified password if the file is encrypted.
 
--o output
+**-o** *output*
 : The output file name (e.g. "output.txt"). If this option is not present,
 any text from decoded barcodes will be printed to standard out.
 
--r rotation
+**-r** *rotation*
 : How much to rotate the input pages in degrees (0-360), before trying to
 decode any barcodes.
 
-file1 and file2, etc.
+*file1* and *file2*, etc.
 : Input file name. The input can be any of the supported document formats.
 
-pages1 and pages2, etc.
+*pages1* and *pages2*, etc.
 : Comma-separated list of page ranges. The first page is "1", and the last
 page is "N". The default is "1-N".
 
 ## Encoding barcodes
 
-	mutool barcode -c [options] text
+> **mutool barcode -c** [*options*] *text*
+
+## OPTIONS
 
 The options are:
 
--o output
+**-o** *output*
 : The output file name. PNG or PDF format is chosen depending on the file
 extension. If none is given, the default is out.png.
 
--F format
+**-F** *format*
 : The desired output barcode format:
 
 	- aztec
@@ -66,20 +82,20 @@ extension. If none is given, the default is out.png.
 	- dxfilmedge
 	- databarlimited
 
--s size
+**-s** *size*
 : Set size in pixels for the output barcode. If not specified, the
 smallest size that can be decoded is chosen.
 
--q
+*-q*
 : Add quiet zones around the barcode. This puts an empty margin around
 created barcodes.
 
--t
+*-t*
 : Add human-readable text, when available. Some barcodes, e.g. EAN-13, may
 have the barcode contents printed in human-readable text next to the
 barcode, which is enabled by this flag.
 
--e level
+**-e** *level*
 : Set error correction level (0-8). Some barcodes, e.g. QR-codes, support
 several levels of error correction, which can be customized through this
 option.

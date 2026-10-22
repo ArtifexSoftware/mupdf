@@ -1,6 +1,5 @@
 # Using with Java
 
-
 There is also a Java library, which uses JNI to provide access to the C
 library. The Java classes provide an interface very similar to that available
 to Javascript. This Java library also powers the Android versions of MuPDF.

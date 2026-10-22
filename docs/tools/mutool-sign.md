@@ -1,4 +1,17 @@
-# mutool sign
+% MUTOOL-SIGN(1) | MuPDF tool manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
+# mtuool sign
+
+## NAME
+mutool-sign - show and sign signature annotations in a PDF file
+
+## SYNOPSIS
+
+> **mutool sign** [*options*] *input.pdf* [*signature object number* *...*]
+
+## DESCRIPTION
 
 The sign command reads an input PDF file and by default prints
 information about each signature field object. The command applies to
@@ -6,35 +19,36 @@ the signature field objects given, or every signature field if none are
 specified. Given suitable option signature fields can be verified,
 cleared or signed using a given certificate and certificate password.
 
-	mutool sign [options] input.pdf [signature object numbers]
+## OPTIONS
 
 The options are:
 
--p password
+**-p** *password*
 : Use the specified password if the file is encrypted.
 
--v
+**-v**
 : Verify each signature field and check whether the document has changed
 since signing.
 
--c
+**-c**
 : Revert each signed signature field back to its unsigned state.
 
--s certificate file
+**-s** *certificate file*
 : Sign each signature field with the certificate in the given file.
 
--P certificate password
+**-P** *certificate password*
 : The password used together with the certificate to sign a signature
 field.
 
--o filename
+**-o** *filename*
 : Output PDF file name.
 
-input.pdf
+*input.pdf*
 : The input PDF document.
 
-signature object numbers
-: Can be used to specify a particular set of signature field objects to apply the sign command to.
+*signature object number*
+: Specifies a single or a set of signature field objects to process. If
+not specified, all the signature field objects in the document are processed.
 
 ## Signing
 

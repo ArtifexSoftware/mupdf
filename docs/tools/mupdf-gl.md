@@ -1,43 +1,55 @@
+% MUPDF-GL(1) | MuPDF manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
 # mupdf-gl
+
+## NAME
+mupdf-gl - MuPDF document viewer using Open-GL
+
+## SYNOPSIS
+
+> **mupdf-gl** [*options*] *document* [*page*]
+
+## DESCRIPTION
 
 The mupdf-gl viewer can show PDF, XPS, CBZ, EPUB, & FB2 documents as
 well as typical image formats including SVG.
 
-## Command Line Options
-
-	mupdf-gl [options] document [page]
+## OPTIONS
 
 The options are:
 
--p password
+**-p** *password*
 : The password needed to open a password protected PDF file.
 
--c profile.icc
+**-c** *profile.icc*
 : Load an ICC profile to use for display (default is sRGB).
 
--r resolution
+**-r** *resolution*
 : Set the initial zoom level, specified as DPI. The default value is 72.
 
--W width
+**-W** *width*
 : Set the page width in points for EPUB layout.
 
--H height
+**-H** *height*
 : Set the page height in points for EPUB layout.
 
--S size
+**-S** *size*
 : Set the default font size in points for EPUB layout.
 
--U stylesheet
+**-U** *stylesheet*
 : Specify a CSS file containing user styles to load for EPUB layout.
 
--X
+**-X**
 : Ignore publisher styles for EPUB layout.
 
--J
+**-J**
 : Disable Javascript in PDF forms.
 
--A level
+**-A** *level*
 : Set anti-aliasing level or pixel rendering rule.
+
 	- 0: off.
 	- 2: 4 levels.
 	- 4: 16 levels.
@@ -45,19 +57,19 @@ The options are:
 	- 9: using centre of pixel rule.
 	- 10: using any part of a pixel rule.
 
--I
+**-I**
 : Start in inverted color mode.
 
--B hex-color
+**-B** *hex-color*
 : Set black tint color (default `303030`).
 
--C hex-color
+**-C** *hex-color*
 : Set white tint color (default `FFFFF0`).
 
--Y factor
+**-Y** *factor*
 : Set UI scaling factor (default calculated from screen DPI).
 
-page
+*page*
 : The initial page number to show.
 
 ## Examples

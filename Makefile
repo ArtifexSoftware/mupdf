@@ -452,24 +452,16 @@ $(OUT)/storytest: docs/examples/storytest.c $(MUPDF_LIB) $(THIRD_LIB)
 $(OUT)/searchtest: docs/examples/searchtest.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS) $(THIRD_LIBS)
 
-# --- Format man pages ---
+# --- DOCUMENTATION ---
 
-%.txt: %.1
-	nroff -man $< | col -b | expand > $@
-
-MAN_FILES := $(sort $(wildcard docs/man/*.1))
-TXT_FILES := $(MAN_FILES:%.1=%.txt)
-
-catman: $(TXT_FILES)
-
-# --- Auto-generate C reference docs from header files ---
+# Auto-generated C reference docs from header files to Markdown and HTML.
+# Convert mutool man pages from Markdown format to HTML.
+# Convert Robin's "MuPDF Explored" book to HTML.
+# Convert Sphinx documentation to simpler HTML via Markdown and pandoc.
 
 DOCS_OUT := build/docs
 
-$(DOCS_OUT)/c/index.md: $(DOCS_H) scripts/docs/index.js
-	$(QUIET_GEN) $(MKTGTDIR) ; ctags -I fz_list -x --sort=yes --c-kinds=dfgpstux $(DOCS_H) | node scripts/docs/index.js $(SPHINX) > $@
-$(DOCS_OUT)/c/%.md: include/mupdf/%.h scripts/docs/header.js
-	$(QUIET_GEN) $(MKTGTDIR) ; ctags -I fz_list -x --sort=no --c-kinds=dfgpstux $< | node scripts/docs/header.js > $@
+# Use pandoc to convert Markdown to HTML:
 
 $(DOCS_OUT)/%.html: $(DOCS_OUT)/%.md scripts/docs/pandoc-template.html scripts/docs/pandoc-filter.lua
 	$(QUIET_GEN) $(MKTGTDIR) ; pandoc --tab-stop=8 --from=markdown+gfm_auto_identifiers --template=scripts/docs/pandoc-template.html --lua-filter=scripts/docs/pandoc-filter.lua -V mupdf_version="$(shell sh scripts/show-version.sh)" -V mupdf_path=$(patsubst $(DOCS_OUT)/%,%,$@) -o $@ $<
@@ -477,6 +469,8 @@ $(DOCS_OUT)/%.html: docs/%.md scripts/docs/pandoc-template.html scripts/docs/pan
 	$(QUIET_GEN) $(MKTGTDIR) ; pandoc --tab-stop=8 --from=markdown+gfm_auto_identifiers --template=scripts/docs/pandoc-template.html --lua-filter=scripts/docs/pandoc-filter.lua -V mupdf_version="$(shell sh scripts/show-version.sh)" -V mupdf_path=$(patsubst $(DOCS_OUT)/%,%,$@) -o $@ $<
 $(DOCS_OUT)/%.html: docs/%.adoc scripts/docs/pandoc-template.html scripts/docs/pandoc-filter.lua
 	$(QUIET_GEN) $(MKTGTDIR) ; pandoc --toc --tab-stop=8 --from=asciidoc --template=scripts/docs/pandoc-template.html --lua-filter=scripts/docs/pandoc-filter.lua -V mupdf_version="$(shell sh scripts/show-version.sh)" -V mupdf_path=$(patsubst $(DOCS_OUT)/%,%,$@) -o $@ $<
+
+# Copy images from docs to target directory:
 
 $(DOCS_OUT)/%.svg: docs/%.svg
 	$(QUIET_GEN) $(MKTGTDIR) ; cp -f $< $@
@@ -487,7 +481,12 @@ $(DOCS_OUT)/%.jpg: docs/%.jpg
 $(DOCS_OUT)/%.webp: docs/%.webp
 	$(QUIET_GEN) $(MKTGTDIR) ; cp -f $< $@
 
-# generated header file docs
+# Generate header file docs from headers:
+
+$(DOCS_OUT)/c/index.md: $(DOCS_H) scripts/docs/index.js
+	$(QUIET_GEN) $(MKTGTDIR) ; ctags -I fz_list -x --sort=yes --c-kinds=dfgpstux $(DOCS_H) | node scripts/docs/index.js $(SPHINX) > $@
+$(DOCS_OUT)/c/%.md: include/mupdf/%.h scripts/docs/header.js
+	$(QUIET_GEN) $(MKTGTDIR) ; ctags -I fz_list -x --sort=no --c-kinds=dfgpstux $< | node scripts/docs/header.js > $@
 
 DOCS_MD += $(DOCS_OUT)/c/index.md
 
@@ -519,14 +518,42 @@ DOCS_SPHINX_DST := $(patsubst %.rst,%.md,$(DOCS_SPHINX_DST))
 $(DOCS_SPHINX_DST) &: $(DOCS_SPHINX_SRC)
 	bash scripts/sphinx/build-markdown.sh
 
-oop-dst: $(DOCS_SPHINX_DST)
-
 DOCS_HTML += $(patsubst %.md,%.html,$(DOCS_SPHINX_DST))
 
 docs: $(DOCS_MD) $(DOCS_HTML)
 
 docs-clean: sphinx-clean
 	rm -rf build/docs
+
+# --- MAN PAGES ---
+
+build/man/%.1: docs/tools/%.md scripts/docs/options.man
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --standalone=true --from=markdown --to=man --shift-heading-level-by=-1 -o $@
+
+DOCS_MAN += $(patsubst docs/tools/%.md,build/man/%.1,$(shell find docs/tools -type f -name '*.md'))
+
+build/man/mutool-stext-options.1: docs/reference/common/stext-options.md
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --template=scripts/docs/options.man --from=markdown --to=man -o $@
+build/man/mutool-docwriter-options.1: docs/reference/common/document-writer-options.md
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --template=scripts/docs/options.man --from=markdown --to=man -o $@
+build/man/mutool-pdfwrite-options.1: docs/reference/common/pdf-write-options.md
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --template=scripts/docs/options.man --from=markdown --to=man -o $@
+build/man/mutool-search-options.1: docs/reference/common/search-options.md
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --template=scripts/docs/options.man --from=markdown --to=man -o $@
+build/man/mutool-tablehunt-options.1: docs/reference/common/table-hunt-options.md
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --template=scripts/docs/options.man --from=markdown --to=man -o $@
+build/man/mutool-option-strings.1: docs/reference/common/option-strings.md
+	$(QUIET_GEN) $(MKTGTDIR) ; sed -e '/^# /d' $< | pandoc --template=scripts/docs/options.man --from=markdown --to=man -o $@
+
+DOCS_MAN += build/man/mutool-stext-options.1
+DOCS_MAN += build/man/mutool-pdfwrite-options.1
+DOCS_MAN += build/man/mutool-docwriter-options.1
+DOCS_MAN += build/man/mutool-search-options.1
+DOCS_MAN += build/man/mutool-stext-options.1
+DOCS_MAN += build/man/mutool-tablehunt-options.1
+DOCS_MAN += build/man/mutool-option-strings.1
+
+man: $(DOCS_MAN)
 
 # --- Install ---
 

@@ -1,0 +1,28 @@
+$if(has-tables)$
+'\" t
+$endif$
+$if(adjusting)$
+.ad $adjusting$
+$endif$
+.TH "$title/nowrap$" "$section/nowrap$" "$date/nowrap$" "$footer/nowrap$"$if(header)$ "$header/nowrap$"$endif$
+$for(header-includes)$
+$header-includes$
+$endfor$
+$for(include-before)$
+$include-before$
+$endfor$
+.SH NAME
+$name$
+.SH DESCRIPTION
+$body$
+$for(include-after)$
+$include-after$
+$endfor$
+$if(seealso)$
+.SH SEE ALSO
+$for(seealso)$$seealso$$sep$, $endfor$
+$endif$
+$if(author)$
+.SH AUTHORS
+$for(author)$$author$$sep$; $endfor$.
+$endif$

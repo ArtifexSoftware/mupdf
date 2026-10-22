@@ -1,20 +1,40 @@
+% MUTOOL-CLEAN(1) | MuPDF tool manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
 # mutool run
+
+## NAME
+mutool-run - run programs accessing the MuPDF Javascript API
+
+## SYNOPSIS
+
+> **mutool run** *script.js* [ *arguments* *...* ]
+
+## DESCRIPTION
 
 The run command executes a Javascript program, which has access to
 most of the features of the MuPDF library. The command supports
 ECMAScript 5 syntax in strict mode.
 
-	mutool run script.js [ arguments ... ]
+See https://mupdf.readthedocs.io for details about the Javascript
+interface.
 
-script.js
+## OPTIONS
+
+*script.js*
 : The Javascript file which you would like to run.
 
-arguments ...
+*arguments* *...*
 : Any extra arguments you want to pass to the script. These are available
 in the global `scriptArgs` array.
 
 If mutool run is invoked without any arguments, it will drop you into an interactive
 REPL (read-eval-print-loop). To exit call the `quit()` function or press `Ctrl-D`.
+
+To get convenient REPL line editing, try running:
+
+	rlwrap mutool run
 
 ## Environment
 

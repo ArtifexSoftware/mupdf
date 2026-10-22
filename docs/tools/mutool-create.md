@@ -1,20 +1,34 @@
+% MUTOOL-CREATE(1) | MuPDF tool manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
 # mutool create
+
+## NAME
+mutool-create - create new PDF files from a description
+
+## SYNOPSIS
+
+> **mutool create** [**-o** *output.pdf*] [**-O** *options*] *page.txt* [*page2.txt ...*]
+
+## DESCRIPTION
 
 The create command creates a new PDF file with the contents created
 from one or more input files containing graphics commands.
 
-	mutool create [-o output.pdf] [-O options] page.txt [page2.txt ...]
+## OPTIONS
 
 The options are:
 
--o output.pdf
+**-o** *output.pdf*
 : The output filename. Defaults to "out.pdf" if not supplied.
 
--O options
-: See [PDF write options](/reference/common/pdf-write-options).
+**-O** *options*
+: Comma-separated list for format-specific output options,
+see [PDF write options](/reference/common/pdf-write-options).
 
-page.txt
-: File containing the contents of a page.
+*page.txt* *page2.txt*
+: Files containing the contents of each page.
 
 ## Content Streams
 
@@ -31,18 +45,18 @@ dimensions and to create font and image resources.
 : Set the page rotation (default 90 degrees).
 
 `%%Font Name Filename Encoding`
-: Create a simple font resource.
+: Create a simple font resource by the given Name.
 : Filename can be either a font file or one of the Base-14 font names (Times-Roman, etc).
 : Encoding is one of Latin (for ISO-8859-1), Greek (for ISO-8859-7) or Cyrillic (for KOI-8).
 
 `%%CJKFont Name Language WMode Style Language`
-: Create a CID font resource for CJK scripts.
-: Language is one of zh-Hant, zh-Hans, ja, ko.
+: Create a CID font resource for CJK scripts by the given Name.
+: Language is one of zh-Hant, zh-Hans, ja, or ko.
 : Wmode is one of H or V.
-: Style is serif or sans.
+: Style is serif, or sans.
 
 `%%Image Name Filename`
-- Create an image resource.
+: Create an image resource.
 
 ### Example \#1
 
@@ -97,13 +111,13 @@ An example input file, which adds an image, a triangle and some text:
 %%CJKFont Mincho ja
 %%CJKFont Batang ko
 %%Image I0 docs/examples/huntingofthesnark.png
-
+%
 % Draw an image.
 q
 480 0 0 480 50 250 cm
 /I0 Do
 Q
-
+%
 % Draw a triangle.
 q
 1 0 0 rg
@@ -112,7 +126,7 @@ q
 200 50 l
 f
 Q
-
+%
 % Show some text.
 q
 0 0 1 rg
@@ -124,3 +138,6 @@ BT /Mincho 24 Tf 50 640 Td <3053 3093 306b 3061 306f> Tj ET
 BT /Batang 24 Tf 50 610 Td <c548 b155 d558 c138 c694> Tj ET
 Q
 ```
+
+## SEE ALSO
+[**mutool-pdfwrite-options**(1)](../reference/common/pdf-write-options.md)

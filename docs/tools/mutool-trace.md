@@ -1,42 +1,56 @@
+% MUTOOL-TRACE(1) | MuPDF tool manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
 # mutool trace
 
-The trace command prints a trace of all the device calls used to
-render a page.
+## NAME
+mutool-trace - trace device calls made when rendering a document
 
-	mutool trace [options] file [pages]
+## SYNOPSIS
+
+> **mutool trace** [*options*] *file* [*pages*]
+
+## DESCRIPTION
+
+The trace command prints a trace of all the device calls needed to
+render the pages from the given document.
+
+## OPTIONS
 
 The options are:
 
--p password
+**-p** *password*
 : Use the specified password if the file is encrypted.
 
--b box
-: Use named page box (MediaBox, CropBox, BleedBox, TrimBox, or ArtBox).
+**-b** *box*
+: Use named page box (**MediaBox**, **CropBox**, **BleedBox**, **TrimBox**, or **ArtBox**).
 
--W width
+**-W** *width*
 : Page width in points for EPUB layout.
 
--H height
+**-H** *height*
 : Page height in points for EPUB layout.
 
--S size
+**-S** *size*
 : Font size in points for EPUB layout.
 
--U filename
+**-U** *filename*
 : User CSS stylesheet for EPUB layout.
 
--X
+**-X**
 : Disable document styles for EPUB layout.
 
--d
+**-d**
 : Use display list.
 
-file
+*file*
 : Input file name. The file can be any of the supported input formats.
 
-pages
-: Comma-separated list of page ranges. The first page is "1", and the last
-page is "N". The default is "1-N".
+*pages*
+: Comma-separated list of page numbers and ranges (for example:
+1,5,10-15,20-N), where the character N denotes the last page. If no
+pages are specified, then all pages will be included.
 
 The trace takes the form of an XML document, with the root element being
 the document, its children each page, and one page child element for

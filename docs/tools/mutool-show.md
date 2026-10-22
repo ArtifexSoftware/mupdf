@@ -1,69 +1,85 @@
+% MUTOOL-SHOW(1) | MuPDF tool manual
+% MuPDF is Copyright 2004-2026 Artifex Software
+% June 3, 2026
+
 # mutool show
 
-The show command will print the specified objects and streams to
+## NAME
+mutool-show - pretty-print PDF objects from a PDF file
+
+## SYNOPSIS
+
+> **mutool show** [*options*] *input.pdf* *...*
+
+## DESCRIPTION
+
+The show command will print the specified PDF objects and streams to
 stdout. Streams are decoded and non-printable characters are
 represented with a period by default.
 
-	mutool show [options] input.pdf ...
+## OPTIONS
 
 The options are:
 
--p password
+**-p** *password*
 : Use the specified password if the file is encrypted.
 
--o output
+**-o** *output*
 : The output file name instead of using stdout. Should be a plain text file format.
 
--e
+**-e**
 : Leave stream contents in their original form.
 
--b
+**-b**
 : Print only stream contents, as raw binary data.
 
--g
-: Print only object, one line per object, suitable for grep.
+**-g**
+: Print only object (ignoring any stream contents), one line per object, suitable for grep.
 
--r
+**-r**
 : Force repair before showing any objects.
 
--L
-: Show object labels (how to reach an object from the root)
+**-L**
+: Show object labels (how to reach an object from the root object)
 
-input.pdf
+**--external-access**
+: Allow access to current directory containing file for external resources.
+
+*input.pdf*
 : Input file name. Must be a PDF file.
 
 Specify what to show by using one of the following keywords, or a path to an object:
 
-`trailer`
+**trailer**
 : Print the trailer dictionary.
 
-`xref`
+**xref**
 : Print the cross reference table.
 
-`pages`
+**pages**
 : List the object numbers for every page.
 
-`grep`
+**grep**
 : Print all the objects in the file in a compact one-line format suitable
 for piping to grep.
 
-`outline`
+**outline**
 : Print the outline (also known as "table of contents" or "bookmarks").
 
-`js`
+**js**
 : Print document level Javascript.
 
-`form`
+**form**
 : Print form objects.
 
 a path
 : A path starts with either an object number, a property in the trailer
-dictionary, or the keyword "trailer" or "pages". Separate elements with
-a period '.' or slash '/'. Select a page object by using pages/N where N
+dictionary, or the keyword **trailer** or **pages**. Separate elements with
+a period **.** or slash **/**. Select a page object by using pages/N where N
 is the page number. The first page is number 1.
 
-`*`
-: You can use `*` as a wildcard to iterate over all array indices or
+**\***
+: You can use **\*** as a wildcard to iterate over all array indices or
 dictionary properties in an object.
 
 ## Examples

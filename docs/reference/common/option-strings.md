@@ -1,3 +1,18 @@
+---
+title: MUTOOL-OPTIONS(1)
+header: MuPDF tool manual
+author: MuPDF is Copyright 2004-2026 Artifex Software
+date: June 3, 2026
+name: mupdf option strings
+seealso:
+- "**mutool-docwriter-options**(1)"
+- "**mutool-option-strings**(1)"
+- "**mutool-pdfwrite-options**(1)"
+- "**mutool-search-options**(1)"
+- "**mutool-stext-options**(1)"
+- "**mutool-tablehunt-options**(1)"
+---
+
 # Option Strings
 
 Many functions in MuPDF take a generic set of options to customize behavior in
