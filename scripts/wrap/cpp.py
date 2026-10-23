@@ -6064,6 +6064,8 @@ def cpp_source(
             'FT_Get_Next_Char',
             ):
         windows_def += f'    {fnname}\n'
+    # Implemented in mupdf on windows, but without declaration.
+    windows_def += f'    gettimeofday\n'
 
     if debug:
         # In debug builds these are real fns, not macros, and we need to

@@ -86,17 +86,13 @@ class State:
         # Maps from <tu> to dict of fnname: cursor.
         self.functions_cache = dict()
 
-        # Maps from <tu> to dict of fnname: cursor for all functions that
-        # we omit from the c++ bindings, e.g. fz_argv_from_wargv().
+        # Maps from <tu> to dict of fnname: cursor for all functions that we
+        # explicitly omit from the c++ bindings, e.g. fz_argv_from_wargv().
         self.functions_omit_cache = dict()
 
         # Maps from <tu> to dict of fnname: cursor for all functions that
-        # we omit because of their prefix.
-        self.functions_omit_prefix_cache = dict()
-
-        # Maps from <tu> to dict of fnname: cursor for all functions that
         # we omit from the c++ bindings because of their prefix.
-        self.s = dict()
+        self.functions_omit_prefix_cache = dict()
 
         # Maps from <tu> to dict of dataname: cursor.
         self.global_data = dict()
