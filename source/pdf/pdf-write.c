@@ -1051,7 +1051,9 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 			pdf_encrypt_data(ctx, opts->crypt, num, gen, write_data, opts->out, data, len);
 		}
 
-		fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
+		fz_write_string(ctx, opts->out, "\nendstream\nendobj\n");
+		if (!opts->do_tight)
+			fz_write_char(ctx, opts->out, '\n');
 	}
 	fz_always(ctx)
 	{
@@ -1149,7 +1151,9 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			pdf_encrypt_data(ctx, opts->crypt, num, gen, write_data, opts->out, data, len);
 		}
 
-		fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
+		fz_write_string(ctx, opts->out, "\nendstream\nendobj\n");
+		if (!opts->do_tight)
+			fz_write_char(ctx, opts->out, '\n');
 	}
 	fz_always(ctx)
 	{
@@ -1350,7 +1354,9 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			{
 				fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 				pdf_print_encrypted_obj(ctx, opts->out, obj, opts->do_tight, opts->do_ascii, unenc ? NULL : opts->crypt, num, gen, NULL);
-				fz_write_string(ctx, opts->out, "\nendobj\n\n");
+				fz_write_string(ctx, opts->out, "\nendobj\n");
+				if (!opts->do_tight)
+					fz_write_char(ctx, opts->out, '\n');
 			}
 		}
 	}
@@ -1708,13 +1714,15 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 	}
 
 	if (opts->reproducible)
-		fz_write_string(ctx, opts->out, "% Written by MuPDF\n\n");
+		fz_write_string(ctx, opts->out, "% Written by MuPDF\n");
 	else
 #ifdef CLUSTER
-		fz_write_string(ctx, opts->out, "% Written by MuPDF CLUSTER\n\n");
+		fz_write_string(ctx, opts->out, "% Written by MuPDF CLUSTER\n");
 #else
-		fz_write_string(ctx, opts->out, "% Written by MuPDF " FZ_VERSION "\n\n");
+		fz_write_string(ctx, opts->out, "% Written by MuPDF " FZ_VERSION "\n");
 #endif
+	if (!opts->do_tight)
+		fz_write_char(ctx, opts->out, '\n');
 
 	for (num = 0; num < xref_len; num++)
 		dowriteobject(ctx, doc, opts, num);
