@@ -402,7 +402,12 @@ names_by_size(const uint8_t **a, const uint8_t **b)
 static int
 filter_name_tables(const uint8_t *ptr, const uint8_t *block, size_t block_len)
 {
-	/* FIXME: For now, we keep everything. */
+	/* Do the same as harfbuzz here. Only keep language=1033, and tables from 0 to 6. */
+	if (get16(ptr+4) != 1033)
+		return 0;
+	if (get16(ptr+6) > 6)
+		return 0;
+
 	return 1;
 }
 
@@ -1219,9 +1224,6 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 
 	/* Initially, we'll use it just as a usage list. 0 = unused, 1 used */
 
-	/* glyph 0 is always used. */
-	glyph_used(ctx, ttf, t, 0);
-
 	if (enc)
 	{
 		uint32_t n = enc->max;
@@ -1234,7 +1236,7 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 		if (ttf->orig_num_glyphs > 0)
 		{
 			ttf->gid_renum[0] = 0;
-			j = 1;
+			j = 0;
 			for (i = 1; i < ttf->orig_num_glyphs; i++)
 				if (ttf->gid_renum[i])
 					ttf->gid_renum[i] = j++;
@@ -1259,34 +1261,29 @@ read_glyf(fz_context *ctx, ttf_t *ttf, fz_stream *stm, int *gids, int num_gids)
 		old_start = get_loca(ctx, ttf, 0);
 		if (old_start > t->len)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
-		old_end = get_loca(ctx, ttf, 1);
-		if (old_end > t->len || old_end < old_start)
-			fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
-		len = old_end - old_start;
 		new_start = 0;
-		put_loca(ctx, ttf, 0, new_start);
 		last_loca = 0;
-		last_loca_ofs = len;
+		last_loca_ofs = 0;
 		for (i = 0; i < ttf->orig_num_glyphs; i++)
 		{
 			old_end = get_loca(ctx, ttf, i + 1);
 			if (old_end > t->len || old_end < old_start)
 				fz_throw(ctx, FZ_ERROR_FORMAT, "Bad loca value");
 			len = old_end - old_start;
-			if (len > 0 && (i == 0 || ttf->gid_renum[i] != 0))
+			if (len > 0 && ttf->gid_renum[i] != 0)
 			{
 				memmove(t->data + new_start, t->data + old_start, len);
 				if ((int16_t)get16(t->data + new_start) < 0)
 					renumber_composite(ctx, ttf, t->data + new_start, len);
-				for (k = last_loca + 1; k <= ttf->gid_renum[i]; k++)
+				for (k = last_loca; k <= ttf->gid_renum[i]; k++)
 					put_loca(ctx, ttf, k, last_loca_ofs);
 				new_start += len;
-				last_loca = ttf->gid_renum[i];
+				last_loca = ttf->gid_renum[i] + 1;
 				last_loca_ofs = new_start;
 			}
 			old_start = old_end;
 		}
-		for (k = last_loca + 1; k <= ttf->new_num_glyphs; k++)
+		for (k = last_loca; k <= ttf->new_num_glyphs; k++)
 			put_loca(ctx, ttf, k, last_loca_ofs);
 	}
 	else
