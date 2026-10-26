@@ -608,7 +608,7 @@ done_SC:
 				gstate->pending.text.fontname != gstate->sent.text.fontname)
 			{
 				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Tf)
+				if (gstate->pending.text.fontname != NULL && p->super.chain->op_Tf)
 					p->super.chain->op_Tf(ctx, p->super.chain, fz_cstring_from_string(gstate->pending.text.fontname), gstate->pending.text.font, gstate->pending.text.size);
 			}
 			if (gstate->pending.text.render != gstate->sent.text.render)
