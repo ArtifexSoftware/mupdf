@@ -1056,7 +1056,7 @@ segment_to_array(fz_context *ctx, pdf_sanitize_processor *p, unsigned char *seg,
 		float ty = scale * (X * -p->tos.tm.b + Y * p->tos.tm.a);
 		if (p->tos.fontdesc->wmode == 0)
 		{
-			adjust = tx * p->gstate->pending.text.scale;
+			adjust = tx / p->gstate->pending.text.scale;
 			assert(fabs(ty) < 0.001);
 		}
 		else
