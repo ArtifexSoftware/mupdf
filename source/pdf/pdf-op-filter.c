@@ -1935,13 +1935,8 @@ pdf_filter_Wstar(fz_context *ctx, pdf_processor *proc)
 /* text objects */
 
 static void
-pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
+do_BT(fz_context *ctx, pdf_sanitize_processor *p)
 {
-	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
-
-	if (fz_is_empty_rect(p->gstate->clip_rect))
-		return;
-
 	p->tos.tm = fz_identity;
 	p->tos.tlm = fz_identity;
 	p->sent_tm = fz_identity;
@@ -1949,6 +1944,17 @@ pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
 	p->BT_pending = 1;
 	p->text_sent = 0;
 	p->text_removed = 0;
+}
+
+static void
+pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+
+	if (fz_is_empty_rect(p->gstate->clip_rect))
+		return;
+
+	do_BT(ctx, p);
 }
 
 static void
@@ -2004,12 +2010,22 @@ pdf_filter_Q(fz_context *ctx, pdf_processor *proc)
 /* text state */
 
 static void
+implicit_bt(fz_context *ctx, pdf_sanitize_processor *p)
+{
+	if (!p->in_BT && !p->BT_pending)
+		do_BT(ctx, p);
+}
+
+
+static void
 pdf_filter_Tc(fz_context *ctx, pdf_processor *proc, float charspace)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.char_space = charspace;
@@ -2022,6 +2038,8 @@ pdf_filter_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.word_space = wordspace;
@@ -2037,6 +2055,8 @@ pdf_filter_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
+	implicit_bt(ctx, p);
+
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.scale = scale / 100;
 }
@@ -2048,6 +2068,8 @@ pdf_filter_TL(fz_context *ctx, pdf_processor *proc, float leading)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->leading = leading;
@@ -2061,6 +2083,8 @@ pdf_filter_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_d
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	fz_drop_string(ctx, p->gstate->pending.text.fontname);
@@ -2079,6 +2103,8 @@ pdf_filter_Tr(fz_context *ctx, pdf_processor *proc, int render)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
+	implicit_bt(ctx, p);
+
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.render = render;
 }
@@ -2090,6 +2116,8 @@ pdf_filter_Ts(fz_context *ctx, pdf_processor *proc, float rise)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.rise = rise;
@@ -2105,6 +2133,8 @@ pdf_filter_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
+	implicit_bt(ctx, p);
+
 	pdf_tos_translate(&p->tos, tx, ty);
 }
 
@@ -2115,6 +2145,8 @@ pdf_filter_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	p->gstate->leading = -ty;
 	pdf_filter_Td(ctx, proc, tx, ty);
@@ -2128,6 +2160,8 @@ pdf_filter_Tm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, f
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
+	implicit_bt(ctx, p);
+
 	filter_flush(ctx, p, FLUSH_OP);
 	pdf_tos_set_matrix(&p->tos, a, b, c, d, e, f);
 }
@@ -2139,6 +2173,8 @@ pdf_filter_Tstar(fz_context *ctx, pdf_processor *proc)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	pdf_tos_newline(&p->tos, p->gstate->leading);
@@ -2154,6 +2190,8 @@ pdf_filter_TJ(fz_context *ctx, pdf_processor *proc, pdf_obj *array)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
+	implicit_bt(ctx, p);
+
 	filter_show_text(ctx, p, array);
 }
 
@@ -2164,6 +2202,8 @@ pdf_filter_Tj(fz_context *ctx, pdf_processor *proc, char *str, size_t len)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	filter_show_string(ctx, p, (unsigned char *)str, len);
 }
@@ -2176,6 +2216,8 @@ pdf_filter_squote(fz_context *ctx, pdf_processor *proc, char *str, size_t len)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
 	filter_show_string(ctx, p, (unsigned char *)str, len);
@@ -2190,6 +2232,8 @@ pdf_filter_dquote(fz_context *ctx, pdf_processor *proc, float aw, float ac, char
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
+
+	implicit_bt(ctx, p);
 
 	p->gstate->pending.text.word_space = aw;
 	p->gstate->pending.text.char_space = ac;
