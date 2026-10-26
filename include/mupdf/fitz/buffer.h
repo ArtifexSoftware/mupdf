@@ -121,6 +121,11 @@ fz_buffer *fz_clone_buffer(fz_context *ctx, fz_buffer *buf);
 fz_buffer *fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size);
 
 /**
+	Create a new buffer with data decoded from a percent-encoded URI component string.
+*/
+fz_buffer *fz_new_buffer_from_uri_component(fz_context *ctx, const char *s, size_t size);
+
+/**
 	Ensure that a buffer has a given capacity,
 	truncating data if required.
 

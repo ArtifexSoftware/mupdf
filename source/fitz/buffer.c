@@ -209,6 +209,37 @@ fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size)
 	return out;
 }
 
+static inline int ishex(int a)
+{
+	return (a >= 'A' && a <= 'F') || (a >= 'a' && a <= 'f') || (a >= '0' && a <= '9');
+}
+
+static inline int unhex(int a)
+{
+	if (a >= 'A' && a <= 'F') return a - 'A' + 0xA;
+	if (a >= 'a' && a <= 'f') return a - 'a' + 0xA;
+	if (a >= '0' && a <= '9') return a - '0';
+	return 0;
+}
+
+fz_buffer *
+fz_new_buffer_from_uri_component(fz_context *ctx, const char *s, size_t size)
+{
+	fz_buffer *out = fz_new_buffer(ctx, size > 0 ? size : strlen(s));
+	while (*s)
+	{
+		int c = (unsigned char) *s++;
+		if (c == '%' && ishex(s[0]) && ishex(s[1]))
+		{
+			int a = unhex(*s++);
+			int b = unhex(*s++);
+			c = a << 4 | b;
+		}
+		fz_append_byte(ctx, out, c);
+	}
+	return out;
+}
+
 fz_buffer *
 fz_keep_buffer(fz_context *ctx, fz_buffer *buf)
 {
