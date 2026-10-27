@@ -2258,10 +2258,6 @@ pdf_filter_d0(fz_context *ctx, pdf_processor *proc, float wx, float wy)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
-	if (fz_is_empty_rect(p->gstate->clip_rect))
-		return;
-
-	filter_flush(ctx, p, FLUSH_OP);
 	if (p->super.chain->op_d0)
 		p->super.chain->op_d0(ctx, p->super.chain, wx, wy);
 }
@@ -2271,10 +2267,6 @@ pdf_filter_d1(fz_context *ctx, pdf_processor *proc, float wx, float wy, float ll
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
-	if (fz_is_empty_rect(p->gstate->clip_rect))
-		return;
-
-	filter_flush(ctx, p, FLUSH_OP);
 	if (p->super.chain->op_d1)
 		p->super.chain->op_d1(ctx, p->super.chain, wx, wy, llx, lly, urx, ury);
 }
