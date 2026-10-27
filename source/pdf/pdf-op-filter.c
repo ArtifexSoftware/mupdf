@@ -1662,6 +1662,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 		cull_segmenter_curvetoy,
 		cull_segmenter_rectto
 	};
+	fz_matrix ctm = fz_concat(fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm), p->transform);
 
 	if (p->options->culler == NULL)
 	{
@@ -1672,8 +1673,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 		{
 			fz_rect r;
 
-			/* ctm has always been flushed by now. */
-			r = fz_bound_path(ctx, p->path, NULL, p->gstate->sent.ctm);
+			r = fz_bound_path(ctx, p->path, NULL, ctm);
 			p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
 			if (p->gstate->clip_op == CLIP_W)
 			{
@@ -1694,8 +1694,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 		return 0;
 	}
 
-	sd.ctm = fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm);
-	sd.ctm = fz_concat(sd.ctm, p->transform);
+	sd.ctm = ctm;
 
 	if (type == FZ_CULL_PATH_STROKE || type == FZ_CULL_PATH_FILL_STROKE)
 	{
@@ -1734,8 +1733,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 		{
 			fz_rect r;
 
-			/* ctm has always been flushed by now. */
-			r = fz_bound_path(ctx, p->path, NULL, p->gstate->sent.ctm);
+			r = fz_bound_path(ctx, p->path, NULL, ctm);
 			p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
 			if (p->gstate->clip_op == CLIP_W)
 			{
