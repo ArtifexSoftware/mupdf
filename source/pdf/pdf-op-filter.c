@@ -1728,22 +1728,32 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	if (sd.any_sent != 0 && p->gstate->clip_op != NO_CLIP_OP)
+	if (p->gstate->clip_op != NO_CLIP_OP)
 	{
-		fz_rect r;
-
-		/* ctm has always been flushed by now. */
-		r = fz_bound_path(ctx, p->path, NULL, p->gstate->sent.ctm);
-		p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
-		if (p->gstate->clip_op == CLIP_W)
+		if (sd.any_sent != 0)
 		{
-			if (p->super.chain->op_W)
-				p->super.chain->op_W(ctx, p->super.chain);
+			fz_rect r;
+
+			/* ctm has always been flushed by now. */
+			r = fz_bound_path(ctx, p->path, NULL, p->gstate->sent.ctm);
+			p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
+			if (p->gstate->clip_op == CLIP_W)
+			{
+				if (p->super.chain->op_W)
+					p->super.chain->op_W(ctx, p->super.chain);
+			}
+			else
+			{
+				if (p->super.chain->op_Wstar)
+					p->super.chain->op_Wstar(ctx, p->super.chain);
+			}
 		}
 		else
 		{
-			if (p->super.chain->op_Wstar)
-				p->super.chain->op_Wstar(ctx, p->super.chain);
+			/* The path was a clip path, and it's been completely removed.
+			 * This means that we need to drop any content that would have
+			 * been clipped by it. */
+			p->gstate->clip_rect = fz_empty_rect;
 		}
 		p->gstate->clip_op = NO_CLIP_OP;
 	}
