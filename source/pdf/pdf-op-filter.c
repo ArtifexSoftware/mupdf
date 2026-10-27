@@ -2532,7 +2532,7 @@ pdf_filter_k(fz_context *ctx, pdf_processor *proc, float c, float m, float y, fl
 /* shadings, images, xobjects */
 
 static void
-pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace)
+pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace, int cs_is_inline)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
@@ -2562,7 +2562,7 @@ pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char 
 				fz_try(ctx)
 				{
 					copy_resource(ctx, p, PDF_NAME(ColorSpace), colorspace);
-					p->super.chain->op_BI(ctx, p->super.chain, image, colorspace);
+					p->super.chain->op_BI(ctx, p->super.chain, image, colorspace, cs_is_inline);
 				}
 				fz_always(ctx)
 					fz_drop_image(ctx, image);
@@ -2573,7 +2573,7 @@ pdf_filter_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char 
 		else
 		{
 			copy_resource(ctx, p, PDF_NAME(ColorSpace), colorspace);
-			p->super.chain->op_BI(ctx, p->super.chain, image, colorspace);
+			p->super.chain->op_BI(ctx, p->super.chain, image, colorspace, cs_is_inline);
 		}
 	}
 }

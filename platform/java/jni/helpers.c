@@ -712,7 +712,7 @@ static void java_proc_k(fz_context *ctx, pdf_processor *proc, float c, float m, 
 	PROC_END("k");
 }
 
-static void java_proc_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colorspace)
+static void java_proc_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colorspace, int cs_is_inline)
 {
 	PROC_BEGIN("BI");
 	jobject jimg = to_Image_safe(ctx, env, img);

@@ -944,7 +944,7 @@ pdf_color_k(fz_context *ctx, pdf_processor *proc, float c, float m, float y, flo
 /* shadings, images, xobjects */
 
 static void
-pdf_color_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace)
+pdf_color_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace, int cs_is_inline)
 {
 	pdf_color_processor *p = (pdf_color_processor*)proc;
 
@@ -962,7 +962,7 @@ pdf_color_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *
 			p->options->image_rewrite(ctx, p->options->opaque, &image, p->gstate->ctm, NULL);
 
 		if (p->super.chain->op_BI)
-			p->super.chain->op_BI(ctx, p->super.chain, image, colorspace);
+			p->super.chain->op_BI(ctx, p->super.chain, image, colorspace, cs_is_inline);
 	}
 	fz_always(ctx)
 		fz_drop_image(ctx, image);

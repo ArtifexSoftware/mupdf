@@ -2889,12 +2889,13 @@ static void js_proc_k(fz_context *ctx, pdf_processor *proc, float c, float m, fl
 	PROC_END(4);
 }
 
-static void js_proc_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colorspace)
+static void js_proc_BI(fz_context *ctx, pdf_processor *proc, fz_image *img, const char *colorspace, int cs_is_inline)
 {
 	PROC_BEGIN("op_BI");
 	ffi_pushimage(J, img);
 	js_pushstring(J, colorspace);
-	PROC_END(2);
+	js_pushboolean(J, cs_is_inline);
+	PROC_END(3);
 }
 
 static void js_proc_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)

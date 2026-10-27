@@ -1255,13 +1255,13 @@ pdf_opcount_k(fz_context *ctx, pdf_processor *proc, float c, float m, float y, f
 /* shadings, images, xobjects */
 
 static void
-pdf_opcount_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace)
+pdf_opcount_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace, int cs_is_inline)
 {
 	pdf_opcount_processor *p = (pdf_opcount_processor*)proc;
 	size_t z = p->buffer->len;
 
 	if (p->mine->op_BI)
-		p->mine->op_BI(ctx, p->mine, image, colorspace);
+		p->mine->op_BI(ctx, p->mine, image, colorspace, cs_is_inline);
 
 	z = p->buffer->len - z;
 	p->op_usage->len[OP_BI] += z;

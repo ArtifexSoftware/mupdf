@@ -3240,7 +3240,7 @@ static void pdf_run_rg(fz_context *ctx, pdf_processor *proc, float r, float g, f
 
 /* shadings, images, xobjects */
 
-static void pdf_run_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace)
+static void pdf_run_BI(fz_context *ctx, pdf_processor *proc, fz_image *image, const char *colorspace, int cs_is_inline)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_show_image(ctx, pr, image);

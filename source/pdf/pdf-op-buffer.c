@@ -807,7 +807,7 @@ pdf_out_k(fz_context *ctx, pdf_processor *proc_, float c, float m, float y, floa
 /* shadings, images, xobjects */
 
 static void
-pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *colorspace)
+pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *colorspace, int cs_is_inline)
 {
 	pdf_output_processor *proc = (pdf_output_processor *)proc_;
 	fz_output *out = proc->out;
@@ -852,16 +852,40 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *col
 		fz_write_printf(ctx, out, "/BPC %d", bpc);
 		if (img->imagemask)
 			fz_write_string(ctx, out, "/IM true");
-		else if (cs == fz_device_gray(ctx))
+		else if (cs_is_inline)
+		{
+			int hi;
+			fz_write_printf(ctx, out, "/CS[/I");
+			if (colorspace)
+				fz_write_printf(ctx, out, "%n", colorspace);
+			else if (cs == NULL || cs == fz_device_gray(ctx))
+				fz_write_string(ctx, out, "/G");
+			else if (cs == fz_device_rgb(ctx))
+				fz_write_string(ctx, out, "/RGB");
+			else if (cs == fz_device_cmyk(ctx))
+				fz_write_string(ctx, out, "/CMYK");
+			else
+				fz_throw(ctx, FZ_ERROR_ARGUMENT, "BI operator can only show ImageMask, DeviceGray, DeviceRGB, DeviceCMYK, or Indexed images");
+			hi = cs->u.indexed.high;
+			fz_write_printf(ctx, out, " %d<", hi);
+			hi = (hi+1) * (cs->u.indexed.base ? cs->u.indexed.base->n : 1);
+			for (i = 0; i < hi; i++)
+			{
+				uint8_t c = cs->u.indexed.lookup[i];
+				fz_write_printf(ctx, out, "%c%c", "0123456789ABCDEF"[c>>4], "0123456789ABCDEF"[c&15]);
+			}
+			fz_write_string(ctx, out, ">]");
+		}
+		else if (cs == NULL || cs == fz_device_gray(ctx))
 			fz_write_string(ctx, out, "/CS/G");
 		else if (cs == fz_device_rgb(ctx))
 			fz_write_string(ctx, out, "/CS/RGB");
 		else if (cs == fz_device_cmyk(ctx))
 			fz_write_string(ctx, out, "/CS/CMYK");
-		else if (cs)
+		else if (colorspace)
 			fz_write_printf(ctx, out, "/CS%n", colorspace);
 		else
-			fz_throw(ctx, FZ_ERROR_ARGUMENT, "BI operator can only show ImageMask, Gray, RGB, or CMYK images");
+			fz_throw(ctx, FZ_ERROR_ARGUMENT, "BI operator can only show ImageMask, DeviceGray, DeviceRGB, DeviceCMYK, or Indexed images");
 		if (img->interpolate)
 			fz_write_string(ctx, out, "/I true");
 		fz_write_string(ctx, out, "/D[");
@@ -1384,7 +1408,7 @@ static void pdf_balance_sc_pattern(fz_context *ctx, pdf_processor *p, const char
 static void pdf_balance_sc_shade(fz_context *ctx, pdf_processor *p, const char *name, fz_shade *shade) BALANCE
 static void pdf_balance_sc_color(fz_context *ctx, pdf_processor *p, int n, float *color) BALANCE
 static void pdf_balance_BDC(fz_context *ctx, pdf_processor *p, const char *tag, pdf_obj *raw, pdf_obj *cooked) BALANCE
-static void pdf_balance_BI(fz_context *ctx, pdf_processor *p, fz_image *img, const char *colorspace) BALANCE
+static void pdf_balance_BI(fz_context *ctx, pdf_processor *p, fz_image *img, const char *colorspace, int cs_is_inline) BALANCE
 static void pdf_balance_sh(fz_context *ctx, pdf_processor *p, const char *name, fz_shade *shade) BALANCE
 static void pdf_balance_Do_image(fz_context *ctx, pdf_processor *p, const char *name, fz_image *image) BALANCE
 static void pdf_balance_Do_form(fz_context *ctx, pdf_processor *p, const char *name, pdf_obj *xobj) BALANCE
