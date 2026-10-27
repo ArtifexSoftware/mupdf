@@ -373,7 +373,7 @@ static void filter_flush(fz_context *ctx, pdf_sanitize_processor *p, int flush)
 		}
 		if (gstate->pending.cs.cs == fz_device_rgb(ctx) && !gstate->pending.sc.pat && !gstate->pending.sc.shd && gstate->pending.sc.n == 3 &&
 			(gstate->sent.cs.cs != fz_device_rgb(ctx) || gstate->sent.sc.pat || gstate->sent.sc.shd || gstate->sent.sc.n != 3 || gstate->pending.sc.c[0] != gstate->sent.sc.c[0] ||
-				gstate->pending.sc.c[1] != gstate->sent.sc.c[1] || gstate->pending.sc.c[1] != gstate->sent.sc.c[1]))
+				gstate->pending.sc.c[1] != gstate->sent.sc.c[1] || gstate->pending.sc.c[2] != gstate->sent.sc.c[2]))
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_rg)
@@ -395,6 +395,7 @@ static void filter_flush(fz_context *ctx, pdf_sanitize_processor *p, int flush)
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_cs)
 				p->super.chain->op_cs(ctx, p->super.chain, gstate->pending.cs.name, gstate->pending.cs.cs);
+			gstate->sent.sc.n = 0;
 		}
 
 		/* pattern or shading */
@@ -458,7 +459,7 @@ done_sc:
 		}
 		if (gstate->pending.CS.cs == fz_device_rgb(ctx) && !gstate->pending.SC.pat && !gstate->pending.SC.shd && gstate->pending.SC.n == 3 &&
 			(gstate->sent.CS.cs != fz_device_rgb(ctx) || gstate->sent.SC.pat || gstate->sent.SC.shd || gstate->sent.SC.n != 3 || gstate->pending.SC.c[0] != gstate->sent.SC.c[0] ||
-				gstate->pending.SC.c[1] != gstate->sent.SC.c[1] || gstate->pending.SC.c[1] != gstate->sent.SC.c[1]))
+				gstate->pending.SC.c[1] != gstate->sent.SC.c[1] || gstate->pending.SC.c[2] != gstate->sent.SC.c[2]))
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_RG)
@@ -480,6 +481,7 @@ done_sc:
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_CS)
 				p->super.chain->op_CS(ctx, p->super.chain, gstate->pending.CS.name, gstate->pending.CS.cs);
+			gstate->sent.SC.n = 0;
 		}
 
 		/* pattern or shading */
