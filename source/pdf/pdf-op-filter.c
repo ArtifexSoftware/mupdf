@@ -450,7 +450,7 @@ done_sc:
 	if (flush & FLUSH_COLOR_S)
 	{
 		if (gstate->pending.CS.cs == fz_device_gray(ctx) && !gstate->pending.SC.pat && !gstate->pending.SC.shd && gstate->pending.SC.n == 1 &&
-			(gstate->sent.CS.cs != fz_device_gray(ctx) || gstate->sent.SC.pat || gstate->sent.SC.shd || gstate->sent.SC.n != 0 || gstate->pending.SC.c[0] != gstate->sent.SC.c[0]))
+			(gstate->sent.CS.cs != fz_device_gray(ctx) || gstate->sent.SC.pat || gstate->sent.SC.shd || gstate->sent.SC.n != 1 || gstate->pending.SC.c[0] != gstate->sent.SC.c[0]))
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_G)
