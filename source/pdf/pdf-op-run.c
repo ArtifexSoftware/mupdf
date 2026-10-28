@@ -965,6 +965,10 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
 
+	path = pr->path;
+	if (fz_path_is_empty(ctx, path))
+		return;
+
 	pop_any_pending_mcid_changes(ctx, pr);
 	flush_begin_layer(ctx, pr);
 
@@ -981,7 +985,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			pr->dev->flags |= FZ_DEVFLAG_UNCACHEABLE;
 	}
 
-	path = pr->path;
+
 	pr->path = fz_new_path(ctx);
 
 	fz_try(ctx)

@@ -88,7 +88,6 @@ typedef struct filter_gstate
 	fz_rect clip_rect;
 	pdf_filter_gstate pending;
 	pdf_filter_gstate sent;
-	clip_op_t clip_op;
 	/* The current leading value that the caller assumes. */
 	float leading;
 	/* Opacity values are not queued, so don't go into pending/sent.
@@ -142,6 +141,7 @@ typedef struct
 	int text_removed;
 	pdf_filter_options *global_options;
 	fz_path *path;
+	clip_op_t clip_op;
 } pdf_sanitize_processor;
 
 static void
@@ -1664,18 +1664,24 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	};
 	fz_matrix ctm = fz_concat(fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm), p->transform);
 
+	if (fz_path_is_empty(ctx, p->path))
+	{
+		p->clip_op = NO_CLIP_OP;
+		return 1;
+	}
+
 	if (p->options->culler == NULL)
 	{
 		filter_flush(ctx, p, flush | FLUSH_OP);
 		fz_walk_path(ctx, p->path, &cull_replay_walker, p);
 
-		if (p->gstate->clip_op != NO_CLIP_OP)
+		if (p->clip_op != NO_CLIP_OP)
 		{
 			fz_rect r;
 
 			r = fz_bound_path(ctx, p->path, NULL, ctm);
 			p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
-			if (p->gstate->clip_op == CLIP_W)
+			if (p->clip_op == CLIP_W)
 			{
 				if (p->super.chain->op_W)
 					p->super.chain->op_W(ctx, p->super.chain);
@@ -1685,7 +1691,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 				if (p->super.chain->op_Wstar)
 					p->super.chain->op_Wstar(ctx, p->super.chain);
 			}
-			p->gstate->clip_op = NO_CLIP_OP;
+			p->clip_op = NO_CLIP_OP;
 		}
 
 		fz_drop_path(ctx, p->path);
@@ -1711,7 +1717,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	sd.p = p;
 	sd.segment = NULL;
 	sd.type = type;
-	if (p->gstate->clip_op != NO_CLIP_OP)
+	if (p->clip_op != NO_CLIP_OP)
 		sd.type += FZ_CULL_CLIP_PATH_FILL - FZ_CULL_PATH_FILL;
 	sd.flush = flush | FLUSH_OP;
 	fz_try(ctx)
@@ -1727,7 +1733,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	if (p->gstate->clip_op != NO_CLIP_OP)
+	if (p->clip_op != NO_CLIP_OP)
 	{
 		if (sd.any_sent != 0)
 		{
@@ -1735,7 +1741,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 
 			r = fz_bound_path(ctx, p->path, NULL, ctm);
 			p->gstate->clip_rect = fz_intersect_rect(p->gstate->clip_rect, r);
-			if (p->gstate->clip_op == CLIP_W)
+			if (p->clip_op == CLIP_W)
 			{
 				if (p->super.chain->op_W)
 					p->super.chain->op_W(ctx, p->super.chain);
@@ -1753,7 +1759,7 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 			 * been clipped by it. */
 			p->gstate->clip_rect = fz_empty_rect;
 		}
-		p->gstate->clip_op = NO_CLIP_OP;
+		p->clip_op = NO_CLIP_OP;
 	}
 
 	fz_drop_path(ctx, p->path);
@@ -1907,7 +1913,7 @@ pdf_filter_n(fz_context *ctx, pdf_processor *proc)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_DROP, (p->gstate->clip_op == NO_CLIP_OP ? FLUSH_OP : FLUSH_CLIP)))
+	if (cull_path(ctx, p, FZ_CULL_PATH_DROP, (p->clip_op == NO_CLIP_OP ? FLUSH_OP : FLUSH_CLIP)))
 		return;
 
 	if (p->super.chain->op_n)
@@ -1926,7 +1932,7 @@ pdf_filter_W(fz_context *ctx, pdf_processor *proc)
 
 	/* This operator does nothing when it is seen. It just affects the
 	 * behaviour of the subsequent path drawing operation. */
-	p->gstate->clip_op = CLIP_W;
+	p->clip_op = CLIP_W;
 }
 
 static void
@@ -1939,7 +1945,7 @@ pdf_filter_Wstar(fz_context *ctx, pdf_processor *proc)
 
 	/* This operator does nothing when it is seen. It just affects the
 	 * behaviour of the subsequent path drawing operation. */
-	p->gstate->clip_op = CLIP_Wstar;
+	p->clip_op = CLIP_Wstar;
 }
 
 /* text objects */
@@ -3107,6 +3113,7 @@ pdf_new_sanitize_filter(
 	proc->options = sopts;
 	proc->transform = transform;
 	proc->path = NULL;
+	proc->clip_op = NO_CLIP_OP;
 
 	fz_try(ctx)
 	{
@@ -3123,7 +3130,6 @@ pdf_new_sanitize_filter(
 		proc->gstate->sent.stroke.linewidth = 1;
 		proc->gstate->sent.stroke.miterlimit = 10;
 		proc->gstate->clip_rect = fz_infinite_rect;
-		proc->gstate->clip_op = NO_CLIP_OP;
 		proc->gstate->ca = 1;
 		proc->gstate->CA = 1;
 	}
