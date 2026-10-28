@@ -963,7 +963,7 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out, fz_stext_xml_flag
 							char text[8];
 							int n = fz_runetochar(text, ch->c);
 							for (i = 0; i < n; i++)
-								fz_write_printf(ctx, out, "%02x", text[i]);
+								fz_write_printf(ctx, out, "%02x", (unsigned char)text[i]);
 						}
 					}
 					fz_write_printf(ctx, out, "\"");
@@ -1007,7 +1007,7 @@ as_xml(fz_context *ctx, fz_stext_block *block, fz_output *out, fz_stext_xml_flag
 							int n = fz_runetochar(text, ch->c);
 							fz_write_string(ctx, out, "\" hexc=\"");
 							for (i = 0; i < n; i++)
-								fz_write_printf(ctx, out, "%02x", text[i]);
+								fz_write_printf(ctx, out, "%02x", (unsigned char)text[i]);
 						}
 						fz_write_printf(ctx, out, "\" quad=\"%g %g %g %g %g %g %g %g\" x=\"%g\" y=\"%g\" bidi=\"%d\" color=\"#%06x\" alpha=\"#%02x\" flags=\"%d\"/>\n",
 								ch->quad.ul.x, ch->quad.ul.y,

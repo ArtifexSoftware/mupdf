@@ -1116,10 +1116,13 @@ fz_add_stext_char(fz_context *ctx,
 		{
 			uint32_t lig[18];
 			int i, n = ucdn_compat_decompose(c, lig);
-			fz_add_stext_char_imp(ctx, dev, font, lig[0], glyph, trm, adv, wmode, bidi, force_new_line, flags);
-			for (i = 1; i < n; ++i)
-				fz_add_stext_char_imp(ctx, dev, font, lig[i], -1, trm, 0, wmode, bidi, 0, flags);
-			return;
+			if (n > 0)
+			{
+				fz_add_stext_char_imp(ctx, dev, font, lig[0], glyph, trm, adv, wmode, bidi, force_new_line, flags);
+				for (i = 1; i < n; ++i)
+					fz_add_stext_char_imp(ctx, dev, font, lig[i], -1, trm, 0, wmode, bidi, 0, flags);
+				return;
+			}
 		}
 	}
 
