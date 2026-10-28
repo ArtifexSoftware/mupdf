@@ -94,14 +94,14 @@ effort.
 `-Z`
 : Use object streams cross reference streams for extra compression.
 
-`--(color|gray|bitonal)-(|lossy-|lossless-)image-subsample-method=method`
+`--((color|gray)(|-lossy|-lossless)|bitonal)-image-subsample-method=method`
 : Set the subsampling method (`average`, or `bicubic`) for the desired
 image types, for example color-lossy and bitonal-lossless.
 
-`--(color|gray|bitonal)-(|lossy-|lossless-)image-subsample-dpi=dpi`
+`--((color|gray)(|-lossy|-lossless)|bitonal)-image-subsample-dpi=dpi`
 : Set the resolution at which to subsample.
 
-`--(color|gray|bitonal)-(|lossy-|lossless-)image-recompress-method=quality`
+`--((color|gray)(|-lossy|-lossless)|bitonal)-image-recompress-method=quality`
 : Set the recompression quality to either of `never`, `same`, `lossless`,
 `jpeg`, `j2k`, `fax`, or `jbig2`.
 

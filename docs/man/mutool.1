@@ -312,26 +312,26 @@ Subset fonts if possible. (EXPERIMENTAL!)
 .B \-Z
 Use object streams cross reference streams for extra compressoin.
 .TP
-.BR \-\- ( color | gray | bitonal )\c
+.BR \-\- (( color | gray )\c
 .BR \- (\c
-.RB | lossy- | lossless- )\c
-.BI image-subsample-method= method
+.RB | -lossy | -lossless )| bitonal )\c
+.BI -image-subsample-method= method
 Set the subsampling method
 .RB ( average\~ or\~ bicubic )
 for the
 desired image types, for example color-lossy and bitonal-lossless.
 .TP
-.BR \-\- ( color | gray | bitonal )\c
+.BR \-\- (( color | gray )\c
 .BR \- (\c
-.RB | lossy- | lossless- )\c
-.BI image-subsample-dpi= dpi\c
+.RB | -lossy | -lossless )| bitonal )\c
+.BI -image-subsample-dpi= dpi\c
 .RI [, dpi ]
 Set the resolution at which to subsample.
 .TP
-.BR \-\- ( color | gray | bitonal )\c
+.BR \-\- (( color | gray )\c
 .BR \- (\c
-.RB | lossy- | lossless- )\c
-.BI image-recompress-method= quality
+.RB | -lossy | -lossless )| bitonal )\c
+.BI -image-recompress-method= quality
 Set the recompression quality to either of
 .BR never ,
 .BR same ,
