@@ -251,7 +251,8 @@ static void fmtint64(struct fmtbuf *out, int64_t value, int s, int z, int w, int
 static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq, int verbatim)
 {
 	int i, n, c;
-	fmtputc(out, sq);
+	if (sq)
+		fmtputc(out, sq);
 	while (*s != 0) {
 		n = fz_chartorune(&c, s);
 		switch (c) {
@@ -309,7 +310,8 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq, int verb
 		}
 		s += n;
 	}
-	fmtputc(out, eq);
+	if (eq)
+		fmtputc(out, eq);
 }
 
 static void fmtquote_pdf(struct fmtbuf *out, const char *s, int sq, int eq)
@@ -738,12 +740,12 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 			case 'Q': /* quoted string (with verbatim unicode) */
 				str = va_arg(args, const char*);
 				if (!str) str = "";
-				fmtquote(&out, str, '"', '"', 1);
+				fmtquote(&out, str, z == '0' ? 0 : '"', z == '0' ? 0 : '"', 1);
 				break;
 			case 'q': /* quoted string */
 				str = va_arg(args, const char*);
 				if (!str) str = "";
-				fmtquote(&out, str, '"', '"', 0);
+				fmtquote(&out, str, z == '0' ? 0 : '"', z == '0' ? 0 : '"', 0);
 				break;
 			case '<': /* quoted string for xml */
 				str = va_arg(args, const char*);

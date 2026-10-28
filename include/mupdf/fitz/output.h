@@ -368,7 +368,7 @@ void fz_write_stream(fz_context *ctx, fz_output *out, fz_stream *in);
 	%R outputs a fz_rect*.
 	%P outputs a fz_point*.
 	%n outputs a PDF name (with appropriate escaping).
-	%q and %( output escaped strings in C/PDF syntax.
+	%q, %Q, and %( output escaped strings in C/C(verbatim unicode)/PDF syntax.
 	%l{d,u,x,X} indicates that the values are int64_t.
 	%z{d,u,x,X} indicates that the value is a size_t.
 	%< outputs a quoted (utf8) string (for XML).
