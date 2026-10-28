@@ -29,6 +29,8 @@ int fz_glyph_entirely_outside_box(fz_context *ctx, fz_matrix *ctm, fz_text_span 
 	trm.e += item->x;
 	trm.f += item->y;
 	trm = fz_concat(trm, *ctm);
+	if (fz_is_empty_rect(*box))
+		return 1;
 	glyph_rect = fz_bound_glyph(ctx, span->font, item->gid, trm);
 	if (glyph_rect.x1 <= box->x0 ||
 			glyph_rect.y1 <= box->y0 ||
