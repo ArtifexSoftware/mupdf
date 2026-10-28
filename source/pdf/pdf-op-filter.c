@@ -990,6 +990,7 @@ filter_string_in_segments(fz_context *ctx, pdf_sanitize_processor *p, unsigned c
 	void (*send_segment)(fz_context *ctx, pdf_sanitize_processor *p, unsigned char *seg, size_t len, pdf_obj *obj),
 	pdf_obj *obj, int first)
 {
+	int stroke = ((p->gstate->pending.text.render+1)&2) ? FLUSH_STROKE_STATE : 0;
 	size_t j = 0;
 	while (j < len)
 	{
@@ -1010,7 +1011,7 @@ filter_string_in_segments(fz_context *ctx, pdf_sanitize_processor *p, unsigned c
 			p->tos.tm = initial_tm;
 			/* If we are the first thing actually sent, flush the gs. */
 			if (first)
-				filter_flush(ctx, p, FLUSH_ALL);
+				filter_flush(ctx, p, FLUSH_ALL | stroke);
 			first = 0;
 			send_segment(ctx, p, buf+start, j-start, obj);
 			p->tos.tm = new_tm;
