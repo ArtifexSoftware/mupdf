@@ -1760,11 +1760,6 @@ fz_load_tiff_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len
 		*hp = tiff.imagelength;
 		*xresp = (tiff.xresolution ? tiff.xresolution : 96);
 		*yresp = (tiff.yresolution ? tiff.yresolution : 96);
-		if (tiff.extrasamples /* == 2 */)
-		{
-			fz_drop_colorspace(ctx, tiff.colorspace);
-			tiff.colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-		}
 		*cspacep = fz_keep_colorspace(ctx, tiff.colorspace);
 	}
 	fz_always(ctx)
