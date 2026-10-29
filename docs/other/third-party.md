@@ -12,7 +12,7 @@ These are the third party libraries used by MuPDF.
 |[openjpeg](http://www.openjpeg.org/)|2.5.4 with upstream and local patches|JPEG 2000 decoding|BSD-style|
 |[zlib](http://www.zlib.net/)|1.3.2|Deflate compression|zlib License|
 |[gumbo-parser](https://codeberg.org/gumbo-parser/gumbo-parser)|0.13.2 with upstream and local patches|HTML5 parser|Apache 2.0|
-|[brotli](https://brotli.org/)|1.1.0 with upstream and local patches|Brotli compression|MIT-style|
+|[brotli](https://brotli.org/)|1.2.1 with upstream and local patches|Brotli compression|MIT-style|
 |[cmark-gfm](https://github.com/github/cmark-gfm)|0.29.0.gfm.13 with patches|Markdown conversion to HTML|MIT-style|
 |**Optional**|
 |[FreeGLUT](http://freeglut.sourceforge.net/)|3.0.0 with patches|OpenGL API for UI|MIT-style|
