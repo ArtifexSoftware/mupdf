@@ -763,11 +763,39 @@ fz_unpack_color_params(fz_color_params *color_params, int flags)
 	color_params->opm = (flags >> OPM) & 1;
 }
 
+static fz_rect
+fudged_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm)
+{
+	float expansion;
+	fz_rect rect = fz_bound_path(ctx, path, stroke, ctm);
+	if (fz_is_infinite_rect(rect))
+		return rect;
+	if (fz_is_empty_rect(rect))
+		return rect;
+
+	/* Antialiasing can cause paths to be expanded by a small amount.
+	 * We don't know what AA level will be used, and we don't know what
+	 * matrix will be applied to the display list on playback, so we can't
+	 * exactly match the logic in the display device here. This is a
+	 * fudge that assumes that the matrix being applied on playback won't
+	 * be orders of magnitude different to the matrix used at creation.
+	 * The only downside to this expansion is that we might not clip
+	 * paths away quite so efficiently on playback. */
+	expansion = fz_matrix_expansion(ctm);
+	expansion = expansion < 1 ? 1 : 1/expansion;
+	rect.x0 -= expansion;
+	rect.y0 -= expansion;
+	rect.x1 += expansion;
+	rect.y1 += expansion;
+
+	return rect;
+}
+
 static void
 fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
-	fz_rect rect = fz_bound_path(ctx, path, NULL, ctm);
+	fz_rect rect = fudged_bound_path(ctx, path, NULL, ctm);
 	fz_append_display_node(
 		ctx,
 		dev,
@@ -788,7 +816,7 @@ static void
 fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
 	fz_matrix ctm, fz_colorspace *colorspace, const float *color, float alpha, fz_color_params color_params)
 {
-	fz_rect rect = fz_bound_path(ctx, path, stroke, ctm);
+	fz_rect rect = fudged_bound_path(ctx, path, stroke, ctm);
 	fz_append_display_node(
 		ctx,
 		dev,
@@ -808,7 +836,7 @@ fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 static void
 fz_list_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, fz_matrix ctm, fz_rect scissor)
 {
-	fz_rect rect = fz_bound_path(ctx, path, NULL, ctm);
+	fz_rect rect = fudged_bound_path(ctx, path, NULL, ctm);
 	rect = fz_intersect_rect(rect, scissor);
 	fz_append_display_node(
 		ctx,
@@ -829,7 +857,7 @@ fz_list_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 static void
 fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, fz_matrix ctm, fz_rect scissor)
 {
-	fz_rect rect = fz_bound_path(ctx, path, stroke, ctm);
+	fz_rect rect = fudged_bound_path(ctx, path, stroke, ctm);
 	rect = fz_intersect_rect(rect, scissor);
 	fz_append_display_node(
 		ctx,
