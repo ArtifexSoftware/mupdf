@@ -858,7 +858,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc_, fz_image *img, const char *col
 			fz_write_printf(ctx, out, "/CS[/I");
 			if (colorspace)
 				fz_write_printf(ctx, out, "%n", colorspace);
-			else if (cs == NULL || cs == fz_device_gray(ctx))
+			else if (cs == fz_device_gray(ctx))
 				fz_write_string(ctx, out, "/G");
 			else if (cs == fz_device_rgb(ctx))
 				fz_write_string(ctx, out, "/RGB");
