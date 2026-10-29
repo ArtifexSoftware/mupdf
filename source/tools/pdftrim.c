@@ -70,7 +70,8 @@ rewrite_page_streams(fz_context *ctx, pdf_document *doc, int page_num, fz_box_ty
 	sopts.opaque = &cd;
 	sopts.culler = culler;
 	options.filters = list;
-	options.recurse = 1;
+	options.recurse = 0;
+	options.instance_forms = 1;
 	list[0].filter = pdf_new_sanitize_filter;
 	list[0].options = &sopts;
 

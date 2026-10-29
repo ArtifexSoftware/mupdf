@@ -121,12 +121,15 @@ pdf_filter_resources(fz_context *ctx, pdf_document *doc, pdf_obj *in_res, pdf_ob
 				i = 0; /* Restart the loop as pdf_dict_put_drop might have caused the ordering to change. */
 			}
 		}
-		for (i = 0; i < n; i++)
+		if (!options->instance_forms)
 		{
-			pdf_obj *font = pdf_dict_get_val(ctx, obj, i);
-			if (font && pdf_dict_get(ctx, font, PDF_NAME(Subtype)) == PDF_NAME(Type3))
+			for (i = 0; i < n; i++)
 			{
-				pdf_filter_type3(ctx, doc, font, in_res, options, &cycle);
+				pdf_obj *font = pdf_dict_get_val(ctx, obj, i);
+				if (font && pdf_dict_get(ctx, font, PDF_NAME(Subtype)) == PDF_NAME(Type3))
+				{
+					pdf_filter_type3(ctx, doc, font, in_res, options, &cycle);
+				}
 			}
 		}
 	}
