@@ -552,8 +552,13 @@ pdf_new_text_string(fz_context *ctx, const char *s)
 	return pdf_new_string(ctx, s, i);
 }
 
-pdf_obj *
-pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
+#define PDF_MAX_PARSE_DEPTH 128
+
+static pdf_obj *
+pdf_parse_dict_aux(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf, int depth);
+
+static pdf_obj *
+pdf_parse_array_aux(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf, int depth)
 {
 	pdf_obj *ary = NULL;
 	pdf_obj *obj = NULL;
@@ -562,6 +567,9 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 	pdf_obj *op = NULL;
 
 	fz_var(obj);
+
+	if (++depth > PDF_MAX_PARSE_DEPTH)
+		fz_throw(ctx, FZ_ERROR_LIMIT, "Array found nested too deeply within PDF");
 
 	ary = pdf_new_array(ctx, doc, 4);
 
@@ -612,12 +620,12 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 				break;
 
 			case PDF_TOK_OPEN_ARRAY:
-				obj = pdf_parse_array(ctx, doc, file, buf);
+				obj = pdf_parse_array_aux(ctx, doc, file, buf, depth);
 				pdf_array_push_drop(ctx, ary, obj);
 				break;
 
 			case PDF_TOK_OPEN_DICT:
-				obj = pdf_parse_dict(ctx, doc, file, buf);
+				obj = pdf_parse_dict_aux(ctx, doc, file, buf, depth);
 				pdf_array_push_drop(ctx, ary, obj);
 				break;
 
@@ -657,13 +665,22 @@ end:
 }
 
 pdf_obj *
-pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
+pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
+{
+	return pdf_parse_array_aux(ctx, doc, file, buf, 0);
+}
+
+static pdf_obj *
+pdf_parse_dict_aux(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf, int depth)
 {
 	pdf_obj *dict;
 	pdf_obj *key = NULL;
 	pdf_obj *val = NULL;
 	pdf_token tok;
 	int64_t a, b;
+
+	if (++depth > PDF_MAX_PARSE_DEPTH)
+		fz_throw(ctx, FZ_ERROR_LIMIT, "Dictionary found nested too deeply within PDF");
 
 	dict = pdf_new_dict(ctx, doc, 8);
 
@@ -693,11 +710,11 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 			switch (tok)
 			{
 			case PDF_TOK_OPEN_ARRAY:
-				val = pdf_parse_array(ctx, doc, file, buf);
+				val = pdf_parse_array_aux(ctx, doc, file, buf, depth);
 				break;
 
 			case PDF_TOK_OPEN_DICT:
-				val = pdf_parse_dict(ctx, doc, file, buf);
+				val = pdf_parse_dict_aux(ctx, doc, file, buf, depth);
 				break;
 
 			case PDF_TOK_NAME: val = pdf_new_name(ctx, buf->scratch); break;
@@ -753,6 +770,12 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 		fz_rethrow(ctx);
 	}
 	return dict;
+}
+
+pdf_obj *
+pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
+{
+	return pdf_parse_dict_aux(ctx, doc, file, buf, 0);
 }
 
 pdf_obj *
