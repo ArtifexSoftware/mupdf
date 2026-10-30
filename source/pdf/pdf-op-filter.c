@@ -27,6 +27,8 @@
 
 #include <string.h>
 
+#define UNSET_SCALE -999999999.f
+
 typedef enum
 {
 	/* These bits represent the pending state we might need to flush. */
@@ -535,25 +537,25 @@ done_SC:
 
 	if (flush & FLUSH_STROKE_STATE)
 	{
-		if (gstate->pending.stroke.linecap != gstate->sent.stroke.linecap)
+		if (gstate->pending.stroke.linecap != gstate->sent.stroke.linecap && gstate->pending.stroke.linecap != -1)
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_J)
 				p->super.chain->op_J(ctx, p->super.chain, gstate->pending.stroke.linecap);
 		}
-		if (gstate->pending.stroke.linejoin != gstate->sent.stroke.linejoin)
+		if (gstate->pending.stroke.linejoin != gstate->sent.stroke.linejoin && gstate->pending.stroke.linejoin != -1)
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_j)
 				p->super.chain->op_j(ctx, p->super.chain, gstate->pending.stroke.linejoin);
 		}
-		if (gstate->pending.stroke.linewidth != gstate->sent.stroke.linewidth)
+		if (gstate->pending.stroke.linewidth != gstate->sent.stroke.linewidth && gstate->pending.stroke.linewidth != -1)
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_w)
 				p->super.chain->op_w(ctx, p->super.chain, gstate->pending.stroke.linewidth);
 		}
-		if (gstate->pending.stroke.miterlimit != gstate->sent.stroke.miterlimit)
+		if (gstate->pending.stroke.miterlimit != gstate->sent.stroke.miterlimit && gstate->pending.stroke.miterlimit != -1)
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_M)
@@ -598,7 +600,7 @@ done_SC:
 				if (p->super.chain->op_Tw)
 					p->super.chain->op_Tw(ctx, p->super.chain, gstate->pending.text.word_space);
 			}
-			if (gstate->pending.text.scale != gstate->sent.text.scale)
+			if (gstate->pending.text.scale != gstate->sent.text.scale && gstate->pending.text.scale != UNSET_SCALE)
 			{
 				/* The value of scale in the gstate is divided by 100 from what is written in the file */
 				gstate = ensure_pushed(ctx, p);
@@ -724,8 +726,12 @@ filter_show_char(fz_context *ctx, pdf_sanitize_processor *p, int cid, int *unico
 	int ucslen;
 	int remove = 0;
 	float adv;
+	pdf_text_state local_text = gstate->pending.text;
 
-	(void)pdf_tos_make_trm(ctx, &p->tos, &gstate->pending.text, fontdesc, cid, &trm, &adv);
+	if (local_text.scale == UNSET_SCALE)
+		local_text.scale = 1;
+
+	(void)pdf_tos_make_trm(ctx, &p->tos, &local_text, fontdesc, cid, &trm, &adv);
 
 	ucslen = 0;
 	if (fontdesc->to_unicode)
@@ -788,7 +794,10 @@ filter_show_space(fz_context *ctx, pdf_sanitize_processor *p, float tadj)
 	pdf_font_desc *fontdesc = gstate->pending.text.font;
 
 	if (fontdesc->wmode == 0)
-		p->tos.tm = fz_pre_translate(p->tos.tm, tadj * gstate->pending.text.scale, 0);
+	{
+		float scale = gstate->pending.text.scale == UNSET_SCALE ? 1 : gstate->pending.text.scale;
+		p->tos.tm = fz_pre_translate(p->tos.tm, tadj * scale, 0);
+	}
 	else
 		p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 }
@@ -1059,7 +1068,8 @@ segment_to_array(fz_context *ctx, pdf_sanitize_processor *p, unsigned char *seg,
 		float ty = scale * (X * -p->tos.tm.b + Y * p->tos.tm.a);
 		if (p->tos.fontdesc->wmode == 0)
 		{
-			adjust = tx / p->gstate->pending.text.scale;
+			float tscale = p->gstate->pending.text.scale == UNSET_SCALE ? 1 : p->gstate->pending.text.scale;
+			adjust = tx / tscale;
 			assert(fabs(ty) < 0.001);
 		}
 		else
@@ -1117,7 +1127,10 @@ filter_show_text(fz_context *ctx, pdf_sanitize_processor *p, pdf_obj *text)
 			{
 				float tadj = -pdf_to_real(ctx, item) * gstate->pending.text.size * 0.001f;
 				if (fontdesc->wmode == 0)
-					p->tos.tm = fz_pre_translate(p->tos.tm, tadj * gstate->pending.text.scale, 0);
+				{
+					float scale = gstate->pending.text.scale == UNSET_SCALE ? 1 : gstate->pending.text.scale;
+					p->tos.tm = fz_pre_translate(p->tos.tm, tadj * scale, 0);
+				}
 				else
 					p->tos.tm = fz_pre_translate(p->tos.tm, 0, tadj);
 			}
@@ -3163,14 +3176,18 @@ pdf_new_sanitize_filter(
 		proc->gstate = fz_malloc_struct(ctx, filter_gstate);
 		proc->gstate->pending.ctm = fz_identity;
 		proc->gstate->sent.ctm = fz_identity;
-		proc->gstate->pending.text.scale = 1;
+		proc->gstate->pending.text.scale = UNSET_SCALE;
 		proc->gstate->pending.text.size = -1;
-		proc->gstate->pending.stroke.linewidth = 1;
-		proc->gstate->pending.stroke.miterlimit = 10;
-		proc->gstate->sent.text.scale = 1;
+		proc->gstate->pending.stroke.linecap = -1;
+		proc->gstate->pending.stroke.linejoin = -1;
+		proc->gstate->pending.stroke.linewidth = -1;
+		proc->gstate->pending.stroke.miterlimit = -1;
+		proc->gstate->sent.text.scale = UNSET_SCALE;
 		proc->gstate->sent.text.size = -1;
-		proc->gstate->sent.stroke.linewidth = 1;
-		proc->gstate->sent.stroke.miterlimit = 10;
+		proc->gstate->sent.stroke.linewidth = -1;
+		proc->gstate->sent.stroke.miterlimit = -1;
+		proc->gstate->sent.stroke.linecap = -1;
+		proc->gstate->sent.stroke.linejoin = -1;
 		proc->gstate->clip_rect = fz_infinite_rect;
 		proc->gstate->ca = 1;
 		proc->gstate->CA = 1;
