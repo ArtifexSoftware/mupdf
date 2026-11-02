@@ -346,6 +346,12 @@ char *pdf_new_uri_from_path_and_explicit_dest(fz_context *ctx, const char *path,
 fz_matrix pdf_annot_transform(fz_context *ctx, pdf_annot *annot);
 
 /*
+	Determine if an annotation should be displayed for the given usage.
+	This depends on a combination of flags and OCG status.
+*/
+int pdf_is_annot_visible(fz_context *ctx, pdf_annot *annot, const char *usage);
+
+/*
 	Create a new link object.
 */
 fz_link *pdf_new_link(fz_context *ctx, pdf_page *page, fz_rect rect, const char *uri, pdf_obj *obj);

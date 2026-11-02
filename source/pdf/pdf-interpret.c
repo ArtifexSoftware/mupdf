@@ -1890,40 +1890,61 @@ pdf_should_print_annot(fz_context *ctx, pdf_annot *annot)
 	return 1;
 }
 
-void
-pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_annot *annot, fz_cookie *cookie)
+int
+pdf_is_annot_visible(fz_context *ctx, pdf_annot *annot, const char *usage)
 {
 	int flags = pdf_annot_flags(ctx, annot);
-	fz_matrix matrix;
-	pdf_obj *ap;
 
-	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN) || annot->hidden_editing)
-		return;
-
-	/* popup annotations should never be drawn */
-	if (pdf_annot_type(ctx, annot) == PDF_ANNOT_POPUP)
-		return;
-
-	if (proc->usage)
+	/* Widgets only get displayed if they have both a T and a FT flag, apparently */
+	if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
 	{
-		if (!strcmp(proc->usage, "Print"))
+		pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
+		pdf_obj *t = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(T));
+		if (ft == NULL || t == NULL)
+			return 0;
+	}
+
+	/* Invisible and hidden annotations are never drawn. */
+	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN))
+		return 0;
+
+	/* Hide annotations that are being edited (the GUI draws its own representation). */
+	if (annot->hidden_editing)
+		return 0;
+
+	/* Popup annotations should never be drawn */
+	if (pdf_annot_type(ctx, annot) == PDF_ANNOT_POPUP)
+		return 0;
+
+	if (usage)
+	{
+		if (!strcmp(usage, "Print"))
 		{
 			if (!(flags & PDF_ANNOT_IS_PRINT))
-				return;
+				return 0;
 			if (!pdf_should_print_annot(ctx, annot))
-				return;
+				return 0;
 		}
-		if (!strcmp(proc->usage, "View") && (flags & PDF_ANNOT_IS_NO_VIEW))
-			return;
+		if (!strcmp(usage, "View") && (flags & PDF_ANNOT_IS_NO_VIEW))
+			return 0;
 	}
 
 	/* XXX what resources, if any, to use for this check? */
-	if (pdf_is_ocg_hidden(ctx, annot->page->doc, NULL, proc->usage, pdf_dict_get(ctx, annot->obj, PDF_NAME(OC))))
-		return;
+	if (pdf_is_ocg_hidden(ctx, annot->page->doc, NULL, usage, pdf_dict_get(ctx, annot->obj, PDF_NAME(OC))))
+		return 0;
 
-	ap = pdf_annot_ap(ctx, annot);
+	if (!pdf_is_stream(ctx, pdf_annot_ap(ctx, annot)))
+		return 0;
 
-	if (!ap)
+	return 1;
+}
+
+void
+pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_annot *annot, fz_cookie *cookie)
+{
+	fz_matrix matrix;
+
+	if (!pdf_is_annot_visible(ctx, annot, proc->usage))
 		return;
 
 	matrix = pdf_annot_transform(ctx, annot);
@@ -1935,7 +1956,7 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_annot *annot, fz_coo
 			matrix.c, matrix.d,
 			matrix.e, matrix.f);
 	if (proc->op_Do_form)
-		proc->op_Do_form(ctx, proc, NULL, ap);
+		proc->op_Do_form(ctx, proc, NULL, pdf_annot_ap(ctx, annot));
 	if (proc->op_Q)
 		proc->op_Q(ctx, proc);
 }

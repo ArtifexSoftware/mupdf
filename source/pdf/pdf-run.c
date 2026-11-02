@@ -43,20 +43,6 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 
 	pdf_annot_push_local_xref(ctx, annot);
 
-	/* Widgets only get displayed if they have both a T and a TF flag,
-	 * apparently */
-	if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME(Subtype)), PDF_NAME(Widget)))
-	{
-		pdf_obj *ft = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(FT));
-		pdf_obj *t = pdf_dict_get_inheritable(ctx, annot->obj, PDF_NAME(T));
-
-		if (ft == NULL || t == NULL)
-		{
-			pdf_annot_pop_local_xref(ctx, annot);
-			return;
-		}
-	}
-
 	fz_try(ctx)
 	{
 		default_cs = pdf_load_default_colorspaces(ctx, doc, page);
