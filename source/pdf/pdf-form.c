@@ -2451,17 +2451,17 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 		return;
 
 	res = pdf_dict_get(ctx, page, PDF_NAME(Resources));
-	if (!res)
+	if (!pdf_is_dict(ctx, res))
 	{
 		res = pdf_dict_get_inheritable(ctx, page, PDF_NAME(Resources));
-		if (res)
-			pdf_dict_put(ctx, page, PDF_NAME(Resources), res);
-		else
+		if (!pdf_is_dict(ctx, res))
 			res = pdf_dict_put_dict(ctx, page, PDF_NAME(Resources), 4);
+		else
+			pdf_dict_put(ctx, page, PDF_NAME(Resources), res);
 	}
 
 	res_xobj = pdf_dict_get(ctx, res, PDF_NAME(XObject));
-	if (!res_xobj)
+	if (!pdf_is_dict(ctx, res_xobj))
 		res_xobj = pdf_dict_put_dict(ctx, res, PDF_NAME(XObject), 8);
 
 	fz_try(ctx)
@@ -2597,5 +2597,6 @@ void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int 
 	fz_catch(ctx)
 	{
 		pdf_abandon_operation(ctx, doc);
+		fz_rethrow(ctx);
 	}
 }
