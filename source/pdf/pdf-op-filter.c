@@ -1540,6 +1540,8 @@ typedef struct
 	int any_sent;
 	int type;
 	int flush;
+	int last_segment_was_just_a_move;
+	int last_segment_was_just_a_move_and_was_culled;
 } segmenter_data_t;
 
 static const fz_path_walker cull_replay_walker = {
@@ -1565,13 +1567,16 @@ end_segment(fz_context *ctx, segmenter_data_t *sd)
 	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE) ? sd->sstate : NULL;
 	r = fz_bound_path(ctx, sd->segment, st, sd->ctm);
 
+	sd->last_segment_was_just_a_move_and_was_culled = 0;
 	if (!fz_is_valid_rect(r))
 	{
 		/* This segment can be skipped */
+		sd->last_segment_was_just_a_move_and_was_culled = sd->last_segment_was_just_a_move;
 	}
 	else if (sd->p->options->culler && sd->p->options->culler(ctx, sd->p->options->opaque, r, sd->type))
 	{
 		/* This segment can be skipped */
+		sd->last_segment_was_just_a_move_and_was_culled = sd->last_segment_was_just_a_move;
 	}
 	else
 	{
@@ -1597,6 +1602,7 @@ cull_segmenter_moveto(fz_context *ctx, void *arg, float x, float y)
 	end_segment(ctx, sd);
 	sd->segment = fz_new_path(ctx);
 	fz_moveto(ctx, sd->segment, x, y);
+	sd->last_segment_was_just_a_move = 1;
 }
 
 static void
@@ -1604,6 +1610,7 @@ cull_segmenter_lineto(fz_context *ctx, void *arg, float x, float y)
 {
 	segmenter_data_t *sd = (segmenter_data_t *)arg;
 
+	sd->last_segment_was_just_a_move = 0;
 	fz_lineto(ctx, sd->segment, x, y);
 }
 
@@ -1612,6 +1619,7 @@ cull_segmenter_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2,
 {
 	segmenter_data_t *sd = (segmenter_data_t *)arg;
 
+	sd->last_segment_was_just_a_move = 0;
 	fz_curveto(ctx, sd->segment, x1, y1, x2, y2, x3, y3);
 }
 
@@ -1628,6 +1636,7 @@ cull_segmenter_curvetov(fz_context *ctx, void *arg, float x2, float y2, float x3
 {
 	segmenter_data_t *sd = (segmenter_data_t *)arg;
 
+	sd->last_segment_was_just_a_move = 0;
 	fz_curvetov(ctx, sd->segment, x2, y2, x3, y3);
 }
 
@@ -1636,6 +1645,7 @@ cull_segmenter_curvetoy(fz_context *ctx, void *arg, float x1, float y1, float x3
 {
 	segmenter_data_t *sd = (segmenter_data_t *)arg;
 
+	sd->last_segment_was_just_a_move = 0;
 	fz_curvetoy(ctx, sd->segment, x1, y1, x3, y3);
 }
 
@@ -1644,13 +1654,14 @@ cull_segmenter_rectto(fz_context *ctx, void *arg, float x1, float y1, float x2, 
 {
 	segmenter_data_t *sd = (segmenter_data_t *)arg;
 
+	sd->last_segment_was_just_a_move = 0;
 	end_segment(ctx, sd);
 	sd->segment = fz_new_path(ctx);
 	fz_rectto(ctx, sd->segment, x1, y1, x2, y2);
 }
 
 static int
-cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
+cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush, int *transmute_following)
 {
 	segmenter_data_t sd = { 0 };
 	static const fz_path_walker segmenter = {
@@ -1665,9 +1676,12 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	};
 	fz_matrix ctm = fz_concat(fz_concat(p->gstate->pending.ctm, p->gstate->sent.ctm), p->transform);
 
+	*transmute_following = 0;
+
 	if (fz_path_is_empty(ctx, p->path))
 	{
 		p->clip_op = NO_CLIP_OP;
+		*transmute_following = 1;
 		return 1;
 	}
 
@@ -1767,6 +1781,8 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush)
 	p->path = NULL;
 	p->path = fz_new_path(ctx);
 
+	*transmute_following = sd.last_segment_was_just_a_move_and_was_culled;
+
 	/* If none were sent, we can skip this path. */
 	return (sd.any_sent == 0);
 }
@@ -1775,11 +1791,12 @@ static void
 pdf_filter_S(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_STROKE, FLUSH_STROKE))
+	if (cull_path(ctx, p, FZ_CULL_PATH_STROKE, FLUSH_STROKE, &transmute))
 		return;
 
 	if (p->super.chain->op_S)
@@ -1790,14 +1807,20 @@ static void
 pdf_filter_s(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_STROKE, FLUSH_STROKE))
+	if (cull_path(ctx, p, FZ_CULL_PATH_STROKE, FLUSH_STROKE, &transmute))
 		return;
 
-	if (p->super.chain->op_s)
+	if (transmute)
+	{
+		if (p->super.chain->op_S)
+			p->super.chain->op_S(ctx, p->super.chain);
+	}
+	else if (p->super.chain->op_s)
 		p->super.chain->op_s(ctx, p->super.chain);
 }
 
@@ -1805,11 +1828,12 @@ static void
 pdf_filter_F(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL, FLUSH_FILL))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL, FLUSH_FILL, &transmute))
 		return;
 
 	if (p->super.chain->op_F)
@@ -1820,11 +1844,12 @@ static void
 pdf_filter_f(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL, FLUSH_FILL))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL, FLUSH_FILL, &transmute))
 		return;
 
 	if (p->super.chain->op_f)
@@ -1835,11 +1860,12 @@ static void
 pdf_filter_fstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL, FLUSH_FILL))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL, FLUSH_FILL, &transmute))
 		return;
 
 	if (p->super.chain->op_fstar)
@@ -1850,11 +1876,12 @@ static void
 pdf_filter_B(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE, &transmute))
 		return;
 
 	if (p->super.chain->op_B)
@@ -1865,11 +1892,12 @@ static void
 pdf_filter_Bstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE, &transmute))
 		return;
 
 	if (p->super.chain->op_Bstar)
@@ -1880,14 +1908,20 @@ static void
 pdf_filter_b(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE, &transmute))
 		return;
 
-	if (p->super.chain->op_b)
+	if (transmute)
+	{
+		if (p->super.chain->op_B)
+			p->super.chain->op_B(ctx, p->super.chain);
+	}
+	else if (p->super.chain->op_b)
 		p->super.chain->op_b(ctx, p->super.chain);
 }
 
@@ -1895,14 +1929,20 @@ static void
 pdf_filter_bstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE))
+	if (cull_path(ctx, p, FZ_CULL_PATH_FILL_STROKE, FLUSH_ALL | FLUSH_STROKE_STATE, &transmute))
 		return;
 
-	if (p->super.chain->op_bstar)
+	if (transmute)
+	{
+		if (p->super.chain->op_Bstar)
+			p->super.chain->op_Bstar(ctx, p->super.chain);
+	}
+	else if (p->super.chain->op_bstar)
 		p->super.chain->op_bstar(ctx, p->super.chain);
 }
 
@@ -1910,11 +1950,12 @@ static void
 pdf_filter_n(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	int transmute;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	if (cull_path(ctx, p, FZ_CULL_PATH_DROP, (p->clip_op == NO_CLIP_OP ? FLUSH_OP : FLUSH_CLIP)))
+	if (cull_path(ctx, p, FZ_CULL_PATH_DROP, (p->clip_op == NO_CLIP_OP ? FLUSH_OP : FLUSH_CLIP), &transmute))
 		return;
 
 	if (p->super.chain->op_n)
