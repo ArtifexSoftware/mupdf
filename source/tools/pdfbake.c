@@ -38,6 +38,7 @@ static int usage(void)
 		"\t-A\tkeep annotations\n"
 		"\t-F\tkeep forms\n"
 		"\t-O -\tcomma separated list of output options\n"
+		"\t-u -\tset PDF usage mode: View or Print\n"
 	);
 	return 1;
 }
@@ -51,10 +52,11 @@ int pdfbake_main(int argc, char **argv)
 	int bake_widgets = 1;
 	char *output = "out.pdf";
 	char *flags = "garbage";
+	char *usage_mode = "View";
 	char *input;
 	int c, code = EXIT_SUCCESS;
 
-	while ((c = fz_getopt(argc, argv, "AFO:")) != -1)
+	while ((c = fz_getopt(argc, argv, "AFO:u:")) != -1)
 	{
 		switch (c)
 		{
@@ -66,6 +68,9 @@ int pdfbake_main(int argc, char **argv)
 			break;
 		case 'O':
 			flags = fz_optarg;
+			break;
+		case 'u':
+			usage_mode = fz_optarg;
 			break;
 		default:
 			return usage();
@@ -92,7 +97,7 @@ int pdfbake_main(int argc, char **argv)
 	{
 		doc = pdf_open_document(ctx, input);
 
-		pdf_bake_document(ctx, doc, bake_annots, bake_widgets);
+		pdf_bake_document_with_usage(ctx, doc, bake_annots, bake_widgets, usage_mode);
 
 		pdf_parse_write_options(ctx, &opts, flags);
 		pdf_save_document(ctx, doc, output, &opts);
