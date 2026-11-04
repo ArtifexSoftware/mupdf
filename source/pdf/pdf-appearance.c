@@ -3782,7 +3782,7 @@ retry_after_repair:
 				 * they already have an appearance. These usually have
 				 * custom images already set for their appearance.
 				 */
-				if (!pdf_annot_is_standard_stamp(ctx, annot) && ap_n)
+				if (!pdf_annot_is_standard_stamp(ctx, annot) && ap_n && !pdf_is_local_object(ctx, annot->page->doc, ap_n))
 				{
 					/* However, we allow changing the Rect even if we don't
 					 * resynthesize the appearance. This should also count
