@@ -3685,6 +3685,19 @@ void pdf_annot_pop_and_discard_local_xref(fz_context *ctx, pdf_annot *annot)
 	pdf_drop_local_xref_and_resources(ctx, doc);
 }
 
+int pdf_has_local_only_appearance(fz_context *ctx, pdf_annot *annot)
+{
+	// Flagged for future local resynthesis.
+	if (pdf_annot_needs_resynthesis(ctx, annot) < 0)
+		return 1;
+
+	// Already has a local AP.
+	if (annot->has_local_only_ap)
+		return 1;
+
+	return 0;
+}
+
 static void pdf_update_appearance(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *subtype;
@@ -3802,6 +3815,7 @@ retry_after_repair:
 				fz_write_printf(ctx, fz_stddbg(ctx), "Local synthesis\n");
 #endif
 				pdf_annot_ensure_local_xref(ctx, annot);
+				annot->has_local_only_ap = 1;
 			}
 			else
 			{
@@ -3815,6 +3829,7 @@ retry_after_repair:
 				 * We don't use it from this point onwards anymore, but beware
 				 * in future code changes. */
 				pop_local_xref = 0;
+				annot->has_local_only_ap = 0;
 			}
 
 			if (subtype == PDF_NAME(Widget) && ft == PDF_NAME(Btn))

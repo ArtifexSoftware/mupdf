@@ -35,6 +35,7 @@ struct pdf_annot
 	int is_hot;
 	int is_active;
 
+	int has_local_only_ap; /* True when new AP only exists in local xref section. */
 	int needs_new_local_ap; /* True for widgets when AcroForm/NeedAppearances is set */
 	int needs_new_ap; /* If set, then a resynthesis of this annotation has been requested. (-1 to request local only) */
 	int has_new_ap; /* If set, then the appearance stream has changed since last queried. */

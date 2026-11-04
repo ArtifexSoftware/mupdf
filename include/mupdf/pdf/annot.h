@@ -883,6 +883,7 @@ void pdf_annot_push_local_xref(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_pop_local_xref(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_ensure_local_xref(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_pop_and_discard_local_xref(fz_context *ctx, pdf_annot *annot);
+int pdf_has_local_only_appearance(fz_context *ctx, pdf_annot *annot);
 
 /*
 	Regenerate any appearance streams that are out of date and check for
