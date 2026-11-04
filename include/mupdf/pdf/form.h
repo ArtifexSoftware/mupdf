@@ -378,5 +378,6 @@ void pdf_annot_event_page_invisible(fz_context *ctx, pdf_annot *annot);
  * and remove the corresponding interactive PDF objects.
  */
 void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets);
+void pdf_bake_document_with_usage(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets, const char *usage);
 
 #endif

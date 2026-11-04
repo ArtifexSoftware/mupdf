@@ -2365,61 +2365,20 @@ int pdf_count_signatures(fz_context *ctx, pdf_document *doc)
  * Bake interactive form fields into static content.
  */
 
-static pdf_obj *get_annot_ap(fz_context *ctx, pdf_obj *annot)
-{
-	pdf_obj *ap = pdf_dict_get(ctx, annot, PDF_NAME(AP));
-	pdf_obj *as = pdf_dict_get(ctx, annot, PDF_NAME(AS));
-	if (ap)
-	{
-		as = pdf_resolve_indirect_chain(ctx, as);
-		ap = pdf_dict_get(ctx, ap, PDF_NAME(N));
-		if (pdf_is_stream(ctx, ap))
-			return ap;
-		ap = pdf_dict_get(ctx, ap, as);
-		if (pdf_is_stream(ctx, ap))
-			return ap;
-	}
-	return NULL;
-}
-
-static fz_matrix get_annot_transform(fz_context *ctx, pdf_obj *annot, pdf_obj *ap)
-{
-	float w, h, x, y;
-	fz_matrix transform;
-	fz_rect bbox;
-	fz_rect rect;
-
-	rect = pdf_dict_get_rect(ctx, annot, PDF_NAME(Rect));
-	bbox = pdf_dict_get_rect(ctx, ap, PDF_NAME(BBox));
-	transform = pdf_dict_get_matrix(ctx, ap, PDF_NAME(Matrix));
-
-	bbox = fz_transform_rect(bbox, transform);
-	w = (rect.x1 - rect.x0) / (bbox.x1 - bbox.x0);
-	h = (rect.y1 - rect.y0) / (bbox.y1 - bbox.y0);
-	x = rect.x0 - bbox.x0 * w;
-	y = rect.y0 - bbox.y0 * h;
-
-	return fz_make_matrix(w, 0, 0, h, x, y);
-}
-
-static void pdf_bake_annot(fz_context *ctx, fz_buffer *buf, pdf_document *doc, pdf_obj *page, pdf_obj *res_xobj, pdf_obj *annot)
+static void pdf_bake_annot(fz_context *ctx, fz_buffer *buf, pdf_document *doc, pdf_page *page, pdf_annot *annot, pdf_obj *res_xobj)
 {
 	fz_matrix m;
 	pdf_obj *ap;
 	char name[20];
 
-	int flags = pdf_dict_get_int(ctx, annot, PDF_NAME(F));
-	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN))
-		return;
-
-	ap = get_annot_ap(ctx, annot);
+	ap = pdf_annot_ap(ctx, annot);
 	if (ap)
 	{
-		fz_snprintf(name, sizeof name, "Annot%d", pdf_to_num(ctx, annot));
+		fz_snprintf(name, sizeof name, "Annot%d", pdf_to_num(ctx, annot->obj));
 		pdf_dict_puts(ctx, res_xobj, name, ap);
 		pdf_dict_put(ctx, ap, PDF_NAME(Type), PDF_NAME(XObject));
 		pdf_dict_put(ctx, ap, PDF_NAME(Subtype), PDF_NAME(Form));
-		m = get_annot_transform(ctx, annot, ap);
+		m = pdf_annot_transform(ctx, annot);
 		fz_append_printf(ctx, buf,
 			"q\n%g %g %g %g %g %g cm\n/%s Do\nQ\n",
 			m.a, m.b, m.c, m.d, m.e, m.f,
@@ -2428,14 +2387,27 @@ static void pdf_bake_annot(fz_context *ctx, fz_buffer *buf, pdf_document *doc, p
 	}
 }
 
-static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int bake_annots, int bake_widgets)
+static pdf_annot *find_annot_from_obj(fz_context *ctx, pdf_page *page, pdf_obj *obj)
+{
+	pdf_annot *annot;
+	for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
+		if (annot->obj == obj)
+			return annot;
+	for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
+		if (annot->obj == obj)
+			return annot;
+	return NULL;
+}
+
+static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_page *page, int bake_annots, int bake_widgets, const char *usage)
 {
 	pdf_obj *res;
 	pdf_obj *res_xobj;
 	pdf_obj *contents;
 	pdf_obj *new_contents = NULL;
 	pdf_obj *annots;
-	pdf_obj *annot;
+	pdf_obj *annot_obj;
+	pdf_annot *annot;
 	pdf_obj *subtype;
 	pdf_obj *prologue = NULL;
 	fz_buffer *buf = NULL;
@@ -2446,18 +2418,18 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 	fz_var(prologue);
 	fz_var(new_contents);
 
-	annots = pdf_dict_get(ctx, page, PDF_NAME(Annots));
+	annots = pdf_dict_get(ctx, page->obj, PDF_NAME(Annots));
 	if (pdf_array_len(ctx, annots) == 0)
 		return;
 
-	res = pdf_dict_get(ctx, page, PDF_NAME(Resources));
+	res = pdf_dict_get(ctx, page->obj, PDF_NAME(Resources));
 	if (!pdf_is_dict(ctx, res))
 	{
-		res = pdf_dict_get_inheritable(ctx, page, PDF_NAME(Resources));
+		res = pdf_dict_get_inheritable(ctx, page->obj, PDF_NAME(Resources));
 		if (!pdf_is_dict(ctx, res))
-			res = pdf_dict_put_dict(ctx, page, PDF_NAME(Resources), 4);
+			res = pdf_dict_put_dict(ctx, page->obj, PDF_NAME(Resources), 4);
 		else
-			pdf_dict_put(ctx, page, PDF_NAME(Resources), res);
+			pdf_dict_put(ctx, page->obj, PDF_NAME(Resources), res);
 	}
 
 	res_xobj = pdf_dict_get(ctx, res, PDF_NAME(XObject));
@@ -2467,7 +2439,7 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 	fz_try(ctx)
 	{
 		// Ensure that the graphics state is balanced.
-		contents = pdf_dict_get(ctx, page, PDF_NAME(Contents));
+		contents = pdf_dict_get(ctx, page->obj, PDF_NAME(Contents));
 		pdf_count_q_balance(ctx, doc, res, contents, &prepend, &append);
 
 		if (prepend)
@@ -2489,35 +2461,23 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 
 		for (i = 0; i < pdf_array_len(ctx, annots); )
 		{
-			annot = pdf_array_get(ctx, annots, i);
-			subtype = pdf_dict_get(ctx, annot, PDF_NAME(Subtype));
+			annot_obj = pdf_array_get(ctx, annots, i);
+			subtype = pdf_dict_get(ctx, annot_obj, PDF_NAME(Subtype));
 			if (subtype == PDF_NAME(Link))
 			{
+				// Don't touch Links.
 				++i;
 			}
-			else if (subtype == PDF_NAME(Widget))
+			else if ((subtype == PDF_NAME(Widget) && bake_widgets) || (subtype != PDF_NAME(Widget) && bake_annots))
 			{
-				if (bake_widgets)
-				{
-					pdf_bake_annot(ctx, buf, doc, page, res_xobj, annot);
-					pdf_array_delete(ctx, annots, i);
-				}
-				else
-				{
-					++i;
-				}
+				annot = find_annot_from_obj(ctx, page, annot_obj);
+				if (annot && pdf_is_annot_visible(ctx, annot, usage))
+					pdf_bake_annot(ctx, buf, doc, page, annot, res_xobj);
+				pdf_array_delete(ctx, annots, i);
 			}
 			else
 			{
-				if (bake_annots)
-				{
-					pdf_bake_annot(ctx, buf, doc, page, res_xobj, annot);
-					pdf_array_delete(ctx, annots, i);
-				}
-				else
-				{
-					++i;
-				}
+				++i;
 			}
 		}
 
@@ -2528,7 +2488,7 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 				pdf_array_push(ctx, new_contents, prologue);
 			if (contents)
 				pdf_array_push(ctx, new_contents, contents);
-			pdf_dict_put(ctx, page, PDF_NAME(Contents), new_contents);
+			pdf_dict_put(ctx, page->obj, PDF_NAME(Contents), new_contents);
 			pdf_drop_obj(ctx, new_contents);
 			contents = new_contents;
 			new_contents = NULL;
@@ -2552,7 +2512,7 @@ static void pdf_bake_page(fz_context *ctx, pdf_document *doc, pdf_obj *page, int
 	}
 }
 
-void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets)
+void pdf_bake_document_with_usage(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets, const char *usage)
 {
 	pdf_page *page = NULL;
 	pdf_annot *annot;
@@ -2569,14 +2529,30 @@ void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int 
 			page = pdf_load_page(ctx, doc, i);
 
 			if (bake_annots)
+			{
 				for (annot = pdf_first_annot(ctx, page); annot; annot = pdf_next_annot(ctx, annot))
-					pdf_annot_request_synthesis(ctx, annot);
+				{
+					if (pdf_has_local_only_appearance(ctx, annot))
+						pdf_annot_request_resynthesis(ctx, annot);
+					else
+						pdf_annot_request_synthesis(ctx, annot);
+				}
+			}
+
 			if (bake_widgets)
+			{
 				for (annot = pdf_first_widget(ctx, page); annot; annot = pdf_next_widget(ctx, annot))
-					pdf_annot_request_synthesis(ctx, annot);
+				{
+					if (pdf_has_local_only_appearance(ctx, annot))
+						pdf_annot_request_resynthesis(ctx, annot);
+					else
+						pdf_annot_request_synthesis(ctx, annot);
+				}
+			}
+
 			pdf_update_page(ctx, page);
 
-			pdf_bake_page(ctx, doc, page->obj, bake_annots, bake_widgets);
+			pdf_bake_page(ctx, doc, page, bake_annots, bake_widgets, usage);
 
 			fz_drop_page(ctx, (fz_page*)page);
 			page = NULL;
@@ -2599,4 +2575,9 @@ void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int 
 		pdf_abandon_operation(ctx, doc);
 		fz_rethrow(ctx);
 	}
+}
+
+void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets)
+{
+	pdf_bake_document_with_usage(ctx, doc, bake_annots, bake_widgets, "View");
 }
