@@ -2747,7 +2747,7 @@ pdf_filter_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_o
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	filter_flush(ctx, p, FLUSH_ALL);
+	filter_flush(ctx, p, FLUSH_ALL | FLUSH_STROKE_STATE);
 
 	if (p->global_options->instance_forms)
 	{
