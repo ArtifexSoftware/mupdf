@@ -219,6 +219,7 @@ fz_recolor_shade_function(fz_context *ctx, pdf_obj *shade, float *samples, int s
 	fz_var(buf);
 	fz_var(ref);
 	fz_var(output);
+	fz_var(fun_obj);
 
 	fz_try(ctx)
 	{
