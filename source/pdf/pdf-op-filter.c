@@ -146,6 +146,8 @@ typedef struct
 	pdf_filter_options *global_options;
 	fz_path *path;
 	clip_op_t clip_op;
+	int next_image_resource_idx;
+	int next_form_resource_idx;
 } pdf_sanitize_processor;
 
 static void
@@ -179,17 +181,20 @@ add_resource(fz_context *ctx, pdf_sanitize_processor *p, pdf_obj *key, const cha
 }
 
 static void
-create_resource_name(fz_context *ctx, pdf_sanitize_processor *p, pdf_obj *key, const char *prefix, char *buf, int len)
+create_resource_name(fz_context *ctx, pdf_sanitize_processor *p, pdf_obj *key, const char *prefix, char *buf, int len, int *idx)
 {
 	int i;
 	pdf_obj *res = pdf_dict_get(ctx, p->new_rstack->resources, key);
 	if (!res)
 		res = pdf_dict_put_dict(ctx, p->new_rstack->resources, key, 8);
-	for (i = 1; i < 65536; ++i)
+	for (i = *idx; i < 65536; ++i)
 	{
 		fz_snprintf(buf, len, "%s%d", prefix, i);
 		if (!pdf_dict_gets(ctx, res, buf))
+		{
+			*idx = i+1;
 			return;
+		}
 	}
 	fz_throw(ctx, FZ_ERROR_LIMIT, "Cannot create unique resource name");
 }
@@ -2707,7 +2712,7 @@ pdf_filter_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_i
 				/* Make up a unique name when instancing forms so we don't accidentally clash. */
 				char buf[40];
 				pdf_obj *obj = pdf_lookup_resource(ctx, proc->rstack, PDF_NAME(XObject), name);
-				create_resource_name(ctx, p, PDF_NAME(XObject), "Im", buf, sizeof buf);
+				create_resource_name(ctx, p, PDF_NAME(XObject), "Im", buf, sizeof buf, &p->next_image_resource_idx);
 				add_resource(ctx, p, PDF_NAME(XObject), buf, obj);
 				p->super.chain->op_Do_image(ctx, p->super.chain, buf, image);
 			}
@@ -2724,7 +2729,7 @@ pdf_filter_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_i
 			fz_try(ctx)
 			{
 				char buf[40];
-				create_resource_name(ctx, p, PDF_NAME(XObject), "Im", buf, sizeof buf);
+				create_resource_name(ctx, p, PDF_NAME(XObject), "Im", buf, sizeof buf, &p->next_image_resource_idx);
 				obj = pdf_add_image(ctx, p->doc, new_image);
 				add_resource(ctx, p, PDF_NAME(XObject), buf, obj);
 				p->super.chain->op_Do_image(ctx, p->super.chain, buf, new_image);
@@ -2756,8 +2761,11 @@ pdf_filter_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_o
 		/* Copy an instance of the form with a new unique name. */
 		pdf_obj *new_xobj;
 		char buf[40];
-		create_resource_name(ctx, p, PDF_NAME(XObject), "Fm", buf, sizeof buf);
+		int form_idx, image_idx;
+		create_resource_name(ctx, p, PDF_NAME(XObject), "Fm", buf, sizeof buf, &p->next_form_resource_idx);
 		transform = fz_concat(p->gstate->sent.ctm, p->transform);
+		form_idx = p->next_form_resource_idx;
+		image_idx = p->next_image_resource_idx;
 		new_xobj = pdf_filter_xobject_instance(ctx, xobj, p->new_rstack->resources, transform, p->global_options, NULL);
 		fz_try(ctx)
 		{
@@ -2766,7 +2774,11 @@ pdf_filter_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_o
 				p->super.chain->op_Do_form(ctx, p->super.chain, buf, new_xobj);
 		}
 		fz_always(ctx)
+		{
 			pdf_drop_obj(ctx, new_xobj);
+			p->next_form_resource_idx = form_idx;
+			p->next_image_resource_idx = image_idx;
+		}
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
@@ -3021,6 +3033,8 @@ pdf_reset_sanitize_processor(fz_context *ctx, pdf_processor *proc)
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
 	pdf_reset_processor(ctx, p->super.chain);
+	p->next_image_resource_idx = 0;
+	p->next_form_resource_idx = 0;
 }
 
 pdf_processor *
