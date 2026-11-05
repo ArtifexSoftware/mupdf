@@ -2262,10 +2262,20 @@ pdf_copy_dict(fz_context *ctx, pdf_obj *obj)
 int
 pdf_dict_len(fz_context *ctx, pdf_obj *obj)
 {
+	int n;
+
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
 		return 0;
-	return DICT(obj)->len;
+
+	n = DICT(obj)->len;
+	/* If we're asking for the length of a dict, there is
+	 * a good chance we're about to enumerate it. And we
+	 * don't want it to suddenly be sorted during the
+	 * enumeration. So presort it now if appropriate. */
+	if (n > 100 && !(obj->flags & PDF_FLAGS_SORTED))
+		pdf_sort_dict(ctx, obj);
+	return n;
 }
 
 pdf_obj *
