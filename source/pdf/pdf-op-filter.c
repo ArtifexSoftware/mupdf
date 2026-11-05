@@ -28,6 +28,8 @@
 #include <string.h>
 
 #define UNSET_SCALE -999999999.f
+#define UNSET_LINECAP ((fz_linecap)-1)
+#define UNSET_LINEJOIN ((fz_linejoin)-1)
 
 typedef enum
 {
@@ -537,13 +539,13 @@ done_SC:
 
 	if (flush & FLUSH_STROKE_STATE)
 	{
-		if (gstate->pending.stroke.linecap != gstate->sent.stroke.linecap && gstate->pending.stroke.linecap != -1)
+		if (gstate->pending.stroke.linecap != gstate->sent.stroke.linecap && gstate->pending.stroke.linecap != UNSET_LINECAP)
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_J)
 				p->super.chain->op_J(ctx, p->super.chain, gstate->pending.stroke.linecap);
 		}
-		if (gstate->pending.stroke.linejoin != gstate->sent.stroke.linejoin && gstate->pending.stroke.linejoin != -1)
+		if (gstate->pending.stroke.linejoin != gstate->sent.stroke.linejoin && gstate->pending.stroke.linejoin != UNSET_LINEJOIN)
 		{
 			gstate = ensure_pushed(ctx, p);
 			if (p->super.chain->op_j)
@@ -3178,16 +3180,16 @@ pdf_new_sanitize_filter(
 		proc->gstate->sent.ctm = fz_identity;
 		proc->gstate->pending.text.scale = UNSET_SCALE;
 		proc->gstate->pending.text.size = -1;
-		proc->gstate->pending.stroke.linecap = -1;
-		proc->gstate->pending.stroke.linejoin = -1;
+		proc->gstate->pending.stroke.linecap = UNSET_LINECAP;
+		proc->gstate->pending.stroke.linejoin = UNSET_LINEJOIN;
 		proc->gstate->pending.stroke.linewidth = -1;
 		proc->gstate->pending.stroke.miterlimit = -1;
 		proc->gstate->sent.text.scale = UNSET_SCALE;
 		proc->gstate->sent.text.size = -1;
 		proc->gstate->sent.stroke.linewidth = -1;
 		proc->gstate->sent.stroke.miterlimit = -1;
-		proc->gstate->sent.stroke.linecap = -1;
-		proc->gstate->sent.stroke.linejoin = -1;
+		proc->gstate->sent.stroke.linecap = UNSET_LINECAP;
+		proc->gstate->sent.stroke.linejoin = UNSET_LINEJOIN;
 		proc->gstate->clip_rect = fz_infinite_rect;
 		proc->gstate->ca = 1;
 		proc->gstate->CA = 1;
