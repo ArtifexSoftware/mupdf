@@ -1441,7 +1441,7 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 				res = pdf_xobject_resources(ctx, ap);
 				if (pdf_resources_use_blending(ctx, res, NULL))
 					page->transparency = 1;
-				if (pdf_resources_use_overprint(ctx, pdf_xobject_resources(ctx, res), NULL))
+				if (pdf_resources_use_overprint(ctx, res, NULL))
 					page->overprint = 1;
 			}
 			fz_always(ctx)
@@ -1462,7 +1462,7 @@ pdf_load_page_imp(fz_context *ctx, fz_document *doc_, int chapter, int number)
 				res = pdf_xobject_resources(ctx, ap);
 				if (pdf_resources_use_blending(ctx, res, NULL))
 					page->transparency = 1;
-				if (pdf_resources_use_overprint(ctx, pdf_xobject_resources(ctx, res), NULL))
+				if (pdf_resources_use_overprint(ctx, res, NULL))
 					page->overprint = 1;
 			}
 			fz_always(ctx)
