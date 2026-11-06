@@ -2518,7 +2518,7 @@ export class PDFDocument extends Document {
 	}
 
 	getTrailer() {
-		return new PDFObject(this, libmupdf._wasm_pdf_trailer(this.pointer))
+		return this._fromPDFObjectKeep(libmupdf._wasm_pdf_trailer(this.pointer))
 	}
 
 	createObject() {
@@ -3065,7 +3065,7 @@ export class PDFObject extends Userdata<"pdf_obj"> {
 
 	// PRIVATE
 	constructor(doc: PDFDocument, pointer: Pointer<"pdf_obj">) {
-		super(libmupdf._wasm_pdf_keep_obj(pointer))
+		super(pointer)
 		this._doc = doc
 	}
 
