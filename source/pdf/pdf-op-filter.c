@@ -1737,13 +1737,17 @@ cull_path(fz_context *ctx, pdf_sanitize_processor *p, int type, int flush, int *
 
 	if (type == FZ_CULL_PATH_STROKE || type == FZ_CULL_PATH_FILL_STROKE)
 	{
+		fz_linecap linecap = p->gstate->pending.stroke.linecap;
+		fz_linejoin linejoin = p->gstate->pending.stroke.linejoin;
+		float linewidth = p->gstate->pending.stroke.linewidth;
+		float miterlimit = p->gstate->pending.stroke.miterlimit;
 		sd.sstate = fz_new_stroke_state(ctx);
-		sd.sstate->start_cap = p->gstate->pending.stroke.linecap;
-		sd.sstate->dash_cap = p->gstate->pending.stroke.linecap;
-		sd.sstate->end_cap = p->gstate->pending.stroke.linecap;
-		sd.sstate->linejoin = p->gstate->pending.stroke.linejoin;
-		sd.sstate->linewidth = p->gstate->pending.stroke.linewidth;
-		sd.sstate->miterlimit = p->gstate->pending.stroke.miterlimit;
+		sd.sstate->start_cap = linecap == UNSET_LINECAP ? 0 : linecap;
+		sd.sstate->dash_cap = linecap == UNSET_LINECAP ? 0 : linecap;
+		sd.sstate->end_cap = linecap == UNSET_LINECAP ? 0 : linecap;
+		sd.sstate->linejoin = linejoin == UNSET_LINEJOIN ? 0 : linejoin;
+		sd.sstate->linewidth = linewidth == -1 ? 1 : linewidth;
+		sd.sstate->miterlimit = miterlimit == -1 ? 10 : miterlimit;
 		/* Ignore dash for now. */
 	}
 
