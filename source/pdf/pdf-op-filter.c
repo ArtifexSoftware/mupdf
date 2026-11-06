@@ -92,8 +92,6 @@ typedef struct filter_gstate
 	fz_rect clip_rect;
 	pdf_filter_gstate pending;
 	pdf_filter_gstate sent;
-	/* The current leading value that the caller assumes. */
-	float leading;
 	/* Opacity values are not queued, so don't go into pending/sent.
 	 * We only track these for invisible text removal. */
 	float ca;
@@ -2150,7 +2148,6 @@ pdf_filter_TL(fz_context *ctx, pdf_processor *proc, float leading)
 	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
-	p->gstate->leading = leading;
 	p->gstate->pending.text.leading = leading;
 }
 
@@ -2226,7 +2223,7 @@ pdf_filter_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 
 	implicit_bt(ctx, p);
 
-	p->gstate->leading = -ty;
+	p->gstate->pending.text.leading = -ty;
 	pdf_filter_Td(ctx, proc, tx, ty);
 }
 
@@ -2255,7 +2252,7 @@ pdf_filter_Tstar(fz_context *ctx, pdf_processor *proc)
 	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
-	pdf_tos_newline(&p->tos, p->gstate->leading);
+	pdf_tos_newline(&p->tos, p->gstate->pending.text.leading);
 }
 
 /* text showing */
