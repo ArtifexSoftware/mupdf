@@ -1294,6 +1294,7 @@ static void
 pdf_filter_gs_begin(fz_context *ctx, pdf_processor *proc, const char *name, pdf_obj *extgstate)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
+	pdf_obj *obj;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
@@ -1302,6 +1303,76 @@ pdf_filter_gs_begin(fz_context *ctx, pdf_processor *proc, const char *name, pdf_
 	if (p->super.chain->op_gs_begin)
 		p->super.chain->op_gs_begin(ctx, p->super.chain, name, extgstate);
 	copy_resource(ctx, p, PDF_NAME(ExtGState), name);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(LW));
+	if (pdf_is_number(ctx, obj))
+		p->gstate->sent.stroke.linewidth = p->gstate->pending.stroke.linewidth = pdf_to_real(ctx, obj);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(LC));
+	if (pdf_is_number(ctx, obj))
+		p->gstate->sent.stroke.linecap = p->gstate->pending.stroke.linecap = fz_clampi(pdf_to_int(ctx, obj), 0, 2);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(LJ));
+	if (pdf_is_number(ctx, obj))
+		p->gstate->sent.stroke.linejoin = p->gstate->pending.stroke.linejoin = fz_clampi(pdf_to_int(ctx, obj), 0, 2);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(ML));
+	if (pdf_is_number(ctx, obj))
+		p->gstate->sent.stroke.miterlimit = p->gstate->pending.stroke.miterlimit = pdf_to_real(ctx, obj);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(D));
+	if (pdf_is_array(ctx, obj))
+	{
+		pdf_obj *dash_array = pdf_array_get(ctx, obj, 0);
+		pdf_obj *dash_phase = pdf_array_get(ctx, obj, 1);
+		p->gstate->sent.stroke.phase = p->gstate->pending.stroke.phase = pdf_to_real(ctx, dash_phase);
+		pdf_drop_obj(ctx, p->gstate->sent.stroke.dash);
+		pdf_drop_obj(ctx, p->gstate->pending.stroke.dash);
+		p->gstate->sent.stroke.dash = pdf_keep_obj(ctx, dash_array);
+		p->gstate->pending.stroke.dash = pdf_keep_obj(ctx, dash_array);
+	}
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(CA));
+	if (pdf_is_number(ctx, obj))
+		p->gstate->CA = pdf_to_real(ctx, obj);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(ca));
+	if (pdf_is_number(ctx, obj))
+		p->gstate->ca = pdf_to_real(ctx, obj);
+
+	obj = pdf_dict_get(ctx, extgstate, PDF_NAME(Font));
+	if (pdf_is_array(ctx, obj))
+	{
+		pdf_obj *font_ref = pdf_array_get(ctx, obj, 0);
+		pdf_obj *font_size = pdf_array_get(ctx, obj, 1);
+		pdf_font_desc *font;
+
+		if (pdf_is_dict(ctx, font_ref))
+			font = pdf_try_load_font(ctx, p->doc, p->super.rstack, font_ref, NULL);
+		else
+			font = pdf_load_hail_mary_font(ctx, p->doc);
+
+		fz_try(ctx)
+		{
+			fz_drop_string(ctx, p->gstate->pending.text.fontname);
+			fz_drop_string(ctx, p->gstate->sent.text.fontname);
+			p->gstate->pending.text.fontname = NULL;
+			p->gstate->sent.text.fontname = NULL;
+			p->gstate->pending.text.fontname = name ? fz_new_string(ctx, name) : NULL;
+			p->gstate->sent.text.fontname = name ? fz_new_string(ctx, name) : NULL;
+			pdf_drop_font(ctx, p->gstate->pending.text.font);
+			pdf_drop_font(ctx, p->gstate->sent.text.font);
+			p->gstate->pending.text.font = pdf_keep_font(ctx, font);
+			p->gstate->sent.text.font = pdf_keep_font(ctx, font);
+			p->gstate->pending.text.size = pdf_to_real(ctx, font_size);
+			p->gstate->sent.text.size = pdf_to_real(ctx, font_size);
+		}
+		fz_always(ctx)
+			pdf_drop_font(ctx, font);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+
+	}
 }
 
 static void

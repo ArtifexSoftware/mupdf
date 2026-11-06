@@ -776,7 +776,7 @@ pdf_clear_stack(fz_context *ctx, pdf_csi *csi)
 	csi->top = 0;
 }
 
-static pdf_font_desc *
+pdf_font_desc *
 pdf_try_load_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_obj *font, fz_cookie *cookie)
 {
 	pdf_font_desc *desc = NULL;

@@ -60,5 +60,10 @@ pdf_obj *pdf_parent_root(fz_context *ctx, pdf_obj *start, void (*repair)(fz_cont
 */
 pdf_obj *pdf_walk_parent(fz_context *ctx, pdf_obj *start, void (*repair)(fz_context *, pdf_document *doc), pdf_obj *(*step)(fz_context *, pdf_obj *, void *), void *step_arg);
 
+/*
+	Try to load a font. If it doesn't work, use the hail_mary font.
+*/
+pdf_font_desc *pdf_try_load_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_obj *font, fz_cookie *cookie);
+
 
 #endif /* MUPDF_PDF_PDF_IMP_H */
