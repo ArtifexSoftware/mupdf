@@ -2409,34 +2409,31 @@ pdf_filter_d1(fz_context *ctx, pdf_processor *proc, float wx, float wy, float ll
 /* color */
 
 static void
-set_default_cs_values(pdf_filter_gstate_sc *sc, const char *name, fz_colorspace *cs)
+set_default_cs_values(fz_context *ctx, pdf_filter_gstate_sc *sc, fz_colorspace *cs)
 {
 	int n = cs ? cs->n : 0;
 	int i;
-	if (strcmp(name, "Separation") == 0 || strcmp(name, "DeviceN") == 0) {
+
+	if (fz_colorspace_is_device_n(ctx, cs))
+	{
 		for (i = 0; i < n; ++i)
 			sc->c[i] = 1;
 	}
-	else if (strcmp(name, "DeviceGray") == 0 ||
-		strcmp(name, "DeviceRGB") == 0 ||
-		strcmp(name, "CalGray") == 0 ||
-		strcmp(name, "CalRGB") == 0 ||
-		strcmp(name, "Indexed") == 0)
-	{
-		for (i = 0; i < n; ++i)
-			sc->c[i] = 0;
-	}
-	else if (strcmp(name, "DeviceCMYK") == 0)
+	else if (fz_colorspace_is_device(ctx, cs) && fz_colorspace_is_cmyk(ctx, cs))
 	{
 		sc->c[0] = 0;
 		sc->c[1] = 0;
 		sc->c[2] = 0;
 		sc->c[3] = 1;
 	}
-	else if (strcmp(name, "Lab") == 0 ||
-		strcmp(name, "ICCBased") == 0)
+	else if (fz_colorspace_is_lab(ctx, cs) || fz_colorspace_is_icc(ctx, cs))
 	{
 		/* Really we should clamp c[i] to the appropriate range. */
+		for (i = 0; i < n; ++i)
+			sc->c[i] = 0;
+	}
+	else if (fz_colorspace_is_device(ctx, cs) || fz_colorspace_is_indexed(ctx, cs))
+	{
 		for (i = 0; i < n; ++i)
 			sc->c[i] = 0;
 	}
@@ -2461,7 +2458,7 @@ pdf_filter_CS(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorsp
 	fz_drop_colorspace(ctx, gstate->pending.CS.cs);
 	gstate->pending.CS.cs = fz_keep_colorspace(ctx, cs);
 	copy_resource(ctx, p, PDF_NAME(ColorSpace), name);
-	set_default_cs_values(&gstate->pending.SC, name, cs);
+	set_default_cs_values(ctx, &gstate->pending.SC, cs);
 }
 
 static void
@@ -2477,7 +2474,7 @@ pdf_filter_cs(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorsp
 	fz_drop_colorspace(ctx, gstate->pending.cs.cs);
 	gstate->pending.cs.cs = fz_keep_colorspace(ctx, cs);
 	copy_resource(ctx, p, PDF_NAME(ColorSpace), name);
-	set_default_cs_values(&gstate->pending.sc, name, cs);
+	set_default_cs_values(ctx, &gstate->pending.sc, cs);
 }
 
 static void
