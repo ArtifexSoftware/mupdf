@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Artifex Software, Inc.
+// Copyright (C) 2004-2026 Artifex Software, Inc.
 //
 // This file is part of MuPDF.
 //
@@ -938,7 +938,7 @@ update_mcid(fz_context *ctx, pdf_sanitize_processor *p)
 	if (tag->alt.edited)
 		pdf_dict_put_text_string(ctx, tag->mcid_obj, PDF_NAME(Alt), tag->alt.utf8 ? tag->alt.utf8 : "");
 	if (tag->actualtext.edited)
-		pdf_dict_put_text_string(ctx, tag->mcid_obj, PDF_NAME(Alt), tag->actualtext.utf8 ? tag->actualtext.utf8 : "");
+		pdf_dict_put_text_string(ctx, tag->mcid_obj, PDF_NAME(ActualText), tag->actualtext.utf8 ? tag->actualtext.utf8 : "");
 }
 
 /* Process a string (from buf, of length len), from position *pos onwards.
