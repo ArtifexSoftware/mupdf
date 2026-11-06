@@ -2813,6 +2813,7 @@ pdf_filter_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *ra
 	filter_flush(ctx, p, FLUSH_OP);
 	if (p->super.chain->op_DP)
 		p->super.chain->op_DP(ctx, p->super.chain, tag, raw, cooked);
+	copy_resource(ctx, p, PDF_NAME(Properties), pdf_to_name(ctx, raw));
 }
 
 static void
