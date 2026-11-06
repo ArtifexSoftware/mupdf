@@ -2852,7 +2852,7 @@ pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *r
 		bdc->bdc = 1;
 		bdc->tag = fz_strdup(ctx, tag);
 		bdc->raw = pdf_keep_obj(ctx, raw);
-		bdc->cooked = pdf_keep_obj(ctx, raw);
+		bdc->cooked = pdf_keep_obj(ctx, cooked);
 	}
 	fz_catch(ctx)
 	{
