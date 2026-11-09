@@ -4132,13 +4132,18 @@ cull_unhelpful_background_fills(fz_context *ctx, fz_stext_page *page)
 
 			/* Remove this vector. It's masked by the outside one. */
 			next = block2->next;
-			block2->prev->next = next;
+			if (block2->prev)
+				block2->prev->next = next;
+			else if (iter2.parent)
+				iter2.parent->first_block = next;
+			else
+				iter2.page->first_block = next;
 			if (next)
 				next->prev = block2->prev;
-			else if (iter.parent)
-				iter.parent->last_block = block2->prev;
+			else if (iter2.parent)
+				iter2.parent->last_block = block2->prev;
 			else
-				iter.page->last_block = block2->prev;
+				iter2.page->last_block = block2->prev;
 		}
 	}
 }
