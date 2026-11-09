@@ -3340,7 +3340,7 @@ static inline int isdelim(int ch)
 
 static inline void fmt_putc(fz_context *ctx, struct fmt *fmt, int c)
 {
-	if (fmt->sep && !isdelim(fmt->last) && !iswhite(fmt->last) && !isdelim(c) && !iswhite(c)) {
+	if (fmt->sep && ((!isdelim(fmt->last) && !iswhite(fmt->last) && !isdelim(c) && !iswhite(c)) || fmt->last == '/')) {
 		fmt->sep = 0;
 		fmt_putc(ctx, fmt, ' ');
 	}

@@ -1572,7 +1572,7 @@ static int is_number(const char *key, int *idx)
 {
 	char *end;
 	*idx = strtol(key, &end, 10);
-	return *end == 0;
+	return *end == 0 && key != end;
 }
 
 static fz_archive *ffi_toarchive(js_State *J, int idx)
