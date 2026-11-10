@@ -1149,25 +1149,25 @@ pdf_flush_text_imp(fz_context *ctx, pdf_run_processor *pr, int flush_clip)
 		flush_begin_layer(ctx, pr);
 
 		dofill = dostroke = doclip = doinvisible = 0;
-		switch (pr->tos.text_mode)
+		if (!pr->super.hidden)
 		{
-		case 0: dofill = 1; break;
-		case 1: dostroke = 1; break;
-		case 2: dofill = dostroke = 1; break;
-		case 3: doinvisible = 1; break;
-		case 4: dofill = doclip = 1; break;
-		case 5: dostroke = doclip = 1; break;
-		case 6: dofill = dostroke = doclip = 1; break;
-		case 7: doclip = 1; break;
+			switch (pr->tos.text_mode)
+			{
+			case 0: dofill = 1; break;
+			case 1: dostroke = 1; break;
+			case 2: dofill = dostroke = 1; break;
+			case 3: doinvisible = 1; break;
+			case 4: dofill = doclip = 1; break;
+			case 5: dostroke = doclip = 1; break;
+			case 6: dofill = dostroke = doclip = 1; break;
+			case 7: doclip = 1; break;
+			}
 		}
 
 		if (flush_clip)
 			dostroke = dofill = 0;
 		else
 			doclip = 0;
-
-		if (pr->super.hidden)
-			dostroke = dofill = 0;
 
 		tb = fz_transform_rect(pr->tos.text_bbox, gstate->ctm);
 		if (dostroke)
