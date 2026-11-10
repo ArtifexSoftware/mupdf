@@ -1085,7 +1085,7 @@ segment_to_array(fz_context *ctx, pdf_sanitize_processor *p, unsigned char *seg,
 	}
 	else
 	{
-		assert("Shouldn't ever happen" == NULL);
+		fz_warn(ctx, "Text determinant zero - ignoring");
 	}
 	if (adjust != 0)
 		pdf_array_push_real(ctx, new_arr, -adjust * 1000 / p->gstate->pending.text.size);
