@@ -450,7 +450,6 @@ void pdf_clear_signature(fz_context *ctx, pdf_annot *widget)
 		fz_text_language lang = pdf_annot_language(ctx, (pdf_annot *)widget);
 		fz_rect rect = pdf_annot_rect(ctx, widget);
 
-		pdf_begin_operation(ctx, widget->page->doc, "Clear Signature");
 		if (pdf_widget_is_readonly(ctx, widget))
 			fz_throw(ctx, FZ_ERROR_ARGUMENT, "Signature read only, it cannot be cleared.");
 
