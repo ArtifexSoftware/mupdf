@@ -1648,7 +1648,8 @@ end_segment(fz_context *ctx, segmenter_data_t *sd)
 	if (sd->segment == NULL)
 		return;
 
-	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE) ? sd->sstate : NULL;
+	st = (sd->type == FZ_CULL_PATH_STROKE || sd->type == FZ_CULL_PATH_FILL_STROKE ||
+			sd->type == FZ_CULL_CLIP_PATH_STROKE || sd->type == FZ_CULL_CLIP_PATH_FILL_STROKE) ? sd->sstate : NULL;
 	r = fz_bound_path(ctx, sd->segment, st, sd->ctm);
 
 	sd->last_segment_was_just_a_move_and_was_culled = 0;
