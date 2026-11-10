@@ -506,6 +506,8 @@ pdf_add_embedded_file(fz_context *ctx, pdf_document *doc,
 		}
 
 		filespec = pdf_add_filespec(ctx, doc, filename, file);
+
+		pdf_end_operation(ctx, doc);
 	}
 	fz_always(ctx)
 		pdf_drop_obj(ctx, file);
