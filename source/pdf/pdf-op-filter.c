@@ -1345,12 +1345,7 @@ pdf_filter_gs_begin(fz_context *ctx, pdf_processor *proc, const char *name, pdf_
 	{
 		pdf_obj *font_ref = pdf_array_get(ctx, obj, 0);
 		pdf_obj *font_size = pdf_array_get(ctx, obj, 1);
-		pdf_font_desc *font;
-
-		if (pdf_is_dict(ctx, font_ref))
-			font = pdf_try_load_font(ctx, p->doc, p->super.rstack, font_ref, NULL);
-		else
-			font = pdf_load_hail_mary_font(ctx, p->doc);
+		pdf_font_desc *font = pdf_try_load_font(ctx, p->doc, p->super.rstack, font_ref, NULL);
 
 		fz_try(ctx)
 		{

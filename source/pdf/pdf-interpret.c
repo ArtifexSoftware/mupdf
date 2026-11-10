@@ -780,20 +780,23 @@ pdf_font_desc *
 pdf_try_load_font(fz_context *ctx, pdf_document *doc, pdf_resource_stack *rdb, pdf_obj *font, fz_cookie *cookie)
 {
 	pdf_font_desc *desc = NULL;
-	fz_try(ctx)
-		desc = pdf_load_font(ctx, doc, rdb, font);
-	fz_catch(ctx)
+	if (pdf_is_dict(ctx, font))
 	{
-		if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+		fz_try(ctx)
+			desc = pdf_load_font(ctx, doc, rdb, font);
+		fz_catch(ctx)
 		{
-			fz_ignore_error(ctx);
-			if (cookie)
-				cookie->incomplete++;
-		}
-		else
-		{
-			fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
-			fz_report_error(ctx);
+			if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+			{
+				fz_ignore_error(ctx);
+				if (cookie)
+					cookie->incomplete++;
+			}
+			else
+			{
+				fz_rethrow_if(ctx, FZ_ERROR_SYSTEM);
+				fz_report_error(ctx);
+			}
 		}
 	}
 	if (desc == NULL)
@@ -925,11 +928,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 	{
 		pdf_obj *font_ref = pdf_array_get(ctx, obj, 0);
 		pdf_obj *font_size = pdf_array_get(ctx, obj, 1);
-		pdf_font_desc *font;
-		if (pdf_is_dict(ctx, font_ref))
-			font = pdf_try_load_font(ctx, csi->doc, proc->rstack, font_ref, csi->cookie);
-		else
-			font = pdf_load_hail_mary_font(ctx, csi->doc);
+		pdf_font_desc *font = pdf_try_load_font(ctx, csi->doc, proc->rstack, font_ref, csi->cookie);
 		fz_try(ctx)
 			proc->op_Tf(ctx, proc, NULL, font, pdf_to_real(ctx, font_size));
 		fz_always(ctx)
@@ -1415,13 +1414,8 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 	case B('T','f'):
 		if (proc->op_Tf)
 		{
-			pdf_obj *fontobj;
-			pdf_font_desc *font;
-			fontobj = pdf_lookup_resource(ctx, proc->rstack, PDF_NAME(Font), csi->name);
-			if (pdf_is_dict(ctx, fontobj))
-				font = pdf_try_load_font(ctx, csi->doc, proc->rstack, fontobj, csi->cookie);
-			else
-				font = pdf_load_hail_mary_font(ctx, csi->doc);
+			pdf_obj *fontobj = pdf_lookup_resource(ctx, proc->rstack, PDF_NAME(Font), csi->name);
+			pdf_font_desc *font = pdf_try_load_font(ctx, csi->doc, proc->rstack, fontobj, csi->cookie);
 			fz_try(ctx)
 				proc->op_Tf(ctx, proc, csi->name, font, s[0]);
 			fz_always(ctx)
