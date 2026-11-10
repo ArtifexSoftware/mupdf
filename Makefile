@@ -608,14 +608,13 @@ install-extra-apps: install-apps extra-apps
 	install -d $(DESTDIR)$(bindir)
 	install -m 755 $(EXTRA_TOOL_APPS) $(EXTRA_VIEW_APPS) $(DESTDIR)$(bindir)
 
-install-docs:
+install-docs: man docs
 	install -d $(DESTDIR)$(mandir)/man1
-	install -m 644 docs/man/*.1 $(DESTDIR)$(mandir)/man1
+	install -m 644 build/man/*.1 $(DESTDIR)$(mandir)/man1
 	install -d $(DESTDIR)$(docdir)
-	install -d $(DESTDIR)$(docdir)/examples
 	install -m 644 README CHANGES $(DESTDIR)$(docdir)
 	install -m 644 $(wildcard COPYING LICENSE) $(DESTDIR)$(docdir)
-	install -m 644 docs/examples/* $(DESTDIR)$(docdir)/examples
+	cp -prf build/docs/* $(DESTDIR)$(docdir)
 
 install: install-libs install-apps install-docs
 
