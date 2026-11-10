@@ -161,7 +161,7 @@ enum fz_css_property_name
 
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK, DIS_TABLE, DIS_TABLE_GROUP, DIS_TABLE_ROW, DIS_TABLE_CELL, DIS_TABLE_COLGROUP, DIS_TABLE_COL };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
-enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
+enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY, TA_START, TA_END };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM, VA_TEXT_TOP, VA_TEXT_BOTTOM, VA_MIDDLE, VA_PERCENT, VA_LENGTH };
 enum { BS_NONE, BS_SOLID, BS_DOTTED, BS_DASHED, BS_DOUBLE, BS_GROOVE, BS_RIDGE, BS_INSET, BS_OUTSET };
 enum { V_VISIBLE, V_HIDDEN, V_COLLAPSE };
@@ -244,7 +244,7 @@ struct fz_css_style
 	unsigned int page_break_before : 3;
 	unsigned int page_break_after : 3;
 	unsigned int visibility : 2;
-	unsigned int text_align : 2;
+	unsigned int text_align : 3;
 	unsigned int direction : 2;
 	unsigned int list_style_type : 4;
 	unsigned int border_style_0 : 4;

@@ -1885,7 +1885,7 @@ fz_default_css_style(fz_context *ctx, fz_css_style *style)
 	memset(style, 0, sizeof *style);
 	style->direction = FZ_BIDI_UNSET;
 	style->visibility = V_VISIBLE;
-	style->text_align = TA_LEFT;
+	style->text_align = TA_START;
 	style->vertical_align = VA_BASELINE;
 	style->white_space = WS_NORMAL;
 	style->list_style_type = LST_DISC;
@@ -1919,6 +1919,8 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "right")) style->text_align = TA_RIGHT;
 		else if (!strcmp(value->data, "center")) style->text_align = TA_CENTER;
 		else if (!strcmp(value->data, "justify")) style->text_align = TA_JUSTIFY;
+		else if (!strcmp(value->data, "start")) style->text_align = TA_START;
+		else if (!strcmp(value->data, "end")) style->text_align = TA_END;
 	}
 
 	value = value_from_property(match, PRO_POSITION);

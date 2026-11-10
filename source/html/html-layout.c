@@ -409,9 +409,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	}
 
 	if (align == TA_JUSTIFY)
-	{
 		justify = slop / (i ? i : 1);
-	}
 	else if (align == TA_RIGHT)
 		x += slop;
 	else if (align == TA_CENTER)
@@ -856,10 +854,17 @@ static void layout_flow(fz_context *ctx, layout_data *ld, fz_html_box *box, fz_h
 	if (box->markup_dir == FZ_BIDI_RTL)
 	{
 		justify_align = TA_RIGHT;
-		if (align == TA_LEFT)
+		if (align == TA_START)
 			align = TA_RIGHT;
-		else if (align == TA_RIGHT)
+		else if (align == TA_END)
 			align = TA_LEFT;
+	}
+	else
+	{
+		if (align == TA_START)
+			align = TA_LEFT;
+		else if (align == TA_END)
+			align = TA_RIGHT;
 	}
 
 	/* Position the box, initially zero height. */
