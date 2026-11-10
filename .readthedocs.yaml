@@ -16,8 +16,6 @@ build:
   os: ubuntu-lts-latest
   tools:
     python: latest
-  apt_packages:
-    - graphviz
   jobs:
     pre_build:
       - cp -rf scripts/sphinx/conf.py docs/

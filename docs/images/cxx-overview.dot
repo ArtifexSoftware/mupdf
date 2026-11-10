@@ -1,0 +1,17 @@
+digraph
+{
+	size="4,4";
+	labeljust=l;
+
+	"MuPDF C API" [shape="rectangle"]
+	"MuPDF C++ API" [shape="rectangle"]
+	"SWIG" [shape="oval"]
+	"MuPDF Python API" [shape="rectangle"]
+	"MuPDF C# API" [shape="rectangle"]
+
+	"MuPDF C API" -> "MuPDF C++ API" [label=" Parse C headers with libclang,\l generate abstractions.\l"]
+
+	"MuPDF C++ API" -> "SWIG" [label=" Parse C++ headers with SWIG."]
+	"SWIG" -> "MuPDF Python API"
+	"SWIG" -> "MuPDF C# API"
+}

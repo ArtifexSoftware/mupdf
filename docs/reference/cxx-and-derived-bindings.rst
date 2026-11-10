@@ -24,26 +24,9 @@ versions of the :title:`MuPDF C API` are available.
   The Python and C# APIs are generated from the C++ API using SWIG, so
   automatically include the C++ API's abstractions.
 
-.. graphviz::
-
-    digraph
-    {
-      size="4,4";
-      labeljust=l;
-
-      "MuPDF C API" [shape="rectangle"]
-      "MuPDF C++ API" [shape="rectangle"]
-      "SWIG" [shape="oval"]
-      "MuPDF Python API" [shape="rectangle"]
-      "MuPDF C# API" [shape="rectangle"]
-
-      "MuPDF C API" -> "MuPDF C++ API" [label=" Parse C headers with libclang,\l generate abstractions.\l"]
-
-      "MuPDF C++ API" -> "SWIG" [label=" Parse C++ headers with SWIG."]
-      "SWIG" -> "MuPDF Python API"
-      "SWIG" -> "MuPDF C# API"
-    }
-
+.. image:: /images/cxx-overview.svg
+	:align: center
+	:alt:
 
 The C++ MuPDF API
 ---------------------------------------------------------------

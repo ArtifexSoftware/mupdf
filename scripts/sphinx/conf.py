@@ -37,7 +37,6 @@ release = version = get_mupdf_version()
 
 extensions = [
 	"myst_parser",
-	"sphinx.ext.graphviz",
 	"sphinxcontrib.googleanalytics",
 ]
 
