@@ -29,6 +29,23 @@
 #include <limits.h>
 #include <assert.h>
 
+/*
+	This header has functions for several data types relating to geometric
+	calculations: rectangles, points, vectors, and matrices.
+
+	We also include a grab bag of other mathematical helpers and utilities.
+*/
+
+/*
+
+	## Fixed point numbers
+
+	Pixmaps and colors use 8-bit fixed point numbers (0..255) representing the 0.0 to 1.0 range (inclusive).
+
+	These are often multiplied and divided to blend and interpolate colors using the following fast functions
+	and macros.
+*/
+
 /**
 	Multiply scaled two integers in the 0..255 range
 */
@@ -71,6 +88,16 @@ static inline int fz_div255(int c, int a)
 	AMOUNT (in the 0...256 range).
 */
 #define FZ_BLEND(SRC, DST, AMOUNT) ((((SRC)-(DST))*(AMOUNT) + ((DST)<<8))>>8)
+
+/*
+	## Flotsam & Jetsam
+*/
+
+/*
+	Return how many bytes are needed to fit a number of bits.
+	Primarily used in various image stride calculations.
+*/
+#define fz_bytes_from_bits(A)  (((A)>>3) + !!((A) & 7))
 
 /**
 	Range checking atof
@@ -175,6 +202,10 @@ static inline void *fz_clampp(void *x, void *min, void *max)
 	return x < min ? min : x > max ? max : x;
 }
 
+/*
+	## Points
+*/
+
 /**
 	fz_point is a point in a two-dimensional space.
 */
@@ -189,7 +220,12 @@ static inline fz_point fz_make_point(float x, float y)
 	return p;
 }
 
+/*
+*/
+
 /**
+	## Rectangles
+
 	fz_rect is a rectangle represented by two diagonally opposite
 	corners at arbitrary coordinates.
 
@@ -219,20 +255,16 @@ static inline fz_point fz_make_point(float x, float y)
 	We choose FZ_{MIN,MAX}_INF_RECT to be the largest 32bit signed
 	integer values that survive roundtripping to floats.
 */
-#define FZ_MIN_INF_RECT ((int)0x80000000)
-#define FZ_MAX_INF_RECT ((int)0x7fffff80)
+
+/*
+	fz_rect is a rectangle using floating point coordinates.
+*/
 
 typedef struct fz_rect
 {
 	float x0, y0;
 	float x1, y1;
 } fz_rect;
-
-static inline fz_rect fz_make_rect(float x0, float y0, float x1, float y1)
-{
-	fz_rect r = { x0, y0, x1, y1 };
-	return r;
-}
 
 /**
 	fz_irect is a rectangle using integers instead of floats.
@@ -244,6 +276,17 @@ typedef struct fz_irect
 	int x0, y0;
 	int x1, y1;
 } fz_irect;
+
+
+/* Magic numbers to indicate infinite rectangles. */
+#define FZ_MIN_INF_RECT ((int)0x80000000)
+#define FZ_MAX_INF_RECT ((int)0x7fffff80)
+
+static inline fz_rect fz_make_rect(float x0, float y0, float x1, float y1)
+{
+	fz_rect r = { x0, y0, x1, y1 };
+	return r;
+}
 
 static inline fz_irect fz_make_irect(int x0, int y0, int x1, int y1)
 {
@@ -365,6 +408,187 @@ fz_irect_height(fz_irect r)
 }
 
 /**
+	Compute intersection of two rectangles.
+
+	Given two rectangles, update the first to be the smallest
+	axis-aligned rectangle that covers the area covered by both
+	given rectangles. If either rectangle is empty then the
+	intersection is also empty. If either rectangle is infinite
+	then the intersection is simply the non-infinite rectangle.
+	Should both rectangles be infinite, then the intersection is
+	also infinite.
+*/
+fz_rect fz_intersect_rect(fz_rect a, fz_rect b);
+
+/**
+	Compute intersection of two bounding boxes.
+
+	Similar to fz_intersect_rect but operates on two bounding
+	boxes instead of two rectangles.
+*/
+fz_irect fz_intersect_irect(fz_irect a, fz_irect b);
+
+/**
+	Compute union of two rectangles.
+
+	Given two rectangles, update the first to be the smallest
+	axis-aligned rectangle that encompasses both given rectangles.
+	If either rectangle is infinite then the union is also infinite.
+	If either rectangle is empty then the union is simply the
+	non-empty rectangle. Should both rectangles be empty, then the
+	union is also empty.
+*/
+fz_rect fz_union_rect(fz_rect a, fz_rect b);
+
+/**
+	Convert a rect into the minimal bounding box
+	that covers the rectangle.
+
+	Coordinates in a bounding box are integers, so rounding of the
+	rects coordinates takes place. The top left corner is rounded
+	upwards and left while the bottom right corner is rounded
+	downwards and to the right.
+*/
+fz_irect fz_irect_from_rect(fz_rect rect);
+
+/**
+	Round rectangle coordinates.
+
+	Coordinates in a bounding box are integers, so rounding of the
+	rects coordinates takes place. The top left corner is rounded
+	upwards and left while the bottom right corner is rounded
+	downwards and to the right.
+
+	This differs from fz_irect_from_rect, in that fz_irect_from_rect
+	slavishly follows the numbers (i.e any slight over/under
+	calculations can cause whole extra pixels to be added).
+	fz_round_rect allows for a small amount of rounding error when
+	calculating the bbox.
+*/
+fz_irect fz_round_rect(fz_rect rect);
+
+/**
+	Convert a bbox into a rect.
+
+	For our purposes, a rect can represent all the values we meet in
+	a bbox, so nothing can go wrong.
+
+	rect: A place to store the generated rectangle.
+
+	bbox: The bbox to convert.
+
+	Returns rect (updated).
+*/
+fz_rect fz_rect_from_irect(fz_irect bbox);
+
+/**
+	Expand a bbox by a given amount in all directions.
+*/
+fz_rect fz_expand_rect(fz_rect b, float expand);
+fz_irect fz_expand_irect(fz_irect a, int expand);
+
+/**
+	Calculate the area of a rectangle.
+
+	Always non-negative. All invalid or empty rects return 0.
+*/
+float fz_rect_area(fz_rect r);
+
+/**
+	Expand a bbox to include a given point.
+	To create a rectangle that encompasses a sequence of points, the
+	rectangle must first be set to be the empty rectangle at one of
+	the points before including the others.
+*/
+fz_rect fz_include_point_in_rect(fz_rect r, fz_point p);
+
+/**
+	Translate bounding box.
+
+	Translate a bbox by a given x and y offset. Allows for overflow.
+*/
+fz_rect fz_translate_rect(fz_rect a, float xoff, float yoff);
+fz_irect fz_translate_irect(fz_irect a, int xoff, int yoff);
+
+/**
+	Test rectangle inclusion.
+
+	Return true if a entirely contains b.
+*/
+int fz_contains_rect(fz_rect a, fz_rect b);
+
+/*
+	## Quads
+
+	A representation for a region defined by 4 points.
+
+	The significant difference between quads and rects is that
+	the edges of quads are not axis aligned.
+*/
+
+typedef struct fz_quad
+{
+	fz_point ul, ur, ll, lr;
+} fz_quad;
+
+/**
+	Inline convenience construction function.
+*/
+static inline fz_quad fz_make_quad(
+	float ul_x, float ul_y,
+	float ur_x, float ur_y,
+	float ll_x, float ll_y,
+	float lr_x, float lr_y)
+{
+	fz_quad q = {
+		{ ul_x, ul_y },
+		{ ur_x, ur_y },
+		{ ll_x, ll_y },
+		{ lr_x, lr_y },
+	};
+	return q;
+}
+
+FZ_DATA extern const fz_quad fz_invalid_quad;
+FZ_DATA extern const fz_quad fz_infinite_quad;
+
+/**
+	Is a quad valid?
+*/
+int fz_is_valid_quad(fz_quad q);
+
+/**
+	Is a quad empty?
+*/
+int fz_is_empty_quad(fz_quad q);
+
+/**
+	Is a quad infinite?
+*/
+int fz_is_infinite_quad(fz_quad q);
+
+/**
+	Convert a rect to a quad (losslessly).
+*/
+fz_quad fz_quad_from_rect(fz_rect r);
+
+/**
+	Convert a quad to the smallest rect that covers it.
+*/
+fz_rect fz_rect_from_quad(fz_quad q);
+
+
+/**
+	Test rectangle overlap.
+
+	Returns true if the area of the overlap is
+	non zero.
+*/
+int fz_overlaps_rect(fz_rect a, fz_rect b);
+
+/**
+	## Matrices
+
 	fz_matrix is a row-major 3x3 matrix used for representing
 	transformations of coordinates throughout MuPDF.
 
@@ -587,123 +811,9 @@ int fz_is_rectilinear(fz_matrix m);
 */
 float fz_matrix_expansion(fz_matrix m);
 
-/**
-	Compute intersection of two rectangles.
-
-	Given two rectangles, update the first to be the smallest
-	axis-aligned rectangle that covers the area covered by both
-	given rectangles. If either rectangle is empty then the
-	intersection is also empty. If either rectangle is infinite
-	then the intersection is simply the non-infinite rectangle.
-	Should both rectangles be infinite, then the intersection is
-	also infinite.
+/*
+	## Transformations
 */
-fz_rect fz_intersect_rect(fz_rect a, fz_rect b);
-
-/**
-	Compute intersection of two bounding boxes.
-
-	Similar to fz_intersect_rect but operates on two bounding
-	boxes instead of two rectangles.
-*/
-fz_irect fz_intersect_irect(fz_irect a, fz_irect b);
-
-/**
-	Compute union of two rectangles.
-
-	Given two rectangles, update the first to be the smallest
-	axis-aligned rectangle that encompasses both given rectangles.
-	If either rectangle is infinite then the union is also infinite.
-	If either rectangle is empty then the union is simply the
-	non-empty rectangle. Should both rectangles be empty, then the
-	union is also empty.
-*/
-fz_rect fz_union_rect(fz_rect a, fz_rect b);
-
-/**
-	Convert a rect into the minimal bounding box
-	that covers the rectangle.
-
-	Coordinates in a bounding box are integers, so rounding of the
-	rects coordinates takes place. The top left corner is rounded
-	upwards and left while the bottom right corner is rounded
-	downwards and to the right.
-*/
-fz_irect fz_irect_from_rect(fz_rect rect);
-
-/**
-	Round rectangle coordinates.
-
-	Coordinates in a bounding box are integers, so rounding of the
-	rects coordinates takes place. The top left corner is rounded
-	upwards and left while the bottom right corner is rounded
-	downwards and to the right.
-
-	This differs from fz_irect_from_rect, in that fz_irect_from_rect
-	slavishly follows the numbers (i.e any slight over/under
-	calculations can cause whole extra pixels to be added).
-	fz_round_rect allows for a small amount of rounding error when
-	calculating the bbox.
-*/
-fz_irect fz_round_rect(fz_rect rect);
-
-/**
-	Convert a bbox into a rect.
-
-	For our purposes, a rect can represent all the values we meet in
-	a bbox, so nothing can go wrong.
-
-	rect: A place to store the generated rectangle.
-
-	bbox: The bbox to convert.
-
-	Returns rect (updated).
-*/
-fz_rect fz_rect_from_irect(fz_irect bbox);
-
-/**
-	Expand a bbox by a given amount in all directions.
-*/
-fz_rect fz_expand_rect(fz_rect b, float expand);
-fz_irect fz_expand_irect(fz_irect a, int expand);
-
-/**
-	Calculate the area of a rectangle.
-
-	Always non-negative. All invalid or empty rects return 0.
-*/
-float fz_rect_area(fz_rect r);
-
-/**
-	Expand a bbox to include a given point.
-	To create a rectangle that encompasses a sequence of points, the
-	rectangle must first be set to be the empty rectangle at one of
-	the points before including the others.
-*/
-fz_rect fz_include_point_in_rect(fz_rect r, fz_point p);
-
-/**
-	Translate bounding box.
-
-	Translate a bbox by a given x and y offset. Allows for overflow.
-*/
-fz_rect fz_translate_rect(fz_rect a, float xoff, float yoff);
-fz_irect fz_translate_irect(fz_irect a, int xoff, int yoff);
-
-/**
-	Test rectangle inclusion.
-
-	Return true if a entirely contains b.
-*/
-int fz_contains_rect(fz_rect a, fz_rect b);
-
-/**
-	Test rectangle overlap.
-
-	Returns true if the area of the overlap is
-	non zero.
-*/
-int fz_overlaps_rect(fz_rect a, fz_rect b);
 
 /**
 	Apply a transformation to a point.
@@ -772,63 +882,6 @@ fz_matrix fz_gridfit_matrix(int as_tiled, fz_matrix m);
 float fz_matrix_max_expansion(fz_matrix m);
 
 /**
-	A representation for a region defined by 4 points.
-
-	The significant difference between quads and rects is that
-	the edges of quads are not axis aligned.
-*/
-typedef struct fz_quad
-{
-	fz_point ul, ur, ll, lr;
-} fz_quad;
-
-/**
-	Inline convenience construction function.
-*/
-static inline fz_quad fz_make_quad(
-	float ul_x, float ul_y,
-	float ur_x, float ur_y,
-	float ll_x, float ll_y,
-	float lr_x, float lr_y)
-{
-	fz_quad q = {
-		{ ul_x, ul_y },
-		{ ur_x, ur_y },
-		{ ll_x, ll_y },
-		{ lr_x, lr_y },
-	};
-	return q;
-}
-
-FZ_DATA extern const fz_quad fz_invalid_quad;
-FZ_DATA extern const fz_quad fz_infinite_quad;
-
-/**
-	Is a quad valid?
-*/
-int fz_is_valid_quad(fz_quad q);
-
-/**
-	Is a quad empty?
-*/
-int fz_is_empty_quad(fz_quad q);
-
-/**
-	Is a quad infinite?
-*/
-int fz_is_infinite_quad(fz_quad q);
-
-/**
-	Convert a rect to a quad (losslessly).
-*/
-fz_quad fz_quad_from_rect(fz_rect r);
-
-/**
-	Convert a quad to the smallest rect that covers it.
-*/
-fz_rect fz_rect_from_quad(fz_quad q);
-
-/**
 	Transform a quad by a matrix.
 */
 fz_quad fz_transform_quad(fz_quad q, fz_matrix m);
@@ -888,14 +941,29 @@ int fz_is_quad_inside_quad(fz_quad needle, fz_quad haystack);
 */
 int fz_is_quad_intersecting_quad(fz_quad a, fz_quad b);
 
-/* Checked integer arithmetic helpers -- return whether operation succeeded without overflow or underflow. */
-/* Use builtin C23 ckd_mul, ckd_add, ckd_sub if available. */
+/*
+	## Checked arithmetic
+
+	The C language is notoriously difficult to use safely.
+	One commonly recurring problem is dealing with integer overflow.
+	C23 has added several built-in primitives providing checked arithmetic
+	to help alleviate these problems; but since we need to be compatible
+	with ancient C compilers we can't use these as-is.
+
+	Here follow macros and functions that implement the same checked arithmetic
+	operations portably using the fz_ prefix.
+
+	These functions return whether the operation succeeded without overflow or underflow.
+
+	They use the built-in primitives (ckd_mul, cdk_add, etc) if they are available.
+*/
 
 #ifdef HAVE_STDCKDINT_H
 
 #include <stdckdint.h>
 
 /* We add explicit casts here to ensure that these match the non-C23 cases below. */
+
 #define fz_ckd_mul_i32(O,A,B) ckd_mul(O,(int32_t)(A),(int32_t)(B))
 #define fz_ckd_mul_u32(O,A,B) ckd_mul(O,(uint32_t)(A),(uint32_t)(B))
 #define fz_ckd_mul_int(O,A,B) ckd_mul(O,(int)(A),(int)(B))
@@ -951,8 +1019,6 @@ int fz_ckd_add_u64(uint64_t *out, uint64_t a, uint64_t b);
 int fz_ckd_sub_u64(uint64_t *out, uint64_t a, uint64_t b);
 
 #endif
-
-#define fz_bytes_from_bits(A)  (((A)>>3) + !!((A) & 7))
 
 int fz_ckd_size_from_i64(size_t *out, int64_t in);
 int fz_ckd_int_from_i64(int *out, int64_t in);
