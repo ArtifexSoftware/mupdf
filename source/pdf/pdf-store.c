@@ -52,7 +52,16 @@ pdf_drop_key(fz_context *ctx, void *key)
 static int
 pdf_cmp_key(fz_context *ctx, void *k0, void *k1)
 {
-	return pdf_objcmp(ctx, (pdf_obj *)k0, (pdf_obj *)k1);
+	pdf_obj *a = (pdf_obj *)k0;
+	pdf_obj *b = (pdf_obj *)k1;
+	pdf_document *adoc = pdf_get_bound_document(ctx, a);
+	pdf_document *bdoc = pdf_get_bound_document(ctx, b);
+
+	/* Avoid sharing complex objects across documents. */
+	if (adoc && bdoc && adoc != bdoc)
+		return 1;
+
+	return pdf_objcmp(ctx, a, b);
 }
 
 static void
