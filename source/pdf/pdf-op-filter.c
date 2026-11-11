@@ -316,6 +316,18 @@ ensure_pushed(fz_context *ctx, pdf_sanitize_processor *p)
 	return p->gstate;
 }
 
+static int
+safe_strcmp(const char *a, const char *b)
+{
+	if (a == b)
+		return 0;
+	if (a == NULL)
+		a = "";
+	if (b == NULL)
+		b = "";
+	return strcmp(a, b);
+}
+
 static void filter_flush(fz_context *ctx, pdf_sanitize_processor *p, int flush)
 {
 	filter_gstate *gstate = p->gstate;
@@ -612,9 +624,12 @@ done_SC:
 				if (p->super.chain->op_Tz)
 					p->super.chain->op_Tz(ctx, p->super.chain, gstate->pending.text.scale*100);
 			}
+
 			if (gstate->pending.text.font != gstate->sent.text.font ||
 				gstate->pending.text.size != gstate->sent.text.size ||
-				gstate->pending.text.fontname != gstate->sent.text.fontname)
+				safe_strcmp(
+					fz_cstring_from_string(gstate->pending.text.fontname),
+					fz_cstring_from_string(gstate->sent.text.fontname)))
 			{
 				gstate = ensure_pushed(ctx, p);
 				if (gstate->pending.text.fontname != NULL && p->super.chain->op_Tf)
