@@ -592,6 +592,59 @@ done_SC:
 
 	if (flush & FLUSH_TEXT)
 	{
+		if (gstate->pending.text.char_space != gstate->sent.text.char_space)
+		{
+			gstate = ensure_pushed(ctx, p);
+			if (p->super.chain->op_Tc)
+				p->super.chain->op_Tc(ctx, p->super.chain, gstate->pending.text.char_space);
+		}
+		if (gstate->pending.text.word_space != gstate->sent.text.word_space)
+		{
+			gstate = ensure_pushed(ctx, p);
+			if (p->super.chain->op_Tw)
+				p->super.chain->op_Tw(ctx, p->super.chain, gstate->pending.text.word_space);
+		}
+		if (gstate->pending.text.scale != gstate->sent.text.scale && gstate->pending.text.scale != UNSET_SCALE)
+		{
+			/* The value of scale in the gstate is divided by 100 from what is written in the file */
+			gstate = ensure_pushed(ctx, p);
+			if (p->super.chain->op_Tz)
+				p->super.chain->op_Tz(ctx, p->super.chain, gstate->pending.text.scale*100);
+		}
+		if (gstate->pending.text.font != gstate->sent.text.font ||
+			gstate->pending.text.size != gstate->sent.text.size ||
+			safe_strcmp(
+				fz_cstring_from_string(gstate->pending.text.fontname),
+				fz_cstring_from_string(gstate->sent.text.fontname)))
+		{
+			gstate = ensure_pushed(ctx, p);
+			if (gstate->pending.text.fontname != NULL && p->super.chain->op_Tf)
+				p->super.chain->op_Tf(ctx, p->super.chain, fz_cstring_from_string(gstate->pending.text.fontname), gstate->pending.text.font, gstate->pending.text.size);
+		}
+		if (gstate->pending.text.render != gstate->sent.text.render)
+		{
+			gstate = ensure_pushed(ctx, p);
+			if (p->super.chain->op_Tr)
+				p->super.chain->op_Tr(ctx, p->super.chain, gstate->pending.text.render);
+		}
+		if (gstate->pending.text.rise != gstate->sent.text.rise)
+		{
+			gstate = ensure_pushed(ctx, p);
+			if (p->super.chain->op_Ts)
+				p->super.chain->op_Ts(ctx, p->super.chain, gstate->pending.text.rise);
+		}
+		pdf_drop_font(ctx, gstate->sent.text.font);
+		fz_drop_string(ctx, gstate->sent.text.fontname);
+		/* Everything has been sent except leading. */
+		{
+			float t = gstate->sent.text.leading;
+			gstate->sent.text = gstate->pending.text;
+			gstate->sent.text.leading = t;
+			gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
+			gstate->sent.text.fontname = fz_keep_string(ctx, gstate->pending.text.fontname);
+			copy_resource(ctx, p, PDF_NAME(Font), fz_cstring_from_string(gstate->sent.text.fontname));
+		}
+
 		if (p->BT_pending)
 		{
 			gstate = ensure_pushed(ctx, p);
@@ -604,59 +657,6 @@ done_SC:
 		}
 		if (p->in_BT)
 		{
-			float t;
-			if (gstate->pending.text.char_space != gstate->sent.text.char_space)
-			{
-				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Tc)
-					p->super.chain->op_Tc(ctx, p->super.chain, gstate->pending.text.char_space);
-			}
-			if (gstate->pending.text.word_space != gstate->sent.text.word_space)
-			{
-				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Tw)
-					p->super.chain->op_Tw(ctx, p->super.chain, gstate->pending.text.word_space);
-			}
-			if (gstate->pending.text.scale != gstate->sent.text.scale && gstate->pending.text.scale != UNSET_SCALE)
-			{
-				/* The value of scale in the gstate is divided by 100 from what is written in the file */
-				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Tz)
-					p->super.chain->op_Tz(ctx, p->super.chain, gstate->pending.text.scale*100);
-			}
-
-			if (gstate->pending.text.font != gstate->sent.text.font ||
-				gstate->pending.text.size != gstate->sent.text.size ||
-				safe_strcmp(
-					fz_cstring_from_string(gstate->pending.text.fontname),
-					fz_cstring_from_string(gstate->sent.text.fontname)))
-			{
-				gstate = ensure_pushed(ctx, p);
-				if (gstate->pending.text.fontname != NULL && p->super.chain->op_Tf)
-					p->super.chain->op_Tf(ctx, p->super.chain, fz_cstring_from_string(gstate->pending.text.fontname), gstate->pending.text.font, gstate->pending.text.size);
-			}
-			if (gstate->pending.text.render != gstate->sent.text.render)
-			{
-				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Tr)
-					p->super.chain->op_Tr(ctx, p->super.chain, gstate->pending.text.render);
-			}
-			if (gstate->pending.text.rise != gstate->sent.text.rise)
-			{
-				gstate = ensure_pushed(ctx, p);
-				if (p->super.chain->op_Ts)
-					p->super.chain->op_Ts(ctx, p->super.chain, gstate->pending.text.rise);
-			}
-			pdf_drop_font(ctx, gstate->sent.text.font);
-			fz_drop_string(ctx, gstate->sent.text.fontname);
-			/* Everything has been sent except leading. */
-			t = gstate->sent.text.leading;
-			gstate->sent.text = gstate->pending.text;
-			gstate->sent.text.leading = t;
-			gstate->sent.text.font = pdf_keep_font(ctx, gstate->pending.text.font);
-			gstate->sent.text.fontname = fz_keep_string(ctx, gstate->pending.text.fontname);
-			copy_resource(ctx, p, PDF_NAME(Font), fz_cstring_from_string(gstate->sent.text.fontname));
-
 			/* We want tm to be up to date. */
 			if (p->tos.tm.a != p->sent_tm.a ||
 				p->tos.tm.b != p->sent_tm.b ||
@@ -2173,22 +2173,12 @@ pdf_filter_Q(fz_context *ctx, pdf_processor *proc)
 /* text state */
 
 static void
-implicit_bt(fz_context *ctx, pdf_sanitize_processor *p)
-{
-	if (!p->in_BT && !p->BT_pending)
-		do_BT(ctx, p);
-}
-
-
-static void
 pdf_filter_Tc(fz_context *ctx, pdf_processor *proc, float charspace)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
-
-	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.char_space = charspace;
@@ -2201,8 +2191,6 @@ pdf_filter_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
-
-	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.word_space = wordspace;
@@ -2218,8 +2206,6 @@ pdf_filter_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	implicit_bt(ctx, p);
-
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.scale = scale / 100;
 }
@@ -2232,8 +2218,6 @@ pdf_filter_TL(fz_context *ctx, pdf_processor *proc, float leading)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	implicit_bt(ctx, p);
-
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.leading = leading;
 }
@@ -2245,8 +2229,6 @@ pdf_filter_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_d
 
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
-
-	implicit_bt(ctx, p);
 
 	filter_flush(ctx, p, FLUSH_OP);
 	fz_drop_string(ctx, p->gstate->pending.text.fontname);
@@ -2265,8 +2247,6 @@ pdf_filter_Tr(fz_context *ctx, pdf_processor *proc, int render)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	implicit_bt(ctx, p);
-
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.render = render;
 }
@@ -2279,13 +2259,18 @@ pdf_filter_Ts(fz_context *ctx, pdf_processor *proc, float rise)
 	if (fz_is_empty_rect(p->gstate->clip_rect))
 		return;
 
-	implicit_bt(ctx, p);
-
 	filter_flush(ctx, p, FLUSH_OP);
 	p->gstate->pending.text.rise = rise;
 }
 
 /* text positioning */
+
+static void
+implicit_bt(fz_context *ctx, pdf_sanitize_processor *p)
+{
+	if (!p->in_BT && !p->BT_pending)
+		do_BT(ctx, p);
+}
 
 static void
 pdf_filter_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
