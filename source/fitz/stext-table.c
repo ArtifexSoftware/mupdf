@@ -2097,7 +2097,13 @@ calculate_spanned_content(fz_context *ctx, grid_walker_data *gd, fz_stext_block 
 
 static cells_t *new_cells(fz_context *ctx, int w, int h)
 {
-	cells_t *cells = fz_malloc_flexible(ctx, cells_t, cell, w * h);
+	cells_t *cells;
+	size_t n;
+
+	if (fz_ckd_mul_size(&n, w, h))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "Impossibly large grid");
+
+	cells = fz_malloc_flexible(ctx, cells_t, cell, n);
 	cells->w = w;
 	cells->h = h;
 
@@ -4605,7 +4611,7 @@ fz_clone_stext_grid_positions(fz_context *ctx, fz_stext_grid_positions *src)
 		return NULL;
 
 	dst = fz_malloc_flexible(ctx, fz_stext_grid_positions, list, src->len);
-	memcpy(dst, src, fz_sizeof_flexible(fz_stext_grid_positions, list, src->len));
+	memcpy(dst, src, fz_sizeof_flexible(ctx, fz_stext_grid_positions, list, src->len));
 
 	return dst;
 }

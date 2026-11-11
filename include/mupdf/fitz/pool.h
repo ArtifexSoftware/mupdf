@@ -48,6 +48,14 @@ void *fz_pool_alloc(fz_context *ctx, fz_pool *pool, size_t size);
 	((TYPE*)Memento_label(fz_pool_alloc(CTX, POOL, sizeof(TYPE)), #TYPE))
 
 /**
+	Allocate a flexible struct from the pool.
+	Block will be inited to 0's.
+*/
+#define fz_pool_alloc_flexible(ctx, pool, T, M, count) \
+	((T*)Memento_label(fz_pool_alloc_flexible_imp(ctx, pool, offsetof(T, M), sizeof(*((T*)0)->M), (count)), #T))
+void *fz_pool_alloc_flexible_imp(fz_context *ctx, fz_pool *pool, size_t offset, size_t size, size_t count);
+
+/**
 	strdup equivalent allocating from the pool.
 */
 char *fz_pool_strdup(fz_context *ctx, fz_pool *pool, const char *s);

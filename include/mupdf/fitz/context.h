@@ -731,13 +731,15 @@ void fz_free(fz_context *ctx, void *p);
 	Flexible array member allocation helpers.
 */
 #define fz_malloc_flexible(ctx, T, M, count) \
-	((T*)Memento_label(fz_calloc(ctx, 1, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T))
+	((T*)Memento_label(fz_malloc_flexible_imp(ctx, offsetof(T, M), sizeof(*((T*)0)->M), (count)), #T))
 #define fz_realloc_flexible(ctx, p, T, M, count) \
-	((T*)Memento_label(fz_realloc(ctx, p, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)), #T))
-#define fz_pool_alloc_flexible(ctx, pool, T, M, count) \
-	((T*)fz_pool_alloc(ctx, pool, offsetof(T, M) + sizeof(*((T*)0)->M) * (count)))
-#define fz_sizeof_flexible(T, M, count) \
-	(offsetof(T, M) + sizeof(*((T*)0)->M) * (count))
+	((T*)Memento_label(fz_realloc_flexible_imp(ctx, p, offsetof(T, M), sizeof(*((T*)0)->M), (count)), #T))
+#define fz_sizeof_flexible(ctx, T, M, count) \
+	fz_sizeof_flexible_imp(ctx, offsetof(T, M), sizeof(*((T*)0)->M), (count))
+
+void *fz_malloc_flexible_imp(fz_context *ctx, size_t offset, size_t size, size_t count);
+void *fz_realloc_flexible_imp(fz_context *ctx, void *p, size_t offset, size_t size, size_t count);
+size_t fz_sizeof_flexible_imp(fz_context *ctx, size_t offset, size_t size, size_t count);
 
 /**
 	fz_malloc equivalent that returns NULL rather than throwing

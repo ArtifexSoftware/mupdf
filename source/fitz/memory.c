@@ -136,6 +136,54 @@ fz_realloc_array_imp(fz_context *ctx, void *p, size_t nmemb, size_t size)
 	return fz_realloc(ctx, p, total);
 }
 
+size_t
+fz_sizeof_flexible_imp(fz_context *ctx, size_t offset, size_t size, size_t count)
+{
+	size_t z;
+
+	if (fz_ckd_mul_size(&z, size, count) ||
+		fz_ckd_add_size(&z, offset, z))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "sizeof flexible overflow");
+
+	return z;
+}
+
+void *
+fz_malloc_flexible_imp(fz_context *ctx, size_t offset, size_t size, size_t count)
+{
+	size_t z;
+
+	if (fz_ckd_mul_size(&z, size, count) ||
+		fz_ckd_add_size(&z, offset, z))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "malloc flexible overflow");
+
+	return fz_calloc(ctx, 1, z);
+}
+
+void *
+fz_realloc_flexible_imp(fz_context *ctx, void *p, size_t offset, size_t size, size_t count)
+{
+	size_t z;
+
+	if (fz_ckd_mul_size(&z, size, count) ||
+		fz_ckd_add_size(&z, offset, z))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "realloc flexible overflow");
+
+	return fz_realloc(ctx, p, z);
+}
+
+void *
+fz_pool_alloc_flexible_imp(fz_context *ctx, fz_pool *pool, size_t offset, size_t size, size_t count)
+{
+	size_t z;
+
+	if (fz_ckd_mul_size(&z, size, count) ||
+		fz_ckd_add_size(&z, offset, z))
+		fz_throw(ctx, FZ_ERROR_LIMIT, "pool alloc flexible overflow");
+
+	return fz_pool_alloc(ctx, pool, z);
+}
+
 void *
 fz_calloc(fz_context *ctx, size_t count, size_t size)
 {
