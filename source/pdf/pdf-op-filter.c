@@ -3037,10 +3037,12 @@ static void
 pdf_close_sanitize_processor(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_sanitize_processor *p = (pdf_sanitize_processor*)proc;
-	while (!filter_pop(ctx, p))
+	do
 	{
-		/* Nothing to do in the loop, all work done above */
+		if (p->in_BT)
+			pdf_filter_ET(ctx, proc);
 	}
+	while (filter_pop(ctx, p));
 	pdf_close_processor(ctx, p->super.chain);
 }
 
