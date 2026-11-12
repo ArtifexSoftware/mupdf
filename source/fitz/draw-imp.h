@@ -472,4 +472,6 @@ void fz_blend_pixmap_knockout(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_p
 
 void fz_paint_glyph(const unsigned char * FZ_RESTRICT colorbv, fz_pixmap * FZ_RESTRICT dst, unsigned char * FZ_RESTRICT dp, const fz_glyph * FZ_RESTRICT glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * FZ_RESTRICT eop);
 
+void fz_union_pixmap(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap * FZ_RESTRICT src);
+
 #endif

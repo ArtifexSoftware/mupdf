@@ -370,6 +370,101 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 
 }
 
+static fz_draw_state *
+fz_shape_ga_begin(fz_context *ctx, fz_draw_device *dev)
+{
+	fz_irect bbox;
+	fz_draw_state *state = &dev->stack[dev->stack_len-1];
+
+	state = push_stack(ctx, dev, "shape_ga");
+
+	if (state[0].shape)
+	{
+		bbox = fz_pixmap_bbox(ctx, state->shape);
+		bbox = fz_intersect_irect(bbox, state->scissor);
+		state[1].shape = fz_new_pixmap_with_bbox(ctx, state->shape->colorspace, bbox, state->shape->seps, state->shape->alpha);
+		fz_clear_pixmap(ctx, state[1].shape);
+	}
+	if (state[0].group_alpha)
+	{
+		bbox = fz_pixmap_bbox(ctx, state->group_alpha);
+		bbox = fz_intersect_irect(bbox, state->scissor);
+		state[1].group_alpha = fz_new_pixmap_with_bbox(ctx, state->group_alpha->colorspace, bbox, state->group_alpha->seps, state->group_alpha->alpha);
+		fz_clear_pixmap(ctx, state[1].group_alpha);
+	}
+
+#ifdef DUMP_GROUP_BLENDS
+	dump_spaces(dev->stack_len-2, "");
+	fz_dump_blend(ctx, "shape_ga begin: background is ", state[1].dest);
+	if (state[1].shape)
+		fz_dump_blend(ctx, "/S=", state[1].shape);
+	if (state[1].group_alpha)
+		fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+	printf("\n");
+#endif
+
+	state[1].scissor = bbox;
+
+	return &state[1];
+}
+
+static void fz_shape_ga_end(fz_context *ctx, fz_draw_device *dev)
+{
+	fz_draw_state *state;
+
+	if (dev->stack_len == 1)
+		fz_throw(ctx, FZ_ERROR_ARGUMENT, "unexpected shape/ga end");
+
+	state = pop_stack(ctx, dev, "shape_ga");
+
+	fz_try(ctx)
+	{
+		assert(state[0].dest == state[1].dest);
+		assert(state[0].shape == NULL || state[1].shape != NULL);
+		assert(state[0].group_alpha == NULL || state[1].group_alpha != NULL);
+
+#ifdef DUMP_GROUP_BLENDS
+		dump_spaces(dev->stack_len-1, "");
+		printf("shape_ga end: blending ");
+		if (state[1].shape)
+			fz_dump_blend(ctx, "/S=", state[1].shape);
+		if (state[1].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[1].group_alpha);
+		printf(" onto ");
+		if (state[0].shape)
+			fz_dump_blend(ctx, "/S=", state[0].shape);
+		if (state[0].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+#endif
+
+		if (state[1].group_alpha)
+		{
+			assert(state[0].group_alpha != state[1].group_alpha);
+			fz_union_pixmap(ctx, state[0].group_alpha, state[1].group_alpha);
+		}
+
+		if (state[1].shape)
+		{
+			assert(state[0].shape != state[1].shape);
+			fz_union_pixmap(ctx, state[0].shape, state[1].shape);
+		}
+
+#ifdef DUMP_GROUP_BLENDS
+		printf(" to get ");
+		if (state[0].shape)
+			fz_dump_blend(ctx, "/S=", state[0].shape);
+		if (state[0].group_alpha)
+			fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
+		printf("\n");
+#endif
+	}
+	fz_always(ctx)
+		cleanup_post_pop(ctx, state);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+}
+
 static int
 colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
 {
@@ -1066,6 +1161,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 	fz_rasterizer *rast = dev->rast;
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
+	int blend_shape_ga = 0;
 
 	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
 	if (state->in_smask)
@@ -1085,6 +1181,12 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT && alpha != 1)
 		state = fz_knockout_begin(ctx, dev);
+
+	if (state->shape || state->group_alpha)
+	{
+		state = fz_shape_ga_begin(ctx, dev);
+		blend_shape_ga = 1;
+	}
 
 	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, dev->overprint_possible);
 	shapebv = 255;
@@ -1152,6 +1254,9 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, fz_matr
 		}
 	}
 
+	if (blend_shape_ga)
+		fz_shape_ga_end(ctx, dev);
+
 	if (state->blendmode & FZ_BLEND_KNOCKOUT && alpha != 1)
 		fz_knockout_end(ctx, dev);
 }
@@ -1173,6 +1278,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	int aa = fz_rasterizer_text_aa_level(dev->rast);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
+	int blend_shape_ga = 0;
 
 	assert((color_params.ri & FZ_RI_IN_SOFTMASK) == 0);
 	if (state->in_smask)
@@ -1189,6 +1295,12 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT && alpha != 1)
 		state = fz_knockout_begin(ctx, dev);
+
+	if (state->shape || state->group_alpha)
+	{
+		state = fz_shape_ga_begin(ctx, dev);
+		blend_shape_ga = 1;
+	}
 
 	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, dev->overprint_possible);
 
@@ -1251,6 +1363,9 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 			}
 		}
 	}
+
+	if (blend_shape_ga)
+		fz_shape_ga_end(ctx, dev);
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT && alpha != 1)
 		fz_knockout_end(ctx, dev);

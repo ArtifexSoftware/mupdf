@@ -1367,3 +1367,44 @@ fz_blend_pixmap_knockout(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap
 		verify_premultiply(ctx, dst);
 #endif
 }
+
+void
+fz_union_pixmap(fz_context *ctx, fz_pixmap * FZ_RESTRICT dst, fz_pixmap * FZ_RESTRICT src)
+{
+	const unsigned char *sp;
+	unsigned char *dp;
+	fz_irect sbox, dbox, bbox;
+	int x, y, w, h;
+
+	dbox = fz_pixmap_bbox_no_ctx(dst);
+	sbox = fz_pixmap_bbox_no_ctx(src);
+	bbox = fz_intersect_irect(dbox, sbox);
+
+	x = bbox.x0;
+	y = bbox.y0;
+	w = fz_irect_width(bbox);
+	h = fz_irect_height(bbox);
+	if (w == 0 || h == 0)
+		return;
+
+	assert(src->n == 1 && dst->n == 1);
+	sp = src->samples + (y - src->y) * (size_t)src->stride + (x - src->x);
+	dp = dst->samples + (y - dst->y) * (size_t)dst->stride + (x - dst->x);
+
+	while (h--)
+	{
+		const unsigned char *sp2 = sp;
+		unsigned char *dp2 = dp;
+		int w2 = w;
+		do
+		{
+			unsigned char s = *sp2++;
+			if (s)
+				*dp2 = (s == 255) ? 255 : FZ_BLEND(255, *dp2, FZ_EXPAND(s));
+			dp2++;
+		}
+		while (--w2);
+		sp += src->stride;
+		dp += dst->stride;
+	}
+}
