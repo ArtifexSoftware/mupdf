@@ -69,6 +69,7 @@ struct pnminfo
 	int endian;
 	int bitmap;
 	float scale;
+	int crlf;
 };
 
 static inline int iswhiteeol(int a)
@@ -127,6 +128,24 @@ pnm_read_eol(fz_context *ctx, const unsigned char *p, const unsigned char *e, in
 		p++;
 	if (p < e && *p == '\n')
 		p++;
+
+	return p;
+}
+
+static const unsigned char *
+pnm_read_first_eol(fz_context *ctx, const unsigned char *p, const unsigned char *e, int *crlf)
+{
+	if (e - p < 1)
+		fz_throw(ctx, FZ_ERROR_FORMAT, "cannot parse end of line in pnm image");
+	if (*p != '\r' && *p != '\n')
+		fz_throw(ctx, FZ_ERROR_FORMAT, "expected end of line in pnm image");
+	p++;
+	*crlf = 0;
+	if (e - p > 0 && *p == '\n')
+	{
+		*crlf = 1;
+		p++;
+	}
 
 	return p;
 }
@@ -623,7 +642,7 @@ pam_binary_read_header(fz_context *ctx, struct pnminfo *pnm, const unsigned char
 
 	while (p < e && token != TOKEN_ENDHDR)
 	{
-		eol = pnm_read_until_eol(ctx, p, e, 0);
+		eol = pnm_read_until_eol(ctx, p, e, pnm->crlf);
 
 		p = pnm_read_whites(ctx, p, eol, 0);
 
@@ -652,9 +671,9 @@ pam_binary_read_header(fz_context *ctx, struct pnminfo *pnm, const unsigned char
 		}
 
 		if (p < eol && *p == '#')
-			p = pnm_read_comment(ctx, p, eol, 0);
+			p = pnm_read_comment(ctx, p, eol, pnm->crlf);
 
-		p = pnm_read_eol(ctx, p, e, 0);
+		p = pnm_read_eol(ctx, p, e, pnm->crlf);
 	}
 
 	return p;
@@ -955,7 +974,8 @@ pnm_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char *p, siz
 
 		p = pnm_read_whites_and_eols(ctx, p, e, 0);
 		p = pnm_read_signature(ctx, p, e, signature);
-		p = pnm_read_whites_and_eols(ctx, p, e, 1);
+		p = pnm_read_whites(ctx, p, e, 0);
+		p = pnm_read_first_eol(ctx, p, e, &pnm->crlf);
 
 		if (!strcmp(signature, "P1"))
 		{
