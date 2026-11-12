@@ -2103,7 +2103,8 @@ do_BT(fz_context *ctx, pdf_sanitize_processor *p)
 	p->tos.tlm = fz_identity;
 	p->sent_tm = fz_identity;
 	p->sent_tlm = fz_identity;
-	p->BT_pending = 1;
+	if (!p->in_BT)
+		p->BT_pending = 1;
 	p->text_sent = 0;
 	p->text_removed = 0;
 }
