@@ -3042,7 +3042,7 @@ pdf_close_sanitize_processor(fz_context *ctx, pdf_processor *proc)
 		if (p->in_BT)
 			pdf_filter_ET(ctx, proc);
 	}
-	while (filter_pop(ctx, p));
+	while (!filter_pop(ctx, p));
 	pdf_close_processor(ctx, p->super.chain);
 }
 
