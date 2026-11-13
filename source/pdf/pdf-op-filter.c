@@ -680,7 +680,7 @@ done_SC:
 					/* A Td does the following update:
 					 *   Tm = Tlm = ( 1  0  0 ) x Tlm
 					 *              ( 0  1  0 )
-					 *              ( tx ty 0 )
+					 *              ( tx ty 1 )
 					 * so:
 					 *   Tlm.e += Tlm.a * tx + Tlm.c * ty
 					 *   Tlm.f += Tlm.b * tx + Tlm.d * ty
