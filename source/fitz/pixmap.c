@@ -1316,17 +1316,27 @@ calc_percentile(int *hist, float thr, float scale, float minval, float maxval)
 }
 
 static void
-calc_percentiles(fz_context *ctx, float *samples, size_t nsamples, float *minprct, float *maxprct)
+calc_percentiles(fz_context *ctx, float *samples, size_t npixels, int n, int alpha, float *minprct, float *maxprct)
 {
 	float minval, maxval, scale;
-	size_t size, k;
+	size_t size, i;
+	int k;
 	int *hist;
+	float *sample;
 
-	minval = maxval = samples[0];
-	for (k = 1; k < nsamples; k++)
+	minval = FLT_MAX;
+	maxval = -FLT_MAX;
+	sample = samples;
+	for (i = npixels; i > 0; i--)
 	{
-		minval = fz_min(minval, samples[k]);
-		maxval = fz_max(maxval, samples[k]);
+		for (k = n; k > 0; k--)
+		{
+			float f = *sample++;
+			minval = fz_min(minval, f);
+			maxval = fz_max(maxval, f);
+		}
+		if (alpha)
+			sample++;
 	}
 
 	if (minval - maxval == 0)
@@ -1335,7 +1345,7 @@ calc_percentiles(fz_context *ctx, float *samples, size_t nsamples, float *minprc
 		return;
 	}
 
-	size = fz_minz(65535, nsamples);
+	size = fz_minz(65535, npixels * n);
 	scale = (size - 1) / (maxval - minval);
 
 	hist = fz_calloc(ctx, size, sizeof(int));
@@ -1343,18 +1353,24 @@ calc_percentiles(fz_context *ctx, float *samples, size_t nsamples, float *minprc
 	*minprct = 0;
 	*maxprct = 0;
 
-	for (k = 0; k < nsamples; k++)
-		hist[(uint16_t) (scale * (samples[k] - minval))]++;
+	sample = samples;
+	for (i = npixels; i > 0; i--)
+	{
+		for (k = n; k > 0; k--)
+			hist[(uint16_t) (scale * (*sample++ - minval))]++;
+		if (alpha)
+			sample++;
+	}
 
-	*minprct = calc_percentile(hist, 0.01f * nsamples, scale, minval, maxval);
-	*maxprct = calc_percentile(hist, 0.99f * nsamples, scale, minval, maxval);
+	*minprct = calc_percentile(hist, 0.01f * npixels * n, scale, minval, maxval);
+	*maxprct = calc_percentile(hist, 0.99f * npixels * n, scale, minval, maxval);
 
 	fz_free(ctx, hist);
 }
 
 /* Tone mapping according to "Consistent Tone Reproduction" by Min H. Kim and Jan Kautz. */
 fz_pixmap *
-fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int w, int h, float *samples)
+fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int alpha, int w, int h, float *samples)
 {
 	fz_pixmap *pixmap = NULL;
 	unsigned char *dp;
@@ -1362,36 +1378,43 @@ fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int w, int h, 
 	float minsample, maxsample, mu;
 	float k1, d0, sigma, sigmasq2;
 	float minprct, maxprct, range;
-	size_t k, nsamples;
-	int y;
+	size_t i, npixels;
+	int x, y, k, n;
 #define KIMKAUTZC1 (3.0f)
 #define KIMKAUTZC2 (0.5f)
 #define MAXLD (logf(300.0f))
 #define MINLD (logf(0.3f))
 
-	pixmap = fz_new_pixmap(ctx, cs, w, h, NULL, 0);
+	pixmap = fz_new_pixmap(ctx, cs, w, h, NULL, alpha);
 	if (w > 0 && h > 0 && pixmap->n > 0)
 	{
 		fz_try(ctx)
 		{
-			nsamples = (size_t) w * h;
-			if ((size_t) pixmap->n > SIZE_MAX / nsamples)
+			n = pixmap->n - alpha;
+			if (fz_ckd_mul_size(&npixels, w, h))
 				fz_throw(ctx, FZ_ERROR_LIMIT, "too many floating point samples to convert to pixmap");
-			nsamples *= pixmap->n;
 
 			mu = 0;
 			minsample = FLT_MAX;
 			maxsample = -FLT_MAX;
 
-			for (k = 0; k < nsamples; k++)
+			sample = samples;
+			for (i = npixels; i > 0; i--)
 			{
-				float v = logf(samples[k] == 0 ? FLT_MIN : samples[k]);
-				mu += v;
-				minsample = fz_min(minsample, v);
-				maxsample = fz_max(maxsample, v);
+				for (k = n; k > 0; k--)
+				{
+					float f = *sample++;
+					float v = logf(f <= 0 ? FLT_MIN : f);
+					mu += v;
+					minsample = fz_min(minsample, v);
+					maxsample = fz_max(maxsample, v);
+				}
+				if (alpha)
+					sample++;
 			}
 
-			mu /= nsamples;
+			mu /= npixels;
+			mu /= n;
 			d0 = maxsample - minsample;
 			if (d0 == 0)
 				d0 = 1;
@@ -1399,29 +1422,37 @@ fz_new_pixmap_from_float_data(fz_context *ctx, fz_colorspace *cs, int w, int h, 
 			sigma = d0 / KIMKAUTZC1;
 			sigmasq2 = sigma * sigma * 2;
 
-			for (k = 0; k < nsamples; k++)
+			sample = samples;
+			for (i = npixels; i > 0; i--)
 			{
-				float samplemu = samples[k] - mu;
-				float samplemu2 = samplemu * samplemu;
-				float fw = expf(-samplemu2 / sigmasq2);
-				float k2 = (1 - k1) * fw + k1;
-				samples[k] = expf(KIMKAUTZC2 * k2 * (logf(samples[k] == 0 ? FLT_MIN : samples[k]) - mu) + mu);
+				for (k = n; k > 0; k--)
+				{
+					float f = *sample;
+					float samplemu = f - mu;
+					float samplemu2 = samplemu * samplemu;
+					float fw = expf(-samplemu2 / sigmasq2);
+					float k2 = (1 - k1) * fw + k1;
+					*sample++ = expf(KIMKAUTZC2 * k2 * (logf(f <= 0 ? FLT_MIN : f) - mu) + mu);
+				}
+				if (alpha)
+					sample++;
 			}
 
-			calc_percentiles(ctx, samples, nsamples, &minprct, &maxprct);
+			calc_percentiles(ctx, samples, npixels, n, alpha, &minprct, &maxprct);
 			range = maxprct - minprct;
 
-			dp = pixmap->samples + pixmap->stride * (h - 1);
+			dp = pixmap->samples;
 			sample = samples;
 
-			for (y = 0; y < h; y++)
+			for (y = h; y > 0; y--)
 			{
-				unsigned char *dpp = dp;
-
-				for (k = 0; k < (size_t) w * pixmap->n; k++)
-					*dpp++ = 255.0f * (fz_clamp(*sample++, minprct, maxprct) - minprct) / range;
-
-				dp -= pixmap->stride;
+				for (x = w; x > 0; x--)
+				{
+					for (k = n; k > 0; k--)
+						*dp++ = 255.0f * (fz_clamp(*sample++, minprct, maxprct) - minprct) / range;
+					if (alpha)
+						*dp++ = 255.0f * fz_clamp(*sample++, 0, 1);
+				}
 			}
 		}
 		fz_catch(ctx)

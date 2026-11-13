@@ -93,13 +93,15 @@ static inline int iswhite(int a)
 static const unsigned char *
 pnm_read_signature(fz_context *ctx, const unsigned char *p, const unsigned char *e, char *signature)
 {
-	if (e - p < 2)
+	if (e - p < 3)
 		fz_throw(ctx, FZ_ERROR_FORMAT, "cannot parse magic number in pnm image");
 	if (p[0] != 'P' || ((p[1] < '1' || p[1] > '7') && p[1] != 'F' && p[1] != 'f'))
 		fz_throw(ctx, FZ_ERROR_FORMAT, "expected signature in pnm image");
 
 	signature[0] = *p++;
 	signature[1] = *p++;
+	if (*p >= '0' && *p <= '9')
+		signature[2] = *p++;
 	return p;
 }
 
@@ -895,11 +897,11 @@ pfm_binary_read_header(fz_context *ctx, struct pnminfo *pnm, const unsigned char
 }
 
 static fz_pixmap *
-pfm_binary_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char *p, const unsigned char *e, int onlymeta, int rgb, const unsigned char **out)
+pfm_binary_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char *p, const unsigned char *e, int onlymeta, int rgb, int alpha, const unsigned char **out)
 {
 	fz_pixmap *pix = NULL;
 	int w, h, n;
-	size_t size;
+	size_t size, stride;
 
 	fz_var(pix);
 
@@ -913,9 +915,9 @@ pfm_binary_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char 
 
 	w = pnm->width;
 	h = pnm->height;
-	n = fz_colorspace_n(ctx, pnm->cs);
+	n = fz_colorspace_n(ctx, pnm->cs) + alpha;
 
-	if (fz_ckd_mul_size(&size, w, h) || fz_ckd_mul_size(&size, size, n) || fz_ckd_mul_size(&size, size, sizeof (float)))
+	if (fz_ckd_mul_size(&stride, w, n) || fz_ckd_mul_size(&size, stride, h) || fz_ckd_mul_size(&size, size, sizeof (float)))
 		fz_throw(ctx, FZ_ERROR_LIMIT, "image too large");
 
 	if (e < p || (size_t)(e - p) < size)
@@ -931,10 +933,13 @@ pfm_binary_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char 
 		float *sample;
 		int x, y, k;
 
-		sample = samples = fz_malloc(ctx, size);
+		samples = fz_malloc(ctx, size);
+		/* This cannot overflow as the check was done above. */
+		sample = samples + stride * (size_t)(h-1);
 		fz_try(ctx)
 		{
 			for (y = 0; y < h; y++)
+			{
 				for (x = 0; x < w; x++)
 					for (k = 0; k < n; k++)
 					{
@@ -946,8 +951,11 @@ pfm_binary_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char 
 						*sample++ = f / pnm->scale;
 						p += sizeof(float);
 					}
+				sample -= stride;
+				sample -= stride;
+			}
 
-			pix = fz_new_pixmap_from_float_data(ctx, pnm->cs, w, h, samples);
+			pix = fz_new_pixmap_from_float_data(ctx, pnm->cs, alpha, w, h, samples);
 		}
 		fz_always(ctx)
 			fz_free(ctx, samples);
@@ -965,7 +973,7 @@ static fz_pixmap *
 pnm_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char *p, size_t total, int onlymeta, int subimage)
 {
 	const unsigned char *e = p + total;
-	char signature[3] = { 0 };
+	char signature[4] = { 0 };
 	fz_pixmap *pix = NULL;
 
 	while (p < e && ((!onlymeta && subimage >= 0) || onlymeta))
@@ -1010,9 +1018,11 @@ pnm_read_image(fz_context *ctx, struct pnminfo *pnm, const unsigned char *p, siz
 		else if (!strcmp(signature, "P7"))
 			pix = pam_binary_read_image(ctx, pnm, p, e, subonlymeta, &p);
 		else if (!strcmp(signature, "Pf"))
-			pix = pfm_binary_read_image(ctx, pnm, p, e, subonlymeta, 0, &p);
+			pix = pfm_binary_read_image(ctx, pnm, p, e, subonlymeta, 0, 0, &p);
+		else if (!strcmp(signature, "PF4"))
+			pix = pfm_binary_read_image(ctx, pnm, p, e, subonlymeta, 1, 1, &p);
 		else if (!strcmp(signature, "PF"))
-			pix = pfm_binary_read_image(ctx, pnm, p, e, subonlymeta, 1, &p);
+			pix = pfm_binary_read_image(ctx, pnm, p, e, subonlymeta, 1, 0, &p);
 		else
 			fz_throw(ctx, FZ_ERROR_FORMAT, "unsupported portable anymap signature (0x%02x, 0x%02x)", signature[0], signature[1]);
 
