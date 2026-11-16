@@ -215,6 +215,8 @@ void pdf_dict_del(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(fz_context *ctx, pdf_obj *dict, const char *key);
 void pdf_sort_dict(fz_context *ctx, pdf_obj *dict);
 
+const char *pdf_dict_put_unique(fz_context *ctx, pdf_obj *dict, const char *prefix, pdf_obj *val);
+
 void pdf_dict_put_bool(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int x);
 void pdf_dict_put_int(fz_context *ctx, pdf_obj *dict, pdf_obj *key, int64_t x);
 void pdf_dict_put_real(fz_context *ctx, pdf_obj *dict, pdf_obj *key, double x);

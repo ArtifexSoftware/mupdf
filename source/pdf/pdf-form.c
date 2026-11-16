@@ -2369,13 +2369,12 @@ static void pdf_bake_annot(fz_context *ctx, fz_buffer *buf, pdf_document *doc, p
 {
 	fz_matrix m;
 	pdf_obj *ap;
-	char name[20];
+	const char *name;
 
 	ap = pdf_annot_ap(ctx, annot);
 	if (ap)
 	{
-		fz_snprintf(name, sizeof name, "Annot%d", pdf_to_num(ctx, annot->obj));
-		pdf_dict_puts(ctx, res_xobj, name, ap);
+		name = pdf_dict_put_unique(ctx, res_xobj, "Annot", ap);
 		pdf_dict_put(ctx, ap, PDF_NAME(Type), PDF_NAME(XObject));
 		pdf_dict_put(ctx, ap, PDF_NAME(Subtype), PDF_NAME(Form));
 		m = pdf_annot_transform(ctx, annot);

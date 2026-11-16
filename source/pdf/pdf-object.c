@@ -2788,6 +2788,31 @@ pdf_dict_putl_drop(fz_context *ctx, pdf_obj *obj, pdf_obj *val, ...)
 		fz_rethrow(ctx);
 }
 
+const char *
+pdf_dict_put_unique(fz_context *ctx, pdf_obj *dict, const char *prefix, pdf_obj *val)
+{
+	// FIXME: Don't use Shlemiel the Painter algorithm for big dictionaries?
+	pdf_obj *key;
+	char buf[100];
+	int i = 1;
+	for (;;)
+	{
+		fz_snprintf(buf, sizeof buf, "%s%d", prefix, i);
+		if (!pdf_dict_gets(ctx, dict, buf))
+		{
+			key = pdf_new_name(ctx, buf);
+			fz_try(ctx)
+				pdf_dict_put(ctx, dict, key, val);
+			fz_always(ctx)
+				pdf_drop_obj(ctx, key);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
+			return pdf_to_name(ctx, key); // use borrowed pointer
+		}
+		i = i + 1;
+	}
+}
+
 void
 pdf_dict_dels(fz_context *ctx, pdf_obj *obj, const char *key)
 {
