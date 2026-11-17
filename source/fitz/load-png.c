@@ -327,8 +327,6 @@ png_read_trns(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 {
 	unsigned int i;
 
-	info->transparency = 1;
-
 	if (info->indexed)
 	{
 		if (size > 256)
@@ -341,13 +339,15 @@ png_read_trns(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 		/* Fill in any missing entries */
 		for (; i < 256; i++)
 			info->palette[i * 4 + 3] = 255;
+		info->transparency = 1;
 	}
-	else
+	else if (info->n == 1 || info->n == 3)
 	{
 		if (size != info->n * 2)
 			fz_throw(ctx, FZ_ERROR_FORMAT, "tRNS chunk is the wrong size");
 		for (i = 0; i < info->n; i++)
 			info->trns[i] = (p[i * 2] << 8 | p[i * 2 + 1]) & ((1 << info->depth) - 1);
+		info->transparency = 1;
 	}
 }
 
