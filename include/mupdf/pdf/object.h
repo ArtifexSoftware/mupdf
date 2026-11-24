@@ -120,6 +120,7 @@ struct pdf_cycle_list {
 	pdf_cycle_list *up;
 	int num;
 };
+
 /*
 	Check for a cycle (or stack overflow) in PDF structures.
 
@@ -128,6 +129,9 @@ struct pdf_cycle_list {
 	Otherwise returns 0.
 */
 int pdf_cycle(fz_context *ctx, pdf_cycle_list *here, pdf_cycle_list *prev, pdf_obj *obj);
+
+/* Check for repeated siblings in an array (to avoid exponential behavior when searching trees). */
+int pdf_array_cycle_sibling(fz_context *ctx, pdf_obj *arr, pdf_obj *item, int last);
 
 typedef struct pdf_mark_bits
 {

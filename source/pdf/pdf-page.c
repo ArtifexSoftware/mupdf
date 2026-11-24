@@ -1653,18 +1653,30 @@ struct page_label_range {
 };
 
 static void
-pdf_lookup_page_label_imp(fz_context *ctx, pdf_obj *node, int index, struct page_label_range *range)
+pdf_lookup_page_label_imp(fz_context *ctx, pdf_obj *node, int index, struct page_label_range *range, pdf_cycle_list *cycle_up)
 {
+	pdf_cycle_list cycle;
 	pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME(Kids));
 	pdf_obj *nums = pdf_dict_get(ctx, node, PDF_NAME(Nums));
 	int i;
+
+	if (pdf_cycle(ctx, &cycle, cycle_up, node))
+	{
+		fz_warn(ctx, "cycle in page label tree");
+		return;
+	}
 
 	if (pdf_is_array(ctx, kids))
 	{
 		for (i = 0; i < pdf_array_len(ctx, kids); ++i)
 		{
 			pdf_obj *kid = pdf_array_get(ctx, kids, i);
-			pdf_lookup_page_label_imp(ctx, kid, index, range);
+			if (pdf_array_cycle_sibling(ctx, kids, kid, i))
+			{
+				fz_warn(ctx, "repeated sibling in page label tree");
+				return;
+			}
+			pdf_lookup_page_label_imp(ctx, kid, index, range, &cycle);
 		}
 	}
 
@@ -1696,7 +1708,7 @@ pdf_lookup_page_label(fz_context *ctx, pdf_document *doc, int index)
 	pdf_obj *labels = pdf_dict_get(ctx, root, PDF_NAME(PageLabels));
 	pdf_obj *nums = pdf_dict_get(ctx, labels, PDF_NAME(Nums));
 	struct page_label_range range = { 0, NULL, 0, nums };
-	pdf_lookup_page_label_imp(ctx, labels, index, &range);
+	pdf_lookup_page_label_imp(ctx, labels, index, &range, NULL);
 	return range;
 }
 
