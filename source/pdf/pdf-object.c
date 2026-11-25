@@ -2791,10 +2791,9 @@ pdf_dict_putl_drop(fz_context *ctx, pdf_obj *obj, pdf_obj *val, ...)
 const char *
 pdf_dict_put_unique(fz_context *ctx, pdf_obj *dict, const char *prefix, pdf_obj *val)
 {
-	// FIXME: Don't use Shlemiel the Painter algorithm for big dictionaries?
 	pdf_obj *key;
 	char buf[100];
-	int i = 1;
+	int i = pdf_dict_len(ctx, dict) + 1;
 	for (;;)
 	{
 		fz_snprintf(buf, sizeof buf, "%s%d", prefix, i);
