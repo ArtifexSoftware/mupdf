@@ -433,6 +433,8 @@ static void showform(fz_context *ctx)
 	pdf_obj *fields, *page, *obj;
 	int i, k, n, m;
 
+	pdf_check_acroform(ctx, doc);
+
 	fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
 	if (fields)
 	{

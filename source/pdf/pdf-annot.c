@@ -345,6 +345,7 @@ pdf_sync_annots(fz_context *ctx, pdf_page *page)
 
 			if (pdf_name_eq(ctx, subtype, PDF_NAME(Widget)))
 			{
+				pdf_check_field(ctx, obj, NULL);
 				annot = find_and_unlink_annot_from_list(ctx, &old_widgets, obj);
 				if (!annot)
 					annot = pdf_new_annot(ctx, page, obj);

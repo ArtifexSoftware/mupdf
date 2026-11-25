@@ -380,4 +380,9 @@ void pdf_annot_event_page_invisible(fz_context *ctx, pdf_annot *annot);
 void pdf_bake_document(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets);
 void pdf_bake_document_with_usage(fz_context *ctx, pdf_document *doc, int bake_annots, int bake_widgets, const char *usage);
 
+/* ## Private */
+
+int pdf_check_field(fz_context *ctx, pdf_obj *field, pdf_cycle_list *cycle_up);
+void pdf_check_acroform(fz_context *ctx, pdf_document *doc);
+
 #endif

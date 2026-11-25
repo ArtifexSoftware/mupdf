@@ -41,6 +41,53 @@ enum
 	SigFlag_AppendOnly = 2
 };
 
+int pdf_check_field(fz_context *ctx, pdf_obj *field, pdf_cycle_list *cycle_up)
+{
+	pdf_cycle_list cycle;
+	pdf_obj *kids, *kid;
+	int i, n;
+
+	if (pdf_cycle(ctx, &cycle, cycle_up, field))
+	{
+		return 1;
+	}
+
+	kids = pdf_dict_get(ctx, field, PDF_NAME(Kids));
+	n = pdf_array_len(ctx, kids);
+	for (i = 0; i < n; ++i)
+	{
+		kid = pdf_array_get(ctx, kids, i);
+		if (pdf_array_cycle_sibling(ctx, kids, kid, i) || pdf_check_field(ctx, kid, &cycle))
+		{
+			fz_warn(ctx, "cycle in AcroForm fields");
+			pdf_array_delete(ctx, kids, i--);
+		}
+	}
+
+	return 0;
+}
+
+void pdf_check_acroform(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *fields, *kid;
+	int i, n;
+
+	fields = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/Fields");
+	if (fields)
+	{
+		n = pdf_array_len(ctx, fields);
+		for (i = 0; i < n; ++i)
+		{
+			kid = pdf_array_get(ctx, fields, i);
+			if (pdf_array_cycle_sibling(ctx, fields, kid, i) || pdf_check_field(ctx, kid, NULL))
+			{
+				fz_warn(ctx, "cycle in AcroForm fields");
+				pdf_array_delete(ctx, fields, i--);
+			}
+		}
+	}
+}
+
 const char *pdf_field_value(fz_context *ctx, pdf_obj *field)
 {
 	pdf_obj *v = pdf_dict_get_inheritable(ctx, field, PDF_NAME(V));

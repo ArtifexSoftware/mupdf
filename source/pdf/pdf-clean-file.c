@@ -408,7 +408,10 @@ static void pdf_rearrange_pages_imp(fz_context *ctx, pdf_document *doc, int coun
 				pdf_obj *f = pdf_array_get(ctx, annots, j);
 
 				if (pdf_dict_get(ctx, f, PDF_NAME(Subtype)) == PDF_NAME(Widget))
+				{
+					pdf_check_field(ctx, f, NULL); /* check and break malicious cycles in children */
 					pdf_array_push(ctx, allfields, f);
+				}
 			}
 		}
 
