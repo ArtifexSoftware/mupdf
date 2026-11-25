@@ -331,7 +331,11 @@ def log_levels_find( caller):
     if not s_log_levels_items:
         return 0
 
-    tb = traceback.extract_stack( None, 1+caller)
+    if isinstance(caller, inspect.FrameInfo):
+        tb = traceback.extract_stack( None, 1)
+    else:
+        tb = traceback.extract_stack( None, 1+caller)
+
     if len(tb) == 0:
         return 0
     filename, line, function, text = tb[0]
@@ -509,7 +513,7 @@ def log_levels_add_env( name='JLIB_log_levels'):
             if 0:   # lgtm [py/unreachable-statement]
                 pass
             elif len( ffl) == 1:
-                filename = ffl
+                filename = ffl[0]
                 function = None
             elif len( ffl) == 2:
                 filename, function = ffl
@@ -741,10 +745,6 @@ def text_split_last_of( text, substrings):
     pos, _ = text_strpbrk_reverse( text, substrings)
 
     return text[ :pos], text[ pos:]
-
-
-
-log_levels_add_env()
 
 
 def force_line_buffering():
@@ -1244,6 +1244,9 @@ def time_duration( seconds, verbose=False, s_format='%i'):
     if seconds < 0:
         ret = '-%s' % ret
     return ret
+
+
+log_levels_add_env()
 
 
 def date_time( t=None):
