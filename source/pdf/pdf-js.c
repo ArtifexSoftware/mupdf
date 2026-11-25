@@ -247,6 +247,7 @@ static pdf_obj *load_color(pdf_js *js, int idx)
 	pdf_obj *color = NULL;
 	int i, n;
 	float c;
+	int failed = 0;
 
 	n = js_getlength(J, idx);
 
@@ -263,9 +264,18 @@ static pdf_obj *load_color(pdf_js *js, int idx)
 		color = pdf_new_array(ctx, doc, n-1);
 		for (i = 0; i < n-1; i++)
 		{
-			js_getindex(J, idx, i+1);
-			c = js_tonumber(J, -1);
-			js_pop(J, 1);
+			if (js_try(J))
+			{
+				failed = 1;
+				break;
+			}
+			else
+			{
+				js_getindex(J, idx, i+1);
+				c = js_tonumber(J, -1);
+				js_pop(J, 1);
+				js_endtry(J);
+			}
 
 			pdf_array_push_real(ctx, color, c);
 		}
@@ -275,6 +285,9 @@ static pdf_obj *load_color(pdf_js *js, int idx)
 		pdf_drop_obj(ctx, color);
 		rethrow(js);
 	}
+
+	if (failed)
+		js_throw(J);
 
 	return color;
 }
@@ -420,7 +433,11 @@ static void doc_getField(js_State *J)
 static void doc_getNumPages(js_State *J)
 {
 	pdf_js *js = js_getcontext(J);
-	int pages = pdf_count_pages(js->ctx, js->doc);
+	int pages;
+	fz_try(js->ctx)
+		pages = pdf_count_pages(js->ctx, js->doc);
+	fz_catch(js->ctx)
+		rethrow(js);
 	js_pushnumber(J, pages);
 }
 
@@ -451,7 +468,10 @@ static void doc_setMetaString(js_State *J, const char *key)
 {
 	pdf_js *js = js_getcontext(J);
 	const char *value = js_tostring(J, 1);
-	fz_set_metadata(js->ctx, &js->doc->super, key, value);
+	fz_try(js->ctx)
+		fz_set_metadata(js->ctx, &js->doc->super, key, value);
+	fz_catch(js->ctx)
+		rethrow(js);
 }
 
 static void doc_getMetaDate(js_State *J, const char *key)
@@ -522,6 +542,7 @@ static void doc_resetForm(js_State *J)
 	pdf_js *js = js_getcontext(J);
 	pdf_obj *field, *form;
 	fz_context *ctx = js->ctx;
+	const char *s;
 	int i, n;
 
 	fz_try(ctx)
@@ -536,12 +557,15 @@ static void doc_resetForm(js_State *J)
 		for (i = 0; i < n; ++i)
 		{
 			js_getindex(J, 1, i);
+			s = js_tostring(J, -1);
 			fz_try(ctx)
-				field = pdf_lookup_field(ctx, form, js_tostring(J, -1));
+			{
+				field = pdf_lookup_field(ctx, form, s);
+				if (field)
+					pdf_field_reset(ctx, js->doc, field);
+			}
 			fz_catch(ctx)
 				rethrow(js);
-			if (field)
-				pdf_field_reset(ctx, js->doc, field);
 			js_pop(J, 1);
 		}
 	}
@@ -1177,7 +1201,10 @@ int pdf_js_event_result_validate(pdf_js *js, char **newtext)
 		if (rc)
 		{
 			js_getproperty(js->imp, -1, "value");
-			*newtext = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+			fz_try(js->ctx)
+				*newtext = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+			fz_catch(js->ctx)
+				rethrow(js);
 			js_pop(js->imp, 1);
 		}
 		js_pop(js->imp, 1);
@@ -1216,10 +1243,16 @@ int pdf_js_event_result_keystroke(pdf_js *js, pdf_keystroke_event *evt)
 			if (rc)
 			{
 				js_getproperty(js->imp, -1, "change");
-				evt->newChange = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+				fz_try(js->ctx)
+					evt->newChange = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+				fz_catch(js->ctx)
+					rethrow(js);
 				js_pop(js->imp, 1);
 				js_getproperty(js->imp, -1, "value");
-				evt->newValue = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+				fz_try(js->ctx)
+					evt->newValue = fz_strdup(js->ctx, js_trystring(js->imp, -1, ""));
+				fz_catch(js->ctx)
+					rethrow(js);
 				js_pop(js->imp, 1);
 				js_getproperty(js->imp, -1, "selStart");
 				evt->selStart = js_tryinteger(js->imp, -1, 0);
@@ -1241,7 +1274,10 @@ char *pdf_js_event_value(pdf_js *js)
 	{
 		js_getglobal(js->imp, "event");
 		js_getproperty(js->imp, -1, "value");
-		value = fz_strdup(js->ctx, js_trystring(js->imp, -1, "undefined"));
+		fz_try(js->ctx)
+			value = fz_strdup(js->ctx, js_trystring(js->imp, -1, "undefined"));
+		fz_catch(js->ctx)
+			rethrow(js);
 		js_pop(js->imp, 2);
 	}
 	return value;
