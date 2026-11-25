@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root attr="value">
+  <child id="1">text</child>
+  <child id="2"><![CDATA[data]]></child>
+</root>
