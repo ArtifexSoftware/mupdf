@@ -1319,7 +1319,7 @@ guess_bidi_level(int bidiclass, int cur_bidi)
 	case UCDN_BIDI_CLASS_ET:
 		return 0;
 	case UCDN_BIDI_CLASS_AN:
-		return 1;
+		return 0;
 	case UCDN_BIDI_CLASS_CS:
 	case UCDN_BIDI_CLASS_NSM:
 	case UCDN_BIDI_CLASS_BN:
